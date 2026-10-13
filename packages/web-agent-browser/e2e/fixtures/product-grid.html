@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Product grid</title></head>
+<body style="margin:0;font-family:sans-serif">
+<app-root></app-root>
+<script>
+customElements.define("product-card", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    r.innerHTML = `<style>:host{display:block;border:1px solid #ccc;border-radius:8px;padding:12px}</style>
+      <h3>${this.getAttribute("name")}</h3><p>${this.getAttribute("price")}</p><button>Add to cart</button>`;
+  }
+});
+customElements.define("store-view", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    const cards = Array.from({ length: 16 }, (_, i) =>
+      `<product-card name="Cat toy ${i + 1}" price="$${(i + 1) * 3}.00"></product-card>`).join("");
+    r.innerHTML = `<style>.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:16px}</style>
+      <h1>Store</h1><div class="grid">${cards}</div>`;
+  }
+});
+customElements.define("app-root", class extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = "<store-view></store-view>";
+  }
+});
+</script>
+</body></html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Human Event Sequence Test Page</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; max-width: 720px; }
+    label { display: block; margin-top: 16px; font-weight: 600; }
+    input, select { font-size: 16px; padding: 6px; width: 320px; }
+    #log { margin-top: 24px; padding: 12px; border: 2px solid #333; min-height: 96px; }
+    #log p { margin: 4px 0; font-size: 18px; font-weight: 700; }
+    #order { margin-top: 16px; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Human event sequence</h1>
+
+  <label for="full-name">Full name</label>
+  <input type="text" id="full-name" aria-label="Full name" />
+
+  <label for="plan">Plan</label>
+  <select id="plan" aria-label="Plan">
+    <option value="">Choose a plan</option>
+    <option value="basic">Basic</option>
+    <option value="premium">Premium</option>
+  </select>
+
+  <div id="log" aria-live="polite"></div>
+  <div id="order"></div>
+
+  <script>
+    const log = document.getElementById("log");
+    const order = document.getElementById("order");
+    const seen = [];
+
+    function write(line) {
+      const p = document.createElement("p");
+      p.textContent = line;
+      log.appendChild(p);
+    }
+
+    const nameEl = document.getElementById("full-name");
+    const planEl = document.getElementById("plan");
+
+    // The visible confirmation lines the screenshot must show.
+    nameEl.addEventListener("blur", () => write("BLUR FIRED: full-name = " + nameEl.value));
+    planEl.addEventListener("change", () => write("CHANGE FIRED: plan = " + planEl.value));
+    planEl.addEventListener("blur", () => write("BLUR FIRED: plan = " + planEl.value));
+
+    // The observed order, for the record in the task file.
+    const TYPES = ["pointerdown", "mousedown", "focus", "focusin", "keydown",
+                   "beforeinput", "input", "keyup", "change", "blur", "focusout"];
+    for (const el of [nameEl, planEl]) {
+      for (const t of TYPES) {
+        el.addEventListener(t, (e) => {
+          seen.push(el.id + ":" + e.type + "[" + e.constructor.name + "]" +
+                    (e.inputType ? " inputType=" + e.inputType : ""));
+          order.textContent = seen.join("\n");
+        });
+      }
+    }
+    window.__EVENT_ORDER__ = () => seen;
+  </script>
+</body>
+</html>

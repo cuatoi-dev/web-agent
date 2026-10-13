@@ -1,0 +1,37 @@
+# The default brand for the Web Agent browser extension.
+#
+# defaultAgent: names the default agent file in brand/agents/<id>.yml.
+# Side panel agents are defined in brand/agents/.
+defaultAgent: chromagent
+
+# prompts: one system-prompt section for the in-page agent. The text becomes
+# the agent's "# App instructions" section.
+# An unknown key, a non-string value, or an empty string fails the build.
+prompts:
+  inPage: |
+    You are the Web Agent bubble inside the current page. You can see and
+    operate this page only. You cannot change pages. If the user needs a
+    different page, ask them to open it. Keep replies short.
+
+# options: settings the brand fixes for every install.
+# lockModel: true makes the endpoint, wire format, model and streaming fields on
+# the options page read-only, so a white-label install cannot be pointed
+# somewhere else. The theme, the API key and the shared token stay editable —
+# they are the user's, not the brand's. Defaults to false.
+options:
+  lockModel: false
+
+# hosts: extra origins the extension may call, as Chrome match patterns. Every
+# model endpoint in model.yml is granted automatically; list here only what the
+# agent must reach on top of that. Use "<all_urls>" for any site. These are
+# granted at install, so the user is never prompted mid-use.
+hosts:
+  # The e2e fixtures server (repo-root AGENTS.md, Dev ports). Playwright cannot
+  # click Chrome's grant dialog, so the tests need this origin granted up front.
+  - "http://localhost:10040/*"
+
+# Tool groups for this sample brand. The side panel enables both by default.
+# Set enabled: false to remove a group.
+tools:
+  todo:      { enabled: true }
+  scheduler: { enabled: true }

@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "GENERATED FROM package.json displayName OR name",
+  "version": "0.0.0",
+  "description": "GENERATED FROM package.json description",
+  "permissions": ["storage", "sidePanel", "tabs", "activeTab", "debugger", "unlimitedStorage"],
+  "host_permissions": [],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle",
+      "world": "ISOLATED",
+      "all_frames": false
+    },
+    {
+      "matches": ["<all_urls>"],
+      "css": ["public-sans.css", "wa-tokens.css"],
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["public-sans.css"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {},
+  "side_panel": { "default_path": "sidepanel.html" },
+
+  "options_page": "options.html"
+}

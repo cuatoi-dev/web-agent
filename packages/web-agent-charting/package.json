@@ -1,0 +1,84 @@
+{
+  "name": "@cuatoi/web-agent-charting",
+  "version": "0.1.0",
+  "description": "Chart.js tools, skills and lit-html chart blocks for the web-agent in-app browser agent.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuatoi-dev/web-agent.git",
+    "directory": "packages/web-agent-charting"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "!**/*.test.*"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./datasource": {
+      "types": "./dist/datasource/index.d.ts",
+      "import": "./dist/datasource/index.js",
+      "default": "./dist/datasource/index.js"
+    },
+    "./lit": {
+      "types": "./dist/lit/index.d.ts",
+      "import": "./dist/lit/index.js",
+      "default": "./dist/lit/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "node ../../scripts/assert-pnpm-publish.mjs && pnpm build",
+    "test": "vitest run",
+    "test:dom": "vitest run --config vitest.config.dom.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cuatoi/web-agent-core": "workspace:*",
+    "ajv": "^8.20.0",
+    "chart.js": "2.7.3"
+  },
+  "peerDependencies": {
+    "@cuatoi/web-agent-lit": "^0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@cuatoi/web-agent-lit": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@cuatoi/web-agent-lit": "workspace:*",
+    "@eslint/js": "10.0.1",
+    "@types/chart.js": "^2.7.0",
+    "@types/node": "20.19.40",
+    "esbuild": "^0.21.5",
+    "eslint": "10.8.1",
+    "jsdom": "24.0.0",
+    "lit-html": "3.3.2",
+    "typescript": "^5.5",
+    "typescript-eslint": "8.67.0",
+    "vitest": "^1.6",
+    "zod": "^3.25.76"
+  },
+  "sideEffects": [
+    "./src/lit/chart-block.ts",
+    "./dist/lit/chart-block.js",
+    "./src/chart/register-finance-plugin.ts",
+    "./dist/chart/register-finance-plugin.js",
+    "./src/lit/index.ts",
+    "./dist/lit/index.js"
+  ]
+}

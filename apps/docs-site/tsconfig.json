@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@cuatoi/web-agent-core": ["../../packages/web-agent-core/src"],
+      "@cuatoi/web-agent-lit": ["../../packages/web-agent-lit/src"],
+      "@cuatoi/web-agent-charting": ["../../packages/web-agent-charting/src"],
+      "@cuatoi/web-agent-charting/lit": ["../../packages/web-agent-charting/src/lit"]
+    }
+  },
+  "include": ["src/**/*", "e2e/**/*", "*.ts"]
+}

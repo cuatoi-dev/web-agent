@@ -1,0 +1,8 @@
+<!doctype html><meta charset="utf-8"><title>Nested agent</title>
+<h1>Nested agent</h1>
+<host-agent-widget></host-agent-widget>
+<script>
+  const w = document.querySelector("host-agent-widget");
+  const root = w.attachShadow({ mode: "open" });
+  root.appendChild(document.createElement("web-agent-bubble"));
+</script>

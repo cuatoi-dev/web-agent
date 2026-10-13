@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Themed page</title>
+<style>
+  /* The site supplies its own theme tokens on the root element, the way a host
+     app does. The extension must then apply no theme of its own. */
+  :root {
+    --wa-background-color: hsl(280deg 40% 20%);
+    --wa-text-color: hsl(280deg 30% 96%);
+    --wa-action-color-info: hsl(280deg 80% 60%);
+    --wa-action-text-color-info: hsl(0deg 0% 100%);
+  }
+  body { background: var(--wa-background-color); color: var(--wa-text-color); }
+</style>
+<h1>Themed page</h1><p>This page supplies its own theme tokens.</p>
+</html>

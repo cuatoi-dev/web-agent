@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*",
+    "vitest.config.ts",
+    "test-dom/**/*.ts",
+    "vitest.config.dom.ts"
+  ],
+  "exclude": []
+}

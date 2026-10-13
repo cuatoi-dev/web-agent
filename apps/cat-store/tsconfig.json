@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@cuatoi/web-agent-core": ["../../packages/web-agent-core/src"],
+      "@cuatoi/web-agent-lit": ["../../packages/web-agent-lit/src"],
+      "@cuatoi/web-agent-lit/themes": ["../../packages/web-agent-lit/src/themes/registry"],
+      "@cuatoi/web-agent-charting": ["../../packages/web-agent-charting/src"],
+      "@cuatoi/web-agent-charting/lit": ["../../packages/web-agent-charting/src/lit"],
+      "@cuatoi/web-agent-vfs": ["../../packages/web-agent-vfs/src"],
+      "@cuatoi/web-agent-vfs/lit": ["../../packages/web-agent-vfs/src/lit"]
+    }
+  },
+  "include": ["src/**/*", "../../packages/web-agent-vfs/src/picomatch.d.ts"],
+  // src/server is compiled by tsconfig.server.json under NodeNext, emitting CommonJS + no DOM lib.
+  "exclude": ["node_modules", "dist", "src/server"]
+}

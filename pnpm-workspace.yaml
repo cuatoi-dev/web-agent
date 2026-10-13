@@ -1,0 +1,64 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+allowBuilds:
+  esbuild: true
+# Version pins. NOTE: pnpm 11 no longer reads the `pnpm.overrides` key in
+# package.json — overrides MUST live here to have any effect.
+overrides:
+  # Official MCP TypeScript SDK. Pinned to the last version known-good on the
+  # internal registry. 1.27.0 ships a real dual ESM/CJS build (dist/cjs), has
+  # zero install/postinstall scripts (airgap-safe), and serves remote MCP over
+  # StreamableHTTPServerTransport mounted on Express 4 — all verified locally.
+  # It implements protocol revision 2025-11-25, which lags the current spec.
+  '@modelcontextprotocol/sdk': 1.27.0
+  # Express 5 for the cat-store server (task 215535-001). 5.2.1 is the registry's
+  # current `latest` and satisfies the MCP SDK's declared `express: ^5.2.1`, so
+  # idea 076 will not add a second major.
+  express: 5.2.1
+  # webpack-dev-server 5.2.4 declares `express: ^4.22.1` and is not tested against
+  # Express 5 (which swaps in router@2 / path-to-regexp@8). Keep the dev server on
+  # the major it supports so `pnpm dev` and the local/mock e2e tiers keep working.
+  'webpack-dev-server>express': 4.22.2
+  # @peculiar/asn1-* family, reached through webpack-dev-server 5.2.4 ->
+  # selfsigned 5.5.0 -> @peculiar/x509 1.14.3. The internal registry does not
+  # carry the 2.8.x versions pnpm resolves by default, so the internal build
+  # fails with ERR_PNPM_FETCH_404. 2.6.0 is the version that registry carries,
+  # and @peculiar/x509 1.14.3 declares "^2.6.0" for this family, so 2.6.0
+  # satisfies it. Five of the eight are inert here: asn1-android, asn1-tsp and
+  # asn1-ocsp are published but unused in this tree, and asn1-cert-logotypes
+  # and asn1-cryptopro are not published at all. They are listed to keep this
+  # file aligned with the internal one.
+  '@peculiar/asn1-x509-attr': 2.6.0
+  '@peculiar/asn1-pkcs8': 2.6.0
+  '@peculiar/asn1-pfx': 2.6.0
+  '@peculiar/asn1-android': 2.6.0
+  '@peculiar/asn1-cert-logotypes': 2.6.0
+  '@peculiar/asn1-cryptopro': 2.6.0
+  '@peculiar/asn1-tsp': 2.6.0
+  '@peculiar/asn1-ocsp': 2.6.0
+  # Moved from the `pnpm.overrides` field of package.json on 2026-10-12.
+  # pnpm 11 ignores that field, so these pins had no effect there.
+  rollup: 4.60.1
+  '@babel/runtime': 7.29.2
+  semver: 7.8.1
+  nwsapi: 2.2.23
+  nanoid: 3.3.12
+  '@lit-labs/ssr-dom-shim': 1.5.1
+  bonjour-service: 1.3.0
+  enhanced-resolve: 5.17.1
+  terser-webpack-plugin: 5.3.10
+  browserslist: 4.23.3
+  launch-editor: 2.9.1
+  webpack-sources: 3.2.3
+  watchpack: 2.4.2
+  terser: 5.47.1
+  '@peculiar/asn1-cms': 2.6.0
+  '@types/qs': 6.9.16
+  '@peculiar/asn1-pkcs9': 2.6.0
+  memfs: 4.14.0
+  '@peculiar/asn1-csr': 2.6.0
+  '@peculiar/asn1-rsa': 2.3.13
+  '@peculiar/asn1-ecc': 2.6.1
+  '@peculiar/asn1-x509': 2.3.13
+  '@peculiar/asn1-schema': 2.6.0

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Screenshot fixture</title>
+    <style>
+      body { margin: 0; font: 16px system-ui, sans-serif; }
+      section { height: 100vh; padding: 24px; box-sizing: border-box; }
+      #top { background: #fff; }
+      #bottom { background: #ffe9a8; }
+      h1 { margin-top: 0; }
+      canvas, video { border: 2px solid #333; }
+    </style>
+  </head>
+  <body>
+    <section id="top">
+      <h1 id="top-heading">ABOVE THE FOLD</h1>
+      <p>This band is visible before any scrolling.</p>
+      <canvas id="pixels" width="240" height="120"></canvas>
+      <video id="clip" width="240" height="120" muted autoplay playsinline></video>
+    </section>
+    <section id="bottom">
+      <h1 id="bottom-heading">BELOW THE FOLD</h1>
+      <p>This band is only visible after scrolling down.</p>
+    </section>
+    <script>
+      // Painted, not marked up: an HTML rasteriser cannot reproduce canvas
+      // pixels, so a screenshot that shows these bands proves a real capture.
+      const canvas = document.getElementById("pixels");
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#0b3d91"; ctx.fillRect(0, 0, 120, 60);
+      ctx.fillStyle = "#d81b60"; ctx.fillRect(120, 0, 120, 60);
+      ctx.fillStyle = "#1b7f3b"; ctx.fillRect(0, 60, 120, 60);
+      ctx.fillStyle = "#f5e663"; ctx.fillRect(120, 60, 120, 60);
+
+      // The video plays the canvas back through a real <video> element. No
+      // network, no file: captureStream() is a browser-local MediaStream.
+      const video = document.getElementById("clip");
+      if (canvas.captureStream) {
+        video.srcObject = canvas.captureStream();
+        video.play().catch(() => {});
+      }
+    </script>
+  </body>
+</html>

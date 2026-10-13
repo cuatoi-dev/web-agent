@@ -1,0 +1,370 @@
+// interactions.ts — the click / fill / selectOption actions behind the matching
+// `DomAdapter` methods, plus the word-by-word typist they share. Split out of
+// dom-adapter.ts; the code is unchanged, with the adapter state it reads passed
+// in as `ctx`.
+
+import { disabledRef, selectOptionMissing, stoppedByUser, invisibleTargetNote } from "../tools/error-messages.js";
+import { isElementVisible } from "../utils/visibility.js";
+import { resolveAgentPermission } from "./permission-resolver.js";
+import {
+  focusLikeHuman,
+  typeChunkLikeHuman,
+  dispatchChangeLikeHuman,
+  blurLikeHuman,
+} from "../utils/human-input-events.js";
+import { getName } from "./element-semantics.js";
+import type { InteractionContext } from "./adapter-contexts.types.js";
+
+function reducedMotion(): boolean {
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+}
+
+export async function performClick(ctx: InteractionContext, ref: string, signal?: AbortSignal): Promise<string> {
+  const el = ctx.resolveOrThrow(ref);
+  const name = getName(el);
+  const isDisabled = el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
+  if (isDisabled) {
+    throw new Error(disabledRef(ref, name));
+  }
+
+  const { permission, reason } = resolveAgentPermission(el);
+  if (permission === "block") {
+    const desc = name ? ` "${name}"` : "";
+    const extra = reason ? ` (${reason})` : "";
+    return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
+  }
+  // "ask"-tier confirmation happens in the `confirmInteraction` gate of
+  // `domTools()` (tool-provider.ts), before this method is reached — see 007.
+
+  const isCSSVisible = isElementVisible(el);
+  const rect = el.getBoundingClientRect?.();
+  // Cue suppressed on CSS-hidden only (jsdom 0x0 rects break adapter-side box checks).
+  // Note covers both CSS-hidden and zero-size (toContain assertions tolerate the append).
+  const hasZeroBox = !!(rect && (rect.width <= 0 || rect.height <= 0));
+
+  if (ctx.actionCue && isCSSVisible) {
+    await ctx.actionCue(el, "click", {
+      point: rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined,
+    }, signal);
+  }
+
+  // The cue can travel for up to MAX_MOVE_MS (agent-cursor.ts:7) and is not
+  // interruptible, so the stop can land while it runs. Measured 2026-08-18:
+  // without this check one more click is dispatched 6 ms after the user's
+  // Stop click reaches the button.
+  if (signal?.aborted) return stoppedByUser(ref);
+
+  const eventInit = { bubbles: true, cancelable: true, composed: true };
+  const PointerClass = typeof PointerEvent !== "undefined" ? PointerEvent : MouseEvent;
+  const pointerdown = new PointerClass("pointerdown", eventInit);
+  const mousedown = new MouseEvent("mousedown", eventInit);
+  const pointerup = new PointerClass("pointerup", eventInit);
+  const mouseup = new MouseEvent("mouseup", eventInit);
+  const clickEvent = new MouseEvent("click", eventInit);
+
+  const tagName = el.tagName.toLowerCase();
+  const isInput = tagName === "input";
+  const isCheckbox = isInput && (el as HTMLInputElement).type === "checkbox";
+  const isRadio = isInput && (el as HTMLInputElement).type === "radio";
+  const isCheckboxOrRadio = isCheckbox || isRadio;
+  const initialChecked = isCheckboxOrRadio ? (el as HTMLInputElement).checked : null;
+
+  el.dispatchEvent(pointerdown);
+  el.dispatchEvent(mousedown);
+  el.dispatchEvent(pointerup);
+  el.dispatchEvent(mouseup);
+  const notPrevented = el.dispatchEvent(clickEvent);
+
+  const stateChanged = (initialChecked !== null) && ((el as HTMLInputElement).checked !== initialChecked);
+  const isLink = tagName === "a" && el.hasAttribute("href");
+
+  if (notPrevented && !stateChanged && (isLink || isCheckboxOrRadio)) {
+    (el as HTMLElement).click?.();
+  }
+
+  await new Promise((r) => setTimeout(r, 0));
+  if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+    await new Promise((r) => window.requestAnimationFrame(() => r(null)));
+  } else if (typeof requestAnimationFrame === "function") {
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+  }
+
+  const description = ctx.describeElement(el);
+  const note = (!isCSSVisible || hasZeroBox) ? ` ${invisibleTargetNote(ref, name)}` : "";
+  return `Clicked [${ref}] ${description}.${note} Page may have changed; snapshot again if you need to verify.`;
+}
+
+export async function performFill(ctx: InteractionContext, ref: string, value: string, signal?: AbortSignal): Promise<string> {
+  const el = ctx.resolveOrThrow(ref);
+  const name = getName(el);
+  const isDisabled = el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
+  if (isDisabled) {
+    throw new Error(disabledRef(ref, name));
+  }
+
+  const { permission, reason } = resolveAgentPermission(el);
+  if (permission === "block") {
+    const desc = name ? ` "${name}"` : "";
+    const extra = reason ? ` (${reason})` : "";
+    return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
+  }
+  // "ask"-tier confirmation happens in the `confirmInteraction` gate of
+  // `domTools()` (tool-provider.ts), before this method is reached — see 007.
+
+  const isCSSVisible = isElementVisible(el);
+  const rect = el.getBoundingClientRect?.();
+  const hasZeroBox = !!(rect && (rect.width <= 0 || rect.height <= 0));
+
+  if (ctx.actionCue && isCSSVisible) {
+    await ctx.actionCue(el, "fill", { value }, signal);
+  }
+
+  // Same reason as click(): the cue is not interruptible, so an abort during
+  // it must not go on to focus the field.
+  if (signal?.aborted) return stoppedByUser(ref);
+
+  const tagName = el.tagName.toLowerCase();
+  const isInput = tagName === "input";
+  const isTextarea = tagName === "textarea";
+  const isContentEditable = (el as HTMLElement).isContentEditable || el.getAttribute("contenteditable") === "true";
+
+  let readBack: string;
+
+  if (isInput || isTextarea) {
+    const proto = isTextarea ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter: ((v: string) => void) | undefined =
+      Object.getOwnPropertyDescriptor(proto, "value")?.set?.bind(el);
+    if (!setter) {
+      throw new Error(`Failed to find value setter prototype for ${tagName}`);
+    }
+    const paceMs = ctx.typingPaceMs?.() ?? 0;
+    const instant = paceMs <= 0 || reducedMotion() || value.length === 0;
+    const valueBeforeTyping = (el as HTMLInputElement).value;
+    focusLikeHuman(el as HTMLElement);
+    let aborted = false;
+    if (instant) {
+      typeChunkLikeHuman(el, value, () => setter(value));
+    } else {
+      aborted = await typeWordByWord(el, setter, value, paceMs, signal);
+    }
+    // A cancelled turn still commits whatever it typed: the raw task for 007
+    // requires that no field is left holding a half-typed value the host
+    // never received a `change` for, and rolling the value back is out of
+    // scope. When the stop landed before the first chunk the value is
+    // unchanged, so no `change` is fired.
+    if (!aborted || (el as HTMLInputElement).value !== valueBeforeTyping) {
+      dispatchChangeLikeHuman(el);
+    }
+    blurLikeHuman(el as HTMLElement);
+    readBack = (el as HTMLInputElement).value;
+  } else if (isContentEditable) {
+    // A real browser fires no `change` on a contenteditable — measured, see
+    // the 006 task file. Everything else in the sequence still applies.
+    focusLikeHuman(el as HTMLElement);
+    typeChunkLikeHuman(el, value, () => { el.textContent = value; });
+    blurLikeHuman(el as HTMLElement);
+    readBack = el.textContent || "";
+  } else {
+    throw new Error(`Ref ${ref} is not a text input, textarea, or contenteditable.`);
+  }
+
+  const description = ctx.describeElement(el);
+  const note = (!isCSSVisible || hasZeroBox) ? ` ${invisibleTargetNote(ref, name)}` : "";
+  if (readBack === value) {
+    return `Filled [${ref}] ${description} → value="${readBack}".${note}`.trim();
+  } else {
+    return `Filled [${ref}] ${description} → set "${value}" but value read back as "${readBack}" (input may have validation/mask).${note}`.trim();
+  }
+}
+
+export async function performSelectOption(ctx: InteractionContext, ref: string, option: string, signal?: AbortSignal): Promise<string> {
+  const el = ctx.resolveOrThrow(ref);
+  const name = getName(el);
+  const isDisabled = el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
+  if (isDisabled) {
+    throw new Error(disabledRef(ref, name));
+  }
+
+  const { permission: selPermission, reason: selReason } = resolveAgentPermission(el);
+  if (selPermission === "block") {
+    const desc = name ? ` "${name}"` : "";
+    const extra = selReason ? ` (${selReason})` : "";
+    return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
+  }
+  // "ask"-tier confirmation happens in the `confirmInteraction` gate of
+  // `domTools()` (tool-provider.ts), before this method is reached — see 007.
+
+  if (!(el instanceof HTMLSelectElement)) {
+    throw new Error(`Ref ${ref} is not a native <select>. Custom dropdowns: click to open then click the option.`);
+  }
+
+  const selectEl = el;
+  const options = Array.from(selectEl.options);
+
+  const isCSSVisible = isElementVisible(selectEl);
+  const rect = selectEl.getBoundingClientRect?.();
+  const hasZeroBox = !!(rect && (rect.width <= 0 || rect.height <= 0));
+
+  if (ctx.actionCue && isCSSVisible) {
+    await ctx.actionCue(selectEl, "select", { value: option }, signal);
+  }
+
+  if (signal?.aborted) return stoppedByUser(ref);
+
+  let matchedOption: HTMLOptionElement | undefined;
+
+  matchedOption = options.find((opt) => (opt.label || opt.text || "").trim() === option.trim());
+
+  if (!matchedOption) {
+    matchedOption = options.find((opt) => opt.value === option);
+  }
+
+  if (!matchedOption) {
+    const lowerOpt = option.trim().toLowerCase();
+    matchedOption = options.find((opt) => (opt.label || opt.text || "").trim().toLowerCase() === lowerOpt);
+  }
+
+  if (!matchedOption) {
+    const optionNames = options.map((opt) => (opt.label || opt.text || opt.value || "").trim()).filter(Boolean);
+    throw new Error(selectOptionMissing(option, optionNames));
+  }
+
+  focusLikeHuman(selectEl, { pointer: false });
+  selectEl.value = matchedOption.value;
+  selectEl.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+  dispatchChangeLikeHuman(selectEl);
+  blurLikeHuman(selectEl);
+
+  const label = (matchedOption.label || matchedOption.text || "").trim();
+  const description = ctx.describeElement(selectEl);
+  const note = (!isCSSVisible || hasZeroBox) ? ` ${invisibleTargetNote(ref, name)}` : "";
+  return `Selected "${label}" in [${ref}] ${description}.${note}`.trim();
+}
+
+export async function performSelectOptions(
+  ctx: InteractionContext,
+  ref: string,
+  values: string[],
+  signal?: AbortSignal,
+): Promise<string> {
+  const el = ctx.resolveOrThrow(ref);
+  const name = getName(el);
+  const isDisabled = el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true";
+  if (isDisabled) {
+    throw new Error(disabledRef(ref, name));
+  }
+
+  const { permission: selPermission, reason: selReason } = resolveAgentPermission(el);
+  if (selPermission === "block") {
+    const desc = name ? ` "${name}"` : "";
+    const extra = selReason ? ` (${selReason})` : "";
+    return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
+  }
+
+  if (!(el instanceof HTMLSelectElement)) {
+    throw new Error(`Ref ${ref} is not a native <select>. Custom dropdowns: click to open then click the option.`);
+  }
+
+  if (!el.multiple) {
+    if (values.length !== 1) {
+      throw new Error(`Ref ${ref} is a single-choice select; pass exactly one value.`);
+    }
+    return performSelectOption(ctx, ref, values[0], signal);
+  }
+
+  const selectEl = el;
+  const options = Array.from(selectEl.options);
+
+  const isCSSVisible = isElementVisible(selectEl);
+  const rect = selectEl.getBoundingClientRect?.();
+  const hasZeroBox = !rect || rect.width <= 0 || rect.height <= 0;
+
+  if (ctx.actionCue && isCSSVisible) {
+    await ctx.actionCue(selectEl, "select", { value: values.join(", ") }, signal);
+  }
+
+  if (signal?.aborted) return stoppedByUser(ref);
+
+  const matchedOptions: HTMLOptionElement[] = [];
+  for (const val of values) {
+    let matchedOption = options.find((opt) => (opt.label || opt.text || "").trim() === val.trim());
+    if (!matchedOption) {
+      matchedOption = options.find((opt) => opt.value === val);
+    }
+    if (!matchedOption) {
+      const lowerOpt = val.trim().toLowerCase();
+      matchedOption = options.find((opt) => (opt.label || opt.text || "").trim().toLowerCase() === lowerOpt);
+    }
+    if (!matchedOption) {
+      const optionNames = options.map((opt) => (opt.label || opt.text || opt.value || "").trim()).filter(Boolean);
+      throw new Error(selectOptionMissing(val, optionNames));
+    }
+    matchedOptions.push(matchedOption);
+  }
+
+  focusLikeHuman(selectEl, { pointer: false });
+  for (const opt of options) {
+    opt.selected = matchedOptions.includes(opt);
+  }
+  selectEl.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+  dispatchChangeLikeHuman(selectEl);
+  blurLikeHuman(selectEl);
+
+  const labels = matchedOptions.map((opt) => `"${(opt.label || opt.text || "").trim()}"`).join(", ");
+  const description = ctx.describeElement(selectEl);
+  const note = (!isCSSVisible || hasZeroBox) ? ` ${invisibleTargetNote(ref, name)}` : "";
+  return `Selected ${labels} in [${ref}] ${description}.${note}`.trim();
+}
+
+function typeWordByWord(
+  el: Element,
+  setter: (v: string) => void,
+  value: string,
+  paceMs: number,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  // Resolves true when the turn was cancelled part way through.
+  return new Promise<boolean>((resolve) => {
+    const rawChunks = value.split(/(?<=\s)(?=\S)/);
+    const chunks = rawChunks.length > 0 ? rawChunks : [value];
+    const pending = new Set<ReturnType<typeof setTimeout>>();
+    let settled = false;
+
+    const settle = (aborted: boolean) => {
+      if (settled) return;
+      settled = true;
+      pending.forEach(clearTimeout);
+      pending.clear();
+      if (signal) signal.removeEventListener("abort", onAbort);
+      resolve(aborted);
+    };
+
+    const onAbort = () => {
+      // Leave the current partial value in place. fill() decides whether to
+      // fire `change` for it (007).
+      settle(true);
+    };
+
+    if (signal?.aborted) {
+      resolve(true);
+      return;
+    }
+    if (signal) signal.addEventListener("abort", onAbort);
+
+    let acc = "";
+    chunks.forEach((chunk, i) => {
+      const id = setTimeout(() => {
+        pending.delete(id);
+        if (settled) return;
+        if (signal?.aborted) { settle(true); return; }
+        acc += chunk;
+        const next = acc;
+        typeChunkLikeHuman(el, chunk, () => setter(next));
+        if (i === chunks.length - 1) {
+          settle(false);
+        }
+      }, i * paceMs);
+      pending.add(id);
+    });
+  });
+}

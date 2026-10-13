@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="wa2-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cat Store — Demo Gallery</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="vendor/public-sans/public-sans.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: var(--wa-font-family, system-ui, -apple-system, sans-serif);
+      background: var(--wa-background-color, #fafafa);
+      color: var(--wa-text-color, #333);
+    }
+    h1 { font-size: 1.5rem; margin: 0 0 8px; }
+    p.lead { margin: 0 0 24px; color: var(--wa-label-color, #555); font-size: 0.95rem; }
+
+    #gallery .strip {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    }
+
+    #gallery figure {
+      position: relative;
+      margin: 0;
+      background: var(--wa-smart-list-background-color, #fff);
+      border: 1px solid var(--wa-border-color, #e0e0e0);
+      border-radius: 8px;
+      padding: 16px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    #gallery figcaption {
+      padding: 8px 0 4px;
+      font-size: 0.85rem;
+      color: var(--wa-label-color, #555);
+    }
+
+    /* 003: the bubble is a shadow element and paints its own launcher from
+       --wa-* tokens, so only the tile-specific overrides remain here. They
+       go through the exposed part, which is the one way a light-DOM rule can
+       reach into the shadow root. Scoped to #gallery so the ?frame= renderer
+       and the live pages are untouched. */
+    #gallery web-agent-bubble::part(launcher) {
+      position: static;
+      inset: auto;
+      margin: 0;
+    }
+
+    .responsive-section {
+      margin-top: 40px;
+    }
+    .responsive-section h2 {
+      font-size: 1.1rem;
+      margin: 0 0 8px;
+    }
+    .responsive-section p {
+      margin: 0 0 16px;
+      color: var(--wa-label-color, #555);
+      font-size: 0.9rem;
+    }
+    .responsive-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    iframe.vp-desktop {
+      width: 900px;
+      height: 680px;
+      border: 1px solid var(--wa-border-color, #e0e0e0);
+      border-radius: 8px;
+    }
+    iframe.vp-mobile {
+      width: 375px;
+      height: 680px;
+      border: 1px solid var(--wa-border-color, #e0e0e0);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cat Store — Demo Gallery</h1>
+  <div id="theme-switcher"></div>
+  <p class="lead">Every UI state rendered deterministically from canned data — no live LLM, no network.</p>
+
+  <div id="gallery">
+    <div class="strip"></div>
+
+    <div class="responsive-section">
+      <h2>Responsive</h2>
+      <p>Desktop floating (wide iframe) vs mobile full-width (375 px iframe).</p>
+      <div class="responsive-row"></div>
+    </div>
+
+    <div class="responsive-section">
+      <h2>Folded dev demos</h2>
+      <p>Each opens the gallery in single-demo frame mode.</p>
+      <div class="demo-links"></div>
+    </div>
+  </div>
+
+  <div id="click-log" style="display: none;"></div>
+</body>
+</html>

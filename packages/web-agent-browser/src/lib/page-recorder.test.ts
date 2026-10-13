@@ -1,0 +1,687 @@
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import * as recorder from "./page-recorder";
+import { REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
+import type { RecordedStep } from "./recorder.types";
+
+if (typeof PointerEvent === "undefined") {
+  (globalThis as unknown as { PointerEvent: unknown }).PointerEvent = MouseEvent;
+}
+
+/** Every step the binding received, in order. */
+let calls: string[];
+
+function steps(): RecordedStep[] {
+  // Upsert by seq, the same rule the panel's driver applies.
+  const out: RecordedStep[] = [];
+  for (const raw of calls) {
+    const step = JSON.parse(raw) as RecordedStep;
+    const at = out.findIndex((s) => s.seq === step.seq);
+    if (at >= 0) out[at] = step;
+    else out.push(step);
+  }
+  return out;
+}
+
+/** A trusted event: jsdom's own events have `isTrusted` false, so it is
+ *  set on the internal symbol (or defined) per event — the recorder's first filter is exactly this flag. */
+function fire(target: EventTarget, event: Event): void {
+  const syms = Object.getOwnPropertySymbols(event);
+  for (const sym of syms) {
+    const impl = (event as unknown as Record<symbol, unknown>)[sym];
+    if (impl && typeof impl === "object") {
+      try {
+        Object.defineProperty(impl, "isTrusted", {
+          get() {
+            return true;
+          },
+          set() {},
+          configurable: true,
+        });
+      } catch {
+        // jsdom impl defines isTrusted on its own prototype
+      }
+    }
+  }
+  target.dispatchEvent(event);
+}
+
+describe("page-recorder", () => {
+  beforeEach(() => {
+    recorder.__resetRecorderForTest();
+    calls = [];
+    document.body.innerHTML = "";
+    (globalThis as unknown as { __waRecStep?: (s: string) => void }).__waRecStep = (s: string) => {
+      calls.push(s);
+    };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    delete (globalThis as unknown as { __waRecStep?: unknown }).__waRecStep;
+  });
+
+  it("U-R3: trusted click on <button>Apply</button> while recording", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].kind).toBe("click");
+    expect(s[0].line).toBe('click button "Apply"');
+    expect(s[0].ref).toBeUndefined();
+    expect(s[0].target?.locator).toBe("getByRole('button', { name: 'Apply' })");
+  });
+
+  it("a step carries no ref, for every step kind", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    const input = document.createElement("input");
+    document.body.append(btn, input);
+
+    recorder.start("r1");
+    fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+    input.value = "x";
+    fire(input, new Event("input", { bubbles: true }));
+
+    for (const s of steps()) expect(s.ref).toBeUndefined();
+  });
+
+  it("target.label has no [n] prefix", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    expect(steps()[0].target?.label).toBe('button "Apply"');
+  });
+
+  it("U-R4: the same click with isTrusted left false", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    expect(steps()).toHaveLength(0);
+  });
+
+  it("U-R5: a trusted click inside <div data-agent-ui='true'><button>X</button></div>", () => {
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-agent-ui", "true");
+    const btn = document.createElement("button");
+    btn.textContent = "X";
+    wrapper.appendChild(btn);
+    document.body.appendChild(wrapper);
+
+    recorder.start("r1");
+    fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    expect(steps()).toHaveLength(0);
+  });
+
+  it("U-R6: a trusted click on a checked/unchecked checkbox", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "gift";
+    label.textContent = "Gift";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = "gift";
+    document.body.appendChild(label);
+    document.body.appendChild(input);
+
+    recorder.start("r1");
+
+    fire(input, new MouseEvent("click", { bubbles: true, cancelable: true }));
+    expect(steps()[0]).toMatchObject({ kind: "check", line: 'check checkbox "Gift"' });
+
+    fire(input, new MouseEvent("click", { bubbles: true, cancelable: true }));
+    expect(steps()[1]).toMatchObject({ kind: "uncheck", line: 'uncheck checkbox "Gift"' });
+  });
+
+  it("U-R7: a trusted click on a text input, a textarea, a <select> and a contenteditable", () => {
+    const text = document.createElement("input");
+    const textarea = document.createElement("textarea");
+    const select = document.createElement("select");
+    const editable = document.createElement("div");
+    editable.contentEditable = "true";
+    document.body.append(text, textarea, select, editable);
+
+    recorder.start("r1");
+    fire(text, new MouseEvent("click", { bubbles: true }));
+    fire(textarea, new MouseEvent("click", { bubbles: true }));
+    fire(select, new MouseEvent("click", { bubbles: true }));
+    fire(editable, new MouseEvent("click", { bubbles: true }));
+
+    expect(steps()).toHaveLength(0);
+  });
+
+  it("U-R8: three input events on the same <input id=coupon>", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "coupon";
+    label.textContent = "Coupon";
+    const input = document.createElement("input");
+    input.id = "coupon";
+    document.body.append(label, input);
+
+    recorder.start("r1");
+
+    input.value = "S";
+    fire(input, new Event("input", { bubbles: true }));
+    input.value = "SA";
+    fire(input, new Event("input", { bubbles: true }));
+    input.value = "SAVE10";
+    fire(input, new Event("input", { bubbles: true }));
+
+    expect(calls).toHaveLength(3);
+    const seqs = calls.map((c) => (JSON.parse(c) as RecordedStep).seq);
+    expect(seqs[0]).toBe(seqs[1]);
+    expect(seqs[1]).toBe(seqs[2]);
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].line).toBe('fill textbox "Coupon" "SAVE10"');
+    expect(s[0].value).toBe("SAVE10");
+  });
+
+  it("U-R9: an input on <input type=password> whose value is secret123", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "pass";
+    label.textContent = "Password";
+    const input = document.createElement("input");
+    input.type = "password";
+    input.id = "pass";
+    document.body.append(label, input);
+
+    recorder.start("r1");
+
+    input.value = "secret123";
+    fire(input, new Event("input", { bubbles: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].masked).toBe(true);
+    expect(s[0].value).toBeUndefined();
+    expect(s[0].line).toBe('fill textbox "Password" <password>');
+    expect(calls.join("")).not.toContain("secret123");
+  });
+
+  it("U-R10: an input on Coupon, then a click on Apply, then another input on Coupon", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "coupon";
+    label.textContent = "Coupon";
+    const input = document.createElement("input");
+    input.id = "coupon";
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.append(label, input, btn);
+
+    recorder.start("r1");
+
+    input.value = "S";
+    fire(input, new Event("input", { bubbles: true }));
+
+    fire(btn, new MouseEvent("click", { bubbles: true }));
+
+    input.value = "NEW";
+    fire(input, new Event("input", { bubbles: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(3);
+    expect(s[0].kind).toBe("fill");
+    expect(s[1].kind).toBe("click");
+    expect(s[2].kind).toBe("fill");
+    expect(s[2].seq).not.toBe(s[0].seq);
+  });
+
+  it("U-R11: a change on <select id=shipping> with Express selected", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "shipping";
+    label.textContent = "Shipping";
+    const select = document.createElement("select");
+    select.id = "shipping";
+    const opt1 = document.createElement("option");
+    opt1.value = "standard";
+    opt1.text = "Standard";
+    const opt2 = document.createElement("option");
+    opt2.value = "express";
+    opt2.text = "Express";
+    select.append(opt1, opt2);
+    document.body.append(label, select);
+
+    recorder.start("r1");
+
+    opt2.selected = true;
+    fire(select, new Event("change", { bubbles: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].kind).toBe("select");
+    expect(s[0].values).toEqual(["Express"]);
+    expect(s[0].line).toBe('select combobox "Shipping" "Express"');
+  });
+
+  it("U-R12: a change on a <select multiple> with two options selected", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "extras";
+    label.textContent = "Extras";
+    const select = document.createElement("select");
+    select.id = "extras";
+    select.multiple = true;
+    const opt1 = document.createElement("option");
+    opt1.value = "giftwrap";
+    opt1.text = "Gift wrap";
+    const opt2 = document.createElement("option");
+    opt2.value = "card";
+    opt2.text = "Card";
+    select.append(opt1, opt2);
+    document.body.append(label, select);
+
+    recorder.start("r1");
+
+    opt1.selected = true;
+    opt2.selected = true;
+    fire(select, new Event("change", { bubbles: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].values).toEqual(["Gift wrap", "Card"]);
+    expect(s[0].line.endsWith('"Gift wrap", "Card"')).toBe(true);
+  });
+
+  it("U-R13: keydown Enter on <button>, Escape on <body>, and a on <button>", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "OK";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+
+    fire(btn, new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    fire(document.body, new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    fire(btn, new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(2);
+    expect(s[0].line).toBe("press Enter");
+    expect(s[0].target).toBeDefined();
+    expect(s[1].line).toBe("press Escape");
+    expect(s[1].target).toBeUndefined();
+  });
+
+  it("U-R14: two wheel events with deltaY 100 and 300, then advance timers past REC_SCROLL_QUIET_MS", () => {
+    vi.useFakeTimers();
+    recorder.start("r1");
+
+    fire(window, new WheelEvent("wheel", { deltaY: 100 }));
+    fire(window, new WheelEvent("wheel", { deltaY: 300 }));
+
+    vi.advanceTimersByTime(REC_SCROLL_QUIET_MS + 50);
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].deltaY).toBe(400);
+    expect(s[0].line).toBe("scroll down 400 px");
+  });
+
+  it("U-R15: scroll with an <h2>Cart</h2> whose getBoundingClientRect().top is stubbed inside the viewport", () => {
+    vi.useFakeTimers();
+    const h2 = document.createElement("h2");
+    h2.textContent = "Cart";
+    vi.spyOn(h2, "getBoundingClientRect").mockReturnValue({
+      top: 50,
+      bottom: 80,
+      left: 0,
+      right: 100,
+      width: 100,
+      height: 30,
+      x: 0,
+      y: 50,
+      toJSON: () => {},
+    });
+    document.body.appendChild(h2);
+
+    recorder.start("r1");
+
+    fire(window, new WheelEvent("wheel", { deltaY: 200 }));
+    vi.advanceTimersByTime(REC_SCROLL_QUIET_MS + 50);
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].line).toBe('scroll to "Cart"');
+  });
+
+  it("U-R16: one wheel with deltaY -250", () => {
+    vi.useFakeTimers();
+    recorder.start("r1");
+
+    fire(window, new WheelEvent("wheel", { deltaY: -250 }));
+    vi.advanceTimersByTime(REC_SCROLL_QUIET_MS + 50);
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].line).toBe("scroll up 250 px");
+  });
+
+  it("U-R17: pointermove over an <a>, then advance timers by REC_HOVER_REST_MS", () => {
+    vi.useFakeTimers();
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = "Cart (2)";
+    document.body.appendChild(a);
+
+    recorder.start("r1");
+
+    fire(a, new PointerEvent("pointermove", { bubbles: true }));
+    vi.advanceTimersByTime(REC_HOVER_REST_MS);
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].kind).toBe("hover");
+    expect(s[0].line).toBe('hover link "Cart (2)"');
+  });
+
+  it("U-R18: pointermove over the link, advance 200 ms, pointermove over a <p>, advance 600 ms", () => {
+    vi.useFakeTimers();
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = "Cart";
+    const p = document.createElement("p");
+    p.textContent = "Paragraph";
+    document.body.append(a, p);
+
+    recorder.start("r1");
+
+    fire(a, new PointerEvent("pointermove", { bubbles: true }));
+    vi.advanceTimersByTime(200);
+
+    fire(p, new PointerEvent("pointermove", { bubbles: true }));
+    vi.advanceTimersByTime(600);
+
+    expect(steps()).toHaveLength(0);
+  });
+
+  it("U-R19: pointermove over the link, rest, then two more pointermoves at the same link", () => {
+    vi.useFakeTimers();
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = "Cart";
+    document.body.appendChild(a);
+
+    recorder.start("r1");
+
+    fire(a, new PointerEvent("pointermove", { bubbles: true }));
+    vi.advanceTimersByTime(REC_HOVER_REST_MS);
+    expect(steps()).toHaveLength(1);
+
+    fire(a, new PointerEvent("pointermove", { bubbles: true }));
+    vi.advanceTimersByTime(REC_HOVER_REST_MS);
+    fire(a, new PointerEvent("pointermove", { bubbles: true }));
+    vi.advanceTimersByTime(REC_HOVER_REST_MS);
+
+    expect(steps()).toHaveLength(1);
+  });
+
+  it("a hashchange and a popstate emit no step: route steps come only from Page.navigatedWithinDocument", () => {
+    recorder.start("r1");
+
+    fire(window, new HashChangeEvent("hashchange"));
+    fire(window, new PopStateEvent("popstate"));
+
+    expect(calls).toHaveLength(0);
+  });
+
+  it("pushState is NOT patched: the panel raises the route step from Page.navigatedWithinDocument instead", () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    const original = history.pushState;
+    recorder.start("r1");
+
+    history.pushState({}, "", "/cart");
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(history.pushState).toBe(original);
+    expect(steps()).toHaveLength(0);
+  });
+
+  it("U-R23: pause(), a trusted click, resume(), a trusted click", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    recorder.pause();
+
+    fire(btn, new MouseEvent("click", { bubbles: true }));
+    expect(steps()).toHaveLength(0);
+
+    recorder.resume();
+    fire(btn, new MouseEvent("click", { bubbles: true }));
+
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].line).toBe('click button "Apply"');
+  });
+
+  it("resume() clears the pending hover timer: a pointer that rested during the pause records no hover", () => {
+    vi.useFakeTimers();
+    const a = document.createElement("a");
+    a.href = "#";
+    a.textContent = "Cart";
+    document.body.appendChild(a);
+
+    recorder.start("r1");
+    fire(a, new PointerEvent("pointermove", { bubbles: true }));
+    recorder.pause();
+    vi.advanceTimersByTime(REC_HOVER_REST_MS);
+    recorder.resume();
+    vi.advanceTimersByTime(REC_HOVER_REST_MS);
+
+    expect(steps()).toHaveLength(0);
+  });
+
+  it("__waRecStep missing: a click does not throw and nothing is emitted", () => {
+    delete (globalThis as unknown as { __waRecStep?: unknown }).__waRecStep;
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    expect(() => fire(btn, new MouseEvent("click", { bubbles: true }))).not.toThrow();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("__waRecStep throwing: a click does not throw", () => {
+    (globalThis as unknown as { __waRecStep?: (s: string) => void }).__waRecStep = () => {
+      throw new Error("session detached");
+    };
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    expect(() => fire(btn, new MouseEvent("click", { bubbles: true }))).not.toThrow();
+  });
+
+  it("stop(): a later click emits nothing, and isRecording() is false", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    recorder.stop();
+    expect(recorder.isRecording()).toBe(false);
+
+    fire(btn, new MouseEvent("click", { bubbles: true }));
+    expect(calls).toHaveLength(0);
+  });
+
+  it("start() twice: the second resets seq to 0 and detaches the first set of listeners", () => {
+    const btn = document.createElement("button");
+    btn.textContent = "Apply";
+    document.body.appendChild(btn);
+
+    recorder.start("r1");
+    recorder.start("r2");
+    fire(btn, new MouseEvent("click", { bubbles: true }));
+
+    // One emit per click, not two — the first attach() was torn down by the
+    // second start(), not left running alongside it.
+    expect(calls).toHaveLength(1);
+    const step = JSON.parse(calls[0]) as RecordedStep;
+    expect(step.recordingId).toBe("r2");
+    expect(step.seq).toBe(0);
+  });
+
+  describe("open shadow roots", () => {
+    const composed = { bubbles: true, composed: true };
+
+    function host(tag: string, mode: "open" | "closed", html: string): { host: HTMLElement; root: ShadowRoot } {
+      const h = document.createElement(tag);
+      const root = h.attachShadow({ mode });
+      root.innerHTML = html;
+      document.body.appendChild(h);
+      return { host: h, root };
+    }
+
+    it("trusted click on a <button> inside an open shadow root with slotted text", () => {
+      const { host: h, root } = host("custom-button", "open", "<button><slot></slot></button>");
+      h.textContent = "Add to cart";
+      recorder.start("r1");
+      fire(root.querySelector("button") as Element, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("click");
+      expect(s[0].line).toBe('click button "Add to cart"');
+      expect(s[0].target?.locator).toBe("getByRole('button', { name: 'Add to cart' })");
+    });
+
+    it("click on a slotted <span> inside such a button records the same click on the inner <button>", () => {
+      const { host: h } = host("custom-button", "open", "<button><slot></slot></button>");
+      const span = document.createElement("span");
+      span.textContent = "Add to cart";
+      h.appendChild(span);
+      recorder.start("r1");
+      fire(span, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Add to cart"');
+      expect(s[0].target?.locator).toBe("getByRole('button', { name: 'Add to cart' })");
+    });
+
+    it("typing into an <input> inside an open shadow root records fill and updates in place", () => {
+      const { root } = host("custom-field", "open", '<label for="qty">Quantity</label><input id="qty">');
+      const input = root.querySelector("input") as HTMLInputElement;
+      recorder.start("r1");
+      input.value = "2";
+      fire(input, new Event("input", composed));
+      input.value = "3";
+      fire(input, new Event("input", composed));
+
+      expect(calls).toHaveLength(2);
+      expect((JSON.parse(calls[0]) as RecordedStep).seq).toBe((JSON.parse(calls[1]) as RecordedStep).seq);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("fill");
+      expect(s[0].value).toBe("3");
+      expect(s[0].line).toBe('fill textbox "Quantity" "3"');
+    });
+
+    it("typing into a password input inside an open shadow root records fill with masked: true", () => {
+      const { root } = host("custom-field", "open", '<label for="secret">Secret Code</label><input id="secret" type="password">');
+      const input = root.querySelector("input") as HTMLInputElement;
+      recorder.start("r1");
+      input.value = "topsecret";
+      fire(input, new Event("input", composed));
+
+      const s = steps();
+      expect(s[0].masked).toBe(true);
+      expect(s[0].value).toBeUndefined();
+      expect(s[0].line).toBe('fill textbox "Secret Code" <password>');
+      expect(calls.join("")).not.toContain("topsecret");
+    });
+
+    it("changing a <select> inside an open shadow root records a select step with option labels", () => {
+      const { root } = host(
+        "custom-select",
+        "open",
+        '<label for="size">Size</label><select id="size"><option value="s">Small</option><option value="l">Large</option></select>',
+      );
+      const select = root.querySelector("select") as HTMLSelectElement;
+      recorder.start("r1");
+      select.selectedIndex = 1;
+      fire(select, new Event("change", composed));
+
+      const s = steps();
+      expect(s[0].kind).toBe("select");
+      expect(s[0].values).toEqual(["Large"]);
+      expect(s[0].line).toBe('select combobox "Size" "Large"');
+    });
+
+    it("Enter pressed in an <input> inside an open shadow root records a press step targeting the input", () => {
+      const { root } = host("custom-input", "open", '<input id="search" aria-label="Search">');
+      recorder.start("r1");
+      fire(root.querySelector("input") as Element, new KeyboardEvent("keydown", { key: "Enter", ...composed }));
+
+      const s = steps();
+      expect(s[0].line).toBe("press Enter");
+      expect(s[0].target?.role).toBe("textbox");
+    });
+
+    it("click on a <button> inside the open shadow root of <web-agent-bubble> records nothing", () => {
+      const { root } = host("web-agent-bubble", "open", "<button>Close</button>");
+      recorder.start("r1");
+      fire(root.querySelector("button") as Element, new MouseEvent("click", composed));
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("wheel scroll where the only visible heading is inside an open shadow root records scroll to heading", () => {
+      vi.useFakeTimers();
+      const { root } = host("section-card", "open", "<h2>Products Catalog</h2>");
+      vi.spyOn(root.querySelector("h2") as Element, "getBoundingClientRect").mockReturnValue({
+        top: 100,
+        bottom: 130,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 30,
+        x: 0,
+        y: 100,
+        toJSON: () => {},
+      });
+      recorder.start("r1");
+      fire(window, new WheelEvent("wheel", { deltaY: 150 }));
+      vi.advanceTimersByTime(REC_SCROLL_QUIET_MS + 50);
+
+      expect(steps()[0].line).toBe('scroll to "Products Catalog"');
+    });
+
+    it("click inside a closed shadow root records nothing when the host is not interactive", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      recorder.start("r1");
+      fire(root.querySelector("button") as Element, new MouseEvent("click", composed));
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("hover on an interactive element inside an open shadow root records a hover step", () => {
+      vi.useFakeTimers();
+      const { root } = host("custom-link", "open", '<a href="#/catalog">Catalog</a>');
+      recorder.start("r1");
+      fire(root.querySelector("a") as Element, new PointerEvent("pointermove", composed));
+      vi.advanceTimersByTime(REC_HOVER_REST_MS);
+
+      const s = steps();
+      expect(s[0].kind).toBe("hover");
+      expect(s[0].line).toBe('hover link "Catalog"');
+    });
+  });
+});

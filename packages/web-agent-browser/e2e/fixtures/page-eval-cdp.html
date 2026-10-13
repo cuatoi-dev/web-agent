@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CDP Eval Fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 2rem; line-height: 1.5; color: #1a1a1a; background: #fafafa; }
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; max-width: 600px; margin-top: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <h1>CDP Eval Fixture</h1>
+  <div class="card">
+    <p>This page is served with a Content Security Policy that does not allow 'unsafe-eval'. It exists to prove that
+       the side panel's <code>page_eval</code> runs through Chrome's debugger, which a page CSP has no authority
+       over — not through this page's own script realm.</p>
+    <div id="status">Fixture ready</div>
+  </div>
+  <script>
+    console.log("early");
+    // The page's own new Function is refused by the CSP; a control the test
+    // can read to prove the CSP is actually in force for the page's own code.
+    window.__NEW_FUNCTION_BLOCKED__ = true;
+    try {
+      new Function("return 1")();
+      window.__NEW_FUNCTION_BLOCKED__ = false;
+    } catch (e) {
+      window.__NEW_FUNCTION_BLOCKED__ = true;
+    }
+  </script>
+</body>
+</html>

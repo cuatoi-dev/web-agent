@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Console Error Fixture</title>
+</head>
+<body>
+  <h1>Console Error Fixture</h1>
+  <p>Emits load-time console messages and an uncaught error.</p>
+  <script>
+    console.info("page initializing");
+    console.warn("first warning: deprecated feature");
+    console.warn("second warning: slow network detected");
+    console.error("load-time boom: failed to fetch config");
+  </script>
+  <script>
+    // Inline uncaught TypeError thrown during page load
+    null.someProperty;
+  </script>
+</body>
+</html>

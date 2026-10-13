@@ -1,0 +1,52 @@
+{
+  "name": "@cuatoi/web-agent-mcp",
+  "version": "0.0.0",
+  "description": "Remote MCP (Model Context Protocol) client tools for the web-agent in-app browser agent.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuatoi-dev/web-agent.git",
+    "directory": "packages/web-agent-mcp"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "!**/*.test.*"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "node ../../scripts/assert-pnpm-publish.mjs && pnpm build",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cuatoi/web-agent-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.27.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "20.19.40",
+    "eslint": "10.8.1",
+    "jsdom": "24.0.0",
+    "typescript": "^5.5",
+    "typescript-eslint": "8.67.0",
+    "vitest": "^1.6"
+  },
+  "sideEffects": false
+}

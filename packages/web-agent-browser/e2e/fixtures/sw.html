@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Service worker</title>
+</head>
+<body>
+  <h1>Service worker</h1>
+  <p id="sw-status">registering</p>
+  <button type="button" id="load-totals-btn">Load totals</button>
+  <p id="totals-status"></p>
+  <script>
+    function markControlled() {
+      document.getElementById("sw-status").textContent = "controlled";
+    }
+    navigator.serviceWorker.addEventListener("controllerchange", markControlled);
+    navigator.serviceWorker.register("/sw-worker.js").then(() => {
+      if (navigator.serviceWorker.controller) markControlled();
+    });
+    document.getElementById("load-totals-btn").addEventListener("click", async () => {
+      const res = await fetch("/api/totals");
+      document.getElementById("totals-status").textContent = await res.text();
+    });
+  </script>
+</body>
+</html>

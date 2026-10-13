@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout</title>
+  <style>
+    #cart-link:hover { color: rgb(255, 0, 0); }
+    footer.tall { height: 3200px; }
+  </style>
+  <script src="/checkout-extra.js"></script>
+</head>
+<body>
+  <header>
+    <a href="/cart.html" id="cart-link">Cart (2)</a>
+  </header>
+  <main>
+    <h1>Cart</h1>
+    <form id="checkout-form">
+      <label for="coupon">Coupon</label>
+      <input type="text" id="coupon" name="coupon" />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" />
+
+      <label for="shipping">Shipping</label>
+      <select id="shipping" name="shipping">
+        <option value="standard">Standard</option>
+        <option value="express">Express</option>
+      </select>
+
+      <label for="extras">Extras</label>
+      <select id="extras" name="extras" multiple>
+        <option value="giftwrap">Gift wrap</option>
+        <option value="card">Card</option>
+        <option value="insurance">Insurance</option>
+      </select>
+
+      <label for="gift">Gift</label>
+      <input type="checkbox" id="gift" name="gift" />
+
+      <button type="submit" id="apply-btn">Apply</button>
+      <p id="coupon-status"></p>
+
+      <div id="coupon-actions">
+        <button type="button" id="refresh-totals-btn">Refresh totals</button>
+        <button type="button" id="remove-coupon-btn">Remove coupon</button>
+        <button type="button" id="gift-message-btn">Gift message</button>
+        <p id="gift-status"></p>
+        <p id="totals-status"></p>
+      </div>
+
+      <button type="button" id="trusted-check-btn">Trusted check</button>
+      <p id="trusted-status"></p>
+      <p id="coupon-trusted"></p>
+
+      <button
+        type="button"
+        id="place-order-btn"
+        data-agent-permission="ask"
+        data-agent-permission-reason="Charges the customer's card"
+      >Place order</button>
+    </form>
+
+    <label for="upload">Attachments</label>
+    <input type="file" id="upload" multiple />
+    <p id="upload-status"></p>
+
+    <button type="button" id="leave-guard-btn">Leave guard</button>
+    <p id="leave-status"></p>
+
+    <div id="icon-actions">
+      <button type="button" id="icon-action-1" data-testid="icon-action"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12M8 2v12" stroke="currentColor" stroke-width="2"/></svg></button>
+      <button type="button" id="icon-action-2" data-testid="icon-action"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h12" stroke="currentColor" stroke-width="2"/></svg></button>
+    </div>
+
+    <button type="button" id="clear-cards-btn" hidden>Clear saved cards</button>
+
+    <button type="button" id="go-to-cart-btn">Go to cart</button>
+    <a href="/signed-out.html" id="sign-out-link">Sign out</a>
+
+    <ul aria-label="Order summary">
+      <li>Coupon</li>
+      <li>Shipping</li>
+      <li>Total</li>
+    </ul>
+    <p id="viewport-status"></p>
+    <p id="pointer-status"></p>
+  </main>
+  <footer class="tall"></footer>
+
+  <script>
+    function updateViewportStatus() {
+      const vp = document.getElementById("viewport-status");
+      const pt = document.getElementById("pointer-status");
+      if (vp) vp.textContent = String(window.innerWidth);
+      if (pt) pt.textContent = String(window.matchMedia("(pointer: coarse)").matches);
+    }
+    window.addEventListener("resize", updateViewportStatus);
+    updateViewportStatus();
+
+    async function applyCoupon() {
+      const code = document.getElementById("coupon").value.trim();
+      const status = document.getElementById("coupon-status");
+      if (!code) {
+        status.textContent = "";
+        return;
+      }
+      try {
+        const res = await fetch("/api/coupon", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        if (res.status === 200) {
+          const data = await res.json();
+          status.textContent = "Discount: " + data.discount;
+        } else if (res.status === 404) {
+          status.textContent = "Coupon not valid";
+        } else {
+          status.textContent = "Error: " + res.status;
+        }
+      } catch {
+        status.textContent = "Network error";
+      }
+    }
+
+    // A submit button in this form makes the Enter key fire "submit" without
+    // needing a click on it. Prevented here so Enter runs applyCoupon()
+    // instead of navigating; the click listener prevents the same default so
+    // a direct click does not also fire "submit" and run applyCoupon() twice.
+    document.getElementById("checkout-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      applyCoupon();
+    });
+
+    document.getElementById("apply-btn").addEventListener("click", (e) => {
+      e.preventDefault();
+      applyCoupon();
+    });
+
+    document.getElementById("refresh-totals-btn").addEventListener("click", () => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", "/api/totals");
+      xhr.onload = () => {
+        document.getElementById("totals-status").textContent = xhr.responseText;
+      };
+      xhr.send();
+    });
+
+    document.getElementById("remove-coupon-btn").addEventListener("click", () => {
+      if (confirm("Remove the coupon?")) {
+        document.getElementById("coupon-status").textContent = "";
+      }
+    });
+
+    document.getElementById("gift-message-btn").addEventListener("click", () => {
+      const msg = prompt("Gift message?");
+      if (msg !== null) {
+        document.getElementById("gift-status").textContent = msg;
+      }
+    });
+
+    document.getElementById("place-order-btn").addEventListener("click", () => {
+      document.getElementById("coupon-status").textContent = "Order placed.";
+    });
+
+    document.getElementById("trusted-check-btn").addEventListener("click", (event) => {
+      document.getElementById("trusted-status").textContent = String(event.isTrusted);
+    });
+
+    document.getElementById("coupon").addEventListener("input", (event) => {
+      document.getElementById("coupon-trusted").textContent = String(event.isTrusted);
+    });
+
+    document.getElementById("upload").addEventListener("change", (event) => {
+      const files = Array.from(event.target.files);
+      document.getElementById("upload-status").textContent = files
+        .map((f) => `${f.name}|${f.type}|${f.size}`)
+        .join("\n");
+    });
+
+    document.getElementById("leave-guard-btn").addEventListener("click", () => {
+      window.addEventListener("beforeunload", (event) => {
+        event.preventDefault();
+        event.returnValue = "";
+      });
+      document.getElementById("leave-status").textContent = "guarded";
+    });
+
+    // A single-page-app route change: same document, so the recording keeps
+    // running and the recorder records one `route` step.
+    document.getElementById("go-to-cart-btn").addEventListener("click", () => {
+      history.pushState({}, "", "/cart");
+    });
+
+    // The recorder's proof clicks this link and keeps recording, so the click
+    // must not leave the page. It stays an <a> with an href, so its role and
+    // accessible name are unchanged.
+    document.getElementById("cart-link").addEventListener("click", (e) => {
+      e.preventDefault();
+    });
+
+    document.getElementById("gift").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") e.preventDefault();
+    });
+  </script>
+</body>
+</html>

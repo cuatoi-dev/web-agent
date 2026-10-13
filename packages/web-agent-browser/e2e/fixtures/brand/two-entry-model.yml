@@ -1,0 +1,13 @@
+models:
+  - id: proof-anthropic
+    label: "Proof Anthropic"
+    endpoint: "http://localhost:28780/api/anthropic"
+    wireFormat: anthropic
+    model: sonnet
+    streaming: true
+  - id: proof-openai
+    label: "Proof OpenAI"
+    endpoint: "http://localhost:28780/api/openai/v1"
+    wireFormat: openai
+    model: sonnet
+    streaming: false

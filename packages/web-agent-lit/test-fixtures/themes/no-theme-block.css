@@ -1,0 +1,4 @@
+/* Fixture: tokens with no [data-theme] block. */
+.acme-panel {
+  --wa-font-size-m: 12px;
+}

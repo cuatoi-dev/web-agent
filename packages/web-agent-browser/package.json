@@ -1,0 +1,60 @@
+{
+  "name": "@cuatoi/web-agent-browser",
+  "displayName": "Web Agent",
+  "version": "0.0.2",
+  "description": "Chrome Manifest V3 extension that puts the web-agent bubble on any website.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuatoi-dev/web-agent.git",
+    "directory": "packages/web-agent-browser"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "files": [
+    "dist-template",
+    "manifest.template.json",
+    "brand",
+    "tool",
+    "bin",
+    "README.md"
+  ],
+  "bin": {
+    "web-agent-brand": "bin/web-agent-brand.mjs"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm typecheck && webpack --mode production && node tool/build.cjs .",
+    "test": "vitest run",
+    "test:e2e": "E2E_ENV=mock playwright test",
+    "test:e2e:mock": "E2E_ENV=mock playwright test",
+    "test:e2e:demo": "E2E_ENV=demo xvfb-run -a -s \"-screen 0 1280x800x24\" playwright test",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cuatoi/web-agent-core": "workspace:*",
+    "@cuatoi/web-agent-dom": "workspace:*",
+    "@cuatoi/web-agent-lit": "workspace:*",
+    "@cuatoi/web-agent-vfs": "workspace:*",
+    "js-yaml": "4.3.0",
+    "lit-html": "3.3.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.58.2",
+    "@types/chrome": "0.0.278",
+    "@types/node": "20.19.40",
+    "copy-webpack-plugin": "^14.0.0",
+    "eslint": "10.8.1",
+    "jsdom": "24.0.0",
+    "ts-loader": "9.5.4",
+    "typescript": "^5.5",
+    "typescript-eslint": "8.67.0",
+    "vitest": "^1.6",
+    "webpack": "5.106.2",
+    "webpack-cli": "^5"
+  }
+}

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Pre-commit hook: scan the staged changes for secrets with gitleaks.
+# Enable it once per clone:  git config core.hooksPath .githooks
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks is not installed, so the commit is blocked." >&2
+  echo "Install it from https://github.com/gitleaks/gitleaks and commit again." >&2
+  exit 1
+fi
+
+exec gitleaks git --pre-commit --staged --redact --no-banner --verbose

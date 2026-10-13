@@ -1,0 +1,7 @@
+defaultAgent: chromagent
+themes:
+  - id: acme-dense
+    label: Acme Dense
+    scheme: dark
+    base: wa2-dark
+    css: themes/acme-dense.css

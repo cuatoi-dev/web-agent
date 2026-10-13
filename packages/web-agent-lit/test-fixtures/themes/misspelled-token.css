@@ -1,0 +1,5 @@
+/* Fixture: one real token and one misspelled name. */
+[data-theme="fixture-misspelled"] {
+  --wa-font-size-m: 12px;
+  --wa-font-size-mm: 12px;
+}

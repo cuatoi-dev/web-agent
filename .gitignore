@@ -1,0 +1,21 @@
+node_modules/
+**/dist/
+.playwright-cli/
+apps/docs-site/.astro/
+!packages/core/public/
+packages/core/docs-site/public/web-agent-embed.js
+packages/core/docs-site/public/web-agent-embed.js.map
+apps/cat-store/e2e/artifacts/*.png
+apps/cat-store/e2e-screenshots/*.png
+apps/cat-store/test-results/
+apps/docs-site/e2e/artifacts/*.png
+apps/docs-site/e2e-screenshots/*.png
+apps/docs-site/test-results/
+packages/web-agent-browser/test-results/
+packages/web-agent-browser/dist-no-bridge/
+# The brand-agnostic webpack output scripts/build.cjs copies into dist/.
+packages/web-agent-browser/dist-template/
+
+# Local scratch: agent briefs, probe output, logs and review artifacts.
+temp/
+artifacts/

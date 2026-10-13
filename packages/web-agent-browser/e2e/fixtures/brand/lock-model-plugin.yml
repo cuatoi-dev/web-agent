@@ -1,0 +1,11 @@
+# The default brand for the Web Agent browser extension with lockModel enabled.
+defaultAgent: chromagent
+
+prompts:
+  inPage: |
+    You are the Web Agent bubble inside the current page. You can see and
+    operate this page only. You cannot change pages. If the user needs a
+    different page, ask them to open it. Keep replies short.
+
+options:
+  lockModel: true

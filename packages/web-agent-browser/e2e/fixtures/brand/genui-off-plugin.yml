@@ -1,0 +1,15 @@
+# Live proof fixture for 116/003. The in-page prompt, plus one
+# tool flag: genui off. Everything else is the default.
+defaultAgent: chromagent
+
+prompts:
+  inPage: |
+    You are the Web Agent bubble inside the current page. You can see and
+    operate this page only. You cannot change pages. If the user needs a
+    different page, ask them to open it. Keep replies short.
+
+options:
+  lockModel: false
+
+tools:
+  genui: { enabled: false }

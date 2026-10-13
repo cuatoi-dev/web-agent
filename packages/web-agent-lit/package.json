@@ -1,0 +1,105 @@
+{
+  "name": "@cuatoi/web-agent-lit",
+  "version": "0.1.0",
+  "description": "lit-html chat UI, embeddable widget and UI-block renderers for the web-agent in-app browser agent.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuatoi-dev/web-agent.git",
+    "directory": "packages/web-agent-lit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "bin",
+    "!**/*.test.*"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "web-agent-theme-check": "bin/web-agent-theme-check.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./embed/*": {
+      "types": "./dist/embed/*.d.ts",
+      "import": "./dist/embed/*.js",
+      "default": "./dist/embed/*.js"
+    },
+    "./chat-ui/*": {
+      "types": "./dist/chat-ui/*.d.ts",
+      "import": "./dist/chat-ui/*.js",
+      "default": "./dist/chat-ui/*.js"
+    },
+    "./ui/*": {
+      "types": "./dist/ui/*.d.ts",
+      "import": "./dist/ui/*.js",
+      "default": "./dist/ui/*.js"
+    },
+    "./ui-blocks/*": {
+      "types": "./dist/ui-blocks/*.d.ts",
+      "import": "./dist/ui-blocks/*.js",
+      "default": "./dist/ui-blocks/*.js"
+    },
+    "./themes": {
+      "types": "./dist/themes/registry.d.ts",
+      "import": "./dist/themes/registry.js",
+      "default": "./dist/themes/registry.js"
+    },
+    "./themes/*": "./src/themes/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "node ../../scripts/assert-pnpm-publish.mjs && pnpm build",
+    "test": "vitest run && node --test ../../eslint-rules/rules/*.test.mjs",
+    "test:dom": "vitest run --config vitest.config.dom.ts",
+    "test:lit1": "vitest run --config vitest.config.lit1.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cuatoi/web-agent-core": "workspace:*",
+    "dompurify": "3.4.10",
+    "marked": "18.0.3"
+  },
+  "peerDependencies": {
+    "lit-html": "^1 || ^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "lit-html": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@types/node": "20.19.40",
+    "lit-html-v1": "npm:lit-html@1.4.1",
+    "lit-html": "3.3.2",
+    "typescript": "^5.5",
+    "vitest": "^1.6",
+    "jsdom": "24.0.0",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.8.1",
+    "typescript-eslint": "8.67.0"
+  },
+  "sideEffects": [
+    "./src/chat-ui/*.ts",
+    "./dist/chat-ui/*.js",
+    "./src/ui-blocks/renderer/*.ts",
+    "./dist/ui-blocks/renderer/*.js",
+    "./src/embed/*.ts",
+    "./dist/embed/*.js",
+    "./src/index.ts",
+    "./dist/index.js",
+    "./src/themes/*.css"
+  ]
+}

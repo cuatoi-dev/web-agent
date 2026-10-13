@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>Detaching agent</title>
+<h1>Detaching agent</h1>
+<p>This page removes anything appended to body shortly after it appears, the
+   way a framework that owns document.body does on re-render.</p>
+<script>
+  // 400 ms is long enough for the extension to finish mounting and to answer
+  // the toggle, and short enough that a test never waits.
+  new MutationObserver(() => {
+    for (const el of Array.from(document.body.children)) {
+      if (el.tagName.toLowerCase() === "web-agent-bubble") {
+        setTimeout(() => el.remove(), 400);
+      }
+    }
+  }).observe(document.body, { childList: true });
+</script>

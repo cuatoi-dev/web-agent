@@ -1,0 +1,258 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Web Agent</title>
+<link rel="stylesheet" href="public-sans.css">
+<link rel="stylesheet" href="wa-tokens.css">
+<style>
+  /* Colours come only from --wa-* tokens, defined by wa-tokens.css
+     under [data-theme="wa2-dark"] (:457) and [data-theme="wa2-light"] (:894).
+     sidepanel.ts writes data-theme on <html>, so the page chrome around the
+     chat is themed too, not just the chat. */
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    /* A Chrome side panel is narrow. Nothing may scroll sideways. */
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    background: var(--wa-background-color);
+    color: var(--wa-text-color);
+  }
+  /* 120/002 — the agent row: a combo box that switches side panel agents.
+     120/003 — the page-agent icon shares the row and stays visible even with
+     no agent loaded. Tokens match mockup frames 1-2
+     (tasks/idea/120-side-panel-agent-profiles.html:70-77,94-100).
+     The row itself is never hidden; #agent-combo (below) is hidden until
+     sidepanel.ts shows an agent, so the no-agent error from 120/001 renders
+     without an empty combo box. */
+  #agent-row {
+    flex: 0 0 auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--wa-padding-m);
+    padding: var(--wa-padding-m) var(--wa-padding-l);
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--wa-border-color);
+  }
+  #agent-combo {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--wa-padding-m);
+    align-items: center;
+    padding: var(--wa-padding-s) var(--wa-padding-m) var(--wa-padding-s) var(--wa-padding-l);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    background: var(--wa-input-background-color);
+    color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color);
+    border-radius: var(--wa-border-radius-m);
+  }
+  #agent-combo .name {
+    grid-column: 1;
+    grid-row: 1;
+    font-weight: var(--wa-font-weight-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #agent-combo .description {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: var(--wa-font-size-s);
+    color: var(--wa-label-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #agent-combo .expand {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid var(--wa-label-color);
+  }
+  #agent-combo:focus-visible {
+    outline: 3px solid var(--wa-text-color);
+    outline-offset: 2px;
+  }
+  #agent-combo[aria-expanded="true"] {
+    outline: 3px solid var(--wa-outline-color);
+    outline-offset: 1px;
+  }
+  #agent-list {
+    position: absolute;
+    top: 100%;
+    left: var(--wa-padding-l);
+    /* 120/003 manager override — stop before the icon button so an open list
+       never covers it: padding-l (12px) + row gap (8px) + icon width (37px) =
+       57px (mockup 120-side-panel-agent-profiles.html:90). */
+    right: 57px;
+    /* Above <agent-chat-panel>, which is z-index 9999
+       (web-agent-lit/src/chat-ui/chat-panel-shell-css.ts:24). */
+    z-index: 10001;
+    margin: 0;
+    padding: var(--wa-padding-s);
+    list-style: none;
+    display: grid;
+    gap: var(--wa-padding-xs);
+    max-height: 60vh;
+    overflow-y: auto;
+    background: var(--wa-dropdown-background-color);
+    color: var(--wa-dropdown-item-text-color);
+    border: 1px solid var(--wa-dropdown-border-color);
+    border-radius: var(--wa-dropdown-border-radius);
+    box-shadow: var(--wa-dropdown-elevation);
+  }
+  #agent-list [role="option"] {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    column-gap: var(--wa-padding-m);
+    padding: var(--wa-dropdown-item-padding);
+    border-radius: var(--wa-dropdown-item-border-radius);
+    cursor: pointer;
+  }
+  #agent-list [role="option"]:hover {
+    background: var(--wa-dropdown-item-background-color-hover);
+  }
+  #agent-list [role="option"][aria-selected="true"] {
+    background: var(--wa-action-color-info-10opc);
+  }
+  /* The keyboard highlight is an outline, not only a colour. */
+  #agent-list [role="option"].highlighted {
+    outline: 2px solid var(--wa-outline-color);
+    outline-offset: -2px;
+  }
+  #agent-list .check {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    visibility: hidden;
+    fill: var(--wa-action-color-info);
+  }
+  #agent-list [role="option"][aria-selected="true"] .check { visibility: visible; }
+  #agent-list .name {
+    grid-column: 2;
+    font-weight: var(--wa-font-weight-semibold);
+  }
+  /* The description wraps in the list (plan: "description wraps in the list"). */
+  #agent-list .description {
+    grid-column: 2;
+    font-size: var(--wa-font-size-s);
+    color: var(--wa-label-color);
+    overflow-wrap: anywhere;
+  }
+  /* 120/002 review fix (item 6b) — the hover and selected states share the
+     --wa-action-color-info-10opc tint, and --wa-label-color on that
+     tint measures 4.20:1 in wa2-light, below the WCAG AA 4.5:1 floor.
+     --wa-text-color meets AA on the tint in both themes. */
+  #agent-list [role="option"]:hover .description,
+  #agent-list [role="option"][aria-selected="true"] .description {
+    color: var(--wa-text-color);
+  }
+  /* Each of these sets its own display, which beats the browser's
+     [hidden] { display: none } rule (it has no !important).
+     120/003 manager override — #agent-row is never hidden (the page-agent
+     icon must stay visible and usable with no agent loaded), so #agent-combo
+     is hidden instead when there is no agent to show in it. */
+  #agent-combo[hidden],
+  #agent-list[hidden],
+  #chat agent-chat-panel[hidden] { display: none; }
+  /* 120/003 — the page-agent toggle as an icon button, right of the combo box.
+     Mockup .iconbtn (tasks/idea/120-side-panel-agent-profiles.html:72-76).
+     Mockup colour roles → tokens, the same mapping the #agent-combo and
+     #agent-list rules above use: --field → input-background, --border → border,
+     --text → text, --accent → action-color-info, --accent-soft →
+     action-color-info-10opc laid over the field colour, --accent-ink →
+     action-color-info. The slash (off) and the dot (on) carry the state
+     without colour. */
+  #page-agent-toggle {
+    flex: 0 0 auto;
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 37px;
+    height: 37px;
+    padding: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    background: var(--wa-input-background-color);
+    color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color);
+    border-radius: var(--wa-border-radius-m);
+  }
+  #page-agent-toggle svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+  }
+  /* The ring in the field colour keeps the slash readable where it crosses
+     the glyph. */
+  #page-agent-toggle.off::after {
+    content: "";
+    position: absolute;
+    width: 26px;
+    height: 2px;
+    background: currentColor;
+    transform: rotate(-45deg);
+    box-shadow: 0 0 0 1.5px var(--wa-input-background-color);
+  }
+  #page-agent-toggle.on {
+    background:
+      linear-gradient(var(--wa-action-color-info-10opc), var(--wa-action-color-info-10opc)),
+      var(--wa-input-background-color);
+    border-color: var(--wa-action-color-info);
+    color: var(--wa-action-color-info);
+  }
+  /* No display here, so the browser's [hidden] { display: none } still hides it. */
+  #page-agent-toggle .dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--wa-action-color-info);
+  }
+  #page-agent-toggle:disabled {
+    opacity: .45;
+    cursor: default;
+  }
+  #page-agent-toggle:focus-visible {
+    outline: 3px solid var(--wa-text-color);
+    outline-offset: 2px;
+  }
+  /* min-height: 0 lets the flex child shrink, which is what makes the chat fill
+     the remaining height instead of overflowing the page. */
+  #chat { flex: 1 1 auto; min-height: 0; display: flex; }
+  #chat agent-chat-panel { flex: 1 1 auto; min-width: 0; }
+  /* 120/001 — shown instead of the panel when no agent is available. Plain
+     text, not a dialog: the page background and body font, at padding-l. */
+  #agent-error {
+    margin: 0;
+    padding: var(--wa-padding-l);
+    font: inherit;
+    color: var(--wa-text-color);
+    background: var(--wa-background-color);
+  }
+</style>
+
+<div id="agent-row">
+  <button id="agent-combo" type="button" role="combobox" aria-haspopup="listbox"
+          aria-expanded="false" aria-controls="agent-list" hidden>
+    <span class="name"></span>
+    <span class="description"></span>
+    <span class="expand" aria-hidden="true"></span>
+  </button>
+  <ul id="agent-list" role="listbox" hidden></ul>
+  <button id="page-agent-toggle" type="button" aria-pressed="false"></button>
+</div>
+<div id="chat"></div>
+<script src="sidepanel.js"></script>

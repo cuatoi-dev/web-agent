@@ -1,0 +1,8 @@
+/* Fixture: a partial theme. It declares 3 tokens and takes every other token
+   from its base theme. No other token references these 3 (refine note 4),
+   so a browser shows every other token with its exact base value. */
+[data-theme="fixture-three"] {
+  --wa-font-size-xl: 21px;
+  --wa-text-shadow: none;
+  --wa-header-text-shadow: none;
+}

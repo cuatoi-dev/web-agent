@@ -1,0 +1,74 @@
+{
+  "name": "@cuatoi/web-agent-vfs",
+  "version": "0.0.0",
+  "description": "Virtual file system tools for the web-agent in-app browser agent: a mounted file tree with read_file, write_file, edit_file, glob_files, search_files, delete_file, move_file, json_get and json_edit.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuatoi-dev/web-agent.git",
+    "directory": "packages/web-agent-vfs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "docs",
+    "!**/*.test.*"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./lit": {
+      "types": "./dist/lit/index.d.ts",
+      "import": "./dist/lit/index.js",
+      "default": "./dist/lit/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --project tsconfig.json",
+    "prepublishOnly": "node ../../scripts/assert-pnpm-publish.mjs && pnpm build",
+    "test": "vitest run",
+    "test:dom": "vitest run --config vitest.config.dom.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cuatoi/web-agent-core": "workspace:*",
+    "picomatch": "4.0.7",
+    "lodash-es": "^4.18.1"
+  },
+  "peerDependencies": {
+    "@cuatoi/web-agent-lit": "^0.1.0",
+    "lit-html": "^1 || ^2 || ^3"
+  },
+  "peerDependenciesMeta": {
+    "@cuatoi/web-agent-lit": {
+      "optional": true
+    },
+    "lit-html": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@cuatoi/web-agent-lit": "workspace:*",
+    "lit-html": "3.3.2",
+    "@eslint/js": "10.0.1",
+    "@types/node": "20.19.40",
+    "@types/lodash-es": "^4.17.12",
+    "eslint": "10.8.1",
+    "jsdom": "24.0.0",
+    "typescript": "^5.5",
+    "typescript-eslint": "8.67.0",
+    "vitest": "^1.6"
+  },
+  "sideEffects": false
+}

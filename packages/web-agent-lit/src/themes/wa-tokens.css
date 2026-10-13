@@ -1,0 +1,1329 @@
+/* web-agent design tokens — three themes, selected with a `data-theme` attribute
+ * on any element (the root element, or any subtree container for scoping):
+ *   wa1-dark   WA v1 (Dark)
+ *   wa2-dark   WA v2 (Dark)
+ *   wa2-light  WA v2 (Light)
+ *
+ * Every block declares the SAME set of tokens, so switching `data-theme` can never
+ * leave a token undefined. Only tokens with a real value in all three source
+ * themes are here; `--wa-primary-color*`, `--wa-secondary-color*`,
+ * `--wa-tertiary-color*` and the `--wa-gap-*` scale are absent because
+ * they do not exist in all three — the accent role is `--wa-action-color-info`,
+ * and spacing is `--wa-padding-*`. The numeric `--wa-font-size-2…12`
+ * scale is absent too: it resolves ~3x larger under v2 than v1; use the
+ * t-shirt scale `--wa-font-size-xs…xl`.
+ */
+
+[data-theme="wa1-dark"], :where([data-theme-base="wa1-dark"]) {
+  /* Action colours */
+  /* 009: --wa-action-color-error is light in this theme (task 008 raised
+     it to 68% lightness for the foreground role), so the paired on-colour must
+     be dark. White measured 2.91:1 against the surface. This value is the
+     theme's own deepest surface colour and measures 6.57:1 at rest, 5.62:1
+     under #stop-run's :hover brightness(0.92) and 4.88:1 under its :active
+     brightness(0.85). */
+  --wa-action-text-color-error: hsl(221deg 36% 7%);
+  --wa-action-text-color-info: hsl(0deg 0% 100%);
+  --wa-action-text-color-success: hsl(0deg 0% 100%);
+  --wa-action-text-color-warn: hsl(0deg 0% 100%);
+  --wa-action-color-error: hsl(352deg 70% 68%);
+  --wa-action-color-error-50: hsl(352deg 70% 88%);
+  --wa-action-color-error-100: hsl(352deg 70% 68%);
+  --wa-action-color-error-300: hsl(352deg 70% 58%);
+  --wa-action-color-error-500: hsl(352deg 70% 68%);
+  --wa-action-color-error-700: hsl(352deg 60% 35%);
+  --wa-action-color-error-900: hsl(352deg 60% 25%);
+  --wa-action-color-error-0opc: hsl(352deg 70% 68% / 0%);
+  --wa-action-color-error-10opc: hsl(352deg 70% 68% / 10%);
+  --wa-action-color-error-20opc: hsl(352deg 70% 68% / 20%);
+  --wa-action-color-error-30opc: hsl(352deg 70% 68% / 30%);
+  --wa-action-color-error-40opc: hsl(352deg 70% 68% / 40%);
+  --wa-action-color-error-50opc: hsl(352deg 70% 68% / 50%);
+  --wa-action-color-error-60opc: hsl(352deg 70% 68% / 60%);
+  --wa-action-color-error-70opc: hsl(352deg 70% 68% / 70%);
+  --wa-action-color-error-80opc: hsl(352deg 70% 68% / 80%);
+  --wa-action-color-error-90opc: hsl(352deg 70% 68% / 90%);
+  --wa-action-color-info: hsl(216deg 100% 52%);
+  --wa-action-color-info-50: hsl(257deg 100% 87%);
+  --wa-action-color-info-100: hsl(257deg 100% 77%);
+  --wa-action-color-info-300: hsl(257deg 100% 72%);
+  --wa-action-color-info-500: hsl(257deg 100% 67%);
+  --wa-action-color-info-700: hsl(257deg 100% 62%);
+  --wa-action-color-info-900: hsl(257deg 100% 57%);
+  --wa-action-color-info-0opc: hsl(216deg 100% 52% / 0%);
+  --wa-action-color-info-10opc: hsl(216deg 100% 52% / 10%);
+  --wa-action-color-info-20opc: hsl(216deg 100% 52% / 20%);
+  --wa-action-color-info-30opc: hsl(216deg 100% 52% / 30%);
+  --wa-action-color-info-40opc: hsl(216deg 100% 52% / 40%);
+  --wa-action-color-info-50opc: hsl(216deg 100% 52% / 50%);
+  --wa-action-color-info-60opc: hsl(216deg 100% 52% / 60%);
+  --wa-action-color-info-70opc: hsl(216deg 100% 52% / 70%);
+  --wa-action-color-info-80opc: hsl(216deg 100% 52% / 80%);
+  --wa-action-color-info-90opc: hsl(216deg 100% 52% / 90%);
+  --wa-action-color-success: hsl(151deg 74% 43%);
+  --wa-action-color-success-50: hsl(151deg 74% 75%);
+  --wa-action-color-success-100: hsl(151deg 74% 53%);
+  --wa-action-color-success-300: hsl(151deg 74% 48%);
+  --wa-action-color-success-500: hsl(151deg 74% 43%);
+  --wa-action-color-success-700: hsl(151deg 74% 28%);
+  --wa-action-color-success-900: hsl(151deg 74% 23%);
+  --wa-action-color-success-0opc: hsl(151deg 74% 43% / 0%);
+  --wa-action-color-success-10opc: hsl(151deg 74% 43% / 10%);
+  --wa-action-color-success-20opc: hsl(151deg 74% 43% / 20%);
+  --wa-action-color-success-30opc: hsl(151deg 74% 43% / 30%);
+  --wa-action-color-success-40opc: hsl(151deg 74% 43% / 40%);
+  --wa-action-color-success-50opc: hsl(151deg 74% 43% / 50%);
+  --wa-action-color-success-60opc: hsl(151deg 74% 43% / 60%);
+  --wa-action-color-success-70opc: hsl(151deg 74% 43% / 70%);
+  --wa-action-color-success-80opc: hsl(151deg 74% 43% / 80%);
+  --wa-action-color-success-90opc: hsl(151deg 74% 43% / 90%);
+  --wa-action-color-warn: hsl(29deg 100% 59%);
+  --wa-action-color-warn-50: hsl(29deg 100% 84%);
+  --wa-action-color-warn-100: hsl(29deg 100% 69%);
+  --wa-action-color-warn-300: hsl(29deg 100% 64%);
+  --wa-action-color-warn-500: hsl(29deg 100% 59%);
+  --wa-action-color-warn-700: hsl(29deg 100% 54%);
+  --wa-action-color-warn-900: hsl(29deg 100% 49%);
+  --wa-action-color-warn-0opc: hsl(29deg 100% 59% / 0%);
+  --wa-action-color-warn-10opc: hsl(29deg 100% 59% / 10%);
+  --wa-action-color-warn-20opc: hsl(29deg 100% 59% / 20%);
+  --wa-action-color-warn-30opc: hsl(29deg 100% 59% / 30%);
+  --wa-action-color-warn-40opc: hsl(29deg 100% 59% / 40%);
+  --wa-action-color-warn-50opc: hsl(29deg 100% 59% / 50%);
+  --wa-action-color-warn-60opc: hsl(29deg 100% 59% / 60%);
+  --wa-action-color-warn-70opc: hsl(29deg 100% 59% / 70%);
+  --wa-action-color-warn-80opc: hsl(29deg 100% 59% / 80%);
+  --wa-action-color-warn-90opc: hsl(29deg 100% 59% / 90%);
+
+  /* Backgrounds */
+  --wa-accordion-background-color: var(--wa-background-color-500);
+  --wa-accordion-header-hover-background-color: var(--wa-background-color-700);
+  --wa-background-color: hsl(221deg 29% 19%);
+  --wa-background-color-0opc: hsl(221deg 29% 19% / 0%);
+  --wa-background-color-10opc: hsl(221deg 29% 19% / 10%);
+  --wa-background-color-20opc: hsl(221deg 29% 19% / 20%);
+  --wa-background-color-30opc: hsl(221deg 29% 19% / 30%);
+  --wa-background-color-40opc: hsl(221deg 29% 19% / 40%);
+  --wa-background-color-50: hsl(221deg 25% 40%);
+  --wa-background-color-50opc: hsl(221deg 29% 19% / 50%);
+  --wa-background-color-60opc: hsl(221deg 29% 19% / 60%);
+  --wa-background-color-70opc: hsl(221deg 29% 19% / 70%);
+  --wa-background-color-80opc: hsl(221deg 29% 19% / 80%);
+  --wa-background-color-90opc: hsl(221deg 29% 19% / 90%);
+  --wa-background-color-100: hsl(221deg 25% 30%);
+  --wa-background-color-300: hsl(221deg 25% 25%);
+  --wa-background-color-500: hsl(221deg 29% 19%);
+  --wa-background-color-700: hsl(221deg 30% 15%);
+  --wa-background-color-900: hsl(222deg 27% 11%);
+  --wa-button-background-color: var(--wa-background-color-300);
+  --wa-button-background-color-disabled: var(--wa-background-color-500);
+  --wa-button-background-color-hover: var(--wa-background-color-100);
+  /* v2 substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-calendar-weekdays-background-color: var(--wa-background-color-300);
+  --wa-circular-progress-bar-background-color: transparent;
+  --wa-countdown-timer-background-color: var(--wa-background-color);
+  --wa-dialog-background-color: var(--wa-background-color-500);
+  --wa-dialog-overlay-background-color: var(--wa-background-color-50opc);
+  --wa-dropdown-background-color: hsl(221deg 36% 7%);
+  --wa-dropdown-item-background-color: transparent;
+  /* substitution: --wa-primary-color-10opc → --wa-action-color-info-10opc */
+  --wa-dropdown-item-background-color-active: var(--wa-action-color-info-10opc);
+  --wa-dropdown-item-background-color-disabled: var(--wa-background-color-500);
+  /* substitution: --wa-primary-color-10opc → --wa-action-color-info-10opc */
+  --wa-dropdown-item-background-color-hover: var(--wa-action-color-info-10opc);
+  --wa-dropdown-item-hover-background-color: var(--wa-action-color-info-10opc);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-background-color-selected: var(--wa-action-color-info);
+  --wa-input-background-color: hsl(221deg 36% 7%);
+  --wa-input-background-color-disabled: hsl(221deg 30% 19%);
+  --wa-input-background-color-hover: hsl(221deg 36% 7%);
+  --wa-radio-button-background-color: hsl(0deg 0% 100%);
+  --wa-radio-button-background-color-checked: hsl(0deg 0% 100%);
+  --wa-radio-button-background-color-disabled: var(--wa-text-color-disabled);
+  --wa-radio-button-background-color-hover: hsl(0deg 0% 90%);
+  --wa-scrollbar-corner-background-color: transparent;
+  --wa-scrollbar-thumb-background-color: hsl(0deg 0% 66%);
+  --wa-scrollbar-thumb-background-color-hover: hsl(0deg 0% 66%);
+  --wa-scrollbar-track-background-color: hsl(221deg 25% 30%);
+  --wa-smart-list-background-color: hsl(221deg 36% 7%);
+  --wa-smart-list-background-color-disabled: hsl(221deg 30% 19%);
+  --wa-tabs-background-color: hsl(221deg 30% 28%);
+  --wa-tabs-background-color-disabled: hsl(221deg 24% 34%);
+  --wa-tabs-background-color-hover: hsl(221deg 30% 33%);
+  --wa-tabs-background-color-selected: hsl(221deg 29% 19%);
+  --wa-tabs-close-button-background-color: transparent;
+  --wa-tabs-close-button-background-color-hover: var(--wa-background-color-900);
+  --wa-tabs-input-background-color: var(--wa-input-background-color);
+  /* substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-tabs-placeholder-background-color: var(--wa-action-color-info-50opc);
+  --wa-toast-background-color: hsl(209deg 26% 20%);
+  --wa-toast-button-background-color: transparent;
+  --wa-toast-button-background-color-hover: var(--wa-white-color-10opc);
+
+  /* Black & white */
+  --wa-black-color: hsl(0deg 0% 0%);
+  --wa-black-color-0opc: hsl(0deg 0% 0% / 0%);
+  --wa-black-color-10opc: hsl(0deg 0% 0% / 10%);
+  --wa-black-color-20opc: hsl(0deg 0% 0% / 20%);
+  --wa-black-color-30opc: hsl(0deg 0% 0% / 30%);
+  --wa-black-color-40opc: hsl(0deg 0% 0% / 40%);
+  --wa-black-color-50opc: hsl(0deg 0% 0% / 50%);
+  --wa-black-color-60opc: hsl(0deg 0% 0% / 60%);
+  --wa-black-color-70opc: hsl(0deg 0% 0% / 70%);
+  --wa-black-color-80opc: hsl(0deg 0% 0% / 80%);
+  --wa-black-color-90opc: hsl(0deg 0% 0% / 90%);
+  --wa-white-color: hsl(0deg 0% 100%);
+  --wa-white-color-0opc: hsl(0deg 0% 100% / 0%);
+  --wa-white-color-10opc: hsl(0deg 0% 100% / 10%);
+  --wa-white-color-20opc: hsl(0deg 0% 100% / 20%);
+  --wa-white-color-30opc: hsl(0deg 0% 100% / 30%);
+  --wa-white-color-40opc: hsl(0deg 0% 100% / 40%);
+  --wa-white-color-50opc: hsl(0deg 0% 100% / 50%);
+  --wa-white-color-60opc: hsl(0deg 0% 100% / 60%);
+  --wa-white-color-70opc: hsl(0deg 0% 100% / 70%);
+  --wa-white-color-80opc: hsl(0deg 0% 100% / 80%);
+  --wa-white-color-90opc: hsl(0deg 0% 100% / 90%);
+
+  /* Calendar / flag / gauge / pagination */
+  --wa-calendar-row-size: 40px;
+  --wa-flag-height: 22.5px;
+  --wa-flag-width: 30px;
+  --wa-gauge-arrow-color: hsl(0deg 0% 100%);
+  --wa-gauge-green-color: hsl(164deg 83% 53%);
+  --wa-gauge-orange-color: hsl(29deg 100% 59%);
+  --wa-gauge-red-color: hsl(10deg 100% 57%);
+  --wa-gauge-size: 48px;
+  --wa-gauge-transition-duration: 2s;
+  --wa-gauge-yellow-color: hsl(47deg 100% 57%);
+  --wa-pagination-height: 38px;
+
+  /* Countdown timer */
+  --wa-countdown-timer-color: var(--wa-text-color);
+  --wa-countdown-timer-donut-size: 10;
+  --wa-countdown-timer-loader-color: var(--wa-label-color);
+  --wa-countdown-timer-loader-size: 10;
+  --wa-countdown-timer-scale-color: var(--wa-label-color);
+  --wa-countdown-timer-scale-stroke-dasharray: 2 5.65;
+  --wa-countdown-timer-scale-stroke-width: 2;
+
+  /* Icon */
+  --wa-accordion-header-icon-color: var(--wa-icon-color);
+  --wa-gauge-exclamation-icon-color: hsl(0deg 0% 100%);
+  --wa-icon-color: var(--wa-text-color);
+  --wa-icon-color-disabled: var(--wa-text-color-disabled);
+  --wa-icon-size-xs: 16px;
+  --wa-icon-size-s: 24px;
+  --wa-icon-size-m: 26px;
+  --wa-icon-size-l: 28px;
+  --wa-icon-size-xl: 32px;
+
+  /* Progress bar / scrollbar / spinner */
+  --wa-circular-progress-bar-linecap: round;
+  --wa-circular-progress-bar-loader-color: var(--wa-label-color);
+  --wa-circular-progress-bar-scale-color: var(--wa-label-color);
+  --wa-circular-progress-bar-scale-stroke-dasharray: 2 5.65;
+  --wa-circular-progress-bar-scale-stroke-width: 2;
+  --wa-circular-progress-bar-size: 100px;
+  --wa-scrollbar-size: 6px;
+  --wa-spinner-color: var(--wa-text-color);
+
+  /* Smart list */
+  --wa-smart-list-row-height: 30px;
+
+  /* Depth */
+  --wa-depth-s: 0px 1px 2px var(--wa-black-color-20opc) inset;
+  --wa-depth-m: 0px 2px 4px var(--wa-black-color-20opc) inset;
+  --wa-depth-l: 0px 4px 8px var(--wa-black-color-20opc) inset;
+
+  /* Elevation */
+  --wa-dropdown-elevation: var(--wa-elevation-m);
+  --wa-elevation-s: 0px 1px 2px var(--wa-black-color-20opc);
+  --wa-elevation-m: 0px 2px 4px var(--wa-black-color-20opc);
+  --wa-elevation-l: 0px 5px 10px var(--wa-black-color-40opc);
+  --wa-toast-elevation: var(--wa-elevation-m);
+
+  /* Highlight */
+  --wa-highlight-color: hsl(45deg 100% 74%);
+  --wa-highlight-color-0opc: hsl(45deg 100% 74% / 0%);
+  --wa-highlight-color-10opc: hsl(45deg 100% 74% / 10%);
+  --wa-highlight-color-20opc: hsl(45deg 100% 74% / 20%);
+  --wa-highlight-color-30opc: hsl(45deg 100% 74% / 30%);
+  --wa-highlight-color-40opc: hsl(45deg 100% 74% / 40%);
+  --wa-highlight-color-50opc: hsl(45deg 100% 74% / 50%);
+  --wa-highlight-color-60opc: hsl(45deg 100% 74% / 60%);
+  --wa-highlight-color-70opc: hsl(45deg 100% 74% / 70%);
+  --wa-highlight-color-80opc: hsl(45deg 100% 74% / 80%);
+  --wa-highlight-color-90opc: hsl(45deg 100% 74% / 90%);
+
+  /* Outline — v1 ships the concrete value; the v2 blocks use the accent token
+   * because `--wa-primary-color` does not exist in v2. */
+  --wa-outline-color: var(--wa-action-color-info);
+  --wa-component-outline: 0px 0px 0px 2px var(--wa-outline-color);
+
+  /* Shadow */
+  --wa-circular-progress-bar-box-shadow: none;
+  --wa-dialog-box-shadow: 0px 5px 10px 0px var(--wa-black-color-50opc);
+
+  /* Radio button */
+  --wa-radio-button-border-style: solid;
+  --wa-radio-button-border-width: 1px;
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-color: var(--wa-action-color-info);
+  --wa-radio-button-color-disabled: var(--wa-text-color-disabled);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-dot-color: var(--wa-action-color-info);
+  --wa-radio-button-dot-color-disabled: var(--wa-text-color-disabled);
+  --wa-radio-button-dot-size: 8px;
+  /* substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-radio-button-focus-ring-color: var(--wa-action-color-info-50opc);
+  --wa-radio-button-focus-ring-size: 3px;
+  --wa-radio-button-size: 20px;
+  /* substitution: --wa-primary-color-40opc → --wa-action-color-info-40opc */
+  --wa-radio-button-outline-color: var(--wa-action-color-info-40opc);
+  /* substitution: --wa-primary-color-20opc → --wa-action-color-info-20opc */
+  --wa-radio-button-outline-color-disabled: var(--wa-action-color-info-20opc);
+
+  /* Form / label */
+  --wa-form-validation-invalid: var(--wa-action-color-error);
+  --wa-form-validation-mandatory: var(--wa-action-color-warn);
+  --wa-form-validation-valid: var(--wa-action-color-success);
+  --wa-gauge-label-color: hsl(0deg 0% 100%);
+  --wa-label-color: hsl(0deg 0% 68%);
+
+  /* Input */
+  --wa-input-icon-color: var(--wa-icon-color);
+  --wa-input-placeholder-color: hsl(221deg 27% 53%);
+  --wa-input-placeholder-color-disabled: hsl(221deg 27% 50%);
+  --wa-tabs-input-placeholder-color: var(--wa-input-placeholder-color);
+
+  /* Border colour */
+  --wa-accordion-border-color: var(--wa-border-color);
+  --wa-border-color: hsl(221deg 20% 35%);
+  --wa-button-border-color: hsl(209deg 25% 34%);
+  --wa-button-border-color-disabled: var(--wa-background-color-100);
+  --wa-button-border-color-hover: hsl(209deg 25% 39%);
+  --wa-dropdown-border-color: hsl(221deg 36% 17%);
+  --wa-dropdown-item-border-color: var(--wa-background-color-700);
+  --wa-form-border-color: hsl(206deg 14% 81%);
+  --wa-input-border-color: #314168;
+  --wa-input-border-color-hover: hsl(221deg 29% 11%);
+  --wa-radio-button-border-color: hsl(0deg 0% 100%);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-border-color-checked: var(--wa-action-color-info);
+  --wa-radio-button-border-color-disabled: transparent;
+  --wa-tabs-border-color: var(--wa-border-color);
+  /* substitution: --wa-primary-color-30opc → --wa-action-color-info-30opc */
+  --wa-tabs-placeholder-border-color: var(--wa-action-color-info-30opc);
+
+  /* Border radius */
+  --wa-border-radius-xs: 1px;
+  --wa-border-radius-s: 2px;
+  --wa-border-radius-m: 4px;
+  --wa-border-radius-l: 8px;
+  --wa-border-radius-xl: 16px;
+  --wa-dialog-border-radius: var(--wa-border-radius-m);
+  --wa-dropdown-border-radius: 4px;
+  --wa-dropdown-item-border-radius: 4px;
+  --wa-scrollbar-thumb-border-radius: 3px;
+  --wa-scrollbar-track-border-radius: 3px;
+  --wa-tabs-border-radius: 4px 4px 0px 0px;
+  --wa-tabs-new-tab-button-border-radius: 4px;
+  --wa-toast-border-radius: var(--wa-border-radius-m);
+
+  /* Component size */
+  --wa-component-size-s: 20px;
+  --wa-component-size-m: 26px;
+  --wa-component-size-l: 36px;
+
+  /* Gap survivors */
+  --wa-calendar-row-gap: 5px;
+  --wa-tabs-gap-size: 2px;
+
+  /* Spacing — v2 spells these as `var(--wa-gap-*)`; resolved to the same px. */
+  --wa-dropdown-item-padding: 8px;
+  --wa-padding-xs: 2px;
+  --wa-padding-s: 4px;
+  --wa-padding-m: 8px;
+  --wa-padding-l: 12px;
+  --wa-padding-xl: 16px;
+  --wa-tabs-padding: 5px;
+
+  /* Dialog / toast borders */
+  --wa-dialog-border: 1px solid var(--wa-background-color-900);
+  --wa-toast-border: 1px solid hsl(209deg 26% 25%);
+
+  /* Tabs */
+  --wa-tabs-cont-height: 30px;
+  --wa-tabs-height: 28px;
+  --wa-tabs-height-selected: 30px;
+  --wa-tabs-icon-color: var(--wa-text-color);
+  --wa-tabs-icon-size: var(--wa-icon-size-xs);
+  --wa-tabs-width: 150px;
+
+  /* Other — base unit for v2's numeric font scale (not shipped) — not a body size;
+   * use --wa-font-size-m. */
+  --wa-text-size: 1rem;
+
+  /* Font family */
+  --wa-dropdown-item-font-family: var(--wa-font-family);
+  --wa-font-family: "Public Sans";
+  --wa-font-family-bold: "Public Sans Bold";
+  --wa-font-family-light: "Public Sans Light";
+  --wa-font-family-semibold: "Public Sans Semibold";
+  --wa-label-font-family: var(--wa-font-family);
+  --wa-toast-font-family: var(--wa-font-family);
+  --wa-toast-header-font-family: var(--wa-font-family-bold);
+
+  /* Font size */
+  --wa-dropdown-item-font-size: var(--wa-font-size-m);
+  --wa-font-size-xs: 10px;
+  --wa-font-size-s: 12px;
+  --wa-font-size-m: 14px;
+  --wa-font-size-l: 16px;
+  --wa-font-size-xl: 18px;
+  --wa-gauge-label-font-size: 16px;
+  --wa-label-font-size: var(--wa-font-size-s);
+  --wa-toast-font-size: var(--wa-font-size-m);
+  --wa-toast-header-font-size: var(--wa-font-size-l);
+
+  /* Font weight */
+  --wa-font-weight-thin: 100;
+  --wa-font-weight-extralight: 200;
+  --wa-font-weight-light: 300;
+  --wa-font-weight-normal: 400;
+  --wa-font-weight-medium: 500;
+  --wa-font-weight-semibold: 600;
+  --wa-font-weight-bold: 700;
+  --wa-font-weight-extrabold: 800;
+  --wa-font-weight-black: 900;
+
+  /* Line height — px values, not unitless ratios */
+  --wa-line-height-xs: 15px;
+  --wa-line-height-s: 18px;
+  --wa-line-height-m: 21px;
+  --wa-line-height-l: 24px;
+  --wa-line-height-xl: 27px;
+
+  /* Links */
+  --wa-link-color: hsl(216deg 86% 51%);
+  --wa-link-color-active: hsl(271deg 100% 60%);
+  --wa-link-color-hover: hsl(216deg 86% 56%);
+  --wa-link-color-visited: hsl(271deg 100% 50%);
+
+  /* Text colour */
+  --wa-accordion-header-text-color: var(--wa-text-color);
+  --wa-button-text-color: var(--wa-text-color);
+  --wa-button-text-color-disabled: var(--wa-background-color-100);
+  --wa-button-text-color-hover: var(--wa-text-color);
+  /* substitution: --wa-primary-color-100 → --wa-action-color-info-100 */
+  --wa-calendar-weekdays-text-color: var(--wa-action-color-info-100);
+  --wa-countdown-timer-donut-text-color: var(--wa-text-color);
+  --wa-countdown-timer-text-color: var(--wa-label-color);
+  --wa-dropdown-item-text-color: var(--wa-text-color);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-text-color-active: var(--wa-action-color-info);
+  --wa-dropdown-item-text-color-disabled: var(--wa-background-color-100);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-text-color-hover: var(--wa-action-color-info);
+  /* substitution: --wa-primary-text-color → --wa-action-text-color-info */
+  --wa-dropdown-item-text-color-selected: var(--wa-action-text-color-info);
+  --wa-header-text-color: hsl(29deg 100% 59%);
+  --wa-header-text-color-disabled: hsl(29deg 100% 84%);
+  --wa-header-text-color-hover: hsl(29deg 100% 64%);
+  --wa-input-text-color: var(--wa-text-color);
+  --wa-input-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-input-text-color-hover: var(--wa-text-color);
+  --wa-radio-button-text-color: var(--wa-text-color);
+  --wa-radio-button-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-input-text-color: var(--wa-input-text-color);
+  --wa-tabs-text-color: var(--wa-text-color);
+  --wa-tabs-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-text-color-hover: var(--wa-text-color);
+  --wa-tabs-text-color-selected: var(--wa-text-color);
+  --wa-text-color: hsl(0deg 0% 100%);
+  --wa-text-color-disabled: hsl(0deg 0% 66%);
+  --wa-toast-header-text-color: hsl(0deg 0% 100%);
+  --wa-toast-text-color: hsl(0deg 0% 92%);
+
+  /* Text shadow */
+  --wa-button-text-shadow: none;
+  --wa-calendar-weekdays-text-shadow: 0px 1px 1px var(--wa-black-color);
+  --wa-dropdown-item-text-shadow: none;
+  --wa-header-text-shadow: 0px 1px 1px var(--wa-black-color);
+  --wa-label-text-shadow: none;
+  --wa-tabs-text-shadow: none;
+  --wa-text-shadow: none;
+}
+
+[data-theme="wa2-dark"], :where([data-theme-base="wa2-dark"]) {
+  /* Action colours */
+  /* 009: same as wa1-dark — the error surface is hsl(352deg 60% 68%) here, so
+     white measured 2.84:1 (the 2.857:1 the mock e2e reported). This value
+     measures 6.72:1 at rest, 5.73:1 on :hover and 4.99:1 on :active. */
+  --wa-action-text-color-error: hsl(221deg 36% 7%);
+  --wa-action-text-color-info: hsl(0deg 0% 100%);
+  --wa-action-text-color-success: hsl(0deg 0% 100%);
+  --wa-action-text-color-warn: hsl(0deg 0% 100%);
+  --wa-action-color-error: hsl(352deg 60% 68%);
+  --wa-action-color-error-50: color-mix(in oklab, var(--wa-action-color-error) 95%, var(--wa-background-color));
+  --wa-action-color-error-100: color-mix(in oklab, var(--wa-action-color-error) 90%, var(--wa-background-color));
+  --wa-action-color-error-300: color-mix(in oklab, var(--wa-action-color-error) 70%, var(--wa-background-color));
+  --wa-action-color-error-500: color-mix(in oklab, var(--wa-action-color-error) 50%, var(--wa-background-color));
+  --wa-action-color-error-700: color-mix(in oklab, var(--wa-action-color-error) 30%, var(--wa-background-color));
+  --wa-action-color-error-900: color-mix(in oklab, var(--wa-action-color-error) 10%, var(--wa-background-color));
+  --wa-action-color-error-0opc: hsl(352deg 60% 68% / 0%);
+  --wa-action-color-error-10opc: hsl(352deg 60% 68% / 10%);
+  --wa-action-color-error-20opc: hsl(352deg 60% 68% / 20%);
+  --wa-action-color-error-30opc: hsl(352deg 60% 68% / 30%);
+  --wa-action-color-error-40opc: hsl(352deg 60% 68% / 40%);
+  --wa-action-color-error-50opc: hsl(352deg 60% 68% / 50%);
+  --wa-action-color-error-60opc: hsl(352deg 60% 68% / 60%);
+  --wa-action-color-error-70opc: hsl(352deg 60% 68% / 70%);
+  --wa-action-color-error-80opc: hsl(352deg 60% 68% / 80%);
+  --wa-action-color-error-90opc: hsl(352deg 60% 68% / 90%);
+  --wa-action-color-info: hsl(257deg 100% 66%);
+  --wa-action-color-info-50: color-mix(in oklab, var(--wa-action-color-info) 95%, var(--wa-background-color));
+  --wa-action-color-info-100: color-mix(in oklab, var(--wa-action-color-info) 90%, var(--wa-background-color));
+  --wa-action-color-info-300: color-mix(in oklab, var(--wa-action-color-info) 70%, var(--wa-background-color));
+  --wa-action-color-info-500: color-mix(in oklab, var(--wa-action-color-info) 50%, var(--wa-background-color));
+  --wa-action-color-info-700: color-mix(in oklab, var(--wa-action-color-info) 30%, var(--wa-background-color));
+  --wa-action-color-info-900: color-mix(in oklab, var(--wa-action-color-info) 10%, var(--wa-background-color));
+  --wa-action-color-info-0opc: hsl(257deg 100% 67% / 0%);
+  --wa-action-color-info-10opc: hsl(257deg 100% 67% / 10%);
+  --wa-action-color-info-20opc: hsl(257deg 100% 67% / 20%);
+  --wa-action-color-info-30opc: hsl(257deg 100% 67% / 30%);
+  --wa-action-color-info-40opc: hsl(257deg 100% 67% / 40%);
+  --wa-action-color-info-50opc: hsl(257deg 100% 67% / 50%);
+  --wa-action-color-info-60opc: hsl(257deg 100% 67% / 60%);
+  --wa-action-color-info-70opc: hsl(257deg 100% 67% / 70%);
+  --wa-action-color-info-80opc: hsl(257deg 100% 67% / 80%);
+  --wa-action-color-info-90opc: hsl(257deg 100% 67% / 90%);
+  --wa-action-color-success: hsl(151deg 74% 43%);
+  --wa-action-color-success-50: color-mix(in oklab, var(--wa-action-color-success) 95%, var(--wa-background-color));
+  --wa-action-color-success-100: color-mix(in oklab, var(--wa-action-color-success) 90%, var(--wa-background-color));
+  --wa-action-color-success-300: color-mix(in oklab, var(--wa-action-color-success) 70%, var(--wa-background-color));
+  --wa-action-color-success-500: color-mix(in oklab, var(--wa-action-color-success) 50%, var(--wa-background-color));
+  --wa-action-color-success-700: color-mix(in oklab, var(--wa-action-color-success) 30%, var(--wa-background-color));
+  --wa-action-color-success-900: color-mix(in oklab, var(--wa-action-color-success) 10%, var(--wa-background-color));
+  --wa-action-color-success-0opc: hsl(151deg 74% 43% / 0%);
+  --wa-action-color-success-10opc: hsl(151deg 74% 43% / 10%);
+  --wa-action-color-success-20opc: hsl(151deg 74% 43% / 20%);
+  --wa-action-color-success-30opc: hsl(151deg 74% 43% / 30%);
+  --wa-action-color-success-40opc: hsl(151deg 74% 43% / 40%);
+  --wa-action-color-success-50opc: hsl(151deg 74% 43% / 50%);
+  --wa-action-color-success-60opc: hsl(151deg 74% 43% / 60%);
+  --wa-action-color-success-70opc: hsl(151deg 74% 43% / 70%);
+  --wa-action-color-success-80opc: hsl(151deg 74% 43% / 80%);
+  --wa-action-color-success-90opc: hsl(151deg 74% 43% / 90%);
+  --wa-action-color-warn: hsl(30deg 70% 60%);
+  --wa-action-color-warn-50: color-mix(in oklab, var(--wa-action-color-warn) 95%, var(--wa-background-color));
+  --wa-action-color-warn-100: color-mix(in oklab, var(--wa-action-color-warn) 90%, var(--wa-background-color));
+  --wa-action-color-warn-300: color-mix(in oklab, var(--wa-action-color-warn) 70%, var(--wa-background-color));
+  --wa-action-color-warn-500: color-mix(in oklab, var(--wa-action-color-warn) 50%, var(--wa-background-color));
+  --wa-action-color-warn-700: color-mix(in oklab, var(--wa-action-color-warn) 30%, var(--wa-background-color));
+  --wa-action-color-warn-900: color-mix(in oklab, var(--wa-action-color-warn) 10%, var(--wa-background-color));
+  --wa-action-color-warn-0opc: hsl(30deg 70% 60% / 0%);
+  --wa-action-color-warn-10opc: hsl(30deg 70% 60% / 10%);
+  --wa-action-color-warn-20opc: hsl(30deg 70% 60% / 20%);
+  --wa-action-color-warn-30opc: hsl(30deg 70% 60% / 30%);
+  --wa-action-color-warn-40opc: hsl(30deg 70% 60% / 40%);
+  --wa-action-color-warn-50opc: hsl(30deg 70% 60% / 50%);
+  --wa-action-color-warn-60opc: hsl(30deg 70% 60% / 60%);
+  --wa-action-color-warn-70opc: hsl(30deg 70% 60% / 70%);
+  --wa-action-color-warn-80opc: hsl(30deg 70% 60% / 80%);
+  --wa-action-color-warn-90opc: hsl(30deg 70% 60% / 90%);
+
+  /* Backgrounds */
+  --wa-accordion-background-color: var(--wa-background-color-500);
+  --wa-accordion-header-hover-background-color: var(--wa-background-color-700);
+  --wa-background-color: hsl(221deg 29% 19%);
+  --wa-background-color-0opc: hsl(221deg 29% 19% / 0%);
+  --wa-background-color-10opc: hsl(221deg 29% 19% / 10%);
+  --wa-background-color-20opc: hsl(221deg 29% 19% / 20%);
+  --wa-background-color-30opc: hsl(221deg 29% 19% / 30%);
+  --wa-background-color-40opc: hsl(221deg 29% 19% / 40%);
+  --wa-background-color-50: hsl(221deg 25% 5%);
+  --wa-background-color-50opc: hsl(221deg 29% 19% / 50%);
+  --wa-background-color-60opc: hsl(221deg 29% 19% / 60%);
+  --wa-background-color-70opc: hsl(221deg 29% 19% / 70%);
+  --wa-background-color-80opc: hsl(221deg 29% 19% / 80%);
+  --wa-background-color-90opc: hsl(221deg 29% 19% / 90%);
+  --wa-background-color-100: hsl(222deg 27% 11%);
+  --wa-background-color-300: hsl(221deg 30% 15%);
+  --wa-background-color-500: hsl(221deg 29% 19%);
+  --wa-background-color-700: hsl(221deg 25% 25%);
+  --wa-background-color-900: hsl(221deg 25% 30%);
+  --wa-button-background-color: var(--wa-background-color-300);
+  --wa-button-background-color-disabled: hsl(221deg 30% 20%);
+  --wa-button-background-color-hover: var(--wa-background-color-300);
+  /* substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-calendar-weekdays-background-color: var(--wa-background-color-300);
+  --wa-circular-progress-bar-background-color: transparent;
+  --wa-countdown-timer-background-color: var(--wa-background-color);
+  --wa-dialog-background-color: var(--wa-background-color-500);
+  --wa-dialog-overlay-background-color: var(--wa-background-color-50opc);
+  --wa-dropdown-background-color: hsl(221deg 36% 7%);
+  --wa-dropdown-item-background-color: transparent;
+  /* substitution: --wa-primary-color-10opc → --wa-action-color-info-10opc */
+  --wa-dropdown-item-background-color-active: var(--wa-action-color-info-10opc);
+  --wa-dropdown-item-background-color-disabled: var(--wa-background-color-500);
+  /* substitution: --wa-primary-color-10opc → --wa-action-color-info-10opc */
+  --wa-dropdown-item-background-color-hover: var(--wa-action-color-info-10opc);
+  --wa-dropdown-item-hover-background-color: var(--wa-action-color-info-10opc);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-background-color-selected: var(--wa-action-color-info);
+  --wa-input-background-color: hsl(221deg 36% 7%);
+  --wa-input-background-color-disabled: hsl(224deg 26% 17%);
+  --wa-input-background-color-hover: hsl(221deg 36% 7%);
+  --wa-radio-button-background-color: transparent;
+  --wa-radio-button-background-color-checked: transparent;
+  --wa-radio-button-background-color-disabled: transparent;
+  --wa-radio-button-background-color-hover: transparent;
+  --wa-scrollbar-corner-background-color: transparent;
+  --wa-scrollbar-thumb-background-color: var(--wa-background-color-900);
+  --wa-scrollbar-thumb-background-color-hover: hsl(221deg 25% 50%);
+  --wa-scrollbar-track-background-color: var(--wa-background-color-100);
+  --wa-smart-list-background-color: hsl(221deg 36% 7%);
+  --wa-smart-list-background-color-disabled: hsl(221deg 30% 19%);
+  --wa-tabs-background-color: hsl(221deg 30% 28%);
+  --wa-tabs-background-color-disabled: hsl(221deg 24% 34%);
+  --wa-tabs-background-color-hover: hsl(221deg 30% 33%);
+  --wa-tabs-background-color-selected: hsl(221deg 29% 19%);
+  --wa-tabs-close-button-background-color: transparent;
+  --wa-tabs-close-button-background-color-hover: var(--wa-background-color-900);
+  --wa-tabs-input-background-color: var(--wa-input-background-color);
+  /* substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-tabs-placeholder-background-color: var(--wa-action-color-info-50opc);
+  --wa-toast-background-color: hsl(209deg 26% 20%);
+  --wa-toast-button-background-color: transparent;
+  --wa-toast-button-background-color-hover: var(--wa-white-color-10opc);
+
+  /* Black & white */
+  --wa-black-color: hsl(0deg 0% 0%);
+  --wa-black-color-0opc: hsl(0deg 0% 0% / 0%);
+  --wa-black-color-10opc: hsl(0deg 0% 0% / 10%);
+  --wa-black-color-20opc: hsl(0deg 0% 0% / 20%);
+  --wa-black-color-30opc: hsl(0deg 0% 0% / 30%);
+  --wa-black-color-40opc: hsl(0deg 0% 0% / 40%);
+  --wa-black-color-50opc: hsl(0deg 0% 0% / 50%);
+  --wa-black-color-60opc: hsl(0deg 0% 0% / 60%);
+  --wa-black-color-70opc: hsl(0deg 0% 0% / 70%);
+  --wa-black-color-80opc: hsl(0deg 0% 0% / 80%);
+  --wa-black-color-90opc: hsl(0deg 0% 0% / 90%);
+  --wa-white-color: hsl(0deg 0% 100%);
+  --wa-white-color-0opc: hsl(0deg 0% 100% / 0%);
+  --wa-white-color-10opc: hsl(0deg 0% 100% / 10%);
+  --wa-white-color-20opc: hsl(0deg 0% 100% / 20%);
+  --wa-white-color-30opc: hsl(0deg 0% 100% / 30%);
+  --wa-white-color-40opc: hsl(0deg 0% 100% / 40%);
+  --wa-white-color-50opc: hsl(0deg 0% 100% / 50%);
+  --wa-white-color-60opc: hsl(0deg 0% 100% / 60%);
+  --wa-white-color-70opc: hsl(0deg 0% 100% / 70%);
+  --wa-white-color-80opc: hsl(0deg 0% 100% / 80%);
+  --wa-white-color-90opc: hsl(0deg 0% 100% / 90%);
+
+  /* Calendar / flag / gauge / pagination */
+  --wa-calendar-row-size: 40px;
+  --wa-flag-height: 22.5px;
+  --wa-flag-width: 30px;
+  --wa-gauge-arrow-color: hsl(0deg 0% 100%);
+  --wa-gauge-green-color: hsl(164deg 83% 53%);
+  --wa-gauge-orange-color: hsl(29deg 100% 59%);
+  --wa-gauge-red-color: hsl(10deg 100% 57%);
+  --wa-gauge-size: 48px;
+  --wa-gauge-transition-duration: 2s;
+  --wa-gauge-yellow-color: hsl(47deg 100% 57%);
+  --wa-pagination-height: 38px;
+
+  /* Countdown timer */
+  --wa-countdown-timer-color: var(--wa-text-color);
+  --wa-countdown-timer-donut-size: 10;
+  --wa-countdown-timer-loader-color: var(--wa-label-color);
+  --wa-countdown-timer-loader-size: 10;
+  --wa-countdown-timer-scale-color: var(--wa-label-color);
+  --wa-countdown-timer-scale-stroke-dasharray: 2 5.65;
+  --wa-countdown-timer-scale-stroke-width: 2;
+
+  /* Icon */
+  --wa-accordion-header-icon-color: var(--wa-icon-color);
+  --wa-gauge-exclamation-icon-color: hsl(0deg 0% 100%);
+  --wa-icon-color: var(--wa-text-color);
+  --wa-icon-color-disabled: var(--wa-text-color-disabled);
+  --wa-icon-size-xs: 14px;
+  --wa-icon-size-s: 16px;
+  --wa-icon-size-m: 20px;
+  --wa-icon-size-l: 24px;
+  --wa-icon-size-xl: 28px;
+
+  /* Progress bar / scrollbar / spinner */
+  --wa-circular-progress-bar-linecap: round;
+  --wa-circular-progress-bar-loader-color: var(--wa-label-color);
+  --wa-circular-progress-bar-scale-color: var(--wa-label-color);
+  --wa-circular-progress-bar-scale-stroke-dasharray: 2 5.65;
+  --wa-circular-progress-bar-scale-stroke-width: 2;
+  --wa-circular-progress-bar-size: 100px;
+  --wa-scrollbar-size: 6px;
+  --wa-spinner-color: var(--wa-text-color);
+
+  /* Smart list */
+  --wa-smart-list-row-height: 30px;
+
+  /* Depth */
+  --wa-depth-s: 0px 1px 2px var(--wa-black-color-40opc) inset;
+  --wa-depth-m: 0px 2px 4px var(--wa-black-color-40opc) inset;
+  --wa-depth-l: 0px 4px 8px var(--wa-black-color-40opc) inset;
+
+  /* Elevation */
+  --wa-dropdown-elevation: var(--wa-elevation-m);
+  --wa-elevation-s: 0px 1px 2px var(--wa-black-color-40opc);
+  --wa-elevation-m: 0px 2px 4px 0px var(--wa-black-color-10opc), 0px 0px 1px 0px var(--wa-black-color-20opc);
+  --wa-elevation-l: 0px 5px 10px var(--wa-black-color-40opc);
+  --wa-toast-elevation: var(--wa-elevation-m);
+
+  /* Highlight */
+  --wa-highlight-color: hsl(45deg 100% 74%);
+  --wa-highlight-color-0opc: hsl(45deg 100% 74% / 0%);
+  --wa-highlight-color-10opc: hsl(45deg 100% 74% / 10%);
+  --wa-highlight-color-20opc: hsl(45deg 100% 74% / 20%);
+  --wa-highlight-color-30opc: hsl(45deg 100% 74% / 30%);
+  --wa-highlight-color-40opc: hsl(45deg 100% 74% / 40%);
+  --wa-highlight-color-50opc: hsl(45deg 100% 74% / 50%);
+  --wa-highlight-color-60opc: hsl(45deg 100% 74% / 60%);
+  --wa-highlight-color-70opc: hsl(45deg 100% 74% / 70%);
+  --wa-highlight-color-80opc: hsl(45deg 100% 74% / 80%);
+  --wa-highlight-color-90opc: hsl(45deg 100% 74% / 90%);
+
+  /* Outline — wa2-dark uses its own lighter value of the accent hue: the accent itself must stay dark enough for white text, which leaves it 2.50:1 on the session column. */
+  --wa-outline-color: hsl(257deg 100% 72%);
+  --wa-component-outline: 0px 0px 2px 2px var(--wa-outline-color);
+
+  /* Shadow */
+  --wa-circular-progress-bar-box-shadow: none;
+  --wa-dialog-box-shadow: 0px 5px 10px 0px var(--wa-black-color-50opc);
+
+  /* Radio button */
+  --wa-radio-button-border-style: solid;
+  --wa-radio-button-border-width: 2px;
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-color: var(--wa-action-color-info);
+  --wa-radio-button-color-disabled: var(--wa-text-color-disabled);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-dot-color: var(--wa-action-color-info);
+  --wa-radio-button-dot-color-disabled: hsl(221deg 35% 80%);
+  --wa-radio-button-dot-size: 8px;
+  /* substitution: --wa-primary-color-30opc → --wa-action-color-info-30opc */
+  --wa-radio-button-focus-ring-color: var(--wa-action-color-info-30opc);
+  --wa-radio-button-focus-ring-size: 3px;
+  --wa-radio-button-size: 18px;
+  /* substitution: --wa-primary-color-40opc → --wa-action-color-info-40opc */
+  --wa-radio-button-outline-color: var(--wa-action-color-info-40opc);
+  /* substitution: --wa-primary-color-20opc → --wa-action-color-info-20opc */
+  --wa-radio-button-outline-color-disabled: var(--wa-action-color-info-20opc);
+
+  /* Form / label */
+  --wa-form-validation-invalid: var(--wa-action-color-error);
+  --wa-form-validation-mandatory: var(--wa-action-color-warn);
+  --wa-form-validation-valid: var(--wa-action-color-success);
+  --wa-gauge-label-color: hsl(0deg 0% 100%);
+  --wa-label-color: hsl(221deg 15% 60%);
+
+  /* Input */
+  --wa-input-icon-color: var(--wa-icon-color);
+  --wa-input-placeholder-color: hsl(221deg 20% 52%);
+  --wa-input-placeholder-color-disabled: hsl(221deg 20% 35%);
+  --wa-tabs-input-placeholder-color: var(--wa-input-placeholder-color);
+
+  /* Border colour */
+  --wa-accordion-border-color: var(--wa-border-color);
+  --wa-border-color: hsl(221deg 27% 11%);
+  --wa-button-border-color: var(--wa-border-color);
+  --wa-button-border-color-disabled: var(--wa-background-color-100);
+  --wa-button-border-color-hover: hsl(209deg 25% 39%);
+  --wa-dropdown-border-color: hsl(221deg 36% 17%);
+  --wa-dropdown-item-border-color: transparent;
+  --wa-form-border-color: hsl(221deg 25% 25%);
+  --wa-input-border-color: var(--wa-border-color);
+  --wa-input-border-color-hover: var(--wa-border-color);
+  --wa-radio-button-border-color: var(--wa-text-color);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-border-color-checked: var(--wa-action-color-info);
+  --wa-radio-button-border-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-border-color: var(--wa-border-color);
+  /* substitution: --wa-primary-color-30opc → --wa-action-color-info-30opc */
+  --wa-tabs-placeholder-border-color: var(--wa-action-color-info-30opc);
+
+  /* Border radius */
+  --wa-border-radius-xs: 1px;
+  --wa-border-radius-s: 2px;
+  --wa-border-radius-m: 4px;
+  --wa-border-radius-l: 8px;
+  --wa-border-radius-xl: 10px;
+  --wa-dialog-border-radius: var(--wa-border-radius-m);
+  --wa-dropdown-border-radius: var(--wa-border-radius-m);
+  --wa-dropdown-item-border-radius: var(--wa-border-radius-m);
+  --wa-scrollbar-thumb-border-radius: 3px;
+  --wa-scrollbar-track-border-radius: 3px;
+  --wa-tabs-border-radius: 4px 4px 0px 0px;
+  --wa-tabs-new-tab-button-border-radius: 4px;
+  --wa-toast-border-radius: var(--wa-border-radius-m);
+
+  /* Component size */
+  --wa-component-size-s: 20px;
+  --wa-component-size-m: 30px;
+  --wa-component-size-l: 36px;
+
+  /* Gap survivors */
+  --wa-calendar-row-gap: 5px;
+  --wa-tabs-gap-size: 2px;
+
+  /* Spacing — v2 `--wa-padding-*` resolved from the v2-only `--wa-gap-*`
+   * scale (xs=2px, s=4px, m=8px, l=12px, xl=16px — identical to v1 numbers). */
+  --wa-dropdown-item-padding: var(--wa-padding-m);
+  --wa-padding-xs: 2px;
+  --wa-padding-s: 4px;
+  --wa-padding-m: 8px;
+  --wa-padding-l: 12px;
+  --wa-padding-xl: 16px;
+  --wa-tabs-padding: 5px;
+
+  /* Dialog / toast borders */
+  --wa-dialog-border: 1px solid var(--wa-background-color-900);
+  --wa-toast-border: 1px solid hsl(209deg 26% 25%);
+
+  /* Tabs */
+  --wa-tabs-cont-height: 30px;
+  --wa-tabs-height: 28px;
+  --wa-tabs-height-selected: 30px;
+  --wa-tabs-icon-color: var(--wa-text-color);
+  --wa-tabs-icon-size: var(--wa-icon-size-xs);
+  --wa-tabs-width: 150px;
+
+  /* Other — base unit for v2's numeric font scale (not shipped) — not a body size;
+   * use --wa-font-size-m. */
+  --wa-text-size: 10px;
+
+  /* Font family */
+  --wa-dropdown-item-font-family: var(--wa-font-family);
+  --wa-font-family: "Public Sans";
+  --wa-font-family-bold: "Public Sans Bold";
+  --wa-font-family-light: "Public Sans Light";
+  --wa-font-family-semibold: "Public Sans SemiBold";
+  --wa-label-font-family: var(--wa-font-family);
+  --wa-toast-font-family: var(--wa-font-family);
+  --wa-toast-header-font-family: var(--wa-font-family-bold);
+
+  /* Font size */
+  --wa-dropdown-item-font-size: var(--wa-font-size-m);
+  --wa-font-size-xs: 10px;
+  --wa-font-size-s: 12px;
+  --wa-font-size-m: 13px;
+  --wa-font-size-l: 14px;
+  --wa-font-size-xl: 16px;
+  --wa-gauge-label-font-size: 16px;
+  --wa-label-font-size: var(--wa-font-size-s);
+  --wa-toast-font-size: var(--wa-font-size-m);
+  --wa-toast-header-font-size: var(--wa-font-size-l);
+
+  /* Font weight */
+  --wa-font-weight-thin: 100;
+  --wa-font-weight-extralight: 200;
+  --wa-font-weight-light: 300;
+  --wa-font-weight-normal: 400;
+  --wa-font-weight-medium: 500;
+  --wa-font-weight-semibold: 600;
+  --wa-font-weight-bold: 700;
+  --wa-font-weight-extrabold: 800;
+  --wa-font-weight-black: 900;
+
+  /* Line height — px values, not unitless ratios */
+  --wa-line-height-xs: 15px;
+  --wa-line-height-s: 18px;
+  --wa-line-height-m: 21px;
+  --wa-line-height-l: 24px;
+  --wa-line-height-xl: 27px;
+
+  /* Links */
+  --wa-link-color: hsl(216deg 86% 66%);
+  --wa-link-color-active: hsl(271deg 100% 75%);
+  --wa-link-color-hover: hsl(216deg 86% 71%);
+  --wa-link-color-visited: hsl(271deg 100% 65%);
+
+  /* Text colour */
+  --wa-accordion-header-text-color: var(--wa-text-color);
+  --wa-button-text-color: var(--wa-text-color);
+  --wa-button-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-button-text-color-hover: var(--wa-text-color);
+  /* substitution: --wa-primary-color-100 → --wa-action-color-info-100 */
+  --wa-calendar-weekdays-text-color: var(--wa-action-color-info-100);
+  --wa-countdown-timer-donut-text-color: var(--wa-text-color);
+  --wa-countdown-timer-text-color: var(--wa-label-color);
+  --wa-dropdown-item-text-color: var(--wa-text-color);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-text-color-active: var(--wa-action-color-info);
+  --wa-dropdown-item-text-color-disabled: var(--wa-background-color-100);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-text-color-hover: var(--wa-action-color-info);
+  /* substitution: --wa-primary-text-color → --wa-action-text-color-info */
+  --wa-dropdown-item-text-color-selected: var(--wa-action-text-color-info);
+  --wa-header-text-color: hsl(30deg 70% 60%);
+  --wa-header-text-color-disabled: hsl(30deg 60% 60%);
+  --wa-header-text-color-hover: hsl(30deg 70% 64%);
+  --wa-input-text-color: var(--wa-text-color);
+  --wa-input-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-input-text-color-hover: var(--wa-text-color);
+  --wa-radio-button-text-color: var(--wa-text-color);
+  --wa-radio-button-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-input-text-color: var(--wa-input-text-color);
+  --wa-tabs-text-color: var(--wa-text-color);
+  --wa-tabs-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-text-color-hover: var(--wa-text-color);
+  --wa-tabs-text-color-selected: var(--wa-text-color);
+  --wa-text-color: hsl(221deg 30% 96%);
+  --wa-text-color-disabled: hsl(221deg 20% 57%);
+  --wa-toast-header-text-color: hsl(0deg 0% 100%);
+  --wa-toast-text-color: hsl(0deg 0% 92%);
+
+  /* Text shadow */
+  --wa-button-text-shadow: none;
+  --wa-calendar-weekdays-text-shadow: 0px 1px 1px var(--wa-black-color);
+  --wa-dropdown-item-text-shadow: none;
+  --wa-header-text-shadow: 0px 1px 1px var(--wa-black-color);
+  --wa-label-text-shadow: 0px 1px 1px var(--wa-black-color);
+  --wa-tabs-text-shadow: none;
+  --wa-text-shadow: 0px 1px 1px var(--wa-black-color);
+}
+
+[data-theme="wa2-light"], :where([data-theme-base="wa2-light"]) {
+  /* Action colours */
+  --wa-action-text-color-error: hsl(0deg 0% 100%);
+  --wa-action-text-color-info: hsl(0deg 0% 100%);
+  --wa-action-text-color-success: hsl(0deg 0% 100%);
+  --wa-action-text-color-warn: hsl(0deg 0% 100%);
+  --wa-action-color-error: hsl(352deg 80% 45%);
+  --wa-action-color-error-50: hsl(352deg 80% 88%);
+  --wa-action-color-error-100: hsl(352deg 80% 68%);
+  --wa-action-color-error-300: hsl(352deg 80% 58%);
+  --wa-action-color-error-500: hsl(352deg 80% 45%);
+  --wa-action-color-error-700: hsl(352deg 70% 35%);
+  --wa-action-color-error-900: hsl(352deg 70% 25%);
+  --wa-action-color-error-0opc: hsl(352deg 80% 45% / 0%);
+  --wa-action-color-error-10opc: hsl(352deg 80% 45% / 10%);
+  --wa-action-color-error-20opc: hsl(352deg 80% 45% / 20%);
+  --wa-action-color-error-30opc: hsl(352deg 80% 45% / 30%);
+  --wa-action-color-error-40opc: hsl(352deg 80% 45% / 40%);
+  --wa-action-color-error-50opc: hsl(352deg 80% 45% / 50%);
+  --wa-action-color-error-60opc: hsl(352deg 80% 45% / 60%);
+  --wa-action-color-error-70opc: hsl(352deg 80% 45% / 70%);
+  --wa-action-color-error-80opc: hsl(352deg 80% 45% / 80%);
+  --wa-action-color-error-90opc: hsl(352deg 80% 45% / 90%);
+  --wa-action-color-info: hsl(257deg 100% 66%);
+  --wa-action-color-info-50: hsl(257deg 100% 87%);
+  --wa-action-color-info-100: hsl(257deg 100% 77%);
+  --wa-action-color-info-300: hsl(257deg 100% 72%);
+  --wa-action-color-info-500: hsl(257deg 100% 67%);
+  --wa-action-color-info-700: hsl(257deg 100% 62%);
+  --wa-action-color-info-900: hsl(257deg 100% 57%);
+  --wa-action-color-info-0opc: hsl(257deg 100% 67% / 0%);
+  --wa-action-color-info-10opc: hsl(257deg 100% 67% / 10%);
+  --wa-action-color-info-20opc: hsl(257deg 100% 67% / 20%);
+  --wa-action-color-info-30opc: hsl(257deg 100% 67% / 30%);
+  --wa-action-color-info-40opc: hsl(257deg 100% 67% / 40%);
+  --wa-action-color-info-50opc: hsl(257deg 100% 67% / 50%);
+  --wa-action-color-info-60opc: hsl(257deg 100% 67% / 60%);
+  --wa-action-color-info-70opc: hsl(257deg 100% 67% / 70%);
+  --wa-action-color-info-80opc: hsl(257deg 100% 67% / 80%);
+  --wa-action-color-info-90opc: hsl(257deg 100% 67% / 90%);
+  --wa-action-color-success: hsl(154deg 100% 24%);
+  --wa-action-color-success-50: hsl(154deg 100% 44%);
+  --wa-action-color-success-100: hsl(154deg 100% 34%);
+  --wa-action-color-success-300: hsl(154deg 100% 29%);
+  --wa-action-color-success-500: hsl(154deg 100% 24%);
+  --wa-action-color-success-700: hsl(154deg 100% 19%);
+  --wa-action-color-success-900: hsl(154deg 100% 14%);
+  --wa-action-color-success-0opc: hsl(154deg 100% 24% / 0%);
+  --wa-action-color-success-10opc: hsl(154deg 100% 24% / 10%);
+  --wa-action-color-success-20opc: hsl(154deg 100% 24% / 20%);
+  --wa-action-color-success-30opc: hsl(154deg 100% 24% / 30%);
+  --wa-action-color-success-40opc: hsl(154deg 100% 24% / 40%);
+  --wa-action-color-success-50opc: hsl(154deg 100% 24% / 50%);
+  --wa-action-color-success-60opc: hsl(154deg 100% 24% / 60%);
+  --wa-action-color-success-70opc: hsl(154deg 100% 24% / 70%);
+  --wa-action-color-success-80opc: hsl(154deg 100% 24% / 80%);
+  --wa-action-color-success-90opc: hsl(154deg 100% 24% / 90%);
+  --wa-action-color-warn: hsl(28deg 100% 30%);
+  --wa-action-color-warn-50: hsl(28deg 100% 50%);
+  --wa-action-color-warn-100: hsl(28deg 100% 40%);
+  --wa-action-color-warn-300: hsl(28deg 100% 35%);
+  --wa-action-color-warn-500: hsl(28deg 100% 30%);
+  --wa-action-color-warn-700: hsl(28deg 100% 25%);
+  --wa-action-color-warn-900: hsl(28deg 100% 20%);
+  --wa-action-color-warn-0opc: hsl(28deg 100% 30% / 0%);
+  --wa-action-color-warn-10opc: hsl(28deg 100% 30% / 10%);
+  --wa-action-color-warn-20opc: hsl(28deg 100% 30% / 20%);
+  --wa-action-color-warn-30opc: hsl(28deg 100% 30% / 30%);
+  --wa-action-color-warn-40opc: hsl(28deg 100% 30% / 40%);
+  --wa-action-color-warn-50opc: hsl(28deg 100% 30% / 50%);
+  --wa-action-color-warn-60opc: hsl(28deg 100% 30% / 60%);
+  --wa-action-color-warn-70opc: hsl(28deg 100% 30% / 70%);
+  --wa-action-color-warn-80opc: hsl(28deg 100% 30% / 80%);
+  --wa-action-color-warn-90opc: hsl(28deg 100% 30% / 90%);
+
+  /* Backgrounds */
+  --wa-accordion-background-color: var(--wa-background-color-50);
+  --wa-accordion-header-hover-background-color: var(--wa-background-color-500);
+  --wa-background-color: hsl(206deg 26% 95%);
+  --wa-background-color-0opc: hsl(206deg 26% 95% / 0%);
+  --wa-background-color-10opc: hsl(206deg 26% 95% / 10%);
+  --wa-background-color-20opc: hsl(206deg 26% 95% / 20%);
+  --wa-background-color-30opc: hsl(206deg 26% 95% / 30%);
+  --wa-background-color-40opc: hsl(206deg 26% 95% / 40%);
+  --wa-background-color-50: hsl(0deg 0% 100%);
+  --wa-background-color-50opc: hsl(206deg 26% 95% / 50%);
+  --wa-background-color-60opc: hsl(206deg 26% 95% / 60%);
+  --wa-background-color-70opc: hsl(206deg 26% 95% / 70%);
+  --wa-background-color-80opc: hsl(206deg 26% 95% / 80%);
+  --wa-background-color-90opc: hsl(206deg 26% 95% / 90%);
+  --wa-background-color-100: hsl(0deg 0% 98%);
+  --wa-background-color-300: hsl(210deg 25% 97%);
+  --wa-background-color-500: hsl(206deg 26% 95%);
+  --wa-background-color-700: hsl(204deg 17% 89%);
+  --wa-background-color-900: hsl(206deg 14% 81%);
+  --wa-button-background-color: hsl(0deg 0% 100%);
+  --wa-button-background-color-disabled: var(--wa-background-color-300);
+  --wa-button-background-color-hover: var(--wa-background-color-300);
+  /* substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-calendar-weekdays-background-color: var(--wa-action-color-info-50opc);
+  --wa-circular-progress-bar-background-color: transparent;
+  --wa-countdown-timer-background-color: var(--wa-background-color);
+  --wa-dialog-background-color: var(--wa-background-color-500);
+  --wa-dialog-overlay-background-color: var(--wa-background-color-50opc);
+  --wa-dropdown-background-color: hsl(0deg 0% 100%);
+  --wa-dropdown-item-background-color: transparent;
+  /* substitution: --wa-primary-color-10opc → --wa-action-color-info-10opc */
+  --wa-dropdown-item-background-color-active: var(--wa-action-color-info-10opc);
+  --wa-dropdown-item-background-color-disabled: var(--wa-background-color-300);
+  /* substitution: --wa-primary-color-10opc → --wa-action-color-info-10opc */
+  --wa-dropdown-item-background-color-hover: var(--wa-action-color-info-10opc);
+  --wa-dropdown-item-hover-background-color: var(--wa-action-color-info-10opc);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-background-color-selected: var(--wa-action-color-info);
+  --wa-input-background-color: hsl(0deg 0% 100%);
+  --wa-input-background-color-disabled: var(--wa-background-color-300);
+  --wa-input-background-color-hover: hsl(0deg 0% 100%);
+  --wa-radio-button-background-color: transparent;
+  --wa-radio-button-background-color-checked: transparent;
+  --wa-radio-button-background-color-disabled: transparent;
+  --wa-radio-button-background-color-hover: transparent;
+  --wa-scrollbar-corner-background-color: transparent;
+  --wa-scrollbar-thumb-background-color: hsl(0deg 0% 80%);
+  --wa-scrollbar-thumb-background-color-hover: hsl(0deg 0% 65%);
+  --wa-scrollbar-track-background-color: var(--wa-background-color-100);
+  --wa-smart-list-background-color: hsl(0deg 0% 100%);
+  --wa-smart-list-background-color-disabled: hsl(0deg 0% 92%);
+  --wa-tabs-background-color: var(--wa-background-color-900);
+  --wa-tabs-background-color-disabled: var(--wa-background-color-900);
+  --wa-tabs-background-color-hover: var(--wa-background-color-700);
+  --wa-tabs-background-color-selected: var(--wa-background-color-500);
+  --wa-tabs-close-button-background-color: transparent;
+  --wa-tabs-close-button-background-color-hover: var(--wa-background-color-900);
+  --wa-tabs-input-background-color: var(--wa-input-background-color);
+  /* substitution: --wa-primary-color-50opc → --wa-action-color-info-50opc */
+  --wa-tabs-placeholder-background-color: var(--wa-action-color-info-50opc);
+  --wa-toast-background-color: hsl(209deg 26% 20%);
+  --wa-toast-button-background-color: transparent;
+  --wa-toast-button-background-color-hover: var(--wa-white-color-10opc);
+
+  /* Black & white */
+  --wa-black-color: hsl(0deg 0% 0%);
+  --wa-black-color-0opc: hsl(0deg 0% 0% / 0%);
+  --wa-black-color-10opc: hsl(0deg 0% 0% / 10%);
+  --wa-black-color-20opc: hsl(0deg 0% 0% / 20%);
+  --wa-black-color-30opc: hsl(0deg 0% 0% / 30%);
+  --wa-black-color-40opc: hsl(0deg 0% 0% / 40%);
+  --wa-black-color-50opc: hsl(0deg 0% 0% / 50%);
+  --wa-black-color-60opc: hsl(0deg 0% 0% / 60%);
+  --wa-black-color-70opc: hsl(0deg 0% 0% / 70%);
+  --wa-black-color-80opc: hsl(0deg 0% 0% / 80%);
+  --wa-black-color-90opc: hsl(0deg 0% 0% / 90%);
+  --wa-white-color: hsl(0deg 0% 100%);
+  --wa-white-color-0opc: hsl(0deg 0% 100% / 0%);
+  --wa-white-color-10opc: hsl(0deg 0% 100% / 10%);
+  --wa-white-color-20opc: hsl(0deg 0% 100% / 20%);
+  --wa-white-color-30opc: hsl(0deg 0% 100% / 30%);
+  --wa-white-color-40opc: hsl(0deg 0% 100% / 40%);
+  --wa-white-color-50opc: hsl(0deg 0% 100% / 50%);
+  --wa-white-color-60opc: hsl(0deg 0% 100% / 60%);
+  --wa-white-color-70opc: hsl(0deg 0% 100% / 70%);
+  --wa-white-color-80opc: hsl(0deg 0% 100% / 80%);
+  --wa-white-color-90opc: hsl(0deg 0% 100% / 90%);
+
+  /* Calendar / flag / gauge / pagination */
+  --wa-calendar-row-size: 40px;
+  --wa-flag-height: 22.5px;
+  --wa-flag-width: 30px;
+  --wa-gauge-arrow-color: hsl(0deg 0% 0%);
+  --wa-gauge-green-color: hsl(164deg 83% 53%);
+  --wa-gauge-orange-color: hsl(29deg 100% 59%);
+  --wa-gauge-red-color: hsl(10deg 100% 57%);
+  --wa-gauge-size: 48px;
+  --wa-gauge-transition-duration: 2s;
+  --wa-gauge-yellow-color: hsl(47deg 100% 57%);
+  --wa-pagination-height: 38px;
+
+  /* Countdown timer */
+  --wa-countdown-timer-color: var(--wa-text-color);
+  --wa-countdown-timer-donut-size: 10;
+  --wa-countdown-timer-loader-color: var(--wa-label-color);
+  --wa-countdown-timer-loader-size: 10;
+  --wa-countdown-timer-scale-color: var(--wa-label-color);
+  --wa-countdown-timer-scale-stroke-dasharray: 2 5.65;
+  --wa-countdown-timer-scale-stroke-width: 2;
+
+  /* Icon */
+  --wa-accordion-header-icon-color: var(--wa-icon-color);
+  --wa-gauge-exclamation-icon-color: hsl(0deg 0% 0%);
+  --wa-icon-color: hsl(205deg 8% 64%);
+  --wa-icon-color-disabled: hsl(206deg 14% 80%);
+  --wa-icon-size-xs: 14px;
+  --wa-icon-size-s: 16px;
+  --wa-icon-size-m: 20px;
+  --wa-icon-size-l: 24px;
+  --wa-icon-size-xl: 28px;
+
+  /* Progress bar / scrollbar / spinner */
+  --wa-circular-progress-bar-linecap: round;
+  --wa-circular-progress-bar-loader-color: var(--wa-label-color);
+  --wa-circular-progress-bar-scale-color: var(--wa-label-color);
+  --wa-circular-progress-bar-scale-stroke-dasharray: 2 5.65;
+  --wa-circular-progress-bar-scale-stroke-width: 2;
+  --wa-circular-progress-bar-size: 100px;
+  --wa-scrollbar-size: 6px;
+  --wa-spinner-color: var(--wa-text-color);
+
+  /* Smart list */
+  --wa-smart-list-row-height: var(--wa-component-size-m);
+
+  /* Depth */
+  --wa-depth-s: 0px 1px 2px var(--wa-black-color-20opc) inset;
+  --wa-depth-m: 0px 2px 4px var(--wa-black-color-20opc) inset;
+  --wa-depth-l: 0px 4px 8px var(--wa-black-color-20opc) inset;
+
+  /* Elevation */
+  --wa-dropdown-elevation: var(--wa-elevation-m);
+  --wa-elevation-s: 0px 1px 2px var(--wa-black-color-20opc);
+  --wa-elevation-m: 0px 2px 4px var(--wa-black-color-20opc);
+  --wa-elevation-l: 0px 5px 10px var(--wa-black-color-40opc);
+  --wa-toast-elevation: var(--wa-elevation-m);
+
+  /* Highlight */
+  --wa-highlight-color: hsl(45deg 100% 74%);
+  --wa-highlight-color-0opc: hsl(45deg 100% 74% / 0%);
+  --wa-highlight-color-10opc: hsl(45deg 100% 74% / 10%);
+  --wa-highlight-color-20opc: hsl(45deg 100% 74% / 20%);
+  --wa-highlight-color-30opc: hsl(45deg 100% 74% / 30%);
+  --wa-highlight-color-40opc: hsl(45deg 100% 74% / 40%);
+  --wa-highlight-color-50opc: hsl(45deg 100% 74% / 50%);
+  --wa-highlight-color-60opc: hsl(45deg 100% 74% / 60%);
+  --wa-highlight-color-70opc: hsl(45deg 100% 74% / 70%);
+  --wa-highlight-color-80opc: hsl(45deg 100% 74% / 80%);
+  --wa-highlight-color-90opc: hsl(45deg 100% 74% / 90%);
+
+  /* Outline — v2 uses the accent token because `--wa-primary-color` does not exist in v2. */
+  --wa-outline-color: var(--wa-action-color-info);
+  --wa-component-outline: 0px 0px 2px 2px var(--wa-outline-color);
+
+  /* Shadow */
+  --wa-circular-progress-bar-box-shadow: none;
+  --wa-dialog-box-shadow: 0px 10px 30px 0px var(--wa-black-color-20opc);
+
+  /* Radio button */
+  --wa-radio-button-border-style: solid;
+  --wa-radio-button-border-width: 2px;
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-color: var(--wa-action-color-info);
+  --wa-radio-button-color-disabled: var(--wa-text-color-disabled);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-dot-color: var(--wa-action-color-info);
+  --wa-radio-button-dot-color-disabled: hsl(0deg 0% 100%);
+  --wa-radio-button-dot-size: 8px;
+  /* substitution: --wa-primary-color-30opc → --wa-action-color-info-30opc */
+  --wa-radio-button-focus-ring-color: var(--wa-action-color-info-30opc);
+  --wa-radio-button-focus-ring-size: 3px;
+  --wa-radio-button-size: 18px;
+  /* substitution: --wa-primary-color-40opc → --wa-action-color-info-40opc */
+  --wa-radio-button-outline-color: var(--wa-action-color-info-40opc);
+  /* substitution: --wa-primary-color-20opc → --wa-action-color-info-20opc */
+  --wa-radio-button-outline-color-disabled: var(--wa-action-color-info-20opc);
+
+  /* Form / label */
+  --wa-form-validation-invalid: var(--wa-action-color-error);
+  --wa-form-validation-mandatory: var(--wa-action-color-warn);
+  --wa-form-validation-valid: var(--wa-action-color-success);
+  --wa-gauge-label-color: hsl(0deg 0% 0%);
+  --wa-label-color: hsl(207deg 8% 41%);
+
+  /* Input */
+  --wa-input-icon-color: var(--wa-icon-color);
+  --wa-input-placeholder-color: hsl(206deg 9% 46%);
+  --wa-input-placeholder-color-disabled: hsl(206deg 9% 64%);
+  --wa-tabs-input-placeholder-color: var(--wa-input-placeholder-color);
+
+  /* Border colour */
+  --wa-accordion-border-color: var(--wa-border-color);
+  --wa-border-color: hsl(206deg 14% 81%);
+  --wa-button-border-color: var(--wa-border-color);
+  --wa-button-border-color-disabled: hsl(206deg 14% 91%);
+  --wa-button-border-color-hover: hsl(206deg 14% 61%);
+  --wa-dropdown-border-color: hsl(206deg 14% 81%);
+  --wa-dropdown-item-border-color: transparent;
+  --wa-form-border-color: var(--wa-border-color);
+  --wa-input-border-color: var(--wa-border-color);
+  --wa-input-border-color-hover: var(--wa-border-color);
+  --wa-radio-button-border-color: var(--wa-text-color);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-radio-button-border-color-checked: var(--wa-action-color-info);
+  --wa-radio-button-border-color-disabled: hsl(206deg 14% 91%);
+  --wa-tabs-border-color: var(--wa-border-color);
+  /* substitution: --wa-primary-color-30opc → --wa-action-color-info-30opc */
+  --wa-tabs-placeholder-border-color: var(--wa-action-color-info-30opc);
+
+  /* Border radius */
+  --wa-border-radius-xs: 1px;
+  --wa-border-radius-s: 2px;
+  --wa-border-radius-m: 4px;
+  --wa-border-radius-l: 8px;
+  --wa-border-radius-xl: 16px;
+  --wa-dialog-border-radius: var(--wa-border-radius-m);
+  --wa-dropdown-border-radius: var(--wa-border-radius-m);
+  --wa-dropdown-item-border-radius: var(--wa-border-radius-m);
+  --wa-scrollbar-thumb-border-radius: 3px;
+  --wa-scrollbar-track-border-radius: 3px;
+  --wa-tabs-border-radius: 8px 8px 0px 0px;
+  --wa-tabs-new-tab-button-border-radius: 50%;
+  --wa-toast-border-radius: var(--wa-border-radius-m);
+
+  /* Component size */
+  --wa-component-size-s: 24px;
+  --wa-component-size-m: 30px;
+  --wa-component-size-l: 36px;
+
+  /* Gap survivors */
+  --wa-calendar-row-gap: 5px;
+  --wa-tabs-gap-size: 2px;
+
+  /* Spacing — v2 `--wa-padding-*` resolved from the v2-only `--wa-gap-*`
+   * scale (xs=2px, s=4px, m=8px, l=12px, xl=16px — identical to v1 numbers). */
+  --wa-dropdown-item-padding: var(--wa-padding-m);
+  --wa-padding-xs: 2px;
+  --wa-padding-s: 4px;
+  --wa-padding-m: 8px;
+  --wa-padding-l: 12px;
+  --wa-padding-xl: 16px;
+  --wa-tabs-padding: 5px;
+
+  /* Dialog / toast borders */
+  --wa-dialog-border: 1px solid hsl(0deg 0% 80%);
+  --wa-toast-border: 1px solid hsl(209deg 26% 25%);
+
+  /* Tabs */
+  --wa-tabs-cont-height: 30px;
+  --wa-tabs-height: var(--wa-component-size-m);
+  --wa-tabs-height-selected: 30px;
+  --wa-tabs-icon-color: var(--wa-text-color);
+  --wa-tabs-icon-size: var(--wa-icon-size-xs);
+  --wa-tabs-width: 150px;
+
+  /* Other — base unit for v2's numeric font scale (not shipped) — not a body size;
+   * use --wa-font-size-m. */
+  --wa-text-size: 10px;
+
+  /* Font family */
+  --wa-dropdown-item-font-family: var(--wa-font-family);
+  --wa-font-family: "Public Sans";
+  --wa-font-family-bold: "Public Sans Bold";
+  --wa-font-family-light: "Public Sans Light";
+  --wa-font-family-semibold: "Public Sans SemiBold";
+  --wa-label-font-family: var(--wa-font-family);
+  --wa-toast-font-family: var(--wa-font-family);
+  --wa-toast-header-font-family: var(--wa-font-family-bold);
+
+  /* Font size */
+  --wa-dropdown-item-font-size: var(--wa-font-size-m);
+  --wa-font-size-xs: 10px;
+  --wa-font-size-s: 12px;
+  --wa-font-size-m: 13px;
+  --wa-font-size-l: 14px;
+  --wa-font-size-xl: 16px;
+  --wa-gauge-label-font-size: 16px;
+  --wa-label-font-size: var(--wa-font-size-s);
+  --wa-toast-font-size: var(--wa-font-size-m);
+  --wa-toast-header-font-size: var(--wa-font-size-l);
+
+  /* Font weight */
+  --wa-font-weight-thin: 100;
+  --wa-font-weight-extralight: 200;
+  --wa-font-weight-light: 300;
+  --wa-font-weight-normal: 400;
+  --wa-font-weight-medium: 500;
+  --wa-font-weight-semibold: 600;
+  --wa-font-weight-bold: 700;
+  --wa-font-weight-extrabold: 800;
+  --wa-font-weight-black: 900;
+
+  /* Line height — px values, not unitless ratios */
+  --wa-line-height-xs: 15px;
+  --wa-line-height-s: 18px;
+  --wa-line-height-m: 21px;
+  --wa-line-height-l: 24px;
+  --wa-line-height-xl: 27px;
+
+  /* Links */
+  --wa-link-color: hsl(216deg 86% 47%);
+  --wa-link-color-active: hsl(271deg 100% 56%);
+  --wa-link-color-hover: hsl(216deg 86% 52%);
+  --wa-link-color-visited: hsl(271deg 100% 46%);
+
+  /* Text colour */
+  --wa-accordion-header-text-color: var(--wa-text-color);
+  --wa-button-text-color: var(--wa-text-color);
+  --wa-button-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-button-text-color-hover: var(--wa-text-color);
+  /* substitution: --wa-primary-text-color → --wa-action-text-color-info */
+  --wa-calendar-weekdays-text-color: var(--wa-action-text-color-info);
+  --wa-countdown-timer-donut-text-color: var(--wa-text-color);
+  --wa-countdown-timer-text-color: var(--wa-label-color);
+  --wa-dropdown-item-text-color: var(--wa-text-color);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-text-color-active: var(--wa-action-color-info);
+  --wa-dropdown-item-text-color-disabled: hsl(205deg 12% 70%);
+  /* substitution: --wa-primary-color → --wa-action-color-info */
+  --wa-dropdown-item-text-color-hover: var(--wa-action-color-info);
+  /* substitution: --wa-primary-text-color → --wa-action-text-color-info */
+  --wa-dropdown-item-text-color-selected: var(--wa-action-text-color-info);
+  --wa-header-text-color: hsl(206deg 38% 15%);
+  --wa-header-text-color-disabled: hsl(206deg 7% 55%);
+  --wa-header-text-color-hover: hsl(206deg 38% 25%);
+  --wa-input-text-color: var(--wa-text-color);
+  --wa-input-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-input-text-color-hover: var(--wa-text-color);
+  --wa-radio-button-text-color: var(--wa-text-color);
+  --wa-radio-button-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-input-text-color: var(--wa-input-text-color);
+  --wa-tabs-text-color: var(--wa-text-color);
+  --wa-tabs-text-color-disabled: var(--wa-text-color-disabled);
+  --wa-tabs-text-color-hover: var(--wa-text-color);
+  --wa-tabs-text-color-selected: var(--wa-text-color);
+  --wa-text-color: hsl(206deg 38% 15%);
+  --wa-text-color-disabled: hsl(206deg 9% 64%);
+  --wa-toast-header-text-color: hsl(0deg 0% 100%);
+  --wa-toast-text-color: hsl(0deg 0% 92%);
+
+  /* Text shadow */
+  --wa-button-text-shadow: none;
+  --wa-calendar-weekdays-text-shadow: 0px 1px 1px var(--wa-black-color);
+  --wa-dropdown-item-text-shadow: none;
+  --wa-header-text-shadow: none;
+  --wa-label-text-shadow: none;
+  --wa-tabs-text-shadow: none;
+  --wa-text-shadow: none;
+}

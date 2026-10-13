@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Order Console (locked down)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 2rem; line-height: 1.5; color: #1a1a1a; background: #fafafa; }
+    .card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; max-width: 600px; margin-top: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <h1>Order Console (locked down)</h1>
+  <div class="card">
+    <p>This page is served with a Content Security Policy that does not allow 'unsafe-eval'.</p>
+    <div id="status">Console ready</div>
+  </div>
+  <script>
+    window.__STORE_STATE__ = { pendingOrders: 7, currency: "SGD", cartTotal: 128.5, region: "APAC" };
+    window.getShippingEstimate = function (region) { return region === "APAC" ? 3 : 9; };
+  </script>
+</body>
+</html>

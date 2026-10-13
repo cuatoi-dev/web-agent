@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="wa2-light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web Agent Docs</title>
+  <link rel="icon" href="data:," />
+  <meta name="description" content="Documentation and showcase for the Web Agent project." />
+  <base href="/public/web-agent-docs/" />
+
+  <!-- Beer CSS -->
+  <link rel="stylesheet" href="vendor/beercss/beer.min.css" />
+  <script type="module" src="vendor/beercss/beer.min.js"></script>
+
+  <!-- Public Sans base font -->
+  <link rel="stylesheet" href="vendor/public-sans/public-sans.css" />
+
+  <!-- App stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="light">
+  <!-- Header / Top Nav -->
+  <header>
+    <nav class="horizontal responsive padding">
+      <button class="circle flat l m s responsive-nav-trigger" data-ui="#sidebar">
+        <i>menu</i>
+      </button>
+      <h5 class="max bold text-primary">Web Agent</h5>
+      <a href="#/" class="button transparent">Overview</a>
+      <a href="#/beercss" class="button primary">Showcase</a>
+    </nav>
+  </header>
+
+  <docs-app></docs-app>
+
+  <!-- Floating chat agent bubble — mounts ONCE, persists across hash routes -->
+  <docs-agent-widget></docs-agent-widget>
+
+</body>
+</html>

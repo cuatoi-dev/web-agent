@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UI Blocks Parser Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      background: #0f0f17;
+      color: #e2e8f0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    h1 {
+      color: #a78bfa;
+      font-size: 1.8rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    .panel {
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+    h2 {
+      font-size: 1.1rem;
+      color: #f9e2af;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    pre {
+      background: #11111b;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #313244;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 0.9rem;
+      margin: 0;
+      white-space: pre-wrap;
+    }
+    .block-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .block-card {
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid #45475a;
+      background: #181825;
+    }
+    .block-card.chart {
+      border-left: 4px solid #89b4fa;
+    }
+    .block-card.buttons {
+      border-left: 4px solid #a6e3a1;
+    }
+    .block-card.error_card {
+      border-left: 4px solid #f38ba8;
+      background: #2a1b24;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .chart .badge { background: #89b4fa; color: #11111b; }
+    .buttons .badge { background: #a6e3a1; color: #11111b; }
+    .error_card .badge { background: #f38ba8; color: #11111b; }
+    .error-msg {
+      color: #f38ba8;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧩 ui-blocks Schema + Parser Demo</h1>
+  <div class="container">
+    <div class="panel">
+      <h2>Input Assistant Text</h2>
+      <pre id="input-text"></pre>
+    </div>
+    <div class="panel">
+      <h2>Parsed Output Blocks</h2>
+      <div id="output-blocks" class="block-list"></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checkout with frames</title>
+    <style>
+      body { margin: 0; font-family: system-ui, sans-serif; }
+      h1 { margin: 16px; }
+      iframe { display: block; border: 0; margin: 16px; width: 420px; height: 180px; }
+    </style>
+  </head>
+  <body>
+    <h1>Checkout</h1>
+    <label for="email">Email</label>
+    <input id="email" type="email" />
+    <button id="top-button">Top button</button>
+    <a href="/signed-out.html" id="second-page-link">Sign out</a>
+    <iframe id="shipping" title="Shipping" src="/shipping-frame.html"></iframe>
+    <iframe id="payment" title="Payment" src="http://pay.test/"></iframe>
+    <script>
+      console.log("checkout page ready");
+    </script>
+  </body>
+</html>

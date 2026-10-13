@@ -1,0 +1,9 @@
+<!doctype html><meta charset="utf-8"><title>Late agent</title>
+<h1>Late agent</h1>
+<script>
+  setTimeout(() => {
+    const w = document.createElement("host-agent-widget");
+    document.body.appendChild(w);
+    w.attachShadow({ mode: "open" }).appendChild(document.createElement("web-agent-bubble"));
+  }, 1500);
+</script>

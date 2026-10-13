@@ -1,0 +1,181 @@
+:root {
+  --primary: #6750A4;
+  --font: "Public Sans", Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans", "Noto Sans", Arial, sans-serif;
+}
+
+:root, html, body {
+  font-family: var(--font);
+}
+
+input, button, textarea, select, option {
+  font-family: inherit;
+}
+
+docs-app {
+  display: contents;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  background-color: #fafdfc;
+}
+
+.content-wrapper {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  width: 100%;
+  position: relative;
+}
+
+.side-nav {
+  flex: 0 0 260px;
+  width: 260px;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  border-right: 1px solid var(--outline-variant, #cac4d0);
+  display: flex;
+  flex-direction: column;
+  /* Beer CSS centres nav children; stretch them so open and closed sections align. */
+  align-items: stretch;
+  padding-top: 1rem;
+  background: #fafdfc;
+}
+
+/* Indent matches the link text: .nav-link margin 12px + padding 16px. */
+.side-nav .nav-section-label {
+  padding: 8px 28px;
+}
+
+.side-nav .nav-link {
+  justify-content: flex-start;
+}
+
+main.page-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.drawer {
+  height: 100%;
+}
+
+/* Glassmorphism sticky header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: rgba(250, 253, 252, 0.8) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--outline-variant, #cac4d0);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 100px;
+  text-decoration: none;
+  color: inherit;
+  margin: 4px 12px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(103, 80, 164, 0.08);
+}
+
+/* Code block theming */
+.code-block,
+pre {
+  background-color: #f6f8fa !important;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+.code-block code,
+pre code {
+  background: none !important;
+  padding: 0;
+}
+
+.code-block mark,
+pre mark {
+  background: none !important;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background-color: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #1f2328;
+}
+
+pre:focus-visible {
+  outline: 2px solid var(--primary, #6750A4);
+  outline-offset: 2px;
+}
+
+/* In-content links.
+   Beer CSS resets every <a> with `text-decoration: none`,
+   `display: inline-flex` and `outline: inherit` (vendor/beercss/beer.css:271),
+   so a markdown link in the docs body reads as plain prose, cannot wrap
+   across lines, and shows no keyboard focus ring. Restore the affordance for
+   prose links only.
+   The selector matches anchors with no `class` and no `data-ui` — the shape
+   `marked` produces. Every Beer CSS component demo inside the docs body
+   (chip, tab, row, button) carries one of those, so it stays untouched.
+   The underline, not the colour, carries the meaning, so the affordance
+   survives a greyscale conversion. */
+main.page-content article a[href]:not([class]):not([data-ui]) {
+  display: inline;
+  color: var(--wa-action-color-info-900, #6224ff);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+main.page-content article a[href]:not([class]):not([data-ui]):hover {
+  color: var(--wa-action-color-info-700, #743dff);
+  text-decoration-thickness: 2px;
+}
+
+main.page-content article a[href]:not([class]):not([data-ui]):focus-visible {
+  outline: 2px solid var(--wa-outline-color, #6224ff);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 003: <web-agent-bubble> is a shadow element. docs-site sets
+   launcherIcon = "menu_book" (src/docs-embed.ts:85) and leaves closeIcon unset,
+   so both launcher glyphs are Material Symbols ligatures. Beer CSS applies that
+   font with a global `i { font-family: … }` rule, which is tree-scoped and stops
+   at the shadow boundary — without this the launcher renders the literal text
+   "menu_book". ::part() is the one selector that reaches in, and font-family set
+   on the part inherits into the <i> inside the shadow root. 24px matches what
+   Beer CSS gave the glyph before the boundary existed.
+   005: <web-agent-bubble> now sits inside <docs-agent-widget>'s shadow root, one
+   boundary further out. A ::part() selector only pierces the ONE shadow root of
+   the element it names, so the selector now targets the widget instead, and
+   docs-agent-widget.ts re-exports "launcher-icon" from its own <web-agent-bubble>
+   child (exportparts) so the part token still reaches this far. */
+docs-agent-widget::part(launcher-icon) {
+  font-family: "Material Symbols Outlined";
+  font-size: 24px;
+}

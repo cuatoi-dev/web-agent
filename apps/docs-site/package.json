@@ -1,0 +1,52 @@
+{
+  "name": "@web-agent/docs-site",
+  "version": "0.0.1",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "predev": "node scripts/build-static.mjs",
+    "dev": "webpack serve --mode development",
+    "prebuild": "node scripts/build-static.mjs",
+    "build": "webpack --mode production",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "E2E_ENV=mock playwright test",
+    "test:e2e:gallery": "E2E_ENV=local playwright test",
+    "test:e2e:mock": "E2E_ENV=mock playwright test",
+    "test:e2e:demo": "E2E_ENV=demo playwright test",
+    "capture:gallery": "E2E_ENV=local playwright test e2e/gallery-capture.mock.spec.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@cuatoi/web-agent-core": "workspace:*",
+    "@cuatoi/web-agent-dom": "workspace:*",
+    "@cuatoi/web-agent-lit": "workspace:*",
+    "dompurify": "^3.2.3",
+    "lit": "3.3.2",
+    "lit-element": "^2.5.1",
+    "lit-html": "^1.4.1",
+    "marked": "^15.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.58.2",
+    "@types/node": "20.19.40",
+    "css-loader": "7.1.2",
+    "esbuild": "^0.21.5",
+    "eslint": "10.8.1",
+    "html-webpack-plugin": "5.6.6",
+    "jsdom": "24.0.0",
+    "style-loader": "^4",
+    "terser-webpack-plugin": "5.6.1",
+    "ts-loader": "9.5.4",
+    "typescript": "^5.5",
+    "typescript-eslint": "8.67.0",
+    "vitest": "^1.6",
+    "webpack": "5.106.2",
+    "webpack-cli": "^5",
+    "webpack-dev-server": "5.2.4"
+  }
+}

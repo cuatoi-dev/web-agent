@@ -1,0 +1,10 @@
+[data-theme="acme-dense"] {
+  --wa-action-color-info: hsl(150deg 80% 40%);
+  --wa-action-color-info-10opc: hsl(150deg 80% 40% / 10%);
+  --wa-action-color-info-20opc: hsl(150deg 80% 40% / 20%);
+  /* Paired with --wa-action-color-info: the accent is the own-message bubble
+     ground, the tick, and .btn.primary, and this token is their label/ink.
+     White on the green measures 2.60:1, below the 4.5:1 floor for 15px text;
+     the wa2-dark input ground measures 7.33:1 on the same green. */
+  --wa-action-text-color-info: hsl(221deg 30% 7%);
+}

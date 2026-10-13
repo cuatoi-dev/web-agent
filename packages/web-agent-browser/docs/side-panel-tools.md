@@ -1,0 +1,204 @@
+---
+title: Side panel tools
+---
+
+# Side panel tools
+
+The side panel agent carries three tool groups, wired at
+`src/sidepanel.ts:97-110`: the five tab tools, the three page-agent tools, and
+the page tools that act on any tab you turned the extension on for.
+
+## Manage browser tabs from the side panel
+
+The agent in the side panel can inspect and control browser tabs using five built-in tab tools:
+
+- `read_tabs`: Lists all open tabs across all normal browser windows with their ID, window ID, title, URL, and active status.
+- `open_tab`: Opens a new tab at a given URL. The optional `active` argument decides whether the new tab becomes the active tab. It defaults to `true`.
+- `navigate_tab`: Navigates an existing tab to a new URL. The tool waits until the tab finishes loading, for at most 10 seconds, then reports the tab's final URL.
+- `refresh_tab`: Reloads an existing tab. The optional `bypassCache` argument skips the browser cache. It defaults to `false`.
+- `close_tab`: Closes a tab after asking for your confirmation in the panel.
+
+The tool names come from `src/lib/tab-tools.ts:58` (`read_tabs`), `:84`
+(`open_tab`), `:106` (`navigate_tab`), `:145` (`refresh_tab`), `:170`
+(`close_tab`). The `navigate_tab` wait is at `src/lib/tab-tools.ts:24-50` and
+`:124-139`.
+
+The side panel agents also include six reference skills:
+
+- `tab_management` guides it to read tabs before acting, use the returned tab
+  IDs, and handle restricted browser URLs such as `chrome://`.
+- `page_agent` teaches the 5-step send, wait, read loop for in-page tasks. See
+  [Page agent tools](./page-agent-tools.md).
+- `website_edit` teaches it to restyle a page and check the result. See
+  [Website edit skill](./website-edit.md).
+- `playwright_script` teaches it to build one runnable `@playwright/test` spec
+  with `export_test`, using the case numbers of its test plan. The default
+  brand gives it to tesagent only.
+- `test_plan` teaches it to plan numbered test cases, run them with the page
+  tools, report each case with evidence, and export the suite with
+  `export_test`. The default brand gives it to tesagent only.
+- `test_healer` teaches it what to do when a test step fails. The default
+  brand gives it to tesagent only.
+
+What the `tab_management` skill actually says, from `src/lib/tab-skill.ts:3-22`:
+
+- Read tabs before acting, and never guess a tab ID.
+- Act on one tab at a time.
+- `navigate_tab` is blocked by Chrome on `chrome://`, `edge://` and
+  `chrome-extension://` URLs, and that is an expected limit, not a crash.
+- `close_tab` needs the user's confirmation before it runs.
+
+## Before a page tool runs
+
+Every page tool now runs through Chrome's debugger (`chrome.debugger`), not the
+page script, so they need `start_debugging` on the tab first, not the
+extension turned on for that origin:
+
+1. Call `start_debugging` with the tab ID. Chrome shows its own debugging bar;
+   this is the consent, and it works on any tab Chrome allows, whether or not
+   the extension is turned on there.
+2. Until you do, `page_eval`, `page_fetch` and `page_console` return
+   `Debugging is not started on tab #<id>. Call start_debugging first.`
+3. If the user presses Cancel on Chrome's debugging bar, the tools return
+   `Debugging stopped on tab #<id>: the user pressed Cancel on Chrome's bar.
+   Call start_debugging to continue.` until `start_debugging` runs again.
+
+The ref tools (`page_snapshot`, `page_click`, `page_fill_form`,
+`page_select_option`, `page_hover`, `page_verify`, `page_generate_locator`,
+`page_upload_file`, and `page_screenshot` with a `ref`) run through Chrome's
+debugger as well, so they need `start_debugging` and not the extension turned
+on for the origin. `page_snapshot` reads Chrome's accessibility tree, and each
+`[ref=<number>]` it prints is that element's Chrome node id: the ref keeps
+working for as long as the element is on the page, across snapshots. A ref
+whose element has gone returns `Ref <n> is no longer on the page. Take a new
+snapshot.`
+
+### Iframes
+
+`page_snapshot` reaches into every iframe, same-site and cross-site. Each one
+prints as `- iframe "<name>" · <origin> [ref=<ref>]`, and its content follows
+one level deeper.
+
+- An element inside a **cross-site** iframe gets a prefixed ref, `f1:12`. The
+  number after `f` is that frame's number in the tab, in attach order. Pass the
+  ref exactly as printed.
+- An element inside a **same-site** iframe gets a plain ref, like any element
+  in the top page.
+- Every ref tool takes both forms, and clicks, fills and screenshots land in
+  the right frame.
+- When a cross-site iframe leaves the page, its `f<n>:` refs return `Ref
+  f<n>:<id> is no longer on the page. Take a new snapshot.`
+- An iframe whose content could not be read prints `(content not available)`
+  instead of its subtree.
+
+## Run JavaScript in a tab
+
+`page_eval` runs JavaScript in any tab you have activated the extension on. Call
+`read_tabs` first and pass the tab ID it reports.
+
+- **What it runs**: the code you supply becomes the body of an async function,
+  run in the tab through `Runtime.evaluate` over Chrome's debugger
+  (`src/lib/panel-page-tools-script.ts`). Use `return` to send a value back and
+  `await` for anything asynchronous.
+- **What it sees**: everything the page's own scripts see — `window`,
+  `document`, and every global the site defines.
+- **What comes back**: `Result type: <kind>` and the serialized value. A value
+  JSON cannot express comes back described. The 6000-character cap and the
+  `…(output truncated)` marker are the same ones `page_fetch` uses.
+- **`timeoutMs`**: how long to wait, in milliseconds. It defaults to 10000 and
+  must be between 1000 and 300000. A value outside that range returns
+  `Invalid timeoutMs: <value>. Must be between 1000 and 300000.` and runs
+  nothing.
+- **`frame`**: the ref of an iframe from `page_snapshot`. The code then runs in
+  that frame's own realm instead of the top page's, and the wait applies to that
+  frame. A ref that is not an iframe returns `frame must be the ref of an iframe
+  from page_snapshot.`
+- **When the wait runs out**, `page_eval` stops the script with
+  `Runtime.terminateExecution` and returns `page_eval stopped the script after
+  <n> ms: it was still running. The tab is responsive again.` The tab is usable
+  again right after.
+- **Before `start_debugging`**, the tool returns `Debugging is not started on
+  tab #<id>. Call start_debugging first.` See "Before a page tool runs" above.
+- **A page's Content Security Policy does not stop it.** `page_eval` runs
+  through Chrome's debugger, which a page CSP has no authority over, so code
+  runs even on a page whose policy forbids `'unsafe-eval'`.
+
+## Call an API from a tab
+
+`page_fetch` performs an HTTP request to the page origin of any tab you have activated the extension on. Call `read_tabs` first and pass the tab ID it reports.
+
+- **What it does**: an HTTP request to that tab's own origin, issued from the tab's realm through Chrome's debugger (`src/lib/panel-page-tools-script.ts`, the `fetch` call runs via `Runtime.evaluate`).
+- **Arguments**: `tabId` (number), `url` (relative path or same-origin absolute URL), `method` (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, default GET), `headers`, and `body`.
+- **Same-origin only**: requests to a different origin are blocked before any request leaves the browser.
+- **Carries session credentials**: uses `credentials: "same-origin"`, so the request carries that site's cookies and authentication.
+- **What comes back**: `Status: …`, `Content-Type: …`, and the body.
+- **The 6000-character cap**: the whole result, status and content-type lines included, is capped at 6000 characters. A longer result ends with `\n…(output truncated)` (`src/lib/panel-page-tools-script.ts`).
+- **When the tab does not answer within 10 seconds**, the tool returns `page_fetch timed out after 10000 ms waiting for tab #<id>.`
+- **When the request fails before a response arrives**, the tool returns `The request failed: <name>: <message>`.
+- **Before `start_debugging`**, the tool returns `Debugging is not started on tab #<id>. Call start_debugging first.`
+
+## Read console output from a tab
+
+`page_console` reads the console log and error buffer from any tab you have activated the extension on. Call `read_tabs` first and pass the tab ID it reports.
+
+- **What it captures**: `console.log`, `console.info`, `console.warn`, `console.error`, uncaught runtime exceptions, and unhandled promise rejections, through Chrome's debugger (`Runtime.consoleAPICalled` and `Runtime.exceptionThrown`).
+- **Buffer starts at `start_debugging`**: Chrome replays everything logged before `Runtime.enable`, so the buffer holds the whole document from load, not just what happened after `start_debugging`, and retains the most recent 200 entries. Entries falling out of the window increment a dropped counter.
+- **Arguments**: `tabId` (number), optional `level` ("log", "info", "warn", or "error"), and optional `limit` (1 to 200, defaults to 50).
+- **Invalid arguments**: an unknown level returns `Invalid level: <level>. Use log, info, warn or error, or omit it for all.`, and a limit outside 1 to 200 returns `Invalid limit: <limit>. Must be between 1 and 200.`
+- **Output format**: `Console (<n> matching):`, then one `[<level>] <text>` line per entry, oldest first.
+- **Reload detection**: the tool remembers the document ID per tab. If the tab has reloaded since the previous read, the output is prefixed with: `The page reloaded since the last read; entries below start from that load.`
+- **Dropped entries header**: if entries were dropped from the 200-entry buffer, the output includes: `<dropped> earlier entries fell out of the 200-entry buffer.`
+- **Empty buffer**: when no matching logs exist, returns `No console output captured for this document.` (or with the level named).
+- **Character limits**: individual entries longer than 2,000 characters are capped to 2,000. Total output exceeding 6,000 characters is truncated with `\n…(output truncated)`.
+- **A line logged inside an iframe is prefixed `(frame <origin>) `.** Only the top page's own navigation clears the buffer; an iframe navigating does not.
+- **Before `start_debugging`**, the tool returns `Debugging is not started on tab #<id>. Call start_debugging first.` It cannot time out waiting for the tab any more — it reads the session's own buffer.
+
+## Take a screenshot of a tab
+
+`page_screenshot` takes a picture of what is visible in any tab you have
+activated the extension on. Call `read_tabs` first and pass the tab ID it
+reports.
+
+- **What it does**: captures the real rendered pixels of the tab's viewport
+  (`src/lib/page-screenshot-tool.ts`, using `chrome.tabs.captureVisibleTab`).
+  Canvas, video and cross-origin images appear exactly as the user sees them.
+- **Arguments**: `tabId` (number).
+- **Viewport only**: there is no full-page mode. To see further down, scroll the
+  page with `page_eval` and call `page_screenshot` again.
+- **It never enters the page**, so it keeps working where a Content Security
+  Policy blocks `page_eval`.
+- **The tab must be the active tab in its window.** `captureVisibleTab`
+  photographs whatever is visible, so a request for a background tab is refused
+  rather than answered with a picture of a different page.
+- **Offered only when the model accepts images.** The tool is left out of the
+  tool list entirely when the configured model cannot receive an image, so the
+  agent never sees a tool it cannot use
+  (`src/lib/panel-page-tools.ts:309-311`).
+- **Permissions**: the extension uses `activeTab`, granted when the user clicks
+  the toolbar icon to open the panel on that tab. If access was lost to a
+  cross-origin navigation, `page_screenshot` asks the user to click the toolbar
+  icon on that tab again.
+- **Rate limit**: Chrome allows two captures per second. A third in the same
+  second returns `Screenshots are limited to 2 per second. Wait a moment and
+  call page_screenshot again.`
+- **Empty capture**: a capture with no image data, for example during a
+  navigation, is discarded and no image is sent. The tool asks the agent to try
+  again (`src/lib/page-screenshot-tool.ts:34-35`).
+
+### Which models get `page_screenshot`
+
+The side panel decides from the wire format and the model name on the options
+page (`src/lib/page-screenshot-tool.ts:49-54`, `modelSupportsVision` in
+`packages/web-agent-core/src/transport/vision.ts`):
+
+| Wire format | The model name must contain |
+|---|---|
+| `anthropic` or `openai` | one of `claude-3`, `gemma-4`, `gemma4`, `gpt-4o`, `gpt-4-turbo`, `vision`, `sonnet` |
+| `gemini` | `gemini` |
+
+The match ignores letter case. Every default entry gets the tool, because each
+model name is `sonnet` or contains `gemini`.
+
+The side panel reads the wire format and the model once, when it opens
+(`src/sidepanel.ts:104-109`). After you change the model on the options page,
+close the side panel and open it again.

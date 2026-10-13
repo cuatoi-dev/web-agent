@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dialog Button</title>
+</head>
+<body>
+  <h1>Dialog Button</h1>
+  <button type="button" id="ask-btn">Ask</button>
+  <p id="result"></p>
+  <script>
+    document.getElementById("ask-btn").addEventListener("click", () => {
+      const res = confirm("Continue?");
+      document.getElementById("result").textContent = String(res);
+    });
+  </script>
+</body>
+</html>

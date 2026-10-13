@@ -1,0 +1,360 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Web Agent options</title>
+<link rel="stylesheet" href="public-sans.css">
+<link rel="stylesheet" href="wa-tokens.css">
+<style>
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    font-family: "Public Sans", system-ui, sans-serif;
+    margin: 0;
+    background: var(--wa-background-color);
+    color: var(--wa-text-color);
+  }
+  .page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 24px;
+  }
+  section[role="tabpanel"] {
+    display: flex;
+    flex-direction: column;
+  }
+  section[role="tabpanel"][hidden] {
+    display: none;
+  }
+  #tab-models {
+    align-items: flex-start;
+  }
+  #tab-models > label,
+  #tab-models > input,
+  #tab-models > select,
+  #tab-models > .row,
+  #tab-models > .hint,
+  #tab-models > #save,
+  #tab-models > #status {
+    width: 100%;
+    max-width: 560px;
+    box-sizing: border-box;
+  }
+  #tab-models > #save {
+    width: auto;
+  }
+  #tab-skills, #tab-agents {
+    align-items: stretch;
+  }
+  h1 { font-size: 1.4rem; }
+  label { display: block; margin: 16px 0 4px; font-weight: 600; }
+  input, select {
+    width: 100%; box-sizing: border-box; padding: 8px; font-size: 14px;
+    background: var(--wa-input-background-color);
+    color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color);
+  }
+  /* A field the brand fixed. The page ground instead of the input ground, so a
+     locked field reads as part of the page and an editable one reads as a box.
+     Both colours are the same two tokens the page already declares, and the
+     text colour does not change, so contrast is unchanged in either theme. The
+     meaning is carried by #model-hint's text, never by this shade alone. */
+  input[readonly], input:disabled, select:disabled {
+    background: var(--wa-background-color);
+    cursor: not-allowed;
+  }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row input[type="checkbox"] { width: auto; }
+  .hint { margin: 4px 0 0; font-size: 12px; }
+  button {
+    margin-top: 20px; padding: 8px 16px; font-size: 14px;
+    background: var(--wa-button-background-color);
+    color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color);
+  }
+  /* Saved skills. Every colour comes from the six tokens declared at the top
+     of this file, so the section follows the page into either theme. Shapes
+     and sizes follow the mockup in
+     tasks/done/114-extension-skill-storage.html:123-133. */
+  .tabs {
+    display: flex; gap: 4px;
+    border-bottom: 1px solid var(--wa-border-color);
+    margin: 16px 0;
+  }
+  .tab {
+    font: 600 14px "Public Sans", system-ui, sans-serif;
+    padding: 8px 14px; margin-top: 0; margin-bottom: -1px;
+    background: none; border: 0;
+    border-bottom: 3px solid transparent;
+    color: var(--wa-text-color);
+    opacity: 0.72; cursor: pointer;
+  }
+  .tab[aria-selected="true"] {
+    opacity: 1;
+    border-bottom-color: var(--wa-action-color-info);
+  }
+  .skill-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 8px;
+    background: var(--wa-input-background-color);
+    border: 1px solid var(--wa-border-color);
+    border-bottom: 0;
+  }
+  .skill-row:last-of-type { border-bottom: 1px solid var(--wa-border-color); }
+  .skill-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .skill-name { font-weight: 600; font-size: 14px; }
+  .skill-desc { font-size: 12px; opacity: 0.82; }
+  .owner {
+    font-size: 11.5px; padding: 1px 8px; border-radius: 999px;
+    border: 1px solid var(--wa-border-color);
+    color: var(--wa-text-color);
+    white-space: nowrap;
+  }
+  .owner.private {
+    border-color: var(--wa-action-color-info);
+  }
+  /* Agents tab. Every colour reuses the six tokens declared at the top of
+     this file, so the tab follows the page into either theme. */
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .toolbar .hint { margin: 0; }
+  .toolbar button { margin-top: 0; }
+  .cards { display: grid; gap: 12px; }
+  .card {
+    background: var(--wa-input-background-color);
+    border: 1px solid var(--wa-border-color);
+    border-radius: 6px;
+  }
+  .card-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 12px; padding: 14px 16px;
+  }
+  .card-title { display: grid; gap: 4px; min-width: 0; }
+  .card-title .n {
+    font-weight: 700; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .card-title .d {
+    font-size: 13px; opacity: 0.82;
+  }
+  .facts {
+    display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 12px; opacity: 0.82; padding: 0 16px 14px;
+  }
+  .facts b {
+    color: var(--wa-text-color); font-weight: 600; opacity: 1;
+  }
+  .pill {
+    font-size: 11px; padding: 1px 7px; border-radius: 999px;
+    border: 1px solid var(--wa-border-color);
+    color: var(--wa-text-color);
+    font-weight: 400;
+  }
+  .pill.def {
+    border-color: var(--wa-action-color-info);
+  }
+  .card-edit-btn {
+    margin-top: 0; margin-left: 0; padding: 4px 12px;
+    font-size: 13px; white-space: nowrap;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* Inherits colour, background and border from the `button` rule above; only
+     the size and placement differ, because a row control is not a page
+     control. */
+  .skill-del {
+    margin-top: 0; margin-left: 0; padding: 4px 10px;
+    font-size: 13px; white-space: nowrap;
+  }
+  .empty-note {
+    font-size: 13px; opacity: 0.82; padding: 14px 8px; margin: 0;
+    border: 1px dashed var(--wa-border-color);
+  }
+  /* Agent card editor (121/003). Every colour is a token declared at the top
+     of this file. Meaning never rests on colour alone: a selected row has a
+     drawn tick mark, a disabled exclude field has its hint text, an error
+     has its message text, and the open card has the "Editing" button text. */
+  .edit-body [hidden] { display: none !important; }
+  .card.editing {
+    border-color: var(--wa-action-color-info);
+    box-shadow: 0 0 0 1px var(--wa-action-color-info);
+  }
+  .card.dim { opacity: 0.68; }
+  .card.dim .d, .card.dim .facts { opacity: 1; }
+  .edit-body {
+    border-top: 1px solid var(--wa-border-color);
+    padding: 16px; display: grid; gap: 14px;
+  }
+  .edit-body .field { display: grid; gap: 6px; min-width: 0; }
+  .edit-body label, .edit-body .lbl { display: block; margin: 0; font-size: 12px; font-weight: 600; }
+  .edit-body .hint { margin: 0; }
+  .edit-body button { margin-top: 0; }
+  .edit-body textarea {
+    width: 100%; box-sizing: border-box; min-height: 108px; padding: 8px; resize: vertical;
+    font: 13px/1.5 "Public Sans", system-ui, sans-serif;
+    background: var(--wa-input-background-color);
+    color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color);
+  }
+  .field-error { margin: 0; font-size: 12px; font-weight: 600; color: var(--wa-action-color-error); }
+  .ms-box {
+    position: relative; display: flex; flex-wrap: wrap; gap: 4px;
+    min-height: 34px; box-sizing: border-box; padding: 5px 30px 5px 6px; cursor: pointer;
+    background: var(--wa-input-background-color);
+    border: 1px solid var(--wa-border-color);
+  }
+  .ms-box::after {
+    content: ""; position: absolute; right: 10px; top: 14px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--wa-text-color);
+  }
+  .ms-box:focus-visible, .ms-box.open { outline: 3px solid var(--wa-outline-color); outline-offset: 1px; }
+  .ms-box[aria-disabled="true"] { background: var(--wa-background-color); cursor: not-allowed; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
+    padding: 2px 4px 2px 7px; border-radius: 3px; font-size: 12px; overflow-wrap: anywhere;
+    background: var(--wa-action-color-info-20opc);
+    color: var(--wa-text-color);
+  }
+  .chip.all { font-weight: 600; }
+  .chip .x {
+    margin: 0; padding: 0 4px; font-size: 13px; line-height: 1; cursor: pointer;
+    background: none; border: 0; color: var(--wa-text-color);
+  }
+  .ms-pop {
+    margin-top: 4px;
+    background: var(--wa-input-background-color);
+    border: 1px solid var(--wa-border-color);
+  }
+  .ms-pop .ms-search { border: 0; border-bottom: 1px solid var(--wa-border-color); }
+  .ms-list { max-height: 260px; overflow-y: auto; }
+  .ms-opt {
+    display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: center;
+    padding: 6px 10px; font-size: 13px; cursor: pointer; overflow-wrap: anywhere;
+  }
+  .ms-opt.all { font-weight: 600; border-bottom: 1px solid var(--wa-border-color); }
+  .ms-opt small { font-weight: 400; opacity: 0.82; }
+  .ms-opt.active {
+    background: var(--wa-action-color-info-10opc);
+    outline: 2px solid var(--wa-outline-color); outline-offset: -2px;
+  }
+  .ms-group { padding: 6px 10px 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .ms-empty { padding: 6px 10px; font-size: 13px; opacity: 0.82; }
+  .tick {
+    position: relative; width: 14px; height: 14px; box-sizing: border-box; border-radius: 2px;
+    background: var(--wa-input-background-color);
+    border: 1px solid var(--wa-text-color);
+  }
+  .tick.on { background: var(--wa-action-color-info); border-color: var(--wa-action-color-info); }
+  .tick.on::after {
+    content: ""; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px;
+    border: solid var(--wa-action-text-color-info); border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .actions .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn.link { background: transparent; border-color: transparent; text-decoration: underline; padding-left: 4px; padding-right: 4px; }
+  .btn.primary {
+    background: var(--wa-action-color-info);
+    border-color: var(--wa-action-color-info);
+    color: var(--wa-action-text-color-info);
+  }
+  /* Delete agent (121/004). The danger action is named in words ("Delete
+     agent"); the error colour only repeats it. Contrast of
+     --wa-action-color-error on the button ground: light 5.52:1,
+     dark 5.59:1. */
+  .btn.danger { color: var(--wa-action-color-error); }
+  .confirm-dialog {
+    max-width: min(440px, calc(100vw - 48px)); box-sizing: border-box;
+    padding: 20px; border-radius: 6px;
+    background: var(--wa-input-background-color);
+    color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color);
+  }
+  .confirm-dialog::backdrop { background: var(--wa-text-color); opacity: 0.4; }
+  .confirm-dialog p { margin: 0 0 16px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+  .confirm-dialog .dialog-actions { justify-content: flex-end; flex-wrap: wrap; }
+  .confirm-dialog button { margin-top: 0; }
+  .edit-body code { font-size: 12px; }
+  #status { margin-top: 16px; min-height: 1.2em; }
+  #status.error { border-left: 4px solid var(--wa-action-color-error); padding-left: 8px; }
+</style>
+<div class="page">
+  <h1>Web Agent options</h1>
+
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" id="tab-btn-models" aria-controls="tab-models" aria-selected="true" tabindex="0">Models</button>
+    <button type="button" class="tab" role="tab" id="tab-btn-skills" aria-controls="tab-skills" aria-selected="false" tabindex="-1">Skills</button>
+    <button type="button" class="tab" role="tab" id="tab-btn-agents" aria-controls="tab-agents" aria-selected="false" tabindex="-1">Agents</button>
+  </div>
+
+  <section role="tabpanel" id="tab-models" aria-labelledby="tab-btn-models">
+  <label for="preset">Ready-made entry</label>
+  <select id="preset">
+    <option value="">Custom</option>
+  </select>
+
+  <label for="endpoint">Endpoint URL</label>
+  <input id="endpoint" type="url" autocomplete="off" spellcheck="false">
+
+  <label for="wireFormat">Wire format</label>
+  <select id="wireFormat">
+    <option value="openai">openai</option>
+    <option value="anthropic">anthropic</option>
+    <option value="gemini">gemini</option>
+  </select>
+
+  <label for="model">Model</label>
+  <input id="model" type="text" autocomplete="off" spellcheck="false">
+
+  <label for="streaming">Streaming</label>
+  <div class="row">
+    <input id="streaming" type="checkbox">
+    <span>Stream the reply as it arrives</span>
+  </div>
+  <p class="hint" id="model-hint" hidden></p>
+
+  <label for="theme">Theme</label>
+  <select id="theme">
+    <option value="auto">Auto (follow system)</option>
+  </select>
+  <p class="hint" id="theme-hint">
+    This changes the agent bubble only, never the website. A website that already
+    supplies its own theme keeps it, and the bubble follows that website.
+  </p>
+
+  <label for="token">Token</label>
+  <input id="token" type="text" autocomplete="off">
+
+  <label for="apiKey">API key (optional)</label>
+  <input id="apiKey" type="text" autocomplete="off" spellcheck="false">
+  <p class="hint" id="key-warning">
+    Leave this empty to use the shared token. If you fill it in, the key is stored
+    unencrypted in browser storage, so anyone with access to this browser profile
+    can read it, and it is sent on every request to the endpoint above.
+  </p>
+
+  <button id="save">Save</button>
+  <p id="status" role="status"></p>
+  </section>
+
+  <section role="tabpanel" id="tab-skills" aria-labelledby="tab-btn-skills" hidden>
+  <label>Saved skills</label>
+  <div id="skill-list"></div>
+  <p class="hint" id="skill-hint">
+    Shared skills are available on every site, in the side panel and in the in-page agent. A skill with an agent name is available only to that side panel agent.
+  </p>
+  </section>
+
+  <section role="tabpanel" id="tab-agents" aria-labelledby="tab-btn-agents" hidden>
+  <div class="toolbar">
+    <p class="hint">Agents appear in the side panel's agent list, in this order.</p>
+    <button type="button" id="add-agent-btn" class="btn" disabled>Add agent</button>
+  </div>
+  <div class="cards" id="agent-cards"></div>
+  </section>
+</div>
+
+<script src="options.js"></script>

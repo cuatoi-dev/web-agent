@@ -1,0 +1,30 @@
+{
+  "name": "web-agent",
+  "version": "0.0.1",
+  "private": true,
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "test:dom": "pnpm -r --no-bail --filter @cuatoi/web-agent-lit --filter @cuatoi/web-agent-vfs --filter @cuatoi/web-agent-charting --filter @web-agent/cat-store test:dom",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "changeset": "changeset",
+    "release": "changeset version && pnpm build && pnpm publish -r",
+    "dev": "pnpm --filter @web-agent/cat-store dev",
+    "seed:wide": "node scripts/seed-wide-fixture.mjs",
+    "seed:discovery": "node scripts/seed-discovery-fixture.mjs",
+    "test:e2e": "pnpm --filter cat-store test:e2e && pnpm --filter docs-site test:e2e && pnpm --filter @cuatoi/web-agent-browser test:e2e",
+    "test:e2e:gallery": "pnpm --filter cat-store test:e2e:gallery && pnpm --filter docs-site test:e2e:gallery",
+    "test:e2e:mock": "pnpm --filter cat-store test:e2e:mock && pnpm --filter docs-site test:e2e:mock && pnpm --filter @cuatoi/web-agent-browser test:e2e:mock",
+    "test:e2e:demo": "pnpm --filter cat-store test:e2e:demo && pnpm --filter docs-site test:e2e:demo && pnpm --filter @cuatoi/web-agent-browser test:e2e:demo",
+    "capture:gallery": "pnpm --filter @web-agent/cat-store capture:gallery && pnpm --filter @web-agent/docs-site capture:gallery"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.1",
+    "@eslint/js": "10.0.1",
+    "esbuild": "^0.21.5",
+    "eslint": "10.8.1",
+    "typescript-eslint": "8.67.0"
+  }
+}

@@ -1,0 +1,374 @@
+{
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string"
+    },
+    "select": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "filter": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "$and": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "$and": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "$and": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "anyOf": [
+                                        {
+                                          "type": [
+                                            "string",
+                                            "number",
+                                            "boolean"
+                                          ]
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "$eq": {
+                                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                            },
+                                            "$ne": {
+                                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                            },
+                                            "$gt": {
+                                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                            },
+                                            "$gte": {
+                                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                            },
+                                            "$lt": {
+                                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                            },
+                                            "$lte": {
+                                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                            },
+                                            "$in": {
+                                              "type": "array",
+                                              "items": {
+                                                "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                              }
+                                            },
+                                            "$nin": {
+                                              "type": "array",
+                                              "items": {
+                                                "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                              }
+                                            },
+                                            "$contains": {
+                                              "type": "string"
+                                            },
+                                            "$startsWith": {
+                                              "type": "string"
+                                            },
+                                            "$endsWith": {
+                                              "type": "string"
+                                            },
+                                            "$regex": {
+                                              "type": "string"
+                                            },
+                                            "$between": {
+                                              "type": "array",
+                                              "minItems": 2,
+                                              "maxItems": 2,
+                                              "prefixItems": [
+                                                {
+                                                  "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                                },
+                                                {
+                                                  "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/additionalProperties/anyOf/0"
+                                                }
+                                              ]
+                                            },
+                                            "$exists": {
+                                              "type": "boolean"
+                                            },
+                                            "$isNull": {
+                                              "type": "boolean"
+                                            }
+                                          },
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "required": [
+                                "$and"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "$or": {
+                                  "type": "array",
+                                  "items": {
+                                    "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+                                  }
+                                }
+                              },
+                              "required": [
+                                "$or"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "$not": {
+                                  "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+                                }
+                              },
+                              "required": [
+                                "$not"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "$and"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "$or": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "$or"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "$not": {
+                        "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+                      }
+                    },
+                    "required": [
+                      "$not"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "$and"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "$or": {
+              "type": "array",
+              "items": {
+                "$ref": "#/properties/filter/anyOf/0/properties/$and/items"
+              }
+            }
+          },
+          "required": [
+            "$or"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "$not": {
+              "$ref": "#/properties/filter/anyOf/0/properties/$and/items"
+            }
+          },
+          "required": [
+            "$not"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/properties/filter/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items/anyOf/0/properties/$and/items"
+        }
+      ]
+    },
+    "search": {
+      "type": "string",
+      "description": "Free-text term. Matches rows where any string or enum field contains it, case-insensitively. Use when you do not know which field holds the term; use a filter with $contains when you do. Empty or blank is ignored."
+    },
+    "sort": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "dir": {
+            "type": "string",
+            "enum": [
+              "asc",
+              "desc"
+            ]
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "page": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "number"
+        },
+        "offset": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "aggregate": {
+      "type": "object",
+      "properties": {
+        "groupBy": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "granularity": {
+                "type": "string",
+                "enum": [
+                  "hour",
+                  "minute",
+                  "day",
+                  "week",
+                  "month",
+                  "quarter",
+                  "year"
+                ]
+              },
+              "as": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "field"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "measures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "enum": [
+                  "count",
+                  "sum",
+                  "avg",
+                  "min",
+                  "max",
+                  "countDistinct",
+                  "first",
+                  "last"
+                ]
+              },
+              "field": {
+                "type": "string"
+              },
+              "as": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "op"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "having": {
+          "$ref": "#/properties/filter"
+        },
+        "sort": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "dir": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ]
+              }
+            },
+            "required": [
+              "field"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "limit": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "groupBy",
+        "measures"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "source"
+  ],
+  "additionalProperties": false
+}

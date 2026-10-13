@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="wa2-dark">
+<head>
+<script>
+  (function() {
+    try {
+      var t = localStorage.getItem("cat-store:theme");
+      if (t === "wa1-dark" || t === "wa2-dark" || t === "wa2-light") {
+        document.documentElement.setAttribute("data-theme", t);
+      }
+    } catch (e) {}
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Cat Bodega — web-agent demo</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="stylesheet" href="vendor/public-sans/public-sans.css">
+<style>
+  :root, html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Public Sans", system-ui, -apple-system, sans-serif;
+    background: var(--wa-background-color, #f5f5f5);
+    color: var(--wa-text-color, #333);
+  }
+  input, button, textarea, select, option {
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div data-agent-ui></div>
+</body>
+</html>
