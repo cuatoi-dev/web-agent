@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>Host wa-button</title>
+<head>
+  <script>
+    // The host's own class for the tag the extension also defines. The
+    // extension's content script runs at document_start but registers nothing
+    // until the bubble mounts, so this script wins the define.
+    class HostWaButton extends HTMLElement {
+      connectedCallback() {
+        this.textContent = "HOST-WA-BUTTON";
+      }
+    }
+    customElements.define("wa-button", HostWaButton);
+  </script>
+</head>
+<body>
+  <h1>Host wa-button</h1>
+  <!-- The page's own agent: findForeignAgent looks for these two tags. -->
+  <agent-chat-panel id="host-agent"></agent-chat-panel>
+  <wa-button id="host-button"></wa-button>
+</body>

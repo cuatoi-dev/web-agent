@@ -90,9 +90,13 @@ The side panel agent can make the same change with `toggle_page_agent`. See
 The extension never adds a second agent to a page. Before it mounts the bubble,
 it looks for a `web-agent-bubble` or `agent-chat-panel` element in the document
 and in every open shadow root (`src/lib/agent-detect.ts:11-32`,
-`src/content.ts:69`). If the page mounts its own agent later, within 10 seconds
+`src/content.ts:54`). If the page mounts its own agent later, within 10 seconds
 of the bubble appearing, the extension removes its bubble
-(`src/content.ts:175-183`, `src/lib/constants.ts:8`).
+(`src/content.ts:191-205`, `src/lib/constants.ts:8`).
+
+The extension registers its custom elements only when the bubble mounts. On a
+page where the bubble is off, the extension defines nothing, so the page keeps
+its own `<wa-*>` classes.
 
 ## What both agents carry
 
