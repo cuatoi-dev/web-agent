@@ -62,6 +62,10 @@ export const REGISTRY_STYLES = `
 .wa-icon-btn:hover {
   background-color: var(--wa-action-color-info-10opc, rgba(0, 0, 0, 0.05));
 }
+.wa-icon-btn:focus-visible {
+  outline: 2px solid var(--wa-text-color, #c4c7c5);
+  outline-offset: 2px;
+}
 .wa-icon-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
