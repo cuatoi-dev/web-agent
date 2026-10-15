@@ -3,36 +3,9 @@
 // that element's CSSOM, not from source text.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { AgentChatPanel } from "../../src/chat-ui/chat-panel.js";
-import type { AgentSession, SessionState } from "@cuatoi/web-agent-core";
 
 if (!customElements.get("agent-chat-panel")) {
   customElements.define("agent-chat-panel", AgentChatPanel);
-}
-
-function makeMockSession(): AgentSession {
-  const state = {
-    activeSessionId: "session-1",
-    sessions: [
-      { id: "session-1", title: "Test Session", titleManual: false, createdAt: 0, updatedAt: 0, messageCount: 0 },
-    ],
-    messages: [],
-    running: false,
-    compacting: false,
-    canCompact: false,
-    error: undefined,
-    contextWindow: { used: 0, total: 128000, percent: 0 },
-    queuedMessages: [],
-  } as unknown as SessionState;
-  return {
-    getState: () => state,
-    subscribe: (cb: (s: SessionState) => void) => {
-      cb(state);
-      return () => {};
-    },
-    subscribeEvents: () => () => {},
-    updateConfig: () => {},
-    availableTools: () => [],
-  } as unknown as AgentSession;
 }
 
 describe("AgentChatPanel — icon button keyboard focus ring", () => {
@@ -40,7 +13,8 @@ describe("AgentChatPanel — icon button keyboard focus ring", () => {
 
   beforeEach(() => {
     element = document.createElement("agent-chat-panel");
-    element.session = makeMockSession();
+    // A real in-memory session; no turn runs, so no network client is reached.
+    element.model = "test-model";
     document.body.appendChild(element);
   });
 
