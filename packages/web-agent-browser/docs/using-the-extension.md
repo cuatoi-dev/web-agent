@@ -59,6 +59,11 @@ agent on or off in the tab you are looking at
 (`src/lib/page-agent-icon.ts`). Select it, or move to it with the Tab key and
 press Space.
 
+The icon updates when you switch tabs, when the active tab finishes loading
+or changes URL, and when the browser window gains focus. It follows the
+active tab in the window that contains the side panel. When you select the
+icon, it checks the active tab again before it changes the in-page agent.
+
 - **Off:** the icon has a slash through it.
 - **On:** the button has an accent fill and a dot in its top-right corner.
 - **Unavailable:** the icon is faded and has a slash through it.

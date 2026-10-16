@@ -26,13 +26,12 @@ import { readAgentStore, chromeAgentStorage, mergedBrand } from "./lib/agent-sto
 import { applyTheme, registerBrandThemes } from "./lib/theme";
 import { applyPanelSettings, type PanelLike } from "./lib/panel-setup";
 import {
-  resolveTabState,
-  toggleTab,
   toggleView,
   type QueryTabs,
   type SendToTab,
   type TabState,
 } from "./lib/panel-toggle";
+import { createTabStateActions, watchActiveTab } from "./lib/tab-state-sync";
 import { tabTools } from "./lib/tab-tools";
 import { tabSkills } from "./lib/tab-skill";
 import { websiteEditSkill } from "./lib/website-edit-skill";
@@ -300,10 +299,14 @@ async function main(): Promise<void> {
   // its own, so <html> carries the token set and the panel inherits it.
   applyTheme(document.documentElement, settings.theme);
 
-  const refreshTabState = async () => {
-    tabState = await resolveTabState(query, send);
-    paint();
-  };
+  const { refresh: refreshTabState, toggleCurrent } = createTabStateActions({
+    query,
+    send,
+    apply: (next) => {
+      tabState = next;
+      paint();
+    },
+  });
 
   // 120/001 — the compiled brand always has an agent matching its
   // defaultAgent, but a worker that could not answer degrades to
@@ -350,12 +353,18 @@ async function main(): Promise<void> {
   }
 
   toggleBtn.addEventListener("click", () => {
-    if (!tabState) return;
-    void toggleTab(send, tabState).then((next) => {
-      tabState = next;
-      paint();
-    });
+    void toggleCurrent();
   });
+  const stopWatching = watchActiveTab({
+    events: {
+      onActivated: chrome.tabs.onActivated,
+      onUpdated: chrome.tabs.onUpdated,
+      onFocusChanged: chrome.windows.onFocusChanged,
+    },
+    getPanelWindowId: () => chrome.windows.getCurrent().then((w) => w.id),
+    refresh: refreshTabState,
+  });
+  window.addEventListener("pagehide", () => stopWatching());
 
   await refreshTabState();
 }

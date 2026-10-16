@@ -14,6 +14,9 @@ const ICON_ARTIFACTS_DIR = path.resolve(
   HERE,
   "../../../temp/artifacts/2026-09-15-171940-003-page-agent-icon-toggle",
 );
+const SYNC_ARTIFACTS_DIR = path.resolve(
+  process.env.TASK_ARTIFACTS_DIR ?? path.join(HERE, "../test-results/tab-state-sync"),
+);
 const SITE_URL = "http://localhost:10040/plain.html";
 // The four texts of the plan's state table. The origin is location.origin
 // (src/content.ts:50), so it carries the scheme.
@@ -175,6 +178,97 @@ test.describe("Side panel mock e2e", () => {
     expect(hasHorizontalScroll).toBe(false);
   });
 
+  test("active tab sync: switch and reload", async ({ context, extensionId }) => {
+    await fs.mkdir(SYNC_ARTIFACTS_DIR, { recursive: true });
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({ enabledOrigins: [] });
+    });
+
+    const { panelPage, sitePage: pageA } = await panelTargetingSite(context, extensionId);
+    const icon = panelPage.locator("#page-agent-toggle");
+    await expectIconState(icon, OFF_TEXT, { pressed: false, disabled: false });
+
+    const pageB = await context.newPage();
+    await pageB.goto("http://127.0.0.1:10040/plain.html");
+    await pageB.bringToFront();
+
+    await expect(icon).toHaveAttribute("title", /http:\/\/127\.0\.0\.1:10040/);
+    await expect(icon).not.toHaveAttribute("title", /http:\/\/localhost:10040/);
+    await expect(icon).toHaveAttribute("aria-label", /http:\/\/127\.0\.0\.1:10040/);
+    await expect(icon).not.toHaveAttribute("aria-label", /http:\/\/localhost:10040/);
+
+    await pageB.reload();
+    await expect(icon).toBeEnabled();
+    await expect(icon).toHaveAttribute("title", /http:\/\/127\.0\.0\.1:10040/);
+
+    await panelPage.screenshot({ path: path.join(SYNC_ARTIFACTS_DIR, "switch-b.png") });
+
+    await pageB.bringToFront();
+    await icon.evaluate((el: HTMLButtonElement) => el.click());
+
+    await expect(pageB.locator("web-agent-bubble #launcher")).toBeVisible();
+    await expect(pageA.locator("web-agent-bubble")).toHaveCount(0);
+
+    const ON_B_TEXT = "Turn off the agent in this tab. The in-page agent is on for http://127.0.0.1:10040.";
+    await expectIconState(icon, ON_B_TEXT, { pressed: true, disabled: false });
+
+    await panelPage.screenshot({ path: path.join(SYNC_ARTIFACTS_DIR, "reload-b-on.png") });
+
+    await pageB.bringToFront();
+    await icon.evaluate((el: HTMLButtonElement) => el.click());
+    await expect(pageB.locator("web-agent-bubble")).toHaveCount(0);
+    const OFF_B_TEXT = "Turn on the agent in this tab. The in-page agent is off for http://127.0.0.1:10040.";
+    await expectIconState(icon, OFF_B_TEXT, { pressed: false, disabled: false });
+
+    const origins = await worker.evaluate(async () => {
+      const got = await chrome.storage.local.get("enabledOrigins");
+      return (got.enabledOrigins as string[]) ?? [];
+    });
+    expect(origins).not.toContain("http://127.0.0.1:10040");
+  });
+
+  test("active tab sync: host to plain navigation", async ({ context, extensionId }) => {
+    await fs.mkdir(SYNC_ARTIFACTS_DIR, { recursive: true });
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({ enabledOrigins: [] });
+    });
+
+    const hostPage = await context.newPage();
+    await hostPage.goto("http://localhost:10040/host-wa-button.html");
+
+    const panelPage = await context.newPage();
+    await panelPage.setViewportSize({ width: 400, height: 700 });
+    await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+
+    await hostPage.bringToFront();
+    await panelPage.reload();
+
+    const icon = panelPage.locator("#page-agent-toggle");
+    await expect(panelPage.locator("#agent-row")).toBeVisible();
+    await expectIconState(icon, FOREIGN_TEXT, { pressed: false, disabled: true });
+    await expect(hostPage.locator("web-agent-bubble")).toHaveCount(0);
+
+    await hostPage.goto("http://localhost:10040/plain.html");
+    await hostPage.bringToFront();
+
+    await expectIconState(icon, OFF_TEXT, { pressed: false, disabled: false });
+    await expect(icon).not.toHaveAttribute("title", /already has its own agent/);
+
+    await panelPage.screenshot({ path: path.join(SYNC_ARTIFACTS_DIR, "host-to-plain-enabled.png") });
+
+    await hostPage.bringToFront();
+    await icon.evaluate((el: HTMLButtonElement) => el.click());
+
+    await expect(hostPage.locator("web-agent-bubble #launcher")).toBeVisible();
+    await expectIconState(icon, ON_TEXT, { pressed: true, disabled: false });
+
+    await panelPage.screenshot({ path: path.join(SYNC_ARTIFACTS_DIR, "host-to-plain-on.png") });
+  });
+
   test("saved options settings reach the panel element", async ({ context, extensionId }) => {
     if (context.serviceWorkers().length === 0) await context.waitForEvent("serviceworker");
 
@@ -243,7 +337,8 @@ test.describe("Side panel mock e2e", () => {
     await expectIconState(toggleBtn, OFF_TEXT, { pressed: false, disabled: false });
 
     // Click toggle to turn on
-    await toggleBtn.click();
+    await sitePage.bringToFront();
+    await toggleBtn.evaluate((el: HTMLButtonElement) => el.click());
 
     // Verify bubble is mounted in sitePage
     await expect(sitePage.locator("web-agent-bubble #launcher")).toBeVisible();
@@ -256,7 +351,8 @@ test.describe("Side panel mock e2e", () => {
     expect(originsAfterOn).toContain("http://localhost:10040");
 
     // Click toggle to turn off
-    await toggleBtn.click();
+    await sitePage.bringToFront();
+    await toggleBtn.evaluate((el: HTMLButtonElement) => el.click());
     await expect(sitePage.locator("web-agent-bubble")).toHaveCount(0);
     await expectIconState(toggleBtn, OFF_TEXT, { pressed: false, disabled: false });
 
@@ -395,34 +491,19 @@ test.describe("Page-agent icon toggle mock e2e (120/003)", () => {
     await panelPage.screenshot({ path: path.join(ICON_ARTIFACTS_DIR, "08-list-open-with-icon-dark.png") });
   });
 
-  test("keyboard: Tab from the combo box reaches the icon, the focus ring shows, Space turns the agent on", async ({
+  test("keyboard: the active extension tab disables and skips the page icon", async ({
     context,
     extensionId,
   }) => {
-    await fs.mkdir(ICON_ARTIFACTS_DIR, { recursive: true });
     const { panelPage, sitePage } = await panelTargetingSite(context, extensionId);
-
-    // The tab state is already resolved for the plain page, and nothing
-    // re-resolves it when the active tab changes (only a click, a reload or a
-    // toggle_page_agent call does), so the panel can come to the front to own
-    // keyboard focus and still target the plain page.
     await panelPage.bringToFront();
-    await setTheme(panelPage, "wa2-light");
-    await panelPage.locator("#agent-combo").focus();
-    await panelPage.keyboard.press("Tab");
 
     const icon = panelPage.locator("#page-agent-toggle");
-    await expect(icon).toBeFocused();
-    const ring = await icon.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { focusVisible: el.matches(":focus-visible"), style: s.outlineStyle, width: s.outlineWidth };
-    });
-    expect(ring).toEqual({ focusVisible: true, style: "solid", width: "3px" });
-    await panelPage.screenshot({ path: path.join(ICON_ARTIFACTS_DIR, "05-focus-ring-wa2-light.png") });
-
-    await panelPage.keyboard.press("Space");
-    await expect(sitePage.locator("web-agent-bubble #launcher")).toBeVisible();
-    await expectIconState(icon, ON_TEXT, { pressed: true, disabled: false });
+    await expectIconState(icon, NO_SITE_TEXT, { pressed: false, disabled: true });
+    await panelPage.locator("#agent-combo").focus();
+    await panelPage.keyboard.press("Tab");
+    await expect(icon).not.toBeFocused();
+    await expect(sitePage.locator("web-agent-bubble")).toHaveCount(0);
   });
 
   test("off, on and disabled at 400 px in light and dark, greyscale off/on pair, contrast check", async ({
@@ -430,7 +511,7 @@ test.describe("Page-agent icon toggle mock e2e (120/003)", () => {
     extensionId,
   }) => {
     await fs.mkdir(ICON_ARTIFACTS_DIR, { recursive: true });
-    const { panelPage } = await panelTargetingSite(context, extensionId);
+    const { panelPage, sitePage } = await panelTargetingSite(context, extensionId);
     const icon = panelPage.locator("#page-agent-toggle");
     const row = panelPage.locator("#agent-row");
     const themes = ["wa2-light", "wa2-dark"] as const;
@@ -445,7 +526,8 @@ test.describe("Page-agent icon toggle mock e2e (120/003)", () => {
       measured.push(await measureIcon(panelPage, theme, "off"));
     }
 
-    await icon.click();
+    await sitePage.bringToFront();
+    await icon.evaluate((el: HTMLButtonElement) => el.click());
     await expectIconState(icon, ON_TEXT, { pressed: true, disabled: false });
     for (const theme of themes) {
       await setTheme(panelPage, theme);
