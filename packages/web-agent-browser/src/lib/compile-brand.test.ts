@@ -1,4 +1,4 @@
-import { describe, expect, it, afterEach } from "vitest";
+import { describe, expect, it, afterEach, vi } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -12,8 +12,9 @@ const { compileBrand, compileThemes } = require("../../tool/compile-brand.cjs") 
   compileBrand: (brandDir: string) => Record<string, unknown>;
   compileThemes: (brandDir: string, rawThemes: unknown) => Record<string, unknown>[];
 };
-const { SIDE_PANEL_TOOL_NAMES } = require("../../tool/sidepanel-tools.cjs") as {
+const { SIDE_PANEL_TOOL_NAMES, DEBUGGER_GATED_TOOLS } = require("../../tool/sidepanel-tools.cjs") as {
   SIDE_PANEL_TOOL_NAMES: string[];
+  DEBUGGER_GATED_TOOLS: string[];
 };
 
 const BRAND_DIR = path.resolve(__dirname, "../../brand");
@@ -264,6 +265,143 @@ describe("compileBrand", () => {
       const brand = compileBrand(BRAND_DIR) as { tools: Record<string, { enabled: boolean }> };
       expect(brand.tools.todo).toEqual({ enabled: true });
       expect(brand.tools.scheduler).toEqual({ enabled: true });
+    });
+
+    describe("debugger-gated tools build warning", () => {
+      it("warns when tools is * and excludeTools contains start_debugging", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+          const tempDir = makeTempDir();
+          writeAgent(
+            tempDir,
+            "chromagent.yml",
+            `${VALID_AGENT_YAML}excludeTools:\n  - start_debugging\n`,
+          );
+          writePlugin(tempDir, "defaultAgent: chromagent\n");
+          const brand = compileBrand(tempDir) as { agents: { id: string }[] };
+          expect(warn).toHaveBeenCalledTimes(1);
+          const message = warn.mock.calls[0][0] as string;
+          expect(message).toContain("brand/agents/chromagent.yml");
+          expect(message).toContain("start_debugging");
+          for (const name of DEBUGGER_GATED_TOOLS) {
+            expect(message, `the warning must name the gated tool ${name}`).toContain(name);
+          }
+          expect(brand.agents).toHaveLength(1);
+          expect(brand.agents[0].id).toBe("chromagent");
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("warns naming only the enabled gated tools when tools list omits start_debugging", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+          const tempDir = makeTempDir();
+          writeAgent(
+            tempDir,
+            "chromagent.yml",
+            "displayName: Chromagent\n"
+              + "description: Test agent.\n"
+              + "instructions: Test.\n"
+              + "tools:\n  - page_eval\n  - read_tabs\n"
+              + 'skills: "*"\n',
+          );
+          writePlugin(tempDir, "defaultAgent: chromagent\n");
+          compileBrand(tempDir);
+          expect(warn).toHaveBeenCalledTimes(1);
+          const message = warn.mock.calls[0][0] as string;
+          expect(message).toContain("brand/agents/chromagent.yml");
+          expect(message).toContain("start_debugging");
+          expect(message).toContain("page_eval");
+          for (const name of DEBUGGER_GATED_TOOLS) {
+            if (name === "page_eval") continue;
+            expect(message, `the warning must not name the gated tool ${name}`).not.toContain(name);
+          }
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("does not warn when start_debugging and every gated tool are excluded", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+          const tempDir = makeTempDir();
+          writeAgent(
+            tempDir,
+            "chromagent.yml",
+            "displayName: Chromagent\n"
+              + "description: Test agent.\n"
+              + "instructions: Test.\n"
+              + "tools:\n  - read_tabs\n  - open_tab\n"
+              + 'skills: "*"\n',
+          );
+          writePlugin(tempDir, "defaultAgent: chromagent\n");
+          compileBrand(tempDir);
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("does not warn when start_debugging is enabled", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+          const tempDir = makeTempDir();
+          writeDefaultAgent(tempDir);
+          writePlugin(tempDir, "defaultAgent: chromagent\n");
+          compileBrand(tempDir);
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("returns identical brand structure when warning is emitted", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+          const tempDir = makeTempDir();
+          writeAgent(
+            tempDir,
+            "chromagent.yml",
+            `${VALID_AGENT_YAML}excludeTools:\n  - start_debugging\n`,
+          );
+          writePlugin(tempDir, "defaultAgent: chromagent\n");
+          const brand = compileBrand(tempDir);
+          expect(Object.keys(brand).sort()).toEqual([
+            "agents",
+            "defaultAgent",
+            "hosts",
+            "models",
+            "options",
+            "prompts",
+            "skillDefs",
+            "skills",
+            "themes",
+            "tools",
+          ]);
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("compiling the repo brand folder produces no warning", () => {
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        try {
+          compileBrand(BRAND_DIR);
+          expect(warn).not.toHaveBeenCalled();
+        } finally {
+          warn.mockRestore();
+        }
+      });
+
+      it("DEBUGGER_GATED_TOOLS exports the 18 expected tools matching SIDE_PANEL_TOOL_NAMES", () => {
+        expect(DEBUGGER_GATED_TOOLS).toHaveLength(18);
+        expect(new Set(DEBUGGER_GATED_TOOLS).size).toBe(18);
+        expect(DEBUGGER_GATED_TOOLS).not.toContain("start_debugging");
+        for (const name of DEBUGGER_GATED_TOOLS) {
+          expect(SIDE_PANEL_TOOL_NAMES).toContain(name);
+        }
+      });
     });
   });
 

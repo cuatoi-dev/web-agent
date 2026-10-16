@@ -183,6 +183,8 @@ skills: "*"
 | `skills` | Yes | `"*"` for every side panel skill, or a list of skill names. |
 | `excludeSkills` | No | A list of skill names to remove from an otherwise-allowed set. |
 
+If an agent leaves out or excludes `start_debugging` while retaining tools that require an active debugger session (such as `page_snapshot` or `page_click`), the build prints a warning.
+
 Then point `plugin.yml`'s `defaultAgent` at it:
 
 ```yaml

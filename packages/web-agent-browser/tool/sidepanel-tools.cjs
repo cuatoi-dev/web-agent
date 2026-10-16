@@ -62,4 +62,26 @@ const SIDE_PANEL_TOOL_NAMES = [
   "json_edit",
 ];
 
-module.exports = { SIDE_PANEL_TOOL_NAMES };
+/** The 18 side panel tools that require an active debugger session (start_debugging). */
+const DEBUGGER_GATED_TOOLS = [
+  "page_snapshot",
+  "page_click",
+  "page_fill_form",
+  "page_select_option",
+  "page_hover",
+  "page_press_key",
+  "page_emulate",
+  "page_network",
+  "page_dialog",
+  "page_upload_file",
+  "page_eval",
+  "page_fetch",
+  "page_console",
+  "page_verify",
+  "page_generate_locator",
+  "page_screenshot",
+  "start_recording",
+  "stop_recording",
+];
+
+module.exports = { SIDE_PANEL_TOOL_NAMES, DEBUGGER_GATED_TOOLS };

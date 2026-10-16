@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
 const { spawnSync } = require("child_process");
-const { SIDE_PANEL_TOOL_NAMES } = require("./sidepanel-tools.cjs");
+const { SIDE_PANEL_TOOL_NAMES, DEBUGGER_GATED_TOOLS } = require("./sidepanel-tools.cjs");
 
 /** Theme ids the registry already ships. A brand theme may not reuse one. */
 const THEME_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
@@ -501,6 +501,21 @@ function compileAgents(brandDir, modelIds, skillNames, toolNames) {
       }
     }
 
+    const enabled = new Set(doc.tools === "*" ? toolNames : doc.tools);
+    for (const name of doc.excludeTools ?? []) {
+      enabled.delete(name);
+    }
+    if (!enabled.has("start_debugging")) {
+      const gated = DEBUGGER_GATED_TOOLS.filter((n) => enabled.has(n));
+      if (gated.length > 0) {
+        console.warn(
+          `brand/agents/${file}: start_debugging is not enabled, but ${gated.join(", ")} `
+            + `need it. Those tools will always fail with "Debugging is not started on tab …". `
+            + `Enable start_debugging, or exclude those tools too.`,
+        );
+      }
+    }
+
     const agent = {
       id,
       displayName: doc.displayName,
@@ -612,4 +627,5 @@ module.exports = {
   TOOL_GROUPS,
   SKILL_GROUPS,
   SIDE_PANEL_TOOL_NAMES,
+  DEBUGGER_GATED_TOOLS,
 };
