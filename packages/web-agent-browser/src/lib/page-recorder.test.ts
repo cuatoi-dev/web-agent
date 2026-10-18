@@ -1,7 +1,15 @@
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi, beforeAll } from "vitest";
 import * as recorder from "./page-recorder";
 import { REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
 import type { RecordedStep } from "./recorder.types";
+
+beforeAll(() => {
+  if (typeof CSS === "undefined" || typeof CSS.escape !== "function") {
+    (globalThis as unknown as { CSS: { escape: (s: string) => string } }).CSS = {
+      escape: (s: string) => s.replace(/([^a-zA-Z0-9_-])/g, "\\$1"),
+    };
+  }
+});
 
 if (typeof PointerEvent === "undefined") {
   (globalThis as unknown as { PointerEvent: unknown }).PointerEvent = MouseEvent;
@@ -75,6 +83,7 @@ describe("page-recorder", () => {
     expect(s[0].line).toBe('click button "Apply"');
     expect(s[0].ref).toBeUndefined();
     expect(s[0].target).toMatchObject({ role: "button", name: "Apply" });
+    expect(s[0].locators).toEqual({ role: "button", name: "Apply", roleMatches: 1, css: "button:nth-of-type(1)", xpath: "/html/body[1]/button[1]" });
   });
 
   it("a step carries no ref, for every step kind", () => {
@@ -560,6 +569,8 @@ describe("page-recorder", () => {
       expect(s[0].kind).toBe("click");
       expect(s[0].line).toBe('click button "Add to cart"');
       expect(s[0].target).toMatchObject({ role: "button", name: "Add to cart" });
+      expect(s[0].locators?.shadow).toEqual(["custom-button:nth-of-type(1)", "button:nth-of-type(1)"]);
+      expect(s[0].locators?.css).toBeUndefined();
     });
 
     it("click on a slotted <span> inside such a button records the same click on the inner <button>", () => {

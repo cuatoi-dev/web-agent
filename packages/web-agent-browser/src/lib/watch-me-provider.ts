@@ -5,6 +5,7 @@
 import type { AttachmentChip, MessagePart } from "@cuatoi/web-agent-core";
 import { attachmentChipsMeta } from "@cuatoi/web-agent-core";
 import type { RecordedStep } from "./recorder.types";
+import { stepLocatorLines } from "./locator-format";
 import type { WatchMeProvider, WatchMeProviderOptions, WatchMeProviderState } from "./watch-me-provider.types";
 
 const SLOT_STYLES = `
@@ -299,7 +300,10 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
       ];
       const header = `# Recorded steps on ${taken.url}\n`;
       const note = taken.note ? `${taken.note}\n` : "";
-      const lines = taken.steps.map((step, i) => `${i + 1}. ${stepLine(step)}`).join("\n");
+      // 127/002 — the agent gets each step's locator lines; the panel list does not.
+      const lines = taken.steps
+        .map((step, i) => [`${i + 1}. ${stepLine(step)}`, ...stepLocatorLines(step)].join("\n"))
+        .join("\n");
       const stepsText = `${header}${note}${lines}`;
       const textPart: MessagePart = { type: "text", text: stepsText };
       const typed = payload.parts

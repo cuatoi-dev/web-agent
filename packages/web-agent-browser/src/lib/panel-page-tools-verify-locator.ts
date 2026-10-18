@@ -1,4 +1,5 @@
 // 122/002 — the panel's page_verify and page_generate_locator.
+// 127/002 — page_generate_locator returns the neutral locator set.
 // 131/002 — both moved onto the debugger's helper world; no forwardToTab, no
 // activation check.
 import { z } from "zod";
@@ -7,7 +8,8 @@ import { AGENT_UI_SELECTOR } from "./constants";
 import { createDebuggerSession } from "./debugger-session";
 import { createHelperWorlds, STALE_REF } from "./debugger-helper-world";
 import type { HelperDescribe } from "./helper-api";
-import type { VerifyOutcome, PanelPageToolsOptions } from "./types";
+import { locatorLines } from "./locator-format";
+import type { LocatorSet, VerifyOutcome, PanelPageToolsOptions } from "./types";
 
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v !== "";
 
@@ -94,7 +96,7 @@ export function createVerifyLocatorPageTools(options: PanelPageToolsOptions): Cu
   const pageGenerateLocator: CustomToolDef = {
     name: "page_generate_locator",
     description:
-      "Turn a ref from page_snapshot into a Playwright locator that matches exactly one element on a browser tab's page. Call read_tabs first and pass the tab ID it reports. The result ends with \"(by position)\" when only .nth() makes it unique, which is fragile. Needs start_debugging on the tab first.",
+      "List the locators for one element on a browser tab's page, from a page_snapshot ref: role and name with how many elements match them, and the id, data-testid, name attribute, CSS selector and XPath when each matches only that element (— when not). An element inside an iframe also gets a frames line, the CSS of each iframe from the top page down. An element inside shadow DOM gets a shadow line instead of css and xpath: the CSS of each shadow host from the page down, then the element's CSS in its own shadow root. Call read_tabs first and pass the tab ID it reports. Needs start_debugging on the tab first.",
     inputSchema: z.object({
       tabId: z.number().describe("The ID of the tab. Call read_tabs first and pass the ID it reports."),
       ref: z.string().describe('A ref from a page_snapshot call, e.g. "7".'),
@@ -115,9 +117,11 @@ export function createVerifyLocatorPageTools(options: PanelPageToolsOptions): Cu
       if (!d.value.connected) return { content: STALE_REF(ref), isError: true };
       if (d.value.refusal !== undefined) return { content: d.value.refusal, isError: true };
 
-      const built = await helper.call<{ text: string; isError: boolean }>(tabId, ref, "locator", [ref, d.value.desc]);
+      const built = await helper.call<LocatorSet>(tabId, ref, "locator", []);
       if (!built.ok) return { content: built.error, isError: true };
-      return built.value.isError ? { content: built.value.text, isError: true } : { content: built.value.text };
+      const frames = await helper.frameChain(tabId, ref);
+      const set: LocatorSet = frames.length > 0 ? { ...built.value, frames } : built.value;
+      return { content: [`[${ref}] ${d.value.desc}`, ...locatorLines(set)].join("\n") };
     },
   };
 

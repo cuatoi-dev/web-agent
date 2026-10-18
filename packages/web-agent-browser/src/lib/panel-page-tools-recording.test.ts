@@ -129,6 +129,57 @@ describe("panel-page-tools-recording", () => {
     expect(res.content).not.toContain("[");
   });
 
+  it("U-T6b: stop_recording prints locator lines under element steps", async () => {
+    const recordingResult: RecordingResult = {
+      host: "localhost:10040",
+      url: "http://localhost:10040/checkout.html",
+      steps: [
+        {
+          recordingId: "r",
+          seq: 0,
+          kind: "click",
+          line: 'click button "Pay"',
+          frameOrigin: "http://pay.test",
+          frames: ["#payment"],
+          locators: { role: "button", name: "Pay", roleMatches: 1, id: "pay", css: "#pay", xpath: "//*[@id='pay']" },
+        },
+        { recordingId: "r", seq: 1, kind: "scroll", line: "scroll down 400 px" },
+        {
+          recordingId: "r",
+          seq: 2,
+          kind: "fill",
+          line: 'fill textbox "Password" <password>',
+          masked: true,
+          locators: { role: "textbox", name: "Password", roleMatches: 1, id: "password", nameAttr: "password", css: "#password", xpath: "//*[@id='password']" },
+        },
+      ],
+    };
+    vi.mocked(controller.stop).mockResolvedValue(recordingResult);
+    const { stopTool } = getTools();
+
+    const res = await stopTool.execute({ tabId: 7 }, toolCtx());
+    const expected =
+      'Recorded 3 steps on localhost:10040:\n' +
+      '1. (frame http://pay.test) click button "Pay"\n' +
+      '  role+name: button "Pay" (matches 1)\n' +
+      '  id: pay\n' +
+      '  data-testid: —\n' +
+      '  name: —\n' +
+      '  css: #pay\n' +
+      "  xpath: //*[@id='pay']\n" +
+      '  frames: #payment\n' +
+      '2. scroll down 400 px\n' +
+      '3. fill textbox "Password" <password>\n' +
+      '  role+name: textbox "Password" (matches 1)\n' +
+      '  id: password\n' +
+      '  data-testid: —\n' +
+      '  name: password\n' +
+      '  css: #password\n' +
+      "  xpath: //*[@id='password']";
+    expect(res.content).toBe(expected);
+    expect(res.content).not.toMatch(/getBy|\.nth\(/);
+  });
+
   it("U-T7: stop_recording with a note", async () => {
     const recordingResult: RecordingResult = {
       host: "localhost:10040",

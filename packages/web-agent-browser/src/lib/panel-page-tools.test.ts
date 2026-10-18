@@ -166,9 +166,9 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
     return { pageSnapshot, pageClick, pageFillForm, pageSelectOption };
   }
 
-  const APPLY_TARGET = { role: "button", name: "Apply", label: '[4] button "Apply"', locator: "getByRole('button', { name: 'Apply' })", isPassword: false };
-  const COUPON_TARGET = { role: "textbox", name: "Coupon", label: '[7] textbox "Coupon"', locator: "getByLabel('Coupon')", isPassword: false };
-  const EMAIL_TARGET = { role: "textbox", name: "Email", label: '[9] textbox "Email"', locator: "getByLabel('Email')", isPassword: false };
+  const APPLY_TARGET = { role: "button", name: "Apply", label: '[4] button "Apply"', isPassword: false };
+  const COUPON_TARGET = { role: "textbox", name: "Coupon", label: '[7] textbox "Coupon"', isPassword: false };
+  const EMAIL_TARGET = { role: "textbox", name: "Email", label: '[9] textbox "Email"', isPassword: false };
 
   function started() {
     const detachListeners: ((tabId: number, reason: string) => void)[] = [];
@@ -519,7 +519,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       const call = vi.fn((_tabId: number, _ref: string, fn: string) => {
         if (fn === "describe") return Promise.resolve({ ok: true, value: { connected: true, name: "Card number", desc: 'textbox "Card number"', permission: "allow", disabled: false } });
         if (fn === "fillPrepare") return Promise.resolve({ ok: true, value: { ok: true, hadText: false } });
-        if (fn === "target") return Promise.resolve({ ok: true, value: { role: "textbox", name: "Card number", label: '[7] textbox "Card number"', locator: "getByLabel('Card number')", isPassword: false } });
+        if (fn === "target") return Promise.resolve({ ok: true, value: { role: "textbox", name: "Card number", label: '[7] textbox "Card number"', isPassword: false } });
         if (fn === "readValue") return Promise.resolve({ ok: true, value: { value: "4242 4242 4242 4242" } });
         throw new Error(`unexpected helper call: ${fn}`);
       });
@@ -699,7 +699,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
           value: {
             ok: true,
             name: "Extras",
-            target: { role: "listbox", name: "Extras", label: '[6] listbox "Extras"', locator: "getByLabel('Extras')", isPassword: false },
+            target: { role: "listbox", name: "Extras", label: '[6] listbox "Extras"', isPassword: false },
           },
         }],
         selectExecute: [{ ok: true, value: { text: 'Selected "Gift wrap", "Card" in [6] combobox "Extras".' } }],
@@ -798,20 +798,38 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       expect(result).toEqual({ content: "Ref 2 is no longer on the page. Take a new snapshot.", isError: true });
     });
 
-    it("page_generate_locator forwards ref and passes isError through", async () => {
+    it("page_generate_locator prints the helper's set with the frame chain", async () => {
       const { session } = started();
       await session.start(1);
       const call = callQueue({
-        describe: [{ ok: true, value: { connected: true, name: "", desc: "button", permission: "allow", disabled: false } }],
-        locator: [{ ok: true, value: { text: "Could not make a unique locator for [3] button.", isError: true } }],
+        describe: [{ ok: true, value: { connected: true, name: "Pay", desc: 'button "Pay"', permission: "allow", disabled: false } }],
+        locator: [{ ok: true, value: { role: "button", name: "Pay", roleMatches: 1, id: "pay", css: "#pay", xpath: "//*[@id='pay']" } }],
       });
-      const { pageGenerateLocator } = getVerifyLocatorTools(fakeHelper({ call }), session);
+      const frameChain = vi.fn().mockResolvedValue(["#payment"]);
+      const { pageGenerateLocator } = getVerifyLocatorTools(fakeHelper({ call, frameChain }), session);
 
       const result = await pageGenerateLocator.execute({ tabId: 1, ref: "3" }, toolCtx());
       expect(result).toEqual({
-        content: "Could not make a unique locator for [3] button.",
-        isError: true,
+        content:
+          '[3] button "Pay"\n  role+name: button "Pay" (matches 1)\n  id: pay\n  data-testid: —\n  name: —\n  css: #pay\n  xpath: //*[@id=\'pay\']\n  frames: #payment',
       });
+      expect(call).toHaveBeenCalledWith(1, "3", "locator", []);
+      expect(frameChain).toHaveBeenCalledWith(1, "3");
+    });
+
+    it("page_generate_locator returns the helper error", async () => {
+      const { session } = started();
+      await session.start(1);
+      const call = callQueue({
+        describe: [{ ok: true, value: { connected: true, name: "Pay", desc: 'button "Pay"', permission: "allow", disabled: false } }],
+        locator: [{ ok: false, error: "boom" }],
+      });
+      const frameChain = vi.fn().mockResolvedValue(["#payment"]);
+      const { pageGenerateLocator } = getVerifyLocatorTools(fakeHelper({ call, frameChain }), session);
+
+      const result = await pageGenerateLocator.execute({ tabId: 1, ref: "3" }, toolCtx());
+      expect(result).toEqual({ content: "boom", isError: true });
+      expect(frameChain).not.toHaveBeenCalled();
     });
 
     it("summarize", () => {

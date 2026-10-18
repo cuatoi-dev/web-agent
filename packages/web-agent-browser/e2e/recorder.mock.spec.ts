@@ -217,7 +217,8 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     const stopText = stopRes.text;
     console.log("M1 STOP TEXT:\n" + stopText);
 
-    const lines = stopText.split("\n");
+    // 127/002 — locator lines (two-space indent) sit under each step.
+    const lines = stopText.split("\n").filter((l) => !l.startsWith("  "));
     expect(lines[0]).toBe("Recorded 8 steps on localhost:10040:");
     expect(lines[1]).toBe("1. scroll down 400 px");
     expect(lines[2]).toBe('2. hover link "Cart (2)"');
@@ -227,6 +228,9 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     expect(lines[6]).toBe('6. select combobox "Shipping" "Express"');
     expect(lines[7]).toBe('7. check checkbox "Gift"');
     expect(lines[8]).toBe("8. press Enter");
+
+    expect(stopText).toContain('4. fill textbox "Coupon" "SAVE10"\n  role+name: textbox "Coupon" (matches 1)\n  id: coupon\n');
+    expect(stopText).not.toMatch(/getBy|\.nth\(/);
 
     // M1b: Verify password was never leaked
     expect(stopText).not.toContain("secret123");
@@ -377,7 +381,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     expect(stopRes.text).toContain("Recorded 3 steps on localhost:10040:");
     expect(stopRes.text).not.toContain("Recording stopped: the page navigated.");
-    const lines = stopRes.text.split("\n");
+    const lines = stopRes.text.split("\n").filter((l) => !l.startsWith("  "));
     expect(lines[1]).toBe('1. click button "Go to cart"');
     expect(lines[2]).toBe("2. route to /cart");
     expect(lines[3]).toBe('3. click button "Apply"');

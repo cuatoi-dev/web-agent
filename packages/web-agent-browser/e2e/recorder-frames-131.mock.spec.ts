@@ -168,6 +168,7 @@ test.describe("recorder in every frame — cross-site, same-site, nested (131/00
     ]);
     const results = await runPlan(panelPage, "Stop recording.", 3);
     expect(results[2].text).toContain('(frame http://bank.test) click button "Confirm with bank"');
+    expect(results[2].text).toContain("\n  frames: #payment >> #bank");
 
     await context.close();
   });

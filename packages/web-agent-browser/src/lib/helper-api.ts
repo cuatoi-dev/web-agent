@@ -8,9 +8,9 @@ import {
   blockedByPolicy,
   resolveAgentPermission,
 } from "@cuatoi/web-agent-dom";
-import { buildLocator, journalTarget } from "./locator-builder";
+import { cssIn, journalTarget, locatorSet } from "./locator-builder";
 import { runVerify } from "./page-verify";
-import type { ElementTarget, FileSpec, VerifyInput, VerifyOutcome, LocatorBuildResult } from "./types";
+import type { ElementTarget, FileSpec, LocatorSet, VerifyInput, VerifyOutcome } from "./types";
 import type { HelperDescribe } from "./helper-api.types";
 
 export type { HelperDescribe } from "./helper-api.types";
@@ -43,36 +43,19 @@ export function target(el: Element, ref: string, desc: string): ElementTarget {
   return journalTarget(el, document, `[${ref}] ${desc}`);
 }
 
-export function locator(el: Element, ref: string, desc: string): { text: string; isError: boolean } {
-  const built: LocatorBuildResult = buildLocator(el, document);
-  return built.ok
-    ? { text: built.line, isError: false }
-    : { text: `Could not make a unique locator for [${ref}] ${desc}.`, isError: true };
+/** 127/002 — the neutral locator set for `el`, in this frame's document. */
+export function locator(el: Element): LocatorSet {
+  return locatorSet(el, document);
 }
 
-/** 131/003 — a selector for ONE `<iframe>`/`<frame>` element, for
- *  `page.frameLocator(<selector>)`. The first attribute that matches exactly
- *  one frame element in this document wins; `nth=` is the last resort. */
+/** 131/003, 127/002 — the CSS for ONE `<iframe>`/`<frame>` element, from the
+ *  same walk as the locator set's `css`. "" for any other element, and for a
+ *  frame inside a shadow root, which has no page-level CSS. */
 export function iframeSelector(el: Element): { selector: string } {
-  const tag = el.tagName.toLowerCase();
+  const tag = el.localName;
   if (tag !== "iframe" && tag !== "frame") return { selector: "" };
-  const all = [...document.querySelectorAll(`${tag}`)];
-  const quote = (v: string) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-  const unique = (sel: string) => {
-    const hits = [...document.querySelectorAll(sel)];
-    return hits.length === 1 && hits[0] === el;
-  };
-  const id = el.getAttribute("id");
-  if (id !== null && id !== "" && unique(`${tag}#${CSS.escape(id)}`)) {
-    return { selector: `${tag}#${CSS.escape(id)}` };
-  }
-  for (const attr of ["name", "title", "src"]) {
-    const v = el.getAttribute(attr);
-    if (v === null || v === "") continue;
-    const sel = `${tag}[${attr}=${quote(v)}]`;
-    if (unique(sel)) return { selector: sel };
-  }
-  return { selector: `${tag} >> nth=${all.indexOf(el)}` };
+  if (el.getRootNode() !== document) return { selector: "" };
+  return { selector: cssIn(document, el) ?? "" };
 }
 
 export function verify(el: Element, input: VerifyInput, agentUiSelector: string): VerifyOutcome {

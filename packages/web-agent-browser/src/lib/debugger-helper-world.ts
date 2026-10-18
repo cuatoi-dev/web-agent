@@ -330,7 +330,10 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
       if (backendNodeId === undefined) break;
       const ownerRef = `${child ? prefixOfSession(tabId, ownerSession) : refPrefix}${backendNodeId}`;
       const built = await call<{ selector: string }>(tabId, ownerRef, "iframeSelector", []);
-      if (!built.ok || typeof built.value?.selector !== "string" || built.value.selector === "") break;
+      if (!built.ok || typeof built.value?.selector !== "string") break;
+      // 127/002 — a frame with no page-level CSS (inside a shadow root) makes
+      // the whole chain unusable, so report none rather than a partial one.
+      if (built.value.selector === "") return [];
       up.push(built.value.selector);
       if (child) {
         sessionId = child.parentSessionId;

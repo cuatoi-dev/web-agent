@@ -36,7 +36,7 @@ async function launchPatchedContext(dir: string) {
 }
 
 const VISIBLE_PANEL = "#chat agent-chat-panel:not([hidden])";
-const TESAGENT_DESCRIPTION = "Test agent — website testing and Playwright scripts";
+const TESAGENT_DESCRIPTION = "Test agent — explores a website, writes and runs test cases";
 
 /** Mock model for these specs.
  *  - The auto-title request answers "Apples chat" when the conversation

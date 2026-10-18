@@ -149,7 +149,7 @@ describe("page_hover (124/002)", () => {
       if (fn === "target") {
         return Promise.resolve({
           ok: true,
-          value: { role: "link", name: "Cart (2)", label: '[3] link "Cart (2)"', locator: "getByRole('link', { name: 'Cart (2)' })", isPassword: false },
+          value: { role: "link", name: "Cart (2)", label: '[3] link "Cart (2)"', isPassword: false },
         });
       }
       throw new Error(`unexpected helper call: ${fn}`);

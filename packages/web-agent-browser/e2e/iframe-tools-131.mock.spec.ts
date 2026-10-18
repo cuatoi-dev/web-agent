@@ -248,8 +248,11 @@ test.describe("Iframe tools 131 mock e2e (131/003)", () => {
 
     for (let i = 2; i < 8; i++) expect(results[i].isError).toBe(false);
     expect(results[5].text).toMatch(/^PASS /);
-    expect(results[6].text).toContain("page.");
-    expect(results[6].text).toContain("matches 1 element");
+    expect(results[6].text).toContain('\n  role+name: button "Pay" (matches 1)\n');
+    expect(results[6].text).toContain("\n  id: pay\n");
+    expect(results[6].text).toContain("\n  css: #pay\n");
+    expect(results[6].text).toContain("\n  xpath: //*[@id='pay']\n");
+    expect(results[6].text).toContain("\n  frames: #payment");
     expect(results[7].text).toMatch(/^Screenshot of \[f1:\d+\] .+, [\d.]+ × [\d.]+\.$/);
 
     await context.close();

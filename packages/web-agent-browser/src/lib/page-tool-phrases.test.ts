@@ -166,7 +166,7 @@ describe("pageToolPhrases — done lines", () => {
   });
 
   it("page_generate_locator", () => {
-    expect(phraseFor("page_generate_locator", { ref: "2" }, "page.getByRole('button', { name: 'Apply' }) — matches 1 element"))
+    expect(phraseFor("page_generate_locator", { ref: "2" }, '[2] button "Apply"\n  role+name: button "Apply" (matches 1)'))
       .toBe("tesagent made a locator for element [2]");
   });
 

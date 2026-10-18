@@ -7,12 +7,14 @@ import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { errorMessage } from "./error-message";
 import type { PanelPageToolsOptions } from "./types";
 import type { RecordingResult } from "./recorder.types";
+import { stepLocatorLines } from "./locator-format";
 
 function tabIdText(input: Record<string, unknown>): string {
   return typeof input.tabId === "number" || typeof input.tabId === "string" ? String(input.tabId) : "(none)";
 }
 
-/** The plan's stop_recording body. */
+/** The plan's stop_recording body. 127/002 — the locator lines go under each
+ *  step that has an element. */
 function report(result: RecordingResult): string {
   const n = result.steps.length;
   const header = `Recorded ${n} ${n === 1 ? "step" : "steps"} on ${result.host}:`;
@@ -20,7 +22,8 @@ function report(result: RecordingResult): string {
   const lines = result.steps
     .map((s, i) => {
       const prefix = s.frameOrigin === undefined ? "" : `(frame ${s.frameOrigin}) `;
-      return `\n${i + 1}. ${prefix}${s.line}`;
+      const locators = stepLocatorLines(s).map((l) => `\n${l}`).join("");
+      return `\n${i + 1}. ${prefix}${s.line}${locators}`;
     })
     .join("");
   return header + note + lines;

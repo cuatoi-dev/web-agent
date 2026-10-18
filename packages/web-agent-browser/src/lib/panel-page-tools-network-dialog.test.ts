@@ -347,7 +347,6 @@ describe("panel-page-tools-network-dialog (124/003)", () => {
       role: "button",
       name: "Attachments",
       label: '[5] file "Attachments"',
-      locator: "getByLabel('Attachments')",
       isPassword: false,
     };
     const call = vi.fn((_tabId: number, _ref: string, fn: string) => {

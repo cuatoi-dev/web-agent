@@ -223,6 +223,7 @@ test.describe("watch-me composer control mock e2e (124/006, self-attaching since
       return JSON.stringify(panel?.messages ?? []);
     });
     expect(debugLog).toContain("# Recorded steps on http://localhost:10040/checkout.html");
+    expect(debugLog).toContain("role+name: ");
 
     await context.close();
   });

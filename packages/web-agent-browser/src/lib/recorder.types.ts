@@ -2,7 +2,7 @@
 // recording controller. Split out of types.ts to stay under that file's
 // 500-line cap (eslint.config.mjs max-lines); imports only the element target
 // type, mirroring act-by-ref-tools.types.ts.
-import type { ElementTarget } from "./element-target.types";
+import type { ElementTarget, LocatorSet } from "./element-target.types";
 
 /** What the user did. `check`/`uncheck` are a click on a checkbox or radio. */
 export type RecordedStepKind =
@@ -41,6 +41,9 @@ export interface RecordedStep {
   /** Role, name and label, read before the step is posted.
    *  Absent for `scroll` and for a `press` with no focused element. */
   target?: ElementTarget;
+  /** 127/002 — the neutral locator set, built with `target`. Its `frames` is
+   *  never set here: the panel adds the step's `frames` when it prints it. */
+  locators?: LocatorSet;
   /** 131/004 — the `<iframe>` selectors from the top page down to this
    *  step's frame, top-down. Absent for a top-frame step. Built by the
    *  helper world, the same way 131/003 builds them for the agent's own

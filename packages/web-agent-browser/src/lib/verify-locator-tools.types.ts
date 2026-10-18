@@ -1,5 +1,5 @@
-// The shapes for the panel's page_verify and page_generate_locator tools
-// (122/002). Imports only the element target type, mirroring act-by-ref-tools.types.ts; spliced into
+// The shapes for the panel's page_verify tool (122/002). Imports only the
+// element target type, mirroring act-by-ref-tools.types.ts; spliced into
 // types.ts's BridgeMessage union and re-exported from there.
 
 import type { ElementTarget } from "./element-target.types";
@@ -27,16 +27,6 @@ export interface VerifyOutcome {
   isError: boolean;
   /** 124/004 — a PASS check's element. Absent for text_visible and FAIL. */
   target?: ElementTarget;
-}
-
-/** The locator builder's answer: a full result line, or no locator at all. */
-export type LocatorBuildResult = { ok: true; line: string } | { ok: false };
-
-/** One `getBy*` candidate: the locator source text and the elements it matches,
- *  in Playwright's result order. */
-export interface LocatorCandidate {
-  source: string;
-  matches: Element[];
 }
 
 /** An element that may or may not implement `checkVisibility` (jsdom does not). */

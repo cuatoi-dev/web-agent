@@ -425,11 +425,11 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
     });
 
     // R12
-    expect(results[10]).toEqual({
-      tool: "page_generate_locator",
-      text: "page.getByRole('button', { name: 'Apply' }) — matches 1 element",
-      isError: false,
-    });
+    expect(results[10].tool).toBe("page_generate_locator");
+    expect(results[10].isError).toBe(false);
+    expect(results[10].text).toMatch(/^\[\d+\] button "Apply"\n {2}role\+name: button "Apply" \(matches 1\)\n/);
+    expect(results[10].text).toContain("\n  css: #apply-btn\n");
+    expect(results[10].text).toContain("\n  xpath: //*[@id='apply-btn']");
 
     await context.close();
   });

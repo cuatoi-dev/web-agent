@@ -7,7 +7,7 @@
 // which takes exactly ONE string argument — so every step is JSON.
 import { describeElementParts } from "@cuatoi/web-agent-dom";
 import { REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
-import { journalTarget } from "./locator-builder";
+import { journalTarget, locatorSet } from "./locator-builder";
 import { pwNormalizeWhiteSpace } from "./playwright-match";
 import type { RecordedStep, RecordedStepKind } from "./recorder.types";
 
@@ -89,12 +89,13 @@ function emit(step: RecordedStep): void {
   }
 }
 
-/** A step with an element: its role, name and Playwright locator. */
+/** A step with an element: its role, name and neutral locator set. */
 function withTarget(el: Element, kind: RecordedStepKind, line: string, extra: Partial<RecordedStep> = {}): RecordedStep {
   // 131/004 — no ref: the panel DomAdapter and its RefTable are gone with the
   // page script, and an isolated world cannot reach the MAIN world's one.
   const target = journalTarget(el, document, describe(el));
-  return nextStep(kind, line, { target, ...extra });
+  const locators = locatorSet(el, document);
+  return nextStep(kind, line, { target, locators, ...extra });
 }
 
 function describe(el: Element): string {

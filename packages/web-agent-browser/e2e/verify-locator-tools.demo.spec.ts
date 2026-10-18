@@ -43,7 +43,7 @@ test.describe("page_verify and page_generate_locator live proof", () => {
 
     const locatorCall = trace.find((t) => t.name === "page_generate_locator");
     expect(locatorCall?.outcomeSummary).toContain("Apply");
-    expect(locatorCall?.outcomeSummary).toContain("matches 1 element");
+    expect(locatorCall?.outcomeSummary).toContain("css: #apply-btn");
 
     await panelPage.close();
     await sitePage.close();

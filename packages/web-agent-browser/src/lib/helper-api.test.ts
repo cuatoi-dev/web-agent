@@ -277,74 +277,59 @@ describe("setFiles", () => {
 });
 
 describe("locator", () => {
-  it("returns buildLocator's line", () => {
+  it("returns neutral locator set for element", () => {
+    document.body.innerHTML = "";
     const el = document.createElement("button");
     el.textContent = "Apply";
     document.body.appendChild(el);
-    const r = locator(el, "1", 'button "Apply"');
-    expect(r).toEqual({ text: "page.getByRole('button', { name: 'Apply' }) — matches 1 element", isError: false });
+    expect(locator(el)).toEqual({
+      role: "button",
+      name: "Apply",
+      roleMatches: 1,
+      css: "button:nth-of-type(1)",
+      xpath: "/html/body[1]/button[1]",
+    });
   });
 
-  it("returns the could-not-make text when there is no unique locator", () => {
-    const el = document.createElement("div");
+  it("button with id='go' produces css #go", () => {
+    document.body.innerHTML = "";
+    const el = document.createElement("button");
+    el.id = "go";
+    el.textContent = "Go";
     document.body.appendChild(el);
-    const r = locator(el, "3", "generic");
-    expect(r).toEqual({ text: "Could not make a unique locator for [3] generic.", isError: true });
+    expect(locator(el).css).toBe("#go");
   });
 });
 
 describe("iframeSelector (131/003)", () => {
-  it("prefers a unique id", () => {
+  it("iframe with id produces #payment", () => {
+    document.body.innerHTML = "";
     const el = document.createElement("iframe");
     el.id = "payment";
-    el.setAttribute("name", "payment-name");
     document.body.appendChild(el);
-    expect(iframeSelector(el)).toEqual({ selector: "iframe#payment" });
+    expect(iframeSelector(el)).toEqual({ selector: "#payment" });
   });
 
-  it("falls back to name, then title, then src", () => {
-    document.body.innerHTML = "";
-    const a = document.createElement("iframe");
-    a.setAttribute("name", "shipping");
-    const b = document.createElement("iframe");
-    b.setAttribute("name", "shipping");
-    document.body.append(a, b);
-    // "name" is not unique (two frames share it), so it falls through to title.
-    a.setAttribute("title", "Shipping");
-    expect(iframeSelector(a)).toEqual({ selector: 'iframe[title="Shipping"]' });
-
-    document.body.innerHTML = "";
-    const c = document.createElement("iframe");
-    c.setAttribute("name", "unique-name");
-    document.body.appendChild(c);
-    expect(iframeSelector(c)).toEqual({ selector: 'iframe[name="unique-name"]' });
-
-    document.body.innerHTML = "";
-    const d = document.createElement("iframe");
-    d.setAttribute("src", "/shipping-frame.html");
-    document.body.appendChild(d);
-    expect(iframeSelector(d)).toEqual({ selector: 'iframe[src="/shipping-frame.html"]' });
-  });
-
-  it("escapes a quote in an attribute value", () => {
-    document.body.innerHTML = "";
-    const el = document.createElement("iframe");
-    el.setAttribute("title", 'Say "hi"');
-    document.body.appendChild(el);
-    expect(iframeSelector(el)).toEqual({ selector: 'iframe[title="Say \\"hi\\""]' });
-  });
-
-  it("falls back to nth when nothing is unique", () => {
+  it("two iframes with no id → second gives iframe:nth-of-type(2)", () => {
     document.body.innerHTML = "";
     const a = document.createElement("iframe");
     const b = document.createElement("iframe");
     document.body.append(a, b);
-    expect(iframeSelector(a)).toEqual({ selector: "iframe >> nth=0" });
-    expect(iframeSelector(b)).toEqual({ selector: "iframe >> nth=1" });
+    expect(iframeSelector(b)).toEqual({ selector: "iframe:nth-of-type(2)" });
   });
 
   it("returns an empty selector for a non-frame element", () => {
     const el = document.createElement("div");
+    expect(iframeSelector(el)).toEqual({ selector: "" });
+  });
+
+  it("returns an empty selector for an iframe inside an open shadow root", () => {
+    document.body.innerHTML = "";
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = host.attachShadow({ mode: "open" });
+    const el = document.createElement("iframe");
+    root.appendChild(el);
     expect(iframeSelector(el)).toEqual({ selector: "" });
   });
 });

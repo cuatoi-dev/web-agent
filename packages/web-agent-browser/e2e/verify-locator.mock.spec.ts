@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { test, expect, getTabId } from "./extension.fixture";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
-import { locatorFromText } from "./locator-text";
+import { countMatches, locatorField } from "./locator-text";
 
 const CHECKOUT_URL = "http://localhost:10040/checkout.html";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -524,26 +524,49 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
     await panelPage.waitForFunction(() => (window.__VERIFY_RESULTS__?.length ?? 0) >= 3, { timeout: 15_000 });
 
     const results = await panelPage.evaluate(() => window.__VERIFY_RESULTS__ ?? []);
-    expect(results[0]).toEqual({
-      tool: "page_generate_locator",
-      text: "page.getByRole('button', { name: 'Apply' }) — matches 1 element",
-      isError: false,
-    });
-    expect(results[1]).toEqual({
-      tool: "page_generate_locator",
-      text: "page.getByRole('textbox', { name: 'Coupon' }) — matches 1 element",
-      isError: false,
-    });
-    expect(results[2]).toEqual({
-      tool: "page_generate_locator",
-      text: "page.getByTestId('icon-action').nth(1) — matches 1 element (by position)",
-      isError: false,
-    });
+    const body = (r: { text: string }) => r.text.split("\n").slice(1);
+    expect(results.map((r) => [r.tool, r.isError])).toEqual([
+      ["page_generate_locator", false],
+      ["page_generate_locator", false],
+      ["page_generate_locator", false],
+    ]);
+    expect(results[0].text).toMatch(/^\[\d+\] button "Apply"\n/);
+    expect(body(results[0])).toEqual([
+      '  role+name: button "Apply" (matches 1)',
+      "  id: apply-btn",
+      "  data-testid: —",
+      "  name: —",
+      "  css: #apply-btn",
+      "  xpath: //*[@id='apply-btn']",
+    ]);
+    expect(results[1].text).toMatch(/^\[\d+\] textbox "Coupon"\n/);
+    expect(body(results[1])).toEqual([
+      '  role+name: textbox "Coupon" (matches 1)',
+      "  id: coupon",
+      "  data-testid: —",
+      "  name: coupon",
+      "  css: #coupon",
+      "  xpath: //*[@id='coupon']",
+    ]);
+    // Two buttons share data-testid="icon-action", so it is not shown.
+    expect(body(results[2])[0]).toMatch(/^ {2}role\+name: button "" \(matches \d+\)$/);
+    expect(body(results[2]).slice(1)).toEqual([
+      "  id: icon-action-2",
+      "  data-testid: —",
+      "  name: —",
+      "  css: #icon-action-2",
+      "  xpath: //*[@id='icon-action-2']",
+    ]);
 
     for (const r of results) {
-      await expect(locatorFromText(sitePage, r.text)).toHaveCount(1);
+      expect(r.text).not.toMatch(/getBy|\.nth\(/);
+      const css = locatorField(r.text, "css");
+      const xpath = locatorField(r.text, "xpath");
+      expect(css).not.toBeNull();
+      expect(xpath).not.toBeNull();
+      expect(await countMatches(sitePage, css!, xpath!)).toEqual({ css: 1, xpath: 1 });
     }
-    await expect(locatorFromText(sitePage, results[2].text)).toHaveId("icon-action-2");
+    await expect(sitePage.locator(locatorField(results[2].text, "css")!)).toHaveId("icon-action-2");
 
     await fs.mkdir(ARTIFACTS_DIR, { recursive: true });
     await panelPage.emulateMedia({ colorScheme: "light" });

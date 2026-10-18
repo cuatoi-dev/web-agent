@@ -46,7 +46,7 @@ function makeControllerHarness() {
   };
   return {
     controller,
-    step(seq: number, line: string, frameOrigin?: string, target?: RecordedStep["target"]) {
+    step(seq: number, line: string, frameOrigin?: string, target?: RecordedStep["target"], locators?: RecordedStep["locators"]) {
       stepListeners[0](TAB_INFO.tabId, {
         recordingId: recordingId(),
         seq,
@@ -54,6 +54,7 @@ function makeControllerHarness() {
         line,
         ...(frameOrigin !== undefined ? { frameOrigin } : {}),
         ...(target !== undefined ? { target } : {}),
+        ...(locators !== undefined ? { locators } : {}),
       });
     },
     closeTab() {
@@ -237,6 +238,37 @@ describe("watch-me-provider", () => {
 
     expect(p.hasPending()).toBe(false);
     expect(harness.controller.state().kind).toBe("idle");
+  });
+
+  it("U-W12b: onUserPrompt() includes locators under element steps, while panel list stays one line per step", async () => {
+    const p = makeProvider();
+    await p.pick();
+    harness.step(0, 'click button "Apply"', undefined, undefined, {
+      role: "button",
+      name: "Apply",
+      roleMatches: 1,
+      id: "apply-btn",
+      css: "#apply-btn",
+      xpath: "//*[@id='apply-btn']",
+    });
+    harness.step(1, 'fill textbox "Coupon" "SAVE10"');
+
+    const root = p.slot?.();
+    const lis = [...root!.querySelectorAll("li")].map((el) => el.textContent);
+    expect(lis).toEqual(['click button "Apply"', 'fill textbox "Coupon" "SAVE10"']);
+
+    await p.pick(); // stop
+
+    const payload = { parts: [{ type: "text", text: "Turn this into a test" }] } as UserPromptPayload;
+    const result = p.onUserPrompt(payload);
+    expect(result).not.toBeUndefined();
+    const r = result as { parts: unknown[]; meta: Record<string, unknown> };
+
+    const textPart = r.parts[0] as { type: string; text: string };
+    expect(textPart.type).toBe("text");
+    expect(textPart.text).toBe(
+      `# Recorded steps on ${TAB_INFO.url}\n1. click button "Apply"\n  role+name: button "Apply" (matches 1)\n  id: apply-btn\n  data-testid: —\n  name: —\n  css: #apply-btn\n  xpath: //*[@id='apply-btn']\n2. fill textbox "Coupon" "SAVE10"`,
+    );
   });
 
   it("002: onUserPrompt() lists every step in order, bare", async () => {

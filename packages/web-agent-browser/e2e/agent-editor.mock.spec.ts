@@ -76,7 +76,7 @@ test.describe("Agent card editor", () => {
     await expect(tesagent.locator(".card-title .n")).toContainText("Tesagent");
     await expect(tesagent.locator(".card-title .d")).toHaveText("Display name and id come from the brand and cannot be changed.");
     await expect(page.locator("#edit-tesagent-displayName")).toHaveCount(0);
-    await expect(page.locator("#edit-tesagent-description")).toHaveValue("Test agent — website testing and Playwright scripts");
+    await expect(page.locator("#edit-tesagent-description")).toHaveValue("Test agent — explores a website, writes and runs test cases");
     await expect(page.locator("#edit-tesagent-instructions")).toHaveValue(/^You are Tesagent, a test agent\./);
     await expect(page.locator("#edit-tesagent-model")).toHaveValue("");
     expect(await chips(page, "edit-tesagent-skills")).toEqual(["*"]);
@@ -258,7 +258,7 @@ test.describe("Agent card editor", () => {
     await page.locator("#edit-tesagent-description").fill("Not saved");
     await page.locator(`${TESAGENT} .cancel-btn`).click();
     await expect(page.locator(`${TESAGENT} .edit-body`)).toHaveCount(0);
-    await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Test agent — website testing and Playwright scripts");
+    await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Test agent — explores a website, writes and runs test cases");
     const s = await stored(page);
     expect(s.agentEdits).toBeUndefined();
   });
@@ -330,7 +330,7 @@ test.describe("Agent card editor", () => {
     await page.locator(`${TESAGENT} .reset-btn`).click();
     await expect(page.locator(`${TESAGENT} .edit-body`)).toHaveCount(0);
     await expect(page.locator(`${TESAGENT} .pill`)).toHaveText(["From brand"]);
-    await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Test agent — website testing and Playwright scripts");
+    await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Test agent — explores a website, writes and runs test cases");
     const s = await stored(page);
     expect(s.agentEdits).toEqual({});
   });
