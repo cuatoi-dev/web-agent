@@ -41,18 +41,20 @@ Plan a test suite for a page, run it, and report it.
    - For a FAIL, capture the wrong state as it is.
 5. **Report every case as one evidence report, in exactly this layout:**
 
-       TC-04 Limit: 2,000-character code — FAIL
-       Steps
-         1. fill [7] textbox "Coupon" with 2,000 × "A"
-         2. click [8] button "Apply"
-       Checks
-         FAIL expected text "Code too long"; found none
-       Network
-         #14 POST /api/coupon → 500 (812 ms)
-       Console errors
-         Uncaught TypeError: cannot read 'total' of undefined
-       Screenshot
-         /tmp/runs/<stamp>/TC-04-long-code.png (element | highlight)
+   \`\`\`
+   TC-04 Limit: 2,000-character code — FAIL
+   Steps
+     1. fill [7] textbox "Coupon" with 2,000 × "A"
+     2. click [8] button "Apply"
+   Checks
+     FAIL expected text "Code too long"; found none
+   Network
+     #14 POST /api/coupon → 500 (812 ms)
+   Console errors
+     Uncaught TypeError: cannot read 'total' of undefined
+   Screenshot
+     /tmp/runs/<stamp>/TC-04-long-code.png (element | highlight)
+   \`\`\`
 
    Write "none" for Network or Console errors when there is nothing to show.
    Screenshot is never "none".

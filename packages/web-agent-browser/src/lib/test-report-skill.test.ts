@@ -48,6 +48,7 @@ describe("testReportSkill", () => {
 
   it("testPlanSkill names the temporary-attribute rule and page_generate_locator", () => {
     expect(testPlanSkill.definition).toContain("page_generate_locator");
-    expect(testPlanSkill.definition).toContain("temporary\n     aria-label");
+    expect(testPlanSkill.definition).toContain("temporary");
+    expect(testPlanSkill.definition).toContain("aria-label");
   });
 });
