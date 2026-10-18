@@ -210,6 +210,175 @@ describe("vfsTools", () => {
       expect(() => provider.vfs.mounts()).toThrow(/overlaps/);
     });
   });
+
+  describe("vfs.write (127/003)", () => {
+    it("creates a file, then overwrites it without a read first", async () => {
+      const provider = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() });
+      const vfs = provider.vfs;
+      const before = Date.now();
+
+      await vfs.write("/tmp/a.md", "x");
+      const created = await vfs.get("/tmp/a.md");
+      expect(created).toMatchObject({ content: "x", encoding: "utf8", mimeType: "text/markdown" });
+      expect(created!.mtimeMs).toBeGreaterThanOrEqual(before);
+
+      await vfs.write("/tmp/a.md", "y");
+      const overwritten = await vfs.get("/tmp/a.md");
+      expect(overwritten!.content).toBe("y");
+      expect(overwritten!.mtimeMs).toBeGreaterThanOrEqual(created!.mtimeMs);
+    });
+
+    it("creates the parent folders of a nested path", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+
+      await vfs.write("/tmp/a/b/c.md", "deep");
+
+      const listed = await vfs.list("/tmp");
+      expect(listed.map((e) => e.abs)).toContain("/tmp/a/b/c.md");
+      expect(await vfs.get("/tmp/a/b/c.md")).toMatchObject({ content: "deep" });
+    });
+
+    it("stores a PNG blob as base64 with the blob's own type", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      const bytes = new Uint8Array([0, 128, 255, 10]);
+
+      await vfs.write("/tmp/shot.png", new Blob([bytes], { type: "image/png" }));
+
+      const file = await vfs.get("/tmp/shot.png");
+      expect(file).toMatchObject({ encoding: "base64", mimeType: "image/png" });
+      expect(new Uint8Array([...atob(file!.content)].map((c) => c.charCodeAt(0)))).toEqual(bytes);
+    });
+
+    it("takes the MIME type from the path when the blob has none", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+
+      await vfs.write("/tmp/shot.png", new Blob([new Uint8Array([1, 2])]));
+
+      expect(await vfs.get("/tmp/shot.png")).toMatchObject({ mimeType: "image/png" });
+    });
+
+    it("rejects a read-only mount with the same message write_file uses", async () => {
+      const readOnly: VfsBackend = {
+        get: () => Promise.resolve(undefined),
+        list: () => Promise.resolve([]),
+      };
+      const vfs = vfsTools({ shared: readOnly }).vfs;
+
+      await expect(vfs.write("/home/shared/x.png", "x")).rejects.toThrow(
+        "Error: /home/shared/x.png is read-only. Writable paths: /tmp, /home/agent.",
+      );
+      expect(await readOnly.list("/")).toEqual([]);
+    });
+
+    it("names the attached folder in the read-only message", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      vfs.mount("/share/photos", { get: () => Promise.resolve(undefined), list: () => Promise.resolve([]) }, { external: true });
+
+      await expect(vfs.write("/share/photos/x.png", "x")).rejects.toThrow(
+        "The user attached /share/photos read only.",
+      );
+    });
+
+    it("rejects a path outside every mount", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+
+      await expect(vfs.write("/outside/x.md", "x")).rejects.toThrow("No mount for /outside/x.md");
+    });
+
+    it("rejects a relative path with normalize's own message", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+
+      await expect(vfs.write("notes.md", "x")).rejects.toThrow(
+        "Error: paths must be absolute, for example /home/agent/notes.md.",
+      );
+    });
+
+    it("rejects a mount root and a populated folder", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      await vfs.write("/home/agent/folder/one.md", "1");
+
+      await expect(vfs.write("/home/agent", "x")).rejects.toThrow("Error: /home/agent is a folder.");
+      await expect(vfs.write("/home/agent/folder", "x")).rejects.toThrow("Error: /home/agent/folder is a folder.");
+    });
+
+    it("notifies once per successful write, and never for a failure", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      const seen: string[] = [];
+      vfs.subscribe(() => seen.push("/"));
+
+      await vfs.write("/tmp/a.md", "x");
+      expect(seen).toHaveLength(1);
+      await vfs.write("/tmp/a.md", "y");
+      expect(seen).toHaveLength(2);
+
+      await expect(vfs.write("/outside/b.md", "b")).rejects.toThrow("No mount for");
+      expect(seen).toHaveLength(2);
+    });
+
+    it("a listener runs after the file is readable, and unsubscribe stops the notices", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      const atNotify: (Promise<string | undefined>)[] = [];
+      const off = vfs.subscribe(() => { atNotify.push(vfs.get("/tmp/a.md").then((f) => f?.content)); });
+
+      await vfs.write("/tmp/a.md", "x");
+      expect(await atNotify[0]).toBe("x");
+
+      off();
+      await vfs.write("/tmp/a.md", "y");
+      expect(atNotify).toHaveLength(1);
+    });
+
+    it("propagates a backend that rejects, storing nothing", async () => {
+      const tmp: VfsBackend = {
+        get: () => Promise.resolve(undefined),
+        list: () => Promise.resolve([]),
+        set: () => Promise.reject(new Error("the storage for /tmp is full.")),
+      };
+      const vfs = vfsTools({ tmp, home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      const seen: unknown[] = [];
+      vfs.subscribe(() => seen.push(1));
+
+      await expect(vfs.write("/tmp/a.md", "x")).rejects.toThrow("the storage for /tmp is full.");
+      expect(seen).toHaveLength(0);
+    });
+
+    it("writes into a run-time mount by relative path", async () => {
+      const extra = MemoryBackend();
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      vfs.mount("/share/reports", extra);
+
+      await vfs.write("/share/reports/nested/a.md", "body");
+
+      expect(await extra.get("/nested/a.md")).toMatchObject({ content: "body", encoding: "utf8" });
+    });
+
+    it("a read-only run-time mount rejects", async () => {
+      const vfs = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+      vfs.mount("/share/photos", { get: () => Promise.resolve(undefined), list: () => Promise.resolve([]) }, { external: true });
+
+      await expect(vfs.write("/share/photos/a.md", "x")).rejects.toThrow("/share/photos/a.md is read-only.");
+    });
+
+    it("a direct write neither grants nor forgets a tracked read", async () => {
+      const home = MemoryBackend();
+      const provider = vfsTools({ tmp: MemoryBackend(), home, shared: MemoryBackend() });
+      const writeFile = (await provider.load()).find((t) => t.name === "write_file")!;
+      const readFile = (await provider.load()).find((t) => t.name === "read_file")!;
+      const vfs = provider.vfs;
+      const ctx = { sessionId: "s1" } as ToolContext;
+
+      await vfs.write("/home/agent/a.md", "one");
+      const notRead = await writeFile.execute({ file_path: "/home/agent/a.md", content: "two" }, ctx);
+      expect(notRead.content).toContain("has not been read in this chat");
+
+      await readFile.execute({ file_path: "/home/agent/a.md" }, ctx);
+      await vfs.write("/home/agent/a.md", "two");
+      expect(await home.get("/a.md")).toMatchObject({ content: "two" });
+
+      const afterDirectWrite = await writeFile.execute({ file_path: "/home/agent/a.md", content: "three" }, ctx);
+      expect(afterDirectWrite.content).toContain("has been updated.");
+    });
+  });
 });
 
 describe("vfsTools run-time mounts", () => {

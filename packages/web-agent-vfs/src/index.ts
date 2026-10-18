@@ -1,7 +1,9 @@
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
-import type { VfsHandle, VfsMount, VfsMountInfo, VfsOptions, VfsToolProvider } from "./types.js";
-import { buildMounts, canDelete, canWrite, ConfigError, filesUnder, overlaps, resolve } from "./mounts.js";
+import type { VfsFile, VfsHandle, VfsMount, VfsMountInfo, VfsOptions, VfsToolProvider } from "./types.js";
+import { buildMounts, canDelete, canWrite, ConfigError, filesUnder, isFolder, overlaps, readOnlyMessage, resolve } from "./mounts.js";
 import { normalize } from "./paths.js";
+import { mimeFromPath } from "./mime.js";
+import { blobFile } from "./blob-file.js";
 import { createReadTracker } from "./read-tracker.js";
 import { createAgentsMdTracker } from "./agents-md-tracker.js";
 import { readFileTool } from "./tools/read-file.js";
@@ -73,6 +75,26 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
       const res = resolve(ms, absPath);
       if (!res.mount || !res.rel) return undefined;
       return res.mount.backend.get(res.rel);
+    },
+    async write(absPath: string, content: string | Blob) {
+      const ms = getMounts();
+      const { p, mount, rel } = resolve(ms, absPath);
+      if (!mount || !rel) {
+        throw new Error(`No mount for ${absPath}`);
+      }
+      if (!canWrite(mount)) {
+        throw new Error(readOnlyMessage(p, mount, ms));
+      }
+      if (await isFolder(mount, rel)) {
+        throw new Error(`Error: ${p} is a folder.`);
+      }
+      // 127/003 — a direct write is not a tool call, so it neither needs nor
+      // updates the read-before-overwrite tracker.
+      const file: VfsFile = typeof content === "string"
+        ? { content, encoding: "utf8" as const, mimeType: mimeFromPath(p), mtimeMs: Date.now() }
+        : await blobFile(content, p);
+      await mount.backend.set!(rel, file);
+      for (const listener of listeners) listener();
     },
     async delete(absPath: string) {
       const ms = getMounts();

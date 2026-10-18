@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { test, expect, getTabId } from "./extension.fixture";
+import { bodyOf, expectSavedRecording } from "./saved-files";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
 const ORIGIN = "http://localhost:10040";
@@ -132,6 +133,18 @@ async function waitForResults(
   return panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 }
 
+/** 127/003 — the stored text of a /tmp file for this agent, read straight from
+ *  the real chrome.storage.session the /tmp mount uses. The key format is
+ *  `chrome-storage-backend.ts:69`; the namespace is `tmp:<agent id>` from
+ *  `sidepanel.ts:169`. */
+async function readTmpFile(worker: Worker, absPath: string): Promise<string | null> {
+  return worker.evaluate(async (p: string) => {
+    const key = `web-agent-vfs:tmp:tesagent:f:${p.replace(/^\/tmp/, "")}`;
+    const got = await chrome.storage.session.get(key);
+    return got[key]?.content ?? null;
+  }, absPath);
+}
+
 async function allow(panelPage: Page): Promise<void> {
   const scrim = panelPage.locator("agent-chat-panel:not([hidden]) .wa-confirm-scrim");
   await expect(scrim).toBeVisible({ timeout: 15_000 });
@@ -231,6 +244,18 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     expect(stopText).toContain('4. fill textbox "Coupon" "SAVE10"\n  role+name: textbox "Coupon" (matches 1)\n  id: coupon\n');
     expect(stopText).not.toMatch(/getBy|\.nth\(/);
+
+    // 127/003 — the report is also a real file, with the same body the tool
+    // returned before its trailing "Saved <path>" line.
+    const savedRecording = expectSavedRecording(stopText);
+    const report = bodyOf(stopText);
+    expect(lines.length).toBe(9 + 1);            // the Saved line joins the numbered ones
+    expect(lines[9]).toBe(`Saved ${savedRecording}`);
+    expect(lines.slice(0, 9)).toEqual(report.split("\n").filter((l) => !l.startsWith("  ")));
+    const storedReport = await readTmpFile(worker, savedRecording);
+    expect(storedReport).toBe(report);
+    expect(storedReport).toContain('5. fill textbox "Password" <password>');
+    expect(storedReport).not.toContain("secret123");
 
     // M1b: Verify password was never leaked
     expect(stopText).not.toContain("secret123");

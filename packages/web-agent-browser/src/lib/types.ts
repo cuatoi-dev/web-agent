@@ -2,6 +2,7 @@
 // alias lives here or in sibling *.types.ts files, kept acyclic.
 
 import type { ConfirmInteractionDetail, CustomToolDef, SkillDef, ToolContext } from "@cuatoi/web-agent-core";
+import type { VfsHandle } from "@cuatoi/web-agent-vfs";
 import type { CaptureApi, PageScreenshotToolOptions } from "./page-screenshot-tool.types";
 import type { SkillsRequestMessage, SkillsResultMessage } from "./skill-registry.types";
 import type { RecordingController } from "./recorder.types";
@@ -419,6 +420,9 @@ export interface RecordingToolsOptions {
 
 export interface PanelPageToolsOptions
   extends PageScreenshotToolOptions, DebuggerToolsOptions, RecordingToolsOptions {
+  /** The panel's own vfs handle (sidepanel.ts:191). page_screenshot and
+   *  stop_recording save what they produce into it (127/003). */
+  vfs: VfsHandle;
   /** The panel's own confirm gate for the "ask" permission tier on
    *  `page_click`, `page_fill_form` and `page_select_option` (122/001). Absent
    *  means every "ask"-tier action proceeds unconfirmed. */

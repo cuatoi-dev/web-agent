@@ -206,6 +206,16 @@ describe("pageToolPhrases — done lines", () => {
       .toBe("tesagent stopped recording: 4 steps");
   });
 
+  it("stop_recording: 127/003 the saved path does not change the count phrase", () => {
+    expect(
+      phraseFor(
+        "stop_recording",
+        {},
+        'Recorded 1 step on localhost:10040:\n1. click …\nSaved /tmp/recordings/2026-01-02-030405.md',
+      ),
+    ).toBe("tesagent stopped recording: 1 step");
+  });
+
   it("start_debugging: fresh", () => {
     expect(phraseFor("start_debugging", { tabId: 5 }, "Debugging tab #5 (localhost:10040)."))
       .toBe("tesagent started debugging localhost:10040");
@@ -269,6 +279,16 @@ describe("pageToolPhrases — done lines", () => {
   it("page_screenshot: ref", () => {
     expect(phraseFor("page_screenshot", { ref: "7" }, 'Screenshot of [7] button "Apply", 80 × 32.'))
       .toBe('tesagent took a screenshot of the button "Apply"');
+  });
+
+  it("page_screenshot: 127/003 the saved path does not change the element phrase", () => {
+    expect(
+      phraseFor(
+        "page_screenshot",
+        { ref: "7" },
+        'Screenshot of [7] button "Apply", 80 × 32.\nSaved /tmp/screenshots/2026-01-02-030405-tab5.png',
+      ),
+    ).toBe('tesagent took a screenshot of the button "Apply"');
   });
 
   it("page_screenshot: viewport", () => {

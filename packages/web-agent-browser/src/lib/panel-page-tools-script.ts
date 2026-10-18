@@ -149,7 +149,7 @@ async function describeResult(
   return describeValue(result.value);
 }
 
-export function createScriptPageTools(options: PanelPageToolsOptions = {}): CustomToolDef[] {
+export function createScriptPageTools(options: PanelPageToolsOptions): CustomToolDef[] {
   const session = options.debuggerSession;
   const helperWorlds = options.helper ?? (session ? createHelperWorlds(session) : undefined);
   const maxChars = options.maxChars ?? DEFAULT_PAGE_EVAL_MAX_CHARS;

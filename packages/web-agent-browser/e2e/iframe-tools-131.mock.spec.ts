@@ -4,6 +4,7 @@
 // the new fixture, routeCrossSiteFrames applied, and refFor extended to also
 // match an "f<k>:" prefixed ref.
 import { test, expect, getTabId } from "./extension.fixture";
+import { captionOf, expectSavedPng } from "./saved-files";
 import { routeCrossSiteFrames } from "./cross-site-frames";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
@@ -253,7 +254,8 @@ test.describe("Iframe tools 131 mock e2e (131/003)", () => {
     expect(results[6].text).toContain("\n  css: #pay\n");
     expect(results[6].text).toContain("\n  xpath: //*[@id='pay']\n");
     expect(results[6].text).toContain("\n  frames: #payment");
-    expect(results[7].text).toMatch(/^Screenshot of \[f1:\d+\] .+, [\d.]+ × [\d.]+\.$/);
+    expect(captionOf(results[7].text)).toMatch(/^Screenshot of \[f1:\d+\] .+, [\d.]+ × [\d.]+\.$/);
+    expectSavedPng(results[7].text);
 
     await context.close();
   });

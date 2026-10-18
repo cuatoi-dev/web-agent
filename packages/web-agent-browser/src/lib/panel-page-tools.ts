@@ -15,7 +15,7 @@ import type { PanelPageToolsOptions } from "./types";
 
 export type { PanelPageToolsOptions } from "./types";
 
-export function createPanelPageTools(input: PanelPageToolsOptions = {}): CustomToolDef[] {
+export function createPanelPageTools(input: PanelPageToolsOptions): CustomToolDef[] {
   // 124/001 — one session shared by the act-by-ref and debugger tools below.
   // 124/007 — one host map per agent panel. Filled by every forwarded call that
   // passes the activation check; read when a step line renders.
@@ -64,7 +64,7 @@ export function createPanelPageTools(input: PanelPageToolsOptions = {}): CustomT
   return attachPhrases(tools, hostTracker.hostFor);
 }
 
-export function panelPageTools(options: PanelPageToolsOptions = {}): ToolProvider[] {
+export function panelPageTools(options: PanelPageToolsOptions): ToolProvider[] {
   return [
     {
       name: "panel-page-tools",

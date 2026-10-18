@@ -237,7 +237,7 @@ export function pageToolPhrases(hostFor: (tabId: unknown) => string): Record<str
       phrase: ({ input, outcomeSummary, failed }, agent) => {
         if (failed) return `${agent} tried to take a screenshot`;
         if (input.fullPage === true) return `${agent} took a full-page screenshot`;
-        const m = /^Screenshot of \[[^\]]+\] (.+), \d+ × \d+\.$/.exec(outcomeSummary);
+        const m = /^Screenshot of \[[^\]]+\] (.+), \d+ × \d+\.$/.exec(outcomeSummary.split("\n")[0]);
         if (m) return `${agent} took a screenshot of ${describeThing(m[1].trim())}`;
         return `${agent} took a screenshot`;
       },

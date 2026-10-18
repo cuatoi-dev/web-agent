@@ -20,7 +20,7 @@ function tabIdText(input: Record<string, unknown>): string {
   return typeof input.tabId === "number" || typeof input.tabId === "string" ? String(input.tabId) : "(none)";
 }
 
-export function createNetworkDialogPageTools(options: PanelPageToolsOptions = {}): CustomToolDef[] {
+export function createNetworkDialogPageTools(options: PanelPageToolsOptions): CustomToolDef[] {
   // createPanelPageTools always passes one; a direct caller gets its own.
   const session = options.debuggerSession ?? createDebuggerSession();
   const helper = options.helper ?? createHelperWorlds(session);

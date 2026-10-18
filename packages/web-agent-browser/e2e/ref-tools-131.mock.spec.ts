@@ -6,6 +6,7 @@
 // again here so the R-list maps one-to-one onto this file, per the finish
 // brief for this task's completion round (2026-09-19).
 import { test, expect, getTabId } from "./extension.fixture";
+import { captionOf, expectSavedPng } from "./saved-files";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
 const ORIGIN = "http://localhost:10040";
@@ -358,7 +359,8 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
     const results = await runPlan(panelPage, "Start debugging, snapshot, then screenshot the Apply button.", 3);
 
     expect(results[2].isError).toBe(false);
-    expect(results[2].text).toMatch(/^Screenshot of \[\d+\] button "Apply", [\d.]+ × [\d.]+\.$/);
+    expect(captionOf(results[2].text)).toMatch(/^Screenshot of \[\d+\] button "Apply", [\d.]+ × [\d.]+\.$/);
+    expectSavedPng(results[2].text);
 
     await context.close();
   });

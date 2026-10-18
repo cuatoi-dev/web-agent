@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { ToolContext } from "@cuatoi/web-agent-core";
 import { createScriptPageTools } from "./panel-page-tools-script";
+import { testVfs } from "./test-vfs";
 import { createDebuggerSession } from "./debugger-session";
 
 function toolCtx(): ToolContext {
@@ -48,7 +49,7 @@ describe("page_eval", () => {
     const { api } = fakeDebuggerApi();
     const session = createDebuggerSession(api);
     vi.clearAllMocks();
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return 1" }, toolCtx());
     expect(result).toEqual({
@@ -61,7 +62,7 @@ describe("page_eval", () => {
   it("the Cancel gate", async () => {
     const { session, fireDetach } = await debuggingSession();
     fireDetach(1, "canceled_by_user");
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return 1" }, toolCtx());
     expect(result).toEqual({
@@ -74,7 +75,7 @@ describe("page_eval", () => {
     const { api, session } = await debuggingSession({
       "Runtime.evaluate": { result: { type: "string", value: "Hello" } },
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     await pageEval.execute({ tabId: 1, code: "return document.title" }, toolCtx());
     expect(api.sendCommand).toHaveBeenCalledWith(1, "Runtime.evaluate", {
@@ -88,7 +89,7 @@ describe("page_eval", () => {
     const { session } = await debuggingSession({
       "Runtime.evaluate": { result: { type: "string", value: "Hello" } },
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return 'Hello'" }, toolCtx());
     expect(result).toEqual({ content: "Result type: string\n\nHello" });
@@ -99,7 +100,7 @@ describe("page_eval", () => {
       "Runtime.evaluate": { result: { type: "object", className: "Foo", objectId: "OID" } },
       "Runtime.callFunctionOn": { result: { value: { kind: "Foo", text: "[Foo] …" } } },
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return foo" }, toolCtx());
     expect(api.sendCommand).toHaveBeenCalledWith(
@@ -124,7 +125,7 @@ describe("page_eval", () => {
       }
       return Promise.resolve({});
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return foo" }, toolCtx());
     expect(result).toEqual({ content: "Result type: Foo\n\na Foo" });
@@ -134,7 +135,7 @@ describe("page_eval", () => {
     const { api, session } = await debuggingSession({
       "Runtime.evaluate": { result: { type: "number", value: 7 } },
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return 7" }, toolCtx());
     expect(result).toEqual({ content: "Result type: number\n\n7" });
@@ -150,7 +151,7 @@ describe("page_eval", () => {
     ];
     for (const [result, kind, text] of cases) {
       const { session } = await debuggingSession({ "Runtime.evaluate": { result } });
-      const [pageEval] = createScriptPageTools({ debuggerSession: session });
+      const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
       const out = await pageEval.execute({ tabId: 1, code: "return x" }, toolCtx());
       expect(out).toEqual({ content: `Result type: ${kind}\n\n${text}` });
     }
@@ -162,7 +163,7 @@ describe("page_eval", () => {
         exceptionDetails: { exception: { className: "TypeError", description: "TypeError: boom\n    at <anonymous>:1:1" } },
       },
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "throw new TypeError('boom')" }, toolCtx());
     expect(result).toEqual({ content: "The code threw TypeError: boom", isError: true });
@@ -172,7 +173,7 @@ describe("page_eval", () => {
     const { session } = await debuggingSession({
       "Runtime.evaluate": { exceptionDetails: { exception: { type: "string", value: "nope" } } },
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "throw 'nope'" }, toolCtx());
     expect(result).toEqual({ content: "The code threw Error: nope", isError: true });
@@ -197,7 +198,7 @@ describe("page_eval", () => {
         }
         return Promise.resolve({});
       });
-      const [pageEval] = createScriptPageTools({ debuggerSession: session });
+      const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
       const exec = pageEval.execute({ tabId: 1, code: "while (true) {}", timeoutMs: 2000 }, toolCtx());
       await vi.advanceTimersByTimeAsync(2000);
@@ -219,7 +220,7 @@ describe("page_eval", () => {
       if (method === "Runtime.evaluate") return Promise.reject(new Error("boom"));
       return Promise.resolve({});
     });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return 1" }, toolCtx());
     expect(result.isError).toBe(true);
@@ -228,7 +229,7 @@ describe("page_eval", () => {
 
   it("timeoutMs out of range runs nothing", async () => {
     const { api, session } = await debuggingSession();
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return 1", timeoutMs: 900000 }, toolCtx());
     expect(result).toEqual({
@@ -240,7 +241,7 @@ describe("page_eval", () => {
 
   it("empty code runs nothing", async () => {
     const { api, session } = await debuggingSession();
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "   " }, toolCtx());
     expect(result).toEqual({ content: "No code provided to page_eval.", isError: true });
@@ -250,7 +251,7 @@ describe("page_eval", () => {
   it("truncates a long result", async () => {
     const long = "Y".repeat(10000);
     const { session } = await debuggingSession({ "Runtime.evaluate": { result: { type: "string", value: long } } });
-    const [pageEval] = createScriptPageTools({ debuggerSession: session });
+    const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageEval.execute({ tabId: 1, code: "return x" }, toolCtx());
     expect(result.content?.endsWith("…(output truncated)")).toBe(true);
@@ -261,7 +262,7 @@ describe("page_eval", () => {
       const { api, session } = await debuggingSession({
         "Runtime.evaluate": { result: { type: "string", value: "Hello" } },
       });
-      const [pageEval] = createScriptPageTools({ debuggerSession: session });
+      const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
       await pageEval.execute({ tabId: 1, code: "return 1" }, toolCtx());
 
@@ -281,7 +282,7 @@ describe("page_eval", () => {
         sessionId: "S1",
         targetInfo: { type: "iframe", targetId: "pay-frame", url: "http://pay.test" },
       });
-      const [pageEval] = createScriptPageTools({ debuggerSession: session });
+      const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
       const result = await pageEval.execute({ tabId: 1, code: "return location.origin", frame: "5" }, toolCtx());
 
@@ -302,7 +303,7 @@ describe("page_eval", () => {
       fireEvent(1, "Runtime.executionContextCreated", {
         context: { id: 55, origin: "http://localhost:10040", auxData: { isDefault: true, frameId: "same-site-frame" } },
       });
-      const [pageEval] = createScriptPageTools({ debuggerSession: session });
+      const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
       const result = await pageEval.execute({ tabId: 1, code: "return document.title", frame: "6" }, toolCtx());
 
@@ -321,7 +322,7 @@ describe("page_eval", () => {
       const { session } = await debuggingSession({
         "DOM.describeNode": { node: { nodeName: "BUTTON" } },
       });
-      const [pageEval] = createScriptPageTools({ debuggerSession: session });
+      const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
       const result = await pageEval.execute({ tabId: 1, code: "return 1", frame: "5" }, toolCtx());
 
@@ -355,7 +356,7 @@ describe("page_eval", () => {
           }
           return Promise.resolve({});
         });
-        const [pageEval] = createScriptPageTools({ debuggerSession: session });
+        const [pageEval] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
         const exec = pageEval.execute({ tabId: 1, code: "while (true) {}", timeoutMs: 2000, frame: "5" }, toolCtx());
         await vi.advanceTimersByTimeAsync(2000);
@@ -380,7 +381,7 @@ describe("page_fetch", () => {
         result: { value: { kind: "response", status: 200, statusText: "OK", contentType: "application/json", body: "{}" } },
       },
     });
-    const [, pageFetch] = createScriptPageTools({ debuggerSession: session });
+    const [, pageFetch] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     await pageFetch.execute({ tabId: 1, url: "/api/items" }, toolCtx());
     const call = api.sendCommand.mock.calls.find((c) => c[1] === "Runtime.evaluate")!;
@@ -396,7 +397,7 @@ describe("page_fetch", () => {
         result: { value: { kind: "response", status: 200, statusText: "OK", contentType: "application/json", body: '{"ok":true}' } },
       },
     });
-    const [, pageFetch] = createScriptPageTools({ debuggerSession: session });
+    const [, pageFetch] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageFetch.execute({ tabId: 1, url: "/api/items" }, toolCtx());
     expect(result).toEqual({ content: 'Status: 200 OK\nContent-Type: application/json\n\n{"ok":true}' });
@@ -408,7 +409,7 @@ describe("page_fetch", () => {
         result: { value: { kind: "cross-origin", requested: "https://other.test", pageOrigin: "http://localhost:10040" } },
       },
     });
-    const [, pageFetch] = createScriptPageTools({ debuggerSession: session });
+    const [, pageFetch] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageFetch.execute({ tabId: 1, url: "https://other.test/x" }, toolCtx());
     expect(result.isError).toBe(true);
@@ -419,21 +420,21 @@ describe("page_fetch", () => {
     const { session: s1 } = await debuggingSession({
       "Runtime.evaluate": { result: { value: { kind: "invalid-url", url: "bad", message: 'Invalid URL "bad": boom' } } },
     });
-    const [, invalidTool] = createScriptPageTools({ debuggerSession: s1 });
+    const [, invalidTool] = createScriptPageTools({ vfs: testVfs(), debuggerSession: s1 });
     const invalid = await invalidTool.execute({ tabId: 1, url: "bad" }, toolCtx());
     expect(invalid).toEqual({ content: 'Invalid URL "bad": boom', isError: true });
 
     const { session: s2 } = await debuggingSession({
       "Runtime.evaluate": { result: { value: { kind: "throw", name: "TypeError", message: "boom" } } },
     });
-    const [, throwTool] = createScriptPageTools({ debuggerSession: s2 });
+    const [, throwTool] = createScriptPageTools({ vfs: testVfs(), debuggerSession: s2 });
     const thrown = await throwTool.execute({ tabId: 1, url: "/x" }, toolCtx());
     expect(thrown).toEqual({ content: "The request failed: TypeError: boom", isError: true });
   });
 
   it("an empty url sends nothing", async () => {
     const { api, session } = await debuggingSession();
-    const [, pageFetch] = createScriptPageTools({ debuggerSession: session });
+    const [, pageFetch] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageFetch.execute({ tabId: 1, url: "  " }, toolCtx());
     expect(result).toEqual({ content: "No URL or path provided to page_fetch.", isError: true });
@@ -448,7 +449,7 @@ describe("page_fetch", () => {
         if (method === "Runtime.evaluate") return new Promise(() => {});
         return Promise.resolve({});
       });
-      const [, pageFetch] = createScriptPageTools({ debuggerSession: session });
+      const [, pageFetch] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
       const exec = pageFetch.execute({ tabId: 1, url: "/api/items" }, toolCtx());
       await vi.advanceTimersByTimeAsync(10000);
@@ -469,7 +470,7 @@ describe("page_fetch", () => {
         result: { value: { kind: "response", status: 200, statusText: "OK", contentType: "text/plain", body: long } },
       },
     });
-    const [, pageFetch] = createScriptPageTools({ debuggerSession: session });
+    const [, pageFetch] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageFetch.execute({ tabId: 1, url: "/x" }, toolCtx());
     expect(result.content?.endsWith("…(output truncated)")).toBe(true);
@@ -481,7 +482,7 @@ describe("page_console", () => {
     const { session, fireEvent } = await debuggingSession();
     fireEvent(1, "Runtime.consoleAPICalled", { type: "error", args: [{ type: "string", value: "boom" }] });
     fireEvent(1, "Runtime.consoleAPICalled", { type: "warning", args: [{ type: "string", value: "careful" }] });
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageConsole.execute({ tabId: 1 }, toolCtx());
     expect(result).toEqual({ content: "Console (2 matching):\n[error] boom\n[warn] careful" });
@@ -491,7 +492,7 @@ describe("page_console", () => {
     const { session, fireEvent } = await debuggingSession();
     fireEvent(1, "Runtime.consoleAPICalled", { type: "error", args: [{ type: "string", value: "boom" }] });
     fireEvent(1, "Runtime.consoleAPICalled", { type: "log", args: [{ type: "string", value: "info line" }] });
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageConsole.execute({ tabId: 1, level: "error" }, toolCtx());
     expect(result).toEqual({ content: "Console (1 matching):\n[error] boom" });
@@ -502,7 +503,7 @@ describe("page_console", () => {
     for (let i = 0; i < 5; i++) {
       fireEvent(1, "Runtime.consoleAPICalled", { type: "log", args: [{ type: "string", value: `m${i}` }] });
     }
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageConsole.execute({ tabId: 1, limit: 2 }, toolCtx());
     expect(result).toEqual({ content: "Console (5 matching):\n[log] m3\n[log] m4" });
@@ -513,7 +514,7 @@ describe("page_console", () => {
     for (let i = 0; i < 205; i++) {
       fireEvent(1, "Runtime.consoleAPICalled", { type: "log", args: [{ type: "string", value: `m${i}` }] });
     }
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageConsole.execute({ tabId: 1, limit: 1 }, toolCtx());
     expect(result.content?.startsWith("5 earlier entries fell out of the 200-entry buffer.")).toBe(true);
@@ -543,7 +544,7 @@ describe("page_console", () => {
     const { session, fireEvent } = await debuggingSession();
     fireEvent(1, "Runtime.consoleAPICalled", { type: "log", args: [{ type: "string", value: "before" }] });
     fireEvent(1, "Page.frameNavigated", { frame: { parentId: "main", url: "http://localhost:10040/iframe.html" } });
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const result = await pageConsole.execute({ tabId: 1 }, toolCtx());
     expect(result.content).toContain("before");
@@ -551,7 +552,7 @@ describe("page_console", () => {
 
   it("invalid level and invalid limit", async () => {
     const { session } = await debuggingSession();
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const badLevel = await pageConsole.execute({ tabId: 1, level: "verbose" }, toolCtx());
     expect(badLevel).toEqual({
@@ -568,7 +569,7 @@ describe("page_console", () => {
 
   it("an empty buffer names why", async () => {
     const { session } = await debuggingSession();
-    const [, , pageConsole] = createScriptPageTools({ debuggerSession: session });
+    const [, , pageConsole] = createScriptPageTools({ vfs: testVfs(), debuggerSession: session });
 
     const plain = await pageConsole.execute({ tabId: 1 }, toolCtx());
     expect(plain).toEqual({ content: "No console output captured for this document." });

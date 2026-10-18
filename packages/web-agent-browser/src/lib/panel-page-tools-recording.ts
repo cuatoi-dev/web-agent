@@ -5,6 +5,7 @@
 import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { errorMessage } from "./error-message";
+import { localFileStamp } from "./file-save-path";
 import type { PanelPageToolsOptions } from "./types";
 import type { RecordingResult } from "./recorder.types";
 import { stepLocatorLines } from "./locator-format";
@@ -70,7 +71,7 @@ export function createRecordingPageTools(options: PanelPageToolsOptions): Custom
   const stopRecording: CustomToolDef = {
     name: "stop_recording",
     description:
-      "Stop recording the user in a browser tab and list what they did, in order. When reporting recorded steps to the user, list all steps in order and preserve any <password> redaction marker. A recording that already stopped because the tab closed or debugging stopped is returned the same way, with the reason.",
+      "Stop recording the user in a browser tab and list what they did, in order. When reporting recorded steps to the user, list all steps in order and preserve any <password> redaction marker. The report is also saved as a Markdown file in the file system, and the saved path is in the result. A recording that already stopped because the tab closed or debugging stopped is returned the same way, with the reason.",
     inputSchema: z.object({
       tabId: z.number().describe("The ID of the tab. Call read_tabs first and pass the ID it reports."),
     }),
@@ -87,7 +88,16 @@ export function createRecordingPageTools(options: PanelPageToolsOptions): Custom
 
       const result = await recording.stop();
       if ("error" in result) return { content: result.error, isError: true };
-      return { content: report(result) };
+      // 127/003 — the report is saved as a Markdown file the user can
+      // download from the Files screen; a failed save fails the call.
+      const text = report(result);
+      const path = `/tmp/recordings/${localFileStamp()}.md`;
+      try {
+        await options.vfs.write(path, text);
+      } catch (err) {
+        return { content: errorMessage(err), isError: true };
+      }
+      return { content: text + "\nSaved " + path };
     },
   };
 

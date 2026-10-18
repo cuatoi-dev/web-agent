@@ -189,6 +189,7 @@ function buildAgentPanel(
     // offered at all, so they come from the agent's EFFECTIVE model, not the
     // options page settings.
     ...panelPageTools({
+      vfs: vfs.vfs,
       endpointType: eff.wireFormat,
       model: eff.model,
       confirmInteraction: panel.confirmInteraction.bind(panel),

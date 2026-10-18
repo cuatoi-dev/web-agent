@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { ToolContext } from "@cuatoi/web-agent-core";
 import { createPanelPageTools } from "./panel-page-tools";
+import { testVfs } from "./test-vfs";
 import { createDebuggerSession } from "./debugger-session";
 import type { HelperWorlds } from "./types";
 
@@ -45,7 +46,7 @@ function fakeDebuggerApi() {
 
 describe("Debugger page tools (124/001)", () => {
   it("names and order: includes page_dialog, page_upload_file, start_debugging, stop_debugging, page_hover, page_press_key, page_emulate", () => {
-    const tools = createPanelPageTools({});
+    const tools = createPanelPageTools({ vfs: testVfs() });
     const names = tools.map((t) => t.name);
     const debuggerTools = names.slice(-9, -2);
     expect(debuggerTools).toEqual([
@@ -62,7 +63,7 @@ describe("Debugger page tools (124/001)", () => {
   it("attaches without asking the tab anything", async () => {
     const debuggerApi = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(debuggerApi);
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     const start = tools.find((t) => t.name === "start_debugging")!;
 
     const result = await start.execute({ tabId: 4 }, toolCtx());
@@ -74,7 +75,7 @@ describe("Debugger page tools (124/001)", () => {
     const onActivatedOrigin = vi.fn();
     const debuggerApi = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(debuggerApi);
-    const tools = createPanelPageTools({ onActivatedOrigin, debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), onActivatedOrigin, debuggerSession });
     const start = tools.find((t) => t.name === "start_debugging")!;
 
     const result = await start.execute({ tabId: 4 }, toolCtx());
@@ -84,7 +85,7 @@ describe("Debugger page tools (124/001)", () => {
 
   it("stop without start returns not being debugged", async () => {
     const debuggerSession = createDebuggerSession(fakeDebuggerApi());
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     const stop = tools.find((t) => t.name === "stop_debugging")!;
 
     const result = await stop.execute({ tabId: 4 }, toolCtx());
@@ -92,7 +93,7 @@ describe("Debugger page tools (124/001)", () => {
   });
 
   it("summaries produce expected strings", () => {
-    const tools = createPanelPageTools({});
+    const tools = createPanelPageTools({ vfs: testVfs() });
     const start = tools.find((t) => t.name === "start_debugging")!;
     const stop = tools.find((t) => t.name === "stop_debugging")!;
 
@@ -110,8 +111,8 @@ describe("Debugger page tools (124/001)", () => {
     const debuggerApi = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(debuggerApi);
 
-    const agent1Tools = createPanelPageTools({ helper, debuggerSession });
-    const agent2Tools = createPanelPageTools({ helper, debuggerSession });
+    const agent1Tools = createPanelPageTools({ vfs: testVfs(), helper, debuggerSession });
+    const agent2Tools = createPanelPageTools({ vfs: testVfs(), helper, debuggerSession });
 
     const start = agent1Tools.find((t) => t.name === "start_debugging")!;
     const pageClick = agent2Tools.find((t) => t.name === "page_click")!;
@@ -127,7 +128,7 @@ describe("Debugger page tools (124/001)", () => {
 describe("page_hover (124/002)", () => {
   it("gate check: error when debugging not started", async () => {
     const debuggerSession = createDebuggerSession(fakeDebuggerApi());
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     const pageHover = tools.find((t) => t.name === "page_hover")!;
 
     const result = await pageHover.execute({ tabId: 4, ref: "1" }, toolCtx());
@@ -155,7 +156,7 @@ describe("page_hover (124/002)", () => {
       throw new Error(`unexpected helper call: ${fn}`);
     });
     const centre = vi.fn().mockResolvedValue({ ok: true, x: 40, y: 50 });
-    const tools = createPanelPageTools({ helper: fakeHelper({ call, centre }), debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), helper: fakeHelper({ call, centre }), debuggerSession });
     const pageHover = tools.find((t) => t.name === "page_hover")!;
 
     const result = await pageHover.execute({ tabId: 1, ref: "3" }, toolCtx());
@@ -173,13 +174,13 @@ describe("page_press_key (124/002)", () => {
     const api = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(api);
     await debuggerSession.start(1);
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     return { tool: tools.find((t) => t.name === "page_press_key")!, api };
   }
 
   it("gate check: error when debugging not started", async () => {
     const debuggerSession = createDebuggerSession(fakeDebuggerApi());
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     const pagePressKey = tools.find((t) => t.name === "page_press_key")!;
 
     const result = await pagePressKey.execute({ tabId: 4, key: "Enter" }, toolCtx());
@@ -298,13 +299,13 @@ describe("page_emulate (124/002)", () => {
     const api = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(api);
     await debuggerSession.start(1);
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     return { tool: tools.find((t) => t.name === "page_emulate")!, api };
   }
 
   it("gate check: error when debugging not started", async () => {
     const debuggerSession = createDebuggerSession(fakeDebuggerApi());
-    const tools = createPanelPageTools({ debuggerSession });
+    const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
     const pageEmulate = tools.find((t) => t.name === "page_emulate")!;
 
     const result = await pageEmulate.execute({ tabId: 4, preset: "iPhone 15" }, toolCtx());

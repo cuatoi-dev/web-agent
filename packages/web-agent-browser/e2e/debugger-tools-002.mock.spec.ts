@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { test, expect, getTabId } from "./extension.fixture";
+import { captionOf, expectSavedPng } from "./saved-files";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
 const ORIGIN = "http://localhost:10040";
@@ -278,16 +279,19 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     expect(results[3].isError).toBe(false);
     // Element bounds come straight from getBoundingClientRect, which is not
     // guaranteed to be a whole number of CSS pixels.
-    expect(results[3].text).toMatch(/^Screenshot of \[\d+\] button "Apply", [\d.]+ × [\d.]+\.$/);
+    expect(captionOf(results[3].text)).toMatch(/^Screenshot of \[\d+\] button "Apply", [\d.]+ × [\d.]+\.$/);
+    expectSavedPng(results[3].text);
 
     expect(results[4].isError).toBe(false);
-    const fullMatch = results[4].text.match(/^Full-page screenshot, (\d+) × (\d+)\.$/);
+    const fullMatch = captionOf(results[4].text).match(/^Full-page screenshot, (\d+) × (\d+)\.$/);
     expect(fullMatch).not.toBeNull();
+    expectSavedPng(results[4].text);
     const fullHeight = Number(fullMatch![2]);
 
     expect(results[5].isError).toBe(false);
-    const viewportMatch = results[5].text.match(/^Viewport screenshot, (\d+) × (\d+)\.$/);
+    const viewportMatch = captionOf(results[5].text).match(/^Viewport screenshot, (\d+) × (\d+)\.$/);
     expect(viewportMatch).not.toBeNull();
+    expectSavedPng(results[5].text);
     const viewportHeight = Number(viewportMatch![2]);
 
     expect(fullHeight).toBeGreaterThan(viewportHeight);
@@ -383,9 +387,11 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, planStage1);
     const results1 = await runPlan(panelPage, "Screenshot, emulate, then screenshot again.", 4);
 
-    const baselineMatch = results1[1].text.match(/^Viewport screenshot, (\d+) × \d+\.$/);
+    const baselineMatch = captionOf(results1[1].text).match(/^Viewport screenshot, (\d+) × \d+\.$/);
     expect(baselineMatch).not.toBeNull();
-    expect(results1[3].text).toBe("Viewport screenshot, 393 × 659.");
+    expectSavedPng(results1[1].text);
+    expect(captionOf(results1[3].text)).toBe("Viewport screenshot, 393 × 659.");
+    expectSavedPng(results1[3].text);
     await expect(sitePage.locator("#viewport-status")).toHaveText("393");
     await expect(sitePage.locator("#pointer-status")).toHaveText("true");
 
@@ -411,7 +417,8 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     await panelPage.waitForFunction((n: number) => (window.__TOOL_RESULTS__?.length ?? 0) >= n, 7, { timeout: 30_000 });
     const results3 = await panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 
-    expect(results3[6].text).toMatch(new RegExp(`^Viewport screenshot, ${baselineMatch![1]} × \\d+\\.$`));
+    expect(captionOf(results3[6].text)).toMatch(new RegExp(`^Viewport screenshot, ${baselineMatch![1]} × \\d+\\.$`));
+    expectSavedPng(results3[6].text);
 
     await panelPage.emulateMedia({ colorScheme: "light" });
     await panelPage.evaluate(() => document.documentElement.setAttribute("data-theme", "wa2-light"));

@@ -1,12 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolContext } from "@cuatoi/web-agent-core";
+import { MemoryBackend, vfsTools } from "@cuatoi/web-agent-vfs";
 import { createPanelPageTools } from "./panel-page-tools";
+import { testVfs } from "./test-vfs";
 import type { DebuggerSession } from "./debugger-tools.types";
 import type { RecordingController, RecordingResult, RecordingState } from "./recorder.types";
 
 function toolCtx(): ToolContext {
   return { app: {}, signal: new AbortController().signal };
 }
+
+/** 127/003 — stop_recording returns its report followed by the path it saved
+ *  it at. These two read the two halves back apart. */
+function reportOf(content: string): string {
+  const i = content.lastIndexOf("\nSaved ");
+  return i < 0 ? content : content.slice(0, i);
+}
+
+function savedPathOf(content: string): string {
+  const i = content.lastIndexOf("\nSaved ");
+  return i < 0 ? "" : content.slice(i + "\nSaved ".length);
+}
+
+const SAVED_PATH = /^\/tmp\/recordings\/\d{4}-\d{2}-\d{2}-\d{6}\.md$/;
 
 function fakeDebuggerSession(gate: DebuggerSession["gate"] = () => ({ ok: true, state: {} as never })): DebuggerSession {
   return {
@@ -24,6 +40,7 @@ describe("panel-page-tools-recording", () => {
   let controller: RecordingController;
   let debuggerSession: DebuggerSession;
   let currentState: RecordingState;
+  let vfs: ReturnType<typeof testVfs>;
 
   beforeEach(() => {
     currentState = { kind: "idle" };
@@ -37,10 +54,12 @@ describe("panel-page-tools-recording", () => {
       subscribe: vi.fn().mockReturnValue(() => {}),
     };
     debuggerSession = fakeDebuggerSession();
+    vfs = testVfs();
   });
 
   function getTools(overrides: Record<string, unknown> = {}) {
     const tools = createPanelPageTools({
+      vfs,
       recording: controller,
       debuggerSession,
       ...overrides,
@@ -124,7 +143,9 @@ describe("panel-page-tools-recording", () => {
     const res = await stopTool.execute({ tabId: 7 }, toolCtx());
     const expected =
       'Recorded 3 steps on localhost:10040:\n1. click button "Apply"\n2. (frame http://pay.test) click button "Pay"\n3. check checkbox "Gift"';
-    expect(res.content).toBe(expected);
+    expect(reportOf(res.content)).toBe(expected);
+    expect(savedPathOf(res.content)).toMatch(SAVED_PATH);
+    expect(await vfs.get(savedPathOf(res.content))).toMatchObject({ content: expected, encoding: "utf8" });
     expect(res.isError).toBeUndefined();
     expect(res.content).not.toContain("[");
   });
@@ -176,7 +197,8 @@ describe("panel-page-tools-recording", () => {
       '  name: password\n' +
       '  css: #password\n' +
       "  xpath: //*[@id='password']";
-    expect(res.content).toBe(expected);
+    expect(reportOf(res.content)).toBe(expected);
+    expect(await vfs.get(savedPathOf(res.content))).toMatchObject({ content: expected });
     expect(res.content).not.toMatch(/getBy|\.nth\(/);
   });
 
@@ -191,7 +213,9 @@ describe("panel-page-tools-recording", () => {
     const { stopTool } = getTools();
 
     const res = await stopTool.execute({ tabId: 7 }, toolCtx());
-    expect(res.content).toContain("Recorded 1 step on localhost:10040:\nRecording stopped: debugging was canceled.\n1. click button \"Apply\"");
+    const body = 'Recorded 1 step on localhost:10040:\nRecording stopped: debugging was canceled.\n1. click button "Apply"';
+    expect(res.content).toContain(body);
+    expect(await vfs.get(savedPathOf(res.content))).toMatchObject({ content: body });
   });
 
   it("U-T8: stop_recording with one step (singular)", async () => {
@@ -205,6 +229,8 @@ describe("panel-page-tools-recording", () => {
 
     const res = await stopTool.execute({ tabId: 7 }, toolCtx());
     expect(res.content.startsWith("Recorded 1 step on localhost:10040:")).toBe(true);
+    expect(savedPathOf(res.content)).toMatch(SAVED_PATH);
+    expect((await vfs.get(savedPathOf(res.content)))?.content).toBe(reportOf(res.content));
   });
 
   it("U-T10: stop_recording when controller is idle and the tab is not gated returns the gate error", async () => {
@@ -244,6 +270,10 @@ describe("panel-page-tools-recording", () => {
     const res = await stopTool.execute({ tabId: 7 }, toolCtx());
     expect(res.isError).toBeUndefined();
     expect(gate).not.toHaveBeenCalled();
+    expect(reportOf(res.content)).toBe('Recorded 1 step on localhost:10040:\n1. click button "Apply"');
+    expect(await vfs.get(savedPathOf(res.content))).toMatchObject({
+      content: 'Recorded 1 step on localhost:10040:\n1. click button "Apply"',
+    });
   });
 
   it("U-T13: start_recording passes a controller error straight through", async () => {
@@ -265,5 +295,78 @@ describe("panel-page-tools-recording", () => {
     const { startTool, stopTool } = getTools();
     expect(startTool.description).toContain("start_debugging");
     expect(stopTool.description).not.toContain("navigated");
+  });
+});
+
+describe("panel-page-tools-recording — the saved report (127/003)", () => {
+  let controller: RecordingController;
+
+  beforeEach(() => {
+    controller = {
+      state: () => ({ kind: "idle" }),
+      tabInfo: vi.fn().mockResolvedValue({ host: "localhost:10040", url: "http://localhost:10040/checkout.html" }),
+      start: vi.fn().mockResolvedValue({ ok: true }),
+      stop: vi.fn().mockResolvedValue({ error: "Nothing is being recorded." }),
+      pause: vi.fn().mockResolvedValue(undefined),
+      resume: vi.fn().mockResolvedValue(undefined),
+      subscribe: vi.fn().mockReturnValue(() => {}),
+    };
+  });
+
+  function stopToolFor(vfs: ReturnType<typeof testVfs>) {
+    const tools = createPanelPageTools({
+      vfs,
+      recording: controller,
+      debuggerSession: fakeDebuggerSession(),
+    });
+    return tools.find((t) => t.name === "stop_recording")!;
+  }
+
+  it("a recording with no steps still saves its report", async () => {
+    const vfs = testVfs();
+    vi.mocked(controller.stop).mockResolvedValue({
+      host: "localhost:10040",
+      url: "http://localhost:10040/checkout.html",
+      steps: [],
+    });
+    const res = await stopToolFor(vfs).execute({ tabId: 7 }, toolCtx());
+
+    expect(reportOf(res.content)).toBe("Recorded 0 steps on localhost:10040:");
+    expect((await vfs.get(savedPathOf(res.content)))?.content).toBe("Recorded 0 steps on localhost:10040:");
+  });
+
+  it("a gate failure saves nothing", async () => {
+    const vfs = testVfs();
+    const denied = fakeDebuggerSession(() => ({ ok: false, error: "Debugging is not started on tab #7. Call start_debugging first." }));
+    const tools = createPanelPageTools({ vfs, recording: controller, debuggerSession: denied });
+    const res = await tools.find((t) => t.name === "stop_recording")!.execute({ tabId: 7 }, toolCtx());
+
+    expect(res.isError).toBe(true);
+    expect(await vfs.list("/")).toEqual([]);
+  });
+
+  it("an idle recording saves nothing", async () => {
+    const vfs = testVfs();
+    vi.mocked(controller.stop).mockResolvedValue({ error: "Nothing is being recorded." });
+    const res = await stopToolFor(vfs).execute({ tabId: 7 }, toolCtx());
+
+    expect(res.isError).toBe(true);
+    expect(await vfs.list("/")).toEqual([]);
+  });
+
+  it("storage that rejects fails the whole call and stores nothing", async () => {
+    const tmp = MemoryBackend();
+    tmp.set = () => Promise.reject(new Error("the storage for /tmp is full."));
+    const vfs = vfsTools({ tmp, home: MemoryBackend(), shared: MemoryBackend() }).vfs;
+    vi.mocked(controller.stop).mockResolvedValue({
+      host: "localhost:10040",
+      url: "http://localhost:10040/checkout.html",
+      steps: [{ recordingId: "r", seq: 0, kind: "click", line: 'click button "Apply"' }],
+    });
+    const res = await stopToolFor(vfs).execute({ tabId: 7 }, toolCtx());
+
+    expect(res).toEqual({ content: "the storage for /tmp is full.", isError: true });
+    expect(res.content).not.toContain("Saved ");
+    expect(await vfs.list("/")).toEqual([]);
   });
 });

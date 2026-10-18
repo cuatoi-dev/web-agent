@@ -93,12 +93,15 @@ export interface VfsHandle {
   mounts(): VfsMountInfo[];
   list(prefix: string): Promise<VfsResolvedEntry[]>;
   get(absPath: string): Promise<VfsFile | undefined>;
+  /** Writes directly, overwriting without the tools' read tracker. */
+  write(absPath: string, content: string | Blob): Promise<void>;
   delete(absPath: string): Promise<void>;
   /** Adds a mount at run time. Throws ConfigError when `prefix` overlaps one. */
   mount(prefix: string, backend: VfsBackend, options?: { external?: boolean }): void;
   /** Removes a mount added by `mount`. Returns false when there is none. */
   unmount(prefix: string): boolean;
-  /** Calls `listener` after every mount or unmount. Returns the unsubscribe function. */
+  /** Calls `listener` after every mount or unmount, and after every successful
+   *  `write`. Returns the unsubscribe function. */
   subscribe(listener: () => void): () => void;
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ToolContext } from "@cuatoi/web-agent-core";
+import { testVfs } from "./test-vfs";
 import { createDebuggerSession } from "./debugger-session";
 import { createNetworkDialogPageTools } from "./panel-page-tools-network-dialog";
 import type { HelperWorlds } from "./types";
@@ -56,7 +57,7 @@ function fakeHelper(overrides: Partial<HelperWorlds> = {}): HelperWorlds {
 function setup(helper: HelperWorlds = fakeHelper()) {
   const debuggerEnv = fakeDebuggerApi();
   const session = createDebuggerSession(debuggerEnv.api);
-  const tools = createNetworkDialogPageTools({ helper, debuggerSession: session });
+  const tools = createNetworkDialogPageTools({ vfs: testVfs(), helper, debuggerSession: session });
   const pageNetwork = tools.find((t) => t.name === "page_network")!;
   const pageDialog = tools.find((t) => t.name === "page_dialog")!;
   const pageUploadFile = tools.find((t) => t.name === "page_upload_file")!;

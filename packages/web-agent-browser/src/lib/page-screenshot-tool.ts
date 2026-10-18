@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { imageReachesModel, modelSupportsVision } from "@cuatoi/web-agent-core";
 import { createHelperWorlds, STALE_REF } from "./debugger-helper-world";
+import { errorMessage } from "./error-message";
+import { localFileStamp } from "./file-save-path";
 import type { HelperDescribe } from "./helper-api";
 import type { PanelPageToolsOptions } from "./types";
 import type { PageScreenshotToolOptions } from "./page-screenshot-tool.types";
@@ -30,15 +32,18 @@ export function screenshotReachesModel(options: PageScreenshotToolOptions): bool
   );
 }
 
-export function createPageScreenshotTool(options: PanelPageToolsOptions = {}): CustomToolDef {
+export function createPageScreenshotTool(options: PanelPageToolsOptions): CustomToolDef {
   return {
     name: "page_screenshot",
     description:
-      "Take a picture of what is visible in a browser tab right now, or capture the full page or an element. Call read_tabs first and pass the tab ID it reports. Needs start_debugging on the tab first.",
+      "Take a picture of what is visible in a browser tab right now, or capture the full page or an element. Call read_tabs first and pass the tab ID it reports. Needs start_debugging on the tab first. Every capture is also saved as a PNG in the file system, where the user can download it, and the saved path is in the result.",
     inputSchema: z.object({
       tabId: z.number().describe("The ID of the tab to photograph. Call read_tabs first and pass the ID it reports."),
       fullPage: z.boolean().optional().describe("Capture the full scrollable page instead of only the viewport."),
       ref: z.string().optional().describe('A ref from a page_snapshot call, e.g. "3", to capture only that element.'),
+      save_to: z.string().optional().describe(
+        "Save the PNG at this virtual path. Defaults to /tmp/screenshots/<local timestamp>-tab<id>.png.",
+      ),
     }),
     summarize: (input) => {
       const idText = typeof input.tabId === "number" || typeof input.tabId === "string" ? String(input.tabId) : "(none)";
@@ -121,8 +126,23 @@ export function createPageScreenshotTool(options: PanelPageToolsOptions = {}): C
         return { content: EMPTY_CAPTURE, isError: true };
       }
       const dataUrl = shotData.startsWith("data:") ? shotData : `data:image/png;base64,${shotData}`;
+      const saveTo = typeof input.save_to === "string" && input.save_to.trim() !== ""
+        ? input.save_to
+        : `/tmp/screenshots/${localFileStamp()}-tab${tabId}.png`;
+      try {
+        // 127/003 — the bytes, not the base64 string: the backends store
+        // base64 themselves, through `VfsHandle.write`. A save that fails
+        // fails the call, so the model is never told about a file that is
+        // not there.
+        const binary = atob(dataUrl.slice(dataUrl.indexOf(",") + 1));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        await options.vfs.write(saveTo, new Blob([bytes], { type: "image/png" }));
+      } catch (err) {
+        return { content: errorMessage(err), isError: true };
+      }
       return {
-        content: caption,
+        content: caption + "\nSaved " + saveTo,
         images: [{ dataUrl, mediaType: "image/png" }],
       };
     },

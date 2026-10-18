@@ -7,6 +7,7 @@ import {
   type SkillRegistry,
   type ToolContext,
 } from "@cuatoi/web-agent-core";
+import type { VfsHandle } from "@cuatoi/web-agent-vfs";
 import type { AgentBrand } from "./types";
 import type { MultiSelectGroup } from "./multi-select.types";
 import { createTabTools } from "./tab-tools";
@@ -24,6 +25,20 @@ const STUB_REGISTRY: SkillRegistry = {
   list: () => Promise.resolve([]),
   get: () => Promise.resolve(undefined),
   save: () => Promise.resolve(),
+};
+
+/** A handle that only answers the tool catalogue. 127/003 — `toolGroups` builds
+ *  the page tools to read their names, so it needs a `VfsHandle`; nothing here
+ *  ever executes, and no storage is instantiated. */
+const STUB_VFS: VfsHandle = {
+  mounts: () => [],
+  list: () => Promise.resolve([]),
+  get: () => Promise.resolve(undefined),
+  write: () => Promise.reject(new Error("Tool catalogue VFS cannot execute operations.")),
+  delete: () => Promise.reject(new Error("Tool catalogue VFS cannot execute operations.")),
+  mount: () => { throw new Error("Tool catalogue VFS cannot execute operations."); },
+  unmount: () => false,
+  subscribe: () => () => {},
 };
 
 /** Only truthiness is read at construction (scheduler-tools.ts:14,
@@ -62,9 +77,9 @@ export function toolGroups(brand: AgentBrand): MultiSelectGroup[] {
 
   return uniqueGroups([
     { heading: "Tabs", names: namesOf(createTabTools()) },
-    // Listed for every model; the side panel still offers it only to a model
-    // with vision (panel-page-tools.ts:305).
-    { heading: "Page", names: [...namesOf(createPanelPageTools()), "page_screenshot"] },
+    // Listed for every model; the side panel still offers page_screenshot only
+    // to a model with vision (panel-page-tools.ts:59, the vision gate).
+    { heading: "Page", names: [...namesOf(createPanelPageTools({ vfs: STUB_VFS })), "page_screenshot"] },
     { heading: "Page agent", names: namesOf(createPageAgentTools()) },
     { heading: "Core", names: namesOf(defaultTools(STUB_CTX)).filter((n) => !drop.has(n)) },
   ]);

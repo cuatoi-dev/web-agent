@@ -499,4 +499,114 @@ describe("AgentFilesScreen (DOM tier)", () => {
     // File stays open
     expect(query("pre.wa-file-text")).not.toBeNull();
   });
+
+  // 127/003 — the screen subscribes to the handle, so a file a tool saved
+  // appears without the user reopening the screen.
+  describe("refresh on change (127/003)", () => {
+    function rowNames(): (string | undefined)[] {
+      return queryAll(".wa-ftree-row-name").map((el) => el.textContent?.trim());
+    }
+
+    async function expand(name: string): Promise<void> {
+      const row = queryAll(".wa-ftree-row").find((r) =>
+        r.querySelector(".wa-ftree-row-name")?.textContent?.trim() === name,
+      );
+      row?.click();
+      await screen.updateComplete;
+    }
+
+    it("a file written while the screen is open appears after expanding its folder", async () => {
+      const vfs = await createMockVfs({ files: {} });
+      screen = await mountScreen(vfs);
+      const handle = screen.vfs;
+
+      await vfs.write("/home/agent/deck/report.md", "body");
+      await screen.treePromise;
+      await screen.updateComplete;
+
+      expect(rowNames()).toContain("deck");
+      await expand("deck");
+      expect(rowNames()).toContain("report.md");
+      expect(screen.vfs).toBe(handle);
+    });
+
+    it("overwriting a file and reopening it shows the new content", async () => {
+      const vfs = await createMockVfs({
+        files: {
+          "/home/agent/notes.md": { content: "first", encoding: "utf8", mimeType: "text/markdown", mtimeMs: 1 },
+        },
+      });
+      screen = await mountScreen(vfs);
+      (queryAll(".wa-ftree-row").find((r) =>
+        r.querySelector(".wa-ftree-row-name")?.textContent?.trim() === "notes.md",
+      ) as HTMLElement).click();
+      await screen.filePromise;
+      await screen.updateComplete;
+      expect(query("pre.wa-file-text")?.textContent).toBe("first");
+
+      await vfs.write("/home/agent/notes.md", "second");
+      await screen.treePromise;
+      await screen.updateComplete;
+      (queryAll(".wa-ftree-row").find((r) =>
+        r.querySelector(".wa-ftree-row-name")?.textContent?.trim() === "notes.md",
+      ) as HTMLElement).click();
+      await screen.filePromise;
+      await screen.updateComplete;
+
+      expect(query("pre.wa-file-text")?.textContent).toBe("second");
+    });
+
+    it("replacing the handle stops the old one from notifying", async () => {
+      const first = await createMockVfs({ files: {} });
+      screen = await mountScreen(first);
+      const second = await createMockVfs({ files: {} });
+      screen.vfs = second;
+      await screen.treePromise;
+      await screen.updateComplete;
+
+      await first.write("/home/agent/stale.md", "x");
+      await new Promise((r) => setTimeout(r, 10));
+      await screen.updateComplete;
+
+      expect(rowNames()).not.toContain("stale.md");
+    });
+
+    it("one subscription survives a disconnect and reconnect", async () => {
+      const vfs = await createMockVfs({ files: {} });
+      screen = await mountScreen(vfs);
+      let live = 0;
+      const realSubscribe = vfs.subscribe.bind(vfs);
+      vfs.subscribe = (listener) => {
+        live += 1;
+        return realSubscribe(listener);
+      };
+
+      screen.remove();
+      await screen.updateComplete;
+      document.body.appendChild(screen);
+      await screen.updateComplete;
+
+      expect(live).toBe(1);
+    });
+
+    it("a refresh that fails shows the error and rejects nothing", async () => {
+      const vfs = await createMockVfs({ files: {} });
+      let broken = false;
+      const flaky: VfsHandle = {
+        ...vfs,
+        mounts: () => {
+          if (broken) throw new Error("mount table unavailable");
+          return vfs.mounts();
+        },
+      };
+      screen = await mountScreen(flaky);
+
+      broken = true;
+      await vfs.write("/home/agent/report.md", "body");
+      await new Promise((r) => setTimeout(r, 10));
+      await screen.updateComplete;
+
+      expect(query(".wa-file-error")?.textContent).toBe("mount table unavailable");
+    });
+  });
 });

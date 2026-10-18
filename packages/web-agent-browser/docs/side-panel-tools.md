@@ -149,35 +149,42 @@ one level deeper.
 
 ## Take a screenshot of a tab
 
-`page_screenshot` takes a picture of what is visible in any tab you have
-activated the extension on. Call `read_tabs` first and pass the tab ID it
-reports.
+`page_screenshot` takes a picture of what is visible in a browser tab, or of
+the whole page or of one element. Call `read_tabs` first and pass the tab ID it
+reports, and call `start_debugging` on that tab first.
 
-- **What it does**: captures the real rendered pixels of the tab's viewport
-  (`src/lib/page-screenshot-tool.ts`, using `chrome.tabs.captureVisibleTab`).
+- **What it does**: captures the real rendered pixels of the tab
+  (`src/lib/page-screenshot-tool.ts`, through the Chrome DevTools Protocol).
   Canvas, video and cross-origin images appear exactly as the user sees them.
-- **Arguments**: `tabId` (number).
-- **Viewport only**: there is no full-page mode. To see further down, scroll the
-  page with `page_eval` and call `page_screenshot` again.
-- **It never enters the page**, so it keeps working where a Content Security
-  Policy blocks `page_eval`.
-- **The tab must be the active tab in its window.** `captureVisibleTab`
-  photographs whatever is visible, so a request for a background tab is refused
-  rather than answered with a picture of a different page.
+- **Arguments**: `tabId` (number), and any one of three optional arguments:
+  - `fullPage` (boolean) captures the whole scrollable page rather than the
+    viewport. Use it instead of `ref`, never with it.
+  - `ref` (string) captures only the element a `page_snapshot` call reported,
+    for example `"3"`. Use it instead of `fullPage`.
+  - `save_to` (string) chooses where the PNG is stored. Without it the file
+    goes to `/tmp/screenshots/<local timestamp>-tab<tabId>.png`, for example
+    `/tmp/screenshots/2026-01-02-030405-tab7.png`. The timestamp is the local
+    date and time to the second, so two captures in the same second overwrite
+    the same file.
+- **Every capture is saved**, whether or not `save_to` is given. The result is
+  the caption, then the path:
+
+  ```text
+  Viewport screenshot, 1280 × 720.
+  Saved /tmp/screenshots/2026-01-02-030405-tab7.png
+  ```
+
+  The user opens Files in the side panel to see the new file, and downloads it
+  from there.
+- **A failed save fails the call.** A path on a read-only mount, a path no
+  mount covers, and storage that rejects all return an error result and send no
+  image, so the agent never reports a file that is not there.
 - **Offered only when the model accepts images.** The tool is left out of the
   tool list entirely when the configured model cannot receive an image, so the
-  agent never sees a tool it cannot use
-  (`src/lib/panel-page-tools.ts:309-311`).
-- **Permissions**: the extension uses `activeTab`, granted when the user clicks
-  the toolbar icon to open the panel on that tab. If access was lost to a
-  cross-origin navigation, `page_screenshot` asks the user to click the toolbar
-  icon on that tab again.
-- **Rate limit**: Chrome allows two captures per second. A third in the same
-  second returns `Screenshots are limited to 2 per second. Wait a moment and
-  call page_screenshot again.`
+  agent never sees a tool it cannot use (`src/lib/panel-page-tools.ts:59`).
 - **Empty capture**: a capture with no image data, for example during a
-  navigation, is discarded and no image is sent. The tool asks the agent to try
-  again (`src/lib/page-screenshot-tool.ts:34-35`).
+  navigation, is discarded, nothing is saved and no image is sent. The tool asks
+  the agent to try again.
 
 ### Which models get `page_screenshot`
 

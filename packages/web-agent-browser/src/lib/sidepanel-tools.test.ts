@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRequire } from "module";
 import { defaultTools, type CustomToolDef, type ToolContext } from "@cuatoi/web-agent-core";
+import { testVfs } from "./test-vfs";
 import { tabTools } from "./tab-tools";
 import { pageAgentTools } from "./page-agent-tools";
 import { panelPageTools } from "./panel-page-tools";
@@ -33,7 +34,7 @@ describe("SIDE_PANEL_TOOL_NAMES", () => {
 
     const tabs = await loadProvider(tabTools());
     const pageAgent = await loadProvider(pageAgentTools());
-    const panelPage = await loadProvider(panelPageTools({ endpointType: "anthropic", model: "sonnet" }));
+    const panelPage = await loadProvider(panelPageTools({ vfs: testVfs(), endpointType: "anthropic", model: "sonnet" }));
     // 069/003 — vfsTools returns ONE provider, not an array, so it is wrapped
     // before it goes through the same loader.
     const vfs = await loadProvider([vfsTools()]);

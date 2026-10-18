@@ -149,6 +149,7 @@ function countTotalFiles(node: TreeNode): number {
 /** Full-panel screen displaying the agent's files as a tree from `/`. */
 export class AgentFilesScreen extends Component {
   private _vfs?: VfsHandle;
+  private _unsubscribeVfs?: () => void;
   private _screenContext?: PanelScreenContext;
 
   private _root: TreeNode | null = null;
@@ -176,6 +177,7 @@ export class AgentFilesScreen extends Component {
     this._vfs = val ?? undefined;
     this._activeFile = null;
     this._fileError = null;
+    this._syncSubscription();
     if (val) {
       this._treePromise = this._initTree();
     } else {
@@ -196,9 +198,35 @@ export class AgentFilesScreen extends Component {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // 127/003 — subscribe whether the handle was set before or after the
+    // element entered the DOM.
+    this._syncSubscription();
     if (!this._root && this._vfs) {
       this._treePromise = this._initTree();
     }
+  }
+
+/** No `super` call: the lit-html `Component` base has no disconnect hook. */
+  disconnectedCallback(): void {
+    this._unsubscribeVfs?.();
+    this._unsubscribeVfs = undefined;
+  }
+
+  /** One subscription per connected screen, so a file a tool saved appears
+   *  without the user reopening the Files screen. The setter and
+   *  connectedCallback both come here, so neither can double subscribe. */
+  private _syncSubscription(): void {
+    this._unsubscribeVfs?.();
+    this._unsubscribeVfs = undefined;
+    if (!this.isConnected || !this._vfs) return;
+    this._unsubscribeVfs = this._vfs.subscribe(() => {
+      // An open preview stays as it is; only the tree is rebuilt.
+      this._fileError = null;
+      this._treePromise = this._initTree().catch((e) => {
+        this._fileError = e instanceof Error ? e.message : String(e);
+        this.requestUpdate();
+      });
+    });
   }
 
   private async _initTree(): Promise<void> {

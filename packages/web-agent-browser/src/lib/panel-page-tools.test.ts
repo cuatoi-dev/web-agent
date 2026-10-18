@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { ToolContext } from "@cuatoi/web-agent-core";
 import { createPanelPageTools, panelPageTools } from "./panel-page-tools";
+import { testVfs } from "./test-vfs";
 import { createDebuggerSession } from "./debugger-session";
 import type { HelperWorlds } from "./types";
 
@@ -83,7 +84,7 @@ const WITH_VISION_NAMES = [...NO_VISION_NAMES, "page_screenshot"];
 
 describe("panelPageTools", () => {
   it("returns one provider that loads page_eval, page_fetch, page_console, the act-by-ref and the verify/locator page tools, and the debugger tools", async () => {
-    const providers = panelPageTools();
+    const providers = panelPageTools({ vfs: testVfs() });
     expect(providers).toHaveLength(1);
     expect(providers[0].name).toBe("panel-page-tools");
     expect(providers[0].required).toBe(false);
@@ -98,13 +99,14 @@ describe("panelPageTools", () => {
 
 describe("panelPageTools vision gate", () => {
   it("G1: panelPageTools() with no options returns 20 tools", async () => {
-    const providers = panelPageTools();
+    const providers = panelPageTools({ vfs: testVfs() });
     const tools = await providers[0].load();
     expect(tools.map((t) => t.name)).toEqual(NO_VISION_NAMES);
   });
 
   it("G2: endpointType gemini and model gemini-flash-lite-latest returns 21 tools", async () => {
     const providers = panelPageTools({
+      vfs: testVfs(),
       endpointType: "gemini",
       model: "gemini-flash-lite-latest",
     });
@@ -114,6 +116,7 @@ describe("panelPageTools vision gate", () => {
 
   it("G3: endpointType anthropic and model text-only-model returns 20 tools", async () => {
     const providers = panelPageTools({
+      vfs: testVfs(),
       endpointType: "anthropic",
       model: "text-only-model",
     });
@@ -123,6 +126,7 @@ describe("panelPageTools vision gate", () => {
 
   it("G7: endpointType anthropic and model sonnet (the default profile) returns 21 tools", async () => {
     const providers = panelPageTools({
+      vfs: testVfs(),
       endpointType: "anthropic",
       model: "sonnet",
     });
@@ -132,6 +136,7 @@ describe("panelPageTools vision gate", () => {
 
   it("G4: endpointType anthropic and model claude-3-5-sonnet returns 21 tools", async () => {
     const providers = panelPageTools({
+      vfs: testVfs(),
       endpointType: "anthropic",
       model: "claude-3-5-sonnet",
     });
@@ -141,6 +146,7 @@ describe("panelPageTools vision gate", () => {
 
   it("G5: endpointType gemini, model gemini-flash-lite-latest, imageInput: false returns 20 tools", async () => {
     const providers = panelPageTools({
+      vfs: testVfs(),
       endpointType: "gemini",
       model: "gemini-flash-lite-latest",
       imageInput: false,
@@ -151,6 +157,7 @@ describe("panelPageTools vision gate", () => {
 
   it("G6: endpointType anthropic, model text-only-model, imageInput: true returns 21 tools", async () => {
     const providers = panelPageTools({
+      vfs: testVfs(),
       endpointType: "anthropic",
       model: "text-only-model",
       imageInput: true,
@@ -161,8 +168,8 @@ describe("panelPageTools vision gate", () => {
 });
 
 describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", () => {
-  function tools(options: Parameters<typeof createPanelPageTools>[0] = {}) {
-    const [, , , pageSnapshot, pageClick, pageFillForm, pageSelectOption] = createPanelPageTools(options);
+  function tools(options: Partial<Parameters<typeof createPanelPageTools>[0]> = {}) {
+    const [, , , pageSnapshot, pageClick, pageFillForm, pageSelectOption] = createPanelPageTools({ vfs: testVfs(), ...options });
     return { pageSnapshot, pageClick, pageFillForm, pageSelectOption };
   }
 
@@ -715,7 +722,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
 
   describe("createPanelPageTools — verify and locator tools (122/002, 131/002)", () => {
     function getVerifyLocatorTools(helper: HelperWorlds, debuggerSession = started().session) {
-      const all = createPanelPageTools({ helper, debuggerSession });
+      const all = createPanelPageTools({ vfs: testVfs(), helper, debuggerSession });
       const pageVerify = all.find((t) => t.name === "page_verify");
       const pageGenerateLocator = all.find((t) => t.name === "page_generate_locator");
       if (!pageVerify || !pageGenerateLocator) throw new Error("tools not found");
@@ -849,8 +856,8 @@ describe("createPanelPageTools — 124/007 phrases", () => {
     "page_upload_file", "page_emulate", "page_screenshot",
   ];
 
-  function toolsWithVision(overrides: Parameters<typeof createPanelPageTools>[0] = {}) {
-    return createPanelPageTools({ endpointType: "anthropic", model: "sonnet", ...overrides });
+  function toolsWithVision(overrides: Partial<Parameters<typeof createPanelPageTools>[0]> = {}) {
+    return createPanelPageTools({ vfs: testVfs(), endpointType: "anthropic", model: "sonnet", ...overrides });
   }
 
   it("every page tool carries a phrase", () => {
