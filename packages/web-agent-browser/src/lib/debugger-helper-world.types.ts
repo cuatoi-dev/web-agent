@@ -12,7 +12,26 @@ export interface RefTarget {
   refPrefix: string;
 }
 
+export type ScreenshotTargetResult =
+  | { ok: true; ref: string; count: number }
+  | { ok: false; error: string };
+
+export interface ScreenshotHighlightHandle {
+  scroll(): Promise<void>;
+  restore(): Promise<void>;
+}
+
+export type ScreenshotHighlightResult =
+  | { ok: true; handle: ScreenshotHighlightHandle }
+  | { ok: false; error: string };
+
 export interface HelperWorlds {
+  /** 127/005 — the first element a CSS selector (open shadow roots included) or
+   *  an XPath matches in the top document, as a ref, with the match count. */
+  selectScreenshotTarget(tabId: number, kind: "css" | "xpath", selector: string): Promise<ScreenshotTargetResult>;
+  /** 127/005 — outline the ref's element in red. The handle owns the element
+   *  until `restore()` puts the old outline back and releases it. */
+  highlightScreenshotRef(tabId: number, ref: string): Promise<ScreenshotHighlightResult>;
   /** The whole helper source, fetched once per panel page. */
   source(): Promise<string>;
   /** 131/003 — `"23"` → `{ frame: "", backendNodeId: 23 }`, `"f1:23"` →

@@ -291,6 +291,25 @@ describe("pageToolPhrases — done lines", () => {
     ).toBe('tesagent took a screenshot of the button "Apply"');
   });
 
+  it("page_screenshot: 127/005 a selector caption with count, warning and Saved lines keeps the generic phrase", () => {
+    expect(
+      phraseFor(
+        "page_screenshot",
+        { css: ".card" },
+        "Screenshot of CSS .card, 80 × 30.\n3 elements match; captured the first.\nHighlighted element 9 is outside the screenshot.\nSaved /tmp/s.png",
+      ),
+    ).toBe("tesagent took a screenshot");
+  });
+
+  it("page_screenshot: 127/005 highlight keeps the ref and full-page phrases", () => {
+    expect(
+      phraseFor("page_screenshot", { ref: "7", highlight: ["8"] }, 'Screenshot of [7] button "Apply", 80 × 32.\nSaved /tmp/s.png'),
+    ).toBe('tesagent took a screenshot of the button "Apply"');
+    expect(
+      phraseFor("page_screenshot", { fullPage: true, highlight: ["8"] }, "Full-page screenshot, 1280 × 4200.\nSaved /tmp/s.png"),
+    ).toBe("tesagent took a full-page screenshot");
+  });
+
   it("page_screenshot: viewport", () => {
     expect(phraseFor("page_screenshot", {}, "Viewport screenshot, 1280 × 720."))
       .toBe("tesagent took a screenshot");

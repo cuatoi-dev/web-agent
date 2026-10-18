@@ -3,6 +3,7 @@
 // navigation Chrome hands back the SAME id with an empty world (measured
 // 2026-09-19), so the cache is cleared on Page.frameNavigated for the main frame.
 import { errorMessage, thrownFromDetails } from "./error-message";
+import { createScreenshotBridge } from "./debugger-screenshot";
 import type { DebuggerSession } from "./debugger-tools.types";
 import type { HelperWorlds, RefTarget } from "./debugger-helper-world.types";
 
@@ -451,5 +452,6 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
   session.onMainFrameNavigated(forget);
   session.onFrameNavigated((tabId, sessionId, frameId) => { forgetFrame(tabId, sessionId, frameId); });
 
-  return { source, parseRef, resolve, frameChain, frameChainAt, call, callOnDocument, centre, box, forget, forgetFrame };
+  const screenshot = createScreenshotBridge(session, { context, resolve }, STALE_REF);
+  return { source, parseRef, resolve, frameChain, frameChainAt, call, callOnDocument, centre, box, forget, forgetFrame, ...screenshot };
 }

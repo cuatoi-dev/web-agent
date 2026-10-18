@@ -23,3 +23,15 @@ export interface PageScreenshotToolOptions {
   /** `AgentSettings.model`. */
   model?: string;
 }
+
+/** What one capture produced: the PNG data and the text above the `Saved`
+ *  line, or the error to return. */
+export type Captured = { shotData: string; caption: string } | { error: string };
+
+/** A rectangle in page CSS pixels. */
+export interface PageRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}

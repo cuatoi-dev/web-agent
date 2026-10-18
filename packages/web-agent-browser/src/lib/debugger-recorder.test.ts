@@ -62,6 +62,8 @@ function fakeHelper(frames: string[] = []): HelperWorlds {
     frameChainAt: vi.fn().mockResolvedValue(frames),
     call: vi.fn().mockRejectedValue(new Error("not stubbed")),
     callOnDocument: vi.fn().mockRejectedValue(new Error("not stubbed")),
+    selectScreenshotTarget: vi.fn().mockRejectedValue(new Error("selectScreenshotTarget not stubbed")),
+    highlightScreenshotRef: vi.fn().mockRejectedValue(new Error("highlightScreenshotRef not stubbed")),
     centre: vi.fn().mockRejectedValue(new Error("not stubbed")),
     box: vi.fn().mockRejectedValue(new Error("not stubbed")),
     forget: vi.fn(),

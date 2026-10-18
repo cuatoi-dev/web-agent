@@ -156,11 +156,31 @@ reports, and call `start_debugging` on that tab first.
 - **What it does**: captures the real rendered pixels of the tab
   (`src/lib/page-screenshot-tool.ts`, through the Chrome DevTools Protocol).
   Canvas, video and cross-origin images appear exactly as the user sees them.
-- **Arguments**: `tabId` (number), and any one of three optional arguments:
-  - `fullPage` (boolean) captures the whole scrollable page rather than the
-    viewport. Use it instead of `ref`, never with it.
+- **Arguments**: `tabId` (number), optional `save_to` (string), optional
+  `highlight` (array of snapshot refs), and at most one capture target:
   - `ref` (string) captures only the element a `page_snapshot` call reported,
-    for example `"3"`. Use it instead of `fullPage`.
+    for example `"3"`.
+  - `css` (string) captures the first element the CSS selector matches. The
+    tool queries the top document first. If nothing matches there, it searches
+    open shadow roots, each root's own tree before the roots nested in it.
+  - `xpath` (string) captures the first element the XPath matches in the top
+    document. XPath does not enter shadow roots.
+  - `fullPage: true` captures the whole scrollable page rather than the
+    viewport.
+  - Passing more than one target returns `Use only one of ref, css, xpath or
+    fullPage.` and captures nothing. `fullPage: false` is not a target.
+  - When a selector matches more than one element, the tool captures the first
+    and adds the line `<N> elements match; captured the first.` before `Saved`.
+    A selector that matches nothing, is invalid, or (for XPath) selects
+    something that is not an element returns an error and captures nothing.
+  - `highlight` draws a temporary `3px solid red` outline, with a `2px` offset,
+    around each ref while the picture is taken, then puts back the previous
+    inline outline. A viewport capture first scrolls the first highlighted ref
+    into view. Element and full-page captures do not scroll. A highlighted
+    element outside the captured area adds the line `Highlighted element <ref>
+    is outside the screenshot.` The outline is removed even when the capture
+    fails. A stale ref in `highlight` returns the stale-ref error and captures
+    nothing.
   - `save_to` (string) chooses where the PNG is stored. Without it the file
     goes to `/tmp/screenshots/<local timestamp>-tab<tabId>.png`, for example
     `/tmp/screenshots/2026-01-02-030405-tab7.png`. The timestamp is the local
@@ -171,6 +191,14 @@ reports, and call `start_debugging` on that tab first.
 
   ```text
   Viewport screenshot, 1280 × 720.
+  Saved /tmp/screenshots/2026-01-02-030405-tab7.png
+  ```
+
+  A selector capture that matched several elements:
+
+  ```text
+  Screenshot of CSS .card, 240 × 320.
+  3 elements match; captured the first.
   Saved /tmp/screenshots/2026-01-02-030405-tab7.png
   ```
 

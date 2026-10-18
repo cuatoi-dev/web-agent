@@ -28,6 +28,8 @@ function fakeHelper(overrides: Partial<HelperWorlds> = {}): HelperWorlds {
     frameChainAt: vi.fn().mockResolvedValue([]),
     call: vi.fn().mockRejectedValue(new Error("call not stubbed")),
     callOnDocument: vi.fn().mockRejectedValue(new Error("callOnDocument not stubbed")),
+    selectScreenshotTarget: vi.fn().mockRejectedValue(new Error("selectScreenshotTarget not stubbed")),
+    highlightScreenshotRef: vi.fn().mockRejectedValue(new Error("highlightScreenshotRef not stubbed")),
     centre: vi.fn().mockRejectedValue(new Error("centre not stubbed")),
     box: vi.fn().mockRejectedValue(new Error("box not stubbed")),
     forget: vi.fn(),
@@ -169,7 +171,7 @@ describe("pageScreenshot tool (124/002, debugger-backed)", () => {
     const tool = createPageScreenshotTool({ vfs: testVfs(), debuggerSession: session });
     const result = await tool.execute({ tabId: 1, fullPage: true, ref: "1" }, toolCtx());
 
-    expect(result).toEqual({ content: "Use fullPage or ref, not both.", isError: true });
+    expect(result).toEqual({ content: "Use only one of ref, css, xpath or fullPage.", isError: true });
   });
 
   it("E5: ref capture clips to the element box and reports its size", async () => {

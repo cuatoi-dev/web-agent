@@ -274,7 +274,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Take several screenshots.", 6);
 
-    expect(results[1]).toEqual({ tool: "page_screenshot", text: "Use fullPage or ref, not both.", isError: true });
+    expect(results[1]).toEqual({ tool: "page_screenshot", text: "Use only one of ref, css, xpath or fullPage.", isError: true });
 
     expect(results[3].isError).toBe(false);
     // Element bounds come straight from getBoundingClientRect, which is not

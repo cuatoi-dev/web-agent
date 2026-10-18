@@ -122,3 +122,4 @@ export function setFiles(
 }
 
 export { selectPrepare, selectExecute } from "./helper-api-actions";
+export { screenshotSelect, screenshotHighlight, screenshotRestore, screenshotScroll } from "./helper-screenshot";
