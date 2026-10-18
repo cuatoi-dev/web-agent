@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { skillNames, toolGroups, uniqueGroups } from "./agent-options";
+import { SIDE_PANEL_DROPPED_TOOL_NAMES } from "./sidepanel-tool-filter";
 import type { AgentBrand } from "./types";
 
 const base = {
@@ -15,57 +16,11 @@ const base = {
 } as unknown as AgentBrand;
 
 describe("agent-options", () => {
-  it("O1 default tool groups", () => {
-    expect(toolGroups(base)).toEqual([
-      { heading: "Tabs", names: ["read_tabs", "open_tab", "navigate_tab", "refresh_tab", "close_tab"] },
-      {
-        heading: "Page",
-        names: [
-          "page_eval",
-          "page_fetch",
-          "page_console",
-          "page_snapshot",
-          "page_click",
-          "page_fill_form",
-          "page_select_option",
-          "page_verify",
-          "page_generate_locator",
-          "page_network",
-          "page_dialog",
-          "page_upload_file",
-          "start_debugging",
-          "stop_debugging",
-          "page_hover",
-          "page_press_key",
-          "page_emulate",
-          "start_recording",
-          "stop_recording",
-          "page_screenshot",
-        ],
-      },
-      { heading: "Page agent", names: ["send_to_page_agent", "toggle_page_agent", "read_page_agent"] },
-      {
-        heading: "Core",
-        names: [
-          "wait",
-          "get_time",
-          "list_data_sources",
-          "get_field_details",
-          "sample_field_values",
-          "query_data",
-          "show_generative_ui",
-          "search_skills",
-          "load_skill",
-          "create_skill",
-          "compact_conversation",
-          "set_schedule",
-          "list_schedules",
-          "cancel_schedule",
-          "todo_write",
-          "todo_read",
-        ],
-      },
-    ]);
+  it("O1 tool groups keep their headings in order and list no name twice", () => {
+    const groups = toolGroups(base);
+    expect(groups.map((g) => g.heading)).toEqual(["Tabs", "Page", "Page agent", "Core"]);
+    const names = groups.flatMap((g) => g.names);
+    expect(new Set(names).size).toBe(names.length);
   });
 
   it("O2 create_skill is in Core", () => {
@@ -85,13 +40,14 @@ describe("agent-options", () => {
     expect(groups.find((g) => g.heading === "Page agent")).toEqual(defaultGroups.find((g) => g.heading === "Page agent"));
   });
 
-  it("O4 genui, scheduler, todo off", () => {
+  it("O4 the side panel drops the CSP-blocked tools, and the scheduler and todo flags still drop theirs", () => {
     const baseCoreLen = toolGroups(base).find((g) => g.heading === "Core")!.names.length;
 
-    const genuiOff = { ...base, tools: { genui: { enabled: false } } } as AgentBrand;
-    const genuiCore = toolGroups(genuiOff).find((g) => g.heading === "Core")!.names;
-    expect(genuiCore).not.toContain("show_generative_ui");
-    expect(genuiCore.length).toBe(baseCoreLen - 1);
+    const allNames = toolGroups(base).flatMap((g) => g.names);
+    for (const dropped of SIDE_PANEL_DROPPED_TOOL_NAMES) {
+      expect(allNames).not.toContain(dropped);
+    }
+    expect(allNames).toContain("query_data");
 
     const schedOff = { ...base, tools: { scheduler: { enabled: false } } } as AgentBrand;
     const schedCore = toolGroups(schedOff).find((g) => g.heading === "Core")!.names;

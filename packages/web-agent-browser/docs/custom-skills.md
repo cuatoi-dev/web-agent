@@ -219,7 +219,7 @@ In order, the tool (`packages/web-agent-core/src/tools/skill-tools.ts:128-178`):
 The two agents offer `create_skill` and `delete_skill` because the extension
 gives each agent a writable skill store
 (`packages/web-agent-core/src/tools/skill-tools.ts:120`, `:183`;
-`src/sidepanel.ts:96`, `src/content.ts:106`).
+`src/sidepanel.ts:buildAgentPanel`, `src/content.ts:106`).
 
 ### Where the saved skills are stored
 

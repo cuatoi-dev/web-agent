@@ -70,7 +70,7 @@ The skill tells the agent what to do for each refusal (`:140-152`):
 
 A brand sets `skills: { websiteEdit: { enabled: false } }` in
 `brand/plugin.yml` to drop the skill from the side panel
-(`src/lib/brand-capabilities.ts:24-37`, `src/sidepanel.ts:89-92`). The panel
+(`src/lib/brand-capabilities.ts:24-37`, `src/sidepanel.ts:panel.skills`). The panel
 then ships no `website_edit` entry, and the extension still builds. The
 `skills` block is described in `brand/README.md` and in
 [Custom skills](./custom-skills.md#replace-or-turn-off-a-built-in-skill).

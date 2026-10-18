@@ -9,9 +9,6 @@ import {
   type AgentChatPanel,
 } from "@cuatoi/web-agent-lit";
 import {
-  dataTools,
-  defaultTools,
-  genuiTools,
   type CustomToolDef,
   type ToolContext,
   type ToolProvider,
@@ -43,6 +40,7 @@ import {
   mergeBrandSkills,
   resolveAgent,
 } from "./lib/brand-capabilities";
+import { sidePanelTools } from "./lib/sidepanel-tool-filter";
 import { pageAgentTools } from "./lib/page-agent-tools";
 import { panelPageTools } from "./lib/panel-page-tools";
 import { createDebuggerSession } from "./lib/debugger-session";
@@ -135,19 +133,11 @@ function buildAgentPanel(
     sessionNamespace: `web-agent-extension-panel-${agent.id}`,
   };
 
-  // The brand's own data / genui switches, same rule as before 116/001.
-  const groupDrop = new Set<string>();
-  if (brand.tools.data?.enabled === false) {
-    for (const tool of dataTools()) groupDrop.add(tool.name);
-  }
-  if (brand.tools.genui?.enabled === false) {
-    for (const tool of genuiTools()) groupDrop.add(tool.name);
-  }
-
+  // 116/001 — the brand's `data` switch, applied on top of the tools the side
+  // panel never runs (lib/sidepanel-tool-filter.ts). The agent's own `tools` /
+  // `excludeTools` applies last.
   panel.config.tools = (ctx: ToolContext): CustomToolDef[] =>
-    defaultTools(ctx).filter(
-      (t) => !groupDrop.has(t.name) && agentAllows(agent.tools, agent.excludeTools, t.name),
-    );
+    sidePanelTools(brand, ctx).filter((t) => agentAllows(agent.tools, agent.excludeTools, t.name));
 
   // 128/003 — an agent that cannot read files gets no folder button.
   const canReadFiles = agentAllows(agent.tools, agent.excludeTools, "read_file");

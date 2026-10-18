@@ -1,4 +1,7 @@
-/** Every tool name the side panel can ever be offered, including gated ones. */
+/** Every tool name the side panel can ever be offered, including gated ones.
+ *  A tool the side panel never runs is NOT listed, and a brand agent YAML that
+ *  names one fails the build (show_generative_ui — see
+ *  src/lib/sidepanel-tool-filter.ts). */
 const SIDE_PANEL_TOOL_NAMES = [
   // core defaultTools
   "wait",
@@ -7,7 +10,6 @@ const SIDE_PANEL_TOOL_NAMES = [
   "get_field_details",
   "sample_field_values",
   "query_data",
-  "show_generative_ui",
   "search_skills",
   "load_skill",
   "create_skill",

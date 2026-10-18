@@ -256,7 +256,6 @@ server of this repository. Remove it from your brand.
 ```yaml
 tools:
   data:  { enabled: false }
-  genui: { enabled: false }
 ```
 
 | Group | Tools |
@@ -264,10 +263,17 @@ tools:
 | `scheduler` | `set_schedule`, `list_schedules` and `cancel_schedule` |
 | `todo` | `todo_write` and `todo_read` |
 | `data` | `list_data_sources`, `get_field_details`, `sample_field_values`, `query_data` |
-| `genui` | `show_generative_ui` |
+
+`show_generative_ui` is not available in the side panel, so there is no group
+for it. It builds a `form` or `buttons` block, and it checks that block with
+`ajv` first. `ajv` compiles a validator with `new Function`, which the
+extension's Content Security Policy refuses, so the check fails and the tool
+returns an error instead of a block. Every side panel agent runs without it,
+whatever its `tools` list says.
 
 Each group takes a mapping with a boolean `enabled`
-(`tool/compile-brand.cjs:78-101`, `src/lib/brand-capabilities.ts:53-70`). For a
+(`tool/compile-brand.cjs`, `compileFlags`; `src/lib/brand-capabilities.ts`,
+`brandToolConfig`). For a
 side panel agent, a group switched off here is removed on top of that agent's
 own `tools` list — an agent set to `tools: "*"` still loses the group.
 

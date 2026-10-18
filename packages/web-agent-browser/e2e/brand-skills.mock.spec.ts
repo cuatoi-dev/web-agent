@@ -265,51 +265,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E6 / criterion 5.
-  test("E6: tools: { genui: { enabled: false } } removes show_generative_ui, keeps query_data", async () => {
-    const dir = await patchedBrand(FLAGS_DIR, { tools: { genui: { enabled: false } } });
-    const { ctx, extensionId } = await launchPatchedContext(dir);
-    try {
-      const panelPage = await ctx.newPage();
-      await installToolListingMock(panelPage);
-      await panelPage.setViewportSize({ width: 400, height: 700 });
-      await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-
-      await panelPage.locator("agent-chat-panel #input").click();
-      await panelPage.keyboard.type("hi");
-      await panelPage.keyboard.press("Enter");
-
-      await panelPage.waitForFunction(() => window.__WA_TOOLS__ !== undefined, { timeout: 15_000 });
-      const tools = await panelPage.evaluate(() => window.__WA_TOOLS__);
-      expect(tools).not.toContain("show_generative_ui");
-      expect(tools).toContain("query_data");
-    } finally {
-      await ctx.close();
-    }
-  });
-
-  // E7 / criterion 5's "removing the key restores it" half.
-  test("E7: tools: {} restores show_generative_ui", async () => {
-    const dir = await patchedBrand(FLAGS_DIR, { tools: {} });
-    const { ctx, extensionId } = await launchPatchedContext(dir);
-    try {
-      const panelPage = await ctx.newPage();
-      await installToolListingMock(panelPage);
-      await panelPage.setViewportSize({ width: 400, height: 700 });
-      await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-
-      await panelPage.locator("agent-chat-panel #input").click();
-      await panelPage.keyboard.type("hi");
-      await panelPage.keyboard.press("Enter");
-
-      await panelPage.waitForFunction(() => window.__WA_TOOLS__ !== undefined, { timeout: 15_000 });
-      const tools = await panelPage.evaluate(() => window.__WA_TOOLS__);
-      expect(tools).toContain("show_generative_ui");
-    } finally {
-      await ctx.close();
-    }
-  });
-
   // E8 / criterion 6 — both agents.
   test("E8: tools: { todo: { enabled: false } } removes todo tools on both agents", async () => {
     const dir = await patchedBrand(FLAGS_DIR, { tools: { todo: { enabled: false } } });
@@ -339,6 +294,9 @@ test.describe("Brand skills and feature flags", () => {
       const pageTools = await page.evaluate(() => window.__WA_TOOLS__);
       expect(pageTools).not.toContain("todo_write");
       expect(pageTools).not.toContain("todo_read");
+      // Out of scope for this task: the in-page bubble still renders the block,
+      // so it keeps the tool.
+      expect(pageTools).toContain("show_generative_ui");
     } finally {
       await ctx.close();
     }
@@ -367,8 +325,8 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E9 / criterion 1's tool half.
-  test("E9: default dist/ still offers todo_write, todo_read and show_generative_ui", async ({ context, extensionId }) => {
+  // E9 / criterion 1's tool half, and criterion 2.
+  test("E9: default dist/ offers todo_write, todo_read and the scheduler tools, and no generative-UI tool", async ({ context, extensionId }) => {
     const panelPage = await context.newPage();
     await installToolListingMock(panelPage);
     await panelPage.setViewportSize({ width: 400, height: 700 });
@@ -380,7 +338,7 @@ test.describe("Brand skills and feature flags", () => {
     const tools = await panelPage.evaluate(() => window.__WA_TOOLS__);
     expect(tools).toContain("todo_write");
     expect(tools).toContain("todo_read");
-    expect(tools).toContain("show_generative_ui");
+    expect(tools).not.toContain("show_generative_ui");
     expect(tools).toContain("set_schedule");
     expect(tools).toContain("list_schedules");
     expect(tools).toContain("cancel_schedule");

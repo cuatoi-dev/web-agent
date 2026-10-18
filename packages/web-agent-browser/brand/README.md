@@ -153,7 +153,6 @@ its current behaviour.
 ```yaml
 tools:
   data:      { enabled: false }
-  genui:     { enabled: false }
   todo:      { enabled: true }
   scheduler: { enabled: true }
 ```
@@ -163,7 +162,13 @@ tools:
 | `scheduler` | `set_schedule`, `list_schedules` and `cancel_schedule`. |
 | `todo` | `todo_write` and `todo_read`, and the composer's todo indicator. |
 | `data` | `list_data_sources`, `get_field_details`, `sample_field_values`, `query_data`. |
-| `genui` | `show_generative_ui`. |
+
+`show_generative_ui` is not available in the side panel, so there is no group
+for it. It builds a `form` or `buttons` block, and it checks that block with
+`ajv` first. `ajv` compiles a validator with `new Function`, which the
+extension's Content Security Policy refuses, so the check fails and the tool
+returns an error instead of a block. Every side panel agent runs without it,
+whatever its `tools` list says.
 
 ### Skill groups
 
@@ -195,7 +200,7 @@ that. A brand skill with the same name as a built-in replaces it.
 
 The build fails, and writes no `dist/`, when:
 
-- a key under `tools` is not `scheduler`, `todo`, `data` or `genui`
+- a key under `tools` is not `scheduler`, `todo` or `data`
 - a key under `skills` is not `core`, `dom`, `pageFetch`, `tab`, `websiteEdit` or `testing`
 - a group's value is not a mapping carrying a boolean `enabled`
 

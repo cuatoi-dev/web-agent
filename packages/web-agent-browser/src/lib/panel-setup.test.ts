@@ -148,32 +148,8 @@ describe("panel-setup", () => {
       expect(branded.config?.maxIterations).toBe(plain.config?.maxIterations);
     });
 
-    // W3 — criterion 5.
-    it("tools: { genui: { enabled: false } } removes show_generative_ui but keeps query_data and get_time", async () => {
-      const panel: PanelLike = {};
-      applyPanelSettings(panel, SETTINGS, "token", {
-        ...EMPTY_BRAND,
-        tools: { genui: { enabled: false } },
-      });
-
-      setMockScript({ text: "ok" });
-      const session = createAgentSession({
-        ...panel.config,
-        persist: false,
-        model: "test-model",
-        endpointType: "mock",
-      });
-      await session.send([{ type: "text", text: "hi" }]);
-
-      const names = session.availableTools().map((t) => t.name);
-      expect(names).not.toContain("show_generative_ui");
-      expect(names).toContain("query_data");
-      expect(names).toContain("get_time");
-      session.dispose();
-    });
-
     // W4.
-    it("tools: { data: { enabled: false } } removes the data tools but keeps show_generative_ui", async () => {
+    it("tools: { data: { enabled: false } } removes the data tools but keeps get_time", async () => {
       const panel: PanelLike = {};
       applyPanelSettings(panel, SETTINGS, "token", {
         ...EMPTY_BRAND,
@@ -194,7 +170,7 @@ describe("panel-setup", () => {
       expect(names).not.toContain("get_field_details");
       expect(names).not.toContain("sample_field_values");
       expect(names).not.toContain("query_data");
-      expect(names).toContain("show_generative_ui");
+      expect(names).toContain("get_time");
       session.dispose();
     });
   });

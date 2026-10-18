@@ -89,15 +89,9 @@ describe("brandToolConfig", () => {
     expect(brandToolConfig(brand)).toEqual({ scheduler: { enabled: true } });
   });
 
-  it("T4: tools: { genui: { enabled: false } } drops show_generative_ui, keeps query_data", () => {
-    const brand: AgentBrand = { ...EMPTY_BRAND, tools: { genui: { enabled: false } } };
-    const cfg = brandToolConfig(brand);
-    expect(typeof cfg.tools).toBe("function");
-    const names = cfg.tools?.({} as ToolContext).map((t) => t.name) ?? [];
-    expect(names).not.toContain("show_generative_ui");
-    expect(names).toContain("query_data");
-  });
-
+  // The genui brand flag was removed on 2026-10-18. The side panel drops
+  // show_generative_ui unconditionally (sidepanel-tool-filter.test.ts); the
+  // in-page bubble keeps it, which is what T5 below checks.
   it("T5: tools: { data: { enabled: false } } drops the four data tools, keeps genui", () => {
     const brand: AgentBrand = { ...EMPTY_BRAND, tools: { data: { enabled: false } } };
     const cfg = brandToolConfig(brand);
@@ -107,23 +101,6 @@ describe("brandToolConfig", () => {
     expect(names).not.toContain("sample_field_values");
     expect(names).not.toContain("query_data");
     expect(names).toContain("show_generative_ui");
-  });
-
-  it("T6: both data and genui off drops both groups; get_time still present", () => {
-    const brand: AgentBrand = {
-      ...EMPTY_BRAND,
-      tools: { data: { enabled: false }, genui: { enabled: false } },
-    };
-    const cfg = brandToolConfig(brand);
-    const names = cfg.tools?.({} as ToolContext).map((t) => t.name) ?? [];
-    expect(names).not.toContain("list_data_sources");
-    expect(names).not.toContain("show_generative_ui");
-    expect(names).toContain("get_time");
-  });
-
-  it("T7: an explicit true for genui changes nothing; tools stays absent", () => {
-    const brand: AgentBrand = { ...EMPTY_BRAND, tools: { genui: { enabled: true } } };
-    expect(brandToolConfig(brand).tools).toBeUndefined();
   });
 });
 

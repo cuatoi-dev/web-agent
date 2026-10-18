@@ -6,6 +6,7 @@ import { tabTools } from "./tab-tools";
 import { pageAgentTools } from "./page-agent-tools";
 import { panelPageTools } from "./panel-page-tools";
 import { vfsTools } from "@cuatoi/web-agent-vfs";
+import { SIDE_PANEL_DROPPED_TOOL_NAMES } from "./sidepanel-tool-filter";
 
 const require = createRequire(import.meta.url);
 const { SIDE_PANEL_TOOL_NAMES } = require("../../tool/sidepanel-tools.cjs") as {
@@ -39,7 +40,15 @@ describe("SIDE_PANEL_TOOL_NAMES", () => {
     // before it goes through the same loader.
     const vfs = await loadProvider([vfsTools()]);
 
-    const discovered = [...new Set([...core, ...tabs, ...pageAgent, ...panelPage, ...vfs])].sort();
+    const discovered = [...new Set([...core, ...tabs, ...pageAgent, ...panelPage, ...vfs])]
+      .filter((name) => !SIDE_PANEL_DROPPED_TOOL_NAMES.includes(name))
+      .sort();
     expect(discovered).toEqual([...SIDE_PANEL_TOOL_NAMES].sort());
+  });
+
+  it("lists no tool the side panel never offers", () => {
+    for (const name of SIDE_PANEL_DROPPED_TOOL_NAMES) {
+      expect(SIDE_PANEL_TOOL_NAMES).not.toContain(name);
+    }
   });
 });

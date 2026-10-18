@@ -7,7 +7,7 @@ export type { ChromeStorageArea } from "./chrome-storage-backend.types";
  *  this page.
  *
  *  The side panel builds one `<agent-chat-panel>` per agent in the SAME page
- *  (`sidepanel.ts:116` `buildAgentPanel`, driven by the agent switcher), and
+ *  (`sidepanel.ts:buildAgentPanel`, driven by the agent switcher), and
  *  every one of them mounts `/home/shared` on the same namespace. Two agents
  *  can therefore start a write at the same moment. Without this chain the
  *  second write reads the index before the first write has stored it, and the

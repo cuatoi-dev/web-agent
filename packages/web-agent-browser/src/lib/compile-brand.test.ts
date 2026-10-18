@@ -910,20 +910,21 @@ describe("compileBrand", () => {
   });
 
   describe("flag blocks", () => {
-    it("C15: tools: { genui: { enabled: false } } compiles through", () => {
+    it("C15: tools: { genui: { enabled: false } } fails the build; genui is no longer a group", () => {
       const tempDir = makeTempDir();
       writeDefaultAgent(tempDir);
       writePlugin(tempDir, "defaultAgent: chromagent\ntools:\n  genui: { enabled: false }\n");
-      const brand = compileBrand(tempDir);
-      expect(brand.tools).toEqual({ genui: { enabled: false } });
+      expect(() => compileBrand(tempDir)).toThrow(
+        "plugin.yml tools.genui is not a known tool group; expected scheduler, todo or data",
+      );
     });
 
-    it("C16: an unknown tool group fails, listing the four accepted names", () => {
+    it("C16: an unknown tool group fails, listing the three accepted names", () => {
       const tempDir = makeTempDir();
       writeDefaultAgent(tempDir);
       writePlugin(tempDir, "defaultAgent: chromagent\ntools:\n  genie: { enabled: false }\n");
       expect(() => compileBrand(tempDir)).toThrow(
-        "plugin.yml tools.genie is not a known tool group; expected scheduler, todo, data or genui",
+        "plugin.yml tools.genie is not a known tool group; expected scheduler, todo or data",
       );
     });
 
@@ -947,9 +948,9 @@ describe("compileBrand", () => {
     it("C19: a flag value that is not { enabled: boolean } fails", () => {
       const tempDir = makeTempDir();
       writeDefaultAgent(tempDir);
-      writePlugin(tempDir, "defaultAgent: chromagent\ntools:\n  genui: false\n");
+      writePlugin(tempDir, "defaultAgent: chromagent\ntools:\n  data: false\n");
       expect(() => compileBrand(tempDir)).toThrow(
-        "plugin.yml tools.genui must be a mapping with a boolean 'enabled', for example { enabled: false }",
+        "plugin.yml tools.data must be a mapping with a boolean 'enabled', for example { enabled: false }",
       );
     });
 

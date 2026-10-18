@@ -24,8 +24,9 @@ export function patchedExtensionDir(specName: string): string {
  *
  *  The merge is a TOP-LEVEL spread, the same as the mock tier's private copy
  *  (`e2e/brand-skills.mock.spec.ts:25-32`): a patch key REPLACES that whole key
- *  on the brand. `{ tools: { genui: { enabled: false } } }` therefore replaces
- *  the entire `tools` object, which is `{}` in the shipped brand.
+ *  on the brand. `{ tools: { data: { enabled: false } } }` therefore replaces
+ *  the whole block, including the bundled brand's `todo` and `scheduler`
+ *  entries.
  *
  *  `manifest.json` is copied unchanged, so host permissions and every other
  *  manifest field stay exactly as the real build produced them.

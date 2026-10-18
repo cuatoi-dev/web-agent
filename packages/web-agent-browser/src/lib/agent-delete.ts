@@ -3,7 +3,7 @@ import { LAST_AGENT_KEY, USER_AGENTS_KEY, isRecord, readAgentStore } from "./age
 import { SKILLS_KEY } from "./skill-registry";
 
 /** The side panel's session database for one agent: the namespace set at
- *  `sidepanel.ts:107` with the `web-agent-` prefix `IdbSessionStore` adds
+ *  `sidepanel.ts:buildAgentPanel` (`sessionNamespace`) with the `web-agent-` prefix `IdbSessionStore` adds
  *  (`packages/web-agent-core/src/loop/session-store.ts:45`). */
 export function sessionDatabaseName(id: string): string {
   return `web-agent-web-agent-extension-panel-${id}`;

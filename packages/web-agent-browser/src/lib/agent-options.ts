@@ -1,7 +1,6 @@
 import {
   dataTools,
   defaultTools,
-  genuiTools,
   schedulerTools,
   todoTools,
   type SkillRegistry,
@@ -19,10 +18,11 @@ import { testPlanSkill } from "./test-plan-skill";
 import { testReportSkill } from "./test-report-skill";
 import { exploreAppSkill } from "./explore-app-skill";
 import { mergeBrandSkills } from "./brand-capabilities";
+import { SIDE_PANEL_DROPPED_TOOL_NAMES } from "./sidepanel-tool-filter";
 
 /** A writable registry, so create_skill is listed: skill-tools.ts:132 adds
  *  it only when `save` is a function, and the side panel always passes one
- *  (sidepanel.ts:162). Never called. */
+ *  (sidepanel.ts:panel.skillRegistry). Never called. */
 const STUB_REGISTRY: SkillRegistry = {
   list: () => Promise.resolve([]),
   get: () => Promise.resolve(undefined),
@@ -71,9 +71,9 @@ export function uniqueGroups(groups: MultiSelectGroup[]): MultiSelectGroup[] {
 
 /** The design's toolGroups(brand). */
 export function toolGroups(brand: AgentBrand): MultiSelectGroup[] {
-  const drop = new Set<string>();
+  // The side panel never offers these, so the picker must not list them.
+  const drop = new Set<string>(SIDE_PANEL_DROPPED_TOOL_NAMES);
   if (brand.tools.data?.enabled === false) for (const n of namesOf(dataTools())) drop.add(n);
-  if (brand.tools.genui?.enabled === false) for (const n of namesOf(genuiTools())) drop.add(n);
   if (brand.tools.scheduler?.enabled === false) for (const n of namesOf(schedulerTools(STUB_CTX))) drop.add(n);
   if (brand.tools.todo?.enabled === false) for (const n of namesOf(todoTools(STUB_CTX))) drop.add(n);
 
@@ -87,7 +87,7 @@ export function toolGroups(brand: AgentBrand): MultiSelectGroup[] {
   ]);
 }
 
-/** The design's skillNames(brand): the same call as sidepanel.ts:152-155.
+/** The design's skillNames(brand): the same call as sidepanel.ts:panel.skills.
  *  Saved skills are not listed. */
 export function skillNames(brand: AgentBrand): MultiSelectGroup[] {
   const skills = mergeBrandSkills(

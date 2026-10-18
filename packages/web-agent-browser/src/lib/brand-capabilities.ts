@@ -1,7 +1,6 @@
 import {
   dataTools,
   defaultTools,
-  genuiTools,
   type CustomToolDef,
   type SkillDef,
   type ToolContext,
@@ -42,9 +41,11 @@ export function mergeBrandSkills(
  *
  * `scheduler` and `todo` are core's own host opt-ins and flow straight through:
  * `todo: { enabled: false }` leaves `ctx._todos` unset, and `todoTools(ctx)`
- * then returns an empty list (tools/todo-tools.ts:14-15). `data` and `genui`
- * have no such switch, so they are removed from the tool list instead, through
+ * then returns an empty list (tools/todo-tools.ts:14-15). `data`
+ * has no such switch, so it is removed from the tool list instead, through
  * the existing `SessionConfig.tools` seam (config.types.ts:112). No core change.
+ * The side panel drops `show_generative_ui` itself, with no brand flag, because
+ * no brand may switch it on (lib/sidepanel-tool-filter.ts).
  *
  * `tools` is set ONLY when a group is actually switched off. With no flags the
  * agent keeps core's own factory, which is what makes the default build
@@ -58,9 +59,6 @@ export function brandToolConfig(brand: AgentBrand): BrandCapabilityConfig {
   const drop = new Set<string>();
   if (brand.tools.data?.enabled === false) {
     for (const tool of dataTools()) drop.add(tool.name);
-  }
-  if (brand.tools.genui?.enabled === false) {
-    for (const tool of genuiTools()) drop.add(tool.name);
   }
   if (drop.size > 0) {
     out.tools = (ctx: ToolContext): CustomToolDef[] =>

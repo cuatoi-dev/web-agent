@@ -31,12 +31,13 @@ const WIRE_FORMATS = ["anthropic", "openai", "gemini"];
  *  optional and is filled in with false. */
 const MODEL_FIELDS = ["id", "label", "endpoint", "wireFormat", "model"];
 
-/** The four tool groups `plugin.yml`'s `tools` block may switch. `scheduler`
+/** The three tool groups `plugin.yml`'s `tools` block may switch. `scheduler`
  *  and `todo` are host opt-ins on the session config
- *  (packages/web-agent-core/src/controller.types.ts:118,121). `data` and
- *  `genui` are built by dataTools() and genuiTools()
- *  (packages/web-agent-core/src/tools/builders.ts:60,70). */
-const TOOL_GROUPS = ["scheduler", "todo", "data", "genui"];
+ *  (packages/web-agent-core/src/controller.types.ts:118,121). `data` is built
+ *  by dataTools() (packages/web-agent-core/src/tools/builders.ts:60).
+ *  `genui` is gone: the side panel cannot render a generative-UI block, so no
+ *  brand may switch show_generative_ui on. */
+const TOOL_GROUPS = ["scheduler", "todo", "data"];
 
 /** The six skill groups `plugin.yml`'s `skills` block may switch. They are the
  *  built-in sets the two agents spread today: core, dom and pageFetch in the

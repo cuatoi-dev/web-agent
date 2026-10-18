@@ -116,23 +116,46 @@ test.describe("Agent profiles mock e2e", () => {
     }
   });
 
-  test("tools: { genui: { enabled: false } } with tools: '*' does not offer show_generative_ui", async () => {
-    const dir = path.resolve(TEMP_DIR, "genui-off");
-    await patchedBrand(dir, { tools: { genui: { enabled: false } } });
+  test("no side panel agent offers show_generative_ui, even with tools: '*'", async () => {
+    const dir = path.resolve(TEMP_DIR, "no-genui");
+    const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8"));
+    brand.agents = brand.agents.map((a: any) => ({ ...a, tools: "*" }));
+    await patchedBrand(dir, brand);
     const { ctx, extensionId } = await launchPatchedContext(dir);
     try {
       const page = await ctx.newPage();
       await installToolListingMock(page);
       await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-      // 120/002 — see the note on the "two tools" test above.
       await page.waitForSelector("agent-chat-panel");
-      await page.evaluate(() => {
-        const panel = document.querySelector("agent-chat-panel") as any;
-        void panel.send("hi");
-      });
-      await expect.poll(() => page.evaluate(() => (window as any).__WA_TOOLS__ !== undefined)).toBe(true);
-      const tools = await page.evaluate(() => (window as any).__WA_TOOLS__ as string[]);
-      expect(tools).not.toContain("show_generative_ui");
+
+      const visibleTools = async (): Promise<string[]> => {
+        await page.evaluate(() => {
+          delete (window as any).__WA_TOOLS__;
+        });
+        await page.evaluate(() => {
+          const panels = [...document.querySelectorAll("agent-chat-panel:not([hidden])")];
+          void (panels[panels.length - 1] as any).send("hi");
+        });
+        await expect
+          .poll(() => page.evaluate(() => (window as any).__WA_TOOLS__ !== undefined))
+          .toBe(true);
+        return page.evaluate(() => (window as any).__WA_TOOLS__ as string[]);
+      };
+
+      const chromagent = await visibleTools();
+      expect(chromagent).not.toContain("show_generative_ui");
+      expect(chromagent).toContain("query_data");
+
+      await page.locator("#agent-combo").click();
+      await page.locator("#agent-option-tesagent").click();
+      await expect(page.locator("agent-chat-panel")).toHaveCount(2);
+
+      const tesagent = await visibleTools();
+      expect(tesagent).not.toContain("show_generative_ui");
+      expect(tesagent).toContain("query_data");
+      // Proves the list really came from the Tesagent panel: its agent file
+      // excludes the three page-agent tools (brand/agents/tesagent.yml:17-20).
+      expect(tesagent).not.toContain("send_to_page_agent");
     } finally {
       await ctx.close();
     }

@@ -99,10 +99,10 @@ export interface BrandFlag {
   enabled: boolean;
 }
 
-/** The four tool groups `plugin.yml` may switch. An omitted group keeps its
+/** The three tool groups `plugin.yml` may switch. An omitted group keeps its
  *  current default; `tool/compile-brand.cjs` fails the build on any other
  *  key. */
-export type BrandToolGroup = "scheduler" | "todo" | "data" | "genui";
+export type BrandToolGroup = "scheduler" | "todo" | "data";
 
 /** The six skill groups `plugin.yml` may switch — the built-in sets the two
  *  agents spread. `core`, `dom` and `pageFetch` belong to the in-page bubble;
@@ -424,7 +424,7 @@ export interface RecordingToolsOptions {
 
 export interface PanelPageToolsOptions
   extends PageScreenshotToolOptions, DebuggerToolsOptions, RecordingToolsOptions {
-  /** The panel's own vfs handle (sidepanel.ts:191). page_screenshot and
+  /** The panel's own vfs handle (sidepanel.ts:buildAgentPanel). page_screenshot and
    *  stop_recording save what they produce into it (127/003). */
   vfs: VfsHandle;
   /** The panel's own confirm gate for the "ask" permission tier on

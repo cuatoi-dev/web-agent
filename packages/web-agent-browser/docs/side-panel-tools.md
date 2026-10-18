@@ -5,7 +5,7 @@ title: Side panel tools
 # Side panel tools
 
 The side panel agent carries three tool groups, wired at
-`src/sidepanel.ts:97-110`: the five tab tools, the three page-agent tools, and
+`src/sidepanel.ts:buildAgentPanel`: the five tab tools, the three page-agent tools, and
 the page tools that act on any tab you turned the extension on for.
 
 ## Manage browser tabs from the side panel
@@ -234,5 +234,5 @@ The match ignores letter case. Every default entry gets the tool, because each
 model name is `sonnet` or contains `gemini`.
 
 The side panel reads the wire format and the model once, when it opens
-(`src/sidepanel.ts:104-109`). After you change the model on the options page,
+(`src/sidepanel.ts:effectiveSettings`). After you change the model on the options page,
 close the side panel and open it again.
