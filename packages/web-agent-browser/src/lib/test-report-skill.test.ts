@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { testReportSkill } from "./test-report-skill";
+import { testPlanSkill } from "./test-plan-skill";
 
 describe("testReportSkill", () => {
   it("name, command, description", () => {
@@ -39,7 +40,14 @@ describe("testReportSkill", () => {
     expect(testReportSkill.definition).toContain("sample HTML file");
   });
 
-  it("names the temporary-attribute rule and page_generate_locator", () => {
-    expect(testReportSkill.definition).toContain("page_generate_locator");
+  it("states every row needs a result capture and requires a list format in answer", () => {
+    expect(testReportSkill.definition).toContain("Every row needs a result capture");
+    expect(testReportSkill.definition).toContain("no result capture");
+    expect(testReportSkill.definition).toContain("Answer with a list, one item per case");
+  });
+
+  it("testPlanSkill names the temporary-attribute rule and page_generate_locator", () => {
+    expect(testPlanSkill.definition).toContain("page_generate_locator");
+    expect(testPlanSkill.definition).toContain("temporary\n     aria-label");
   });
 });

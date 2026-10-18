@@ -14,15 +14,14 @@ Build the self-contained HTML report for a test run, then hand it to the user.
 1. **Collect the cases.** One row per case, in the order they ran: its id
    (TC-01, TC-02, …), the title with its Given and When steps, the expected
    result (Then), the real result you observed, the word PASS or FAIL, and the
-   screenshot path. A case with no screenshot is not evidence: take one.
-2. **Screenshots live in the run folder.** Save them with page_screenshot and
-   save_to, at /tmp/runs/<stamp>/TC-<nn>-<slug>.png, where <stamp> is the run
-   start as yyyy-mm-dd-hhmmss. Capture the element that shows the result (ref,
-   css or xpath), or the viewport with highlight on that element. To find an
-   element you may add a temporary role or aria-label with page_eval, then
-   remove it after the capture. A temporary attribute never goes into a test
-   case file or a page table, and page_generate_locator is never called while
-   it is on the page.
+   screenshot path from the run.
+2. **Every row needs a result capture.** It is the element capture or the
+   outlined viewport that test_plan step 4 saved in /tmp/runs/<stamp>/. If a
+   case has none, or only a plain viewport capture with nothing outlined, and
+   the page still shows its result, take it now the same way
+   (page_screenshot with ref, css or xpath, or with highlight) before you write
+   the report. If the result is gone, write "no result capture" in that row's
+   Screenshot cell instead of an image.
 3. **A format from the user wins.** When the user gives a sample HTML file or
    describes a layout, follow that exactly. Otherwise use the starter template
    below.
@@ -37,7 +36,13 @@ Build the self-contained HTML report for a test run, then hand it to the user.
    It replaces every file-system image with base64 data. An error that names a
    missing image means that file is not there: fix the path, do not drop the
    image.
-6. **Answer with one line per case**, TC-<nn> <title> — PASS or FAIL, then:
+6. **Answer with a list, one item per case**, so each case is on its own line:
+
+       - TC-01 Add a cat to the cart — PASS
+       - TC-02 Cart count updates — PASS
+       - TC-03 Out-of-stock item has no button — FAIL
+
+   Then one more line:
    Report: /tmp/runs/<stamp>/report.html — download it from Files, open it in
    the browser, select all and paste it into Outlook.
 
