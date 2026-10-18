@@ -323,16 +323,16 @@ describe("panel-page-tools-network-dialog (124/003)", () => {
     const { session, pageDialog } = setup();
     await session.start(1);
     const r1 = await pageDialog.execute({ tabId: 1, accept: false }, toolCtx());
-    expect(r1.content).toBe("The next dialog will be dismissed. (journal #1)");
+    expect(r1.content).toBe("The next dialog will be dismissed.");
     expect(session.state.get(1)!.dialogPlan).toEqual({ accept: false });
 
     const r2 = await pageDialog.execute({ tabId: 1, accept: true, promptText: "hi" }, toolCtx());
-    expect(r2.content).toBe('The next dialog will be accepted. A prompt will receive "hi". (journal #2)');
+    expect(r2.content).toBe('The next dialog will be accepted. A prompt will receive "hi".');
     expect(session.state.get(1)!.dialogPlan).toEqual({ accept: true, promptText: "hi" });
 
     session.state.get(1)!.lastDialog = 'confirm "Continue?" → dismissed';
     const r3 = await pageDialog.execute({ tabId: 1, accept: false }, toolCtx());
-    expect(r3.content).toBe('The next dialog will be dismissed. Last dialog: confirm "Continue?" → dismissed (journal #3)');
+    expect(r3.content).toBe('The next dialog will be dismissed. Last dialog: confirm "Continue?" → dismissed');
   });
 
   it("U4.14: page_upload_file validation error returns error", async () => {
@@ -370,7 +370,7 @@ describe("panel-page-tools-network-dialog (124/003)", () => {
       toolCtx(),
     );
     expect(res).toEqual({
-      content: 'Uploaded 1 file to [5] file "Attachments": orders.csv (8 B). (journal #1)',
+      content: 'Uploaded 1 file to [5] file "Attachments": orders.csv (8 B).',
     });
     expect(call).toHaveBeenCalledWith(1, "5", "setFiles", ["5", [{ name: "orders.csv", mimeType: "text/csv", text: "a,b\n1,2\n" }]]);
 
@@ -396,7 +396,7 @@ describe("panel-page-tools-network-dialog (124/003)", () => {
       },
       toolCtx(),
     );
-    expect(res2.content).toBe('Uploaded 2 files to [5] file "Attachments": a.csv (8 B), big.bin (5.0 MB). (journal #1)');
+    expect(res2.content).toBe('Uploaded 2 files to [5] file "Attachments": a.csv (8 B), big.bin (5.0 MB).');
   });
 
   it("U4.16: page_upload_file setFiles error reply returns isError", async () => {

@@ -38,7 +38,6 @@ const SIDE_PANEL_TOOL_NAMES = [
   "page_select_option",
   "page_verify",
   "page_generate_locator",
-  "export_test",
   "page_network",
   "page_dialog",
   "page_upload_file",

@@ -31,14 +31,8 @@ The side panel agents also include six reference skills:
   [Page agent tools](./page-agent-tools.md).
 - `website_edit` teaches it to restyle a page and check the result. See
   [Website edit skill](./website-edit.md).
-- `playwright_script` teaches it to build one runnable `@playwright/test` spec
-  with `export_test`, using the case numbers of its test plan. The default
-  brand gives it to tesagent only.
 - `test_plan` teaches it to plan numbered test cases, run them with the page
-  tools, report each case with evidence, and export the suite with
-  `export_test`. The default brand gives it to tesagent only.
-- `test_healer` teaches it what to do when a test step fails. The default
-  brand gives it to tesagent only.
+  tools, and report each case with evidence.
 
 What the `tab_management` skill actually says, from `src/lib/tab-skill.ts:3-22`:
 

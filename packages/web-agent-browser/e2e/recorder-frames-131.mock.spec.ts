@@ -1,7 +1,7 @@
 // 131/004 — the recorder on the debugger, in every frame: cross-site,
 // same-site and doubly-nested. Harness copied from
 // iframe-tools-131.mock.spec.ts:1-149, with the plan-queue model driving
-// start_debugging/start_recording/stop_recording/export_test while the USER
+// start_debugging/start_recording/stop_recording while the USER
 // (not the agent) acts directly on the fixture page and its frames.
 import { test, expect, getTabId } from "./extension.fixture";
 import { routeCrossSiteFrames } from "./cross-site-frames";
@@ -153,19 +153,6 @@ test.describe("recorder in every frame — cross-site, same-site, nested (131/00
     const stopResults = await runPlan(panelPage, "Stop recording.", 3);
     expect(stopResults[2].text).toContain('click button "Save shipping"');
 
-    await nextPlan(panelPage, [
-      {
-        name: "export_test",
-        input: {
-          format: "playwright",
-          suite: "Recorded shipping",
-          cases: [{ id: "TC-01", title: "Save shipping", steps: [{ text: "Recorded steps", journal: [1] }] }],
-        },
-      },
-    ]);
-    const exportResults = await runPlan(panelPage, "Export it.", 4);
-    expect(exportResults[3].text).toContain("page.frameLocator('iframe#shipping')");
-
     await context.close();
   });
 
@@ -178,47 +165,9 @@ test.describe("recorder in every frame — cross-site, same-site, nested (131/00
 
     await nextPlan(panelPage, [
       { name: "stop_recording", input: {} },
-      {
-        name: "export_test",
-        input: {
-          format: "playwright",
-          suite: "Recorded bank confirm",
-          cases: [{ id: "TC-01", title: "Confirm with bank", steps: [{ text: "Recorded steps", journal: [1] }] }],
-        },
-      },
     ]);
-    const results = await runPlan(panelPage, "Stop recording, then export it.", 4);
+    const results = await runPlan(panelPage, "Stop recording.", 3);
     expect(results[2].text).toContain('(frame http://bank.test) click button "Confirm with bank"');
-    const spec = results[3].text;
-    const frameLocatorCount = (spec.match(/\.frameLocator\(/g) ?? []).length;
-    expect(frameLocatorCount).toBeGreaterThanOrEqual(2);
-
-    await context.close();
-  });
-
-  test("F4 export_test writes the iframe steps with frameLocator and the top-page steps without", async ({ context, extensionId }) => {
-    const { sitePage, tabId } = await openCheckout(context);
-    const panelPage = await startDebuggingAndRecording(context, extensionId, tabId);
-
-    await sitePage.locator("#top-button").click();
-    await sitePage.frameLocator("#payment").locator("#pay").click();
-    await sitePage.waitForTimeout(200);
-
-    await nextPlan(panelPage, [
-      { name: "stop_recording", input: {} },
-      {
-        name: "export_test",
-        input: {
-          format: "playwright",
-          suite: "Recorded checkout",
-          cases: [{ id: "TC-01", title: "Top then Pay", steps: [{ text: "Recorded steps", journal: [1, 2] }] }],
-        },
-      },
-    ]);
-    const results = await runPlan(panelPage, "Stop recording, then export it.", 4);
-    const spec = results[3].text;
-    expect(spec).toContain("await page.getByRole('button', { name: 'Top button' }).click();");
-    expect(spec).toMatch(/page\.frameLocator\('iframe#payment'\)[^\n]*\.click\(\);/);
 
     await context.close();
   });

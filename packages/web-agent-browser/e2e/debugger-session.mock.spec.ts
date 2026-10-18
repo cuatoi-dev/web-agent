@@ -247,7 +247,7 @@ test.describe("Debugger session mock e2e (124/001)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Start and click Trusted check.", 3);
 
-    expect(results[2].text).toMatch(/^Clicked \[\d+\] button "Trusted check"\. \(journal #\d+\)$/);
+    expect(results[2].text).toMatch(/^Clicked \[\d+\] button "Trusted check"\.$/);
     await expect(sitePage.locator("#trusted-status")).toHaveText("true");
 
     await context.close();
@@ -273,7 +273,7 @@ test.describe("Debugger session mock e2e (124/001)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Fill coupon.", 3);
 
-    expect(results[2].text).toMatch(/^Filled 1 field: \[\d+\] textbox "Coupon"\. \(journal #\d+\)$/);
+    expect(results[2].text).toMatch(/^Filled 1 field: \[\d+\] textbox "Coupon"\.$/);
     expect(await sitePage.locator("#coupon").inputValue()).toBe("SAVE10");
     await expect(sitePage.locator("#coupon-trusted")).toHaveText("true");
 

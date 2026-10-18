@@ -163,7 +163,7 @@ skills:
   pageFetch: { enabled: true }
   tab:       { enabled: true }
   websiteEdit: { enabled: true }
-  playwright: { enabled: true }
+  testing: { enabled: true }
 ```
 
 | Group | Which agent has it | Skills in the group |
@@ -173,7 +173,7 @@ skills:
 | `pageFetch` | the in-page agent | `page_fetch` |
 | `tab` | the side panel's agents | `tab_management`, `page_agent` |
 | `websiteEdit` | the side panel's agents | `website_edit` |
-| `playwright` | the side panel's agents | `playwright_script` |
+| `testing` | the side panel's agents | `test_plan` |
 
 The skills in `brand/skills/` go to **every** agent — the in-page bubble and
 every side panel agent — and are added on top of whichever groups are still
@@ -183,7 +183,7 @@ that. A brand skill with the same name as a built-in replaces it.
 The build fails, and writes no `dist/`, when:
 
 - a key under `tools` is not `scheduler`, `todo`, `data` or `genui`
-- a key under `skills` is not `core`, `dom`, `pageFetch`, `tab`, `websiteEdit` or `playwright`
+- a key under `skills` is not `core`, `dom`, `pageFetch`, `tab`, `websiteEdit` or `testing`
 - a group's value is not a mapping carrying a boolean `enabled`
 
 ## skills

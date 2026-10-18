@@ -2,8 +2,6 @@
 // step list, so a full page load loses no step that was already sent, and it
 // is what Watch me drives.
 import { REC_RESUME_DELAY_MS } from "./constants";
-import { createActionJournal, recordedStepEntry } from "./action-journal";
-import type { ActionJournal, NewJournalEntry } from "./action-journal.types";
 import type { DebuggerRecorder } from "./debugger-recorder.types";
 import type { DebuggerSession } from "./debugger-tools.types";
 import type {
@@ -55,14 +53,12 @@ function newRecordingId(): string {
 }
 
 export function createRecordingController(options: {
-  journal?: ActionJournal;
   /** 131/004 — the tab's debugger. A controller built without one can still
    *  report a finished recording, but cannot start a new one. */
   session?: DebuggerSession;
   recorder?: DebuggerRecorder;
   api?: RecordingApi;
 } = {}): RecordingController {
-  const journal = options.journal ?? createActionJournal();
   const api = options.api ?? defaultRecordingApi;
   let state: RecordingState = { kind: "idle" };
   const listeners = new Set<() => void>();
@@ -124,30 +120,13 @@ export function createRecordingController(options: {
   options.recorder?.onRoute(onRoute);
   options.session?.onDetached(onDetached);
 
-  /** Detaches every listener, journals the steps, and parks the result. */
+  /** Detaches every listener and parks the result. */
   function finish(note?: string): void {
     if (state.kind !== "recording") return;
     api.removeTabRemovedListener(onTabRemoved);
     const { host, url, steps } = state;
-    const pending: NewJournalEntry[] = [];
-    const indexOfPending: number[] = [];
-    const unjournaled: string[] = [];
-    steps.forEach((s, i) => {
-      const entry = recordedStepEntry(s);
-      if (entry) {
-        pending.push(entry);
-        indexOfPending.push(i);
-      } else {
-        unjournaled.push(s.target?.label ?? s.line);
-      }
-    });
-    // `append` returns one id per entry, in the same order as `pending`, so
-    // `indexOfPending[k]` is the step that produced `journalIds[k]`.
-    const journalIds = journal.append(pending);
-    const stepJournalIds: Partial<Record<number, number>> = {};
-    for (let k = 0; k < journalIds.length; k++) stepJournalIds[indexOfPending[k]] = journalIds[k];
     state = { kind: "stopped", host, url, steps, ...(note === undefined ? {} : { note }) };
-    lastResult = { host, url, steps, ...(note === undefined ? {} : { note }), journalIds, stepJournalIds, unjournaled };
+    lastResult = { host, url, steps, ...(note === undefined ? {} : { note }) };
     notifyListeners();
   }
 

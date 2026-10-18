@@ -62,12 +62,12 @@ describe("mergeBrandSkills", () => {
     expect(mergeBrandSkills({ core: [a], dom: [b] }, brand)).toEqual([]);
   });
 
-  it("M8: skills: { playwright: { enabled: false } } drops only the playwright group", () => {
+  it("M8: skills: { testing: { enabled: false } } drops only the testing group", () => {
     const c: SkillDef = { name: "c", description: "C", definition: "body c" };
-    const groups = { tab: [a], websiteEdit: [b], playwright: [c] };
+    const groups = { tab: [a], websiteEdit: [b], testing: [c] };
     expect(mergeBrandSkills(groups, EMPTY_BRAND).map((s) => s.name)).toEqual(["a", "b", "c"]);
 
-    const off: AgentBrand = { ...EMPTY_BRAND, skills: { playwright: { enabled: false } } };
+    const off: AgentBrand = { ...EMPTY_BRAND, skills: { testing: { enabled: false } } };
     expect(mergeBrandSkills(groups, off).map((s) => s.name)).toEqual(["a", "b"]);
   });
 });

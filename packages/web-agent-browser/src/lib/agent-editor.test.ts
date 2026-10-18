@@ -57,7 +57,7 @@ const CHROMAGENT: BrandAgent = {
   instructions: "You are Chromagent, a helpful personal assistant.\n",
   tools: "*",
   skills: "*",
-  excludeSkills: ["playwright_script"],
+  excludeSkills: ["test_plan"],
 };
 
 const TESAGENT: BrandAgent = {
@@ -169,7 +169,7 @@ describe("agent-editor", () => {
     const { card, byId, chips } = await setupEditor();
     card("chromagent").querySelector<HTMLButtonElement>(".card-edit-btn")!.click();
 
-    expect(chips("edit-chromagent-exclude-skills")).toEqual(["playwright_script"]);
+    expect(chips("edit-chromagent-exclude-skills")).toEqual(["test_plan"]);
     expect(byId("edit-chromagent-exclude-skills-box")!.getAttribute("aria-disabled")).toBe("false");
   });
 

@@ -174,21 +174,6 @@ export function pageToolPhrases(hostFor: (tabId: unknown) => string): Record<str
       inProgressPhrase: (agent) => `${agent} is stopping the recording…`,
     },
 
-    export_test: {
-      phrase: ({ input, failed }, agent) => {
-        if (failed) return `${agent} tried to export a test`;
-        const format = str(input.format);
-        if (format === "playwright") {
-          return `${agent} exported a Playwright spec`;
-        }
-        if (format === "bdd") {
-          return `${agent} exported a BDD case`;
-        }
-        return `${agent} exported a test`;
-      },
-      inProgressPhrase: (agent) => `${agent} is exporting a test…`,
-    },
-
     start_debugging: {
       phrase: ({ input, failed }, agent) =>
         failed

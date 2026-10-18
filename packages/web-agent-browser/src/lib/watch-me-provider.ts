@@ -245,7 +245,7 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
       if (s.kind === "recording") {
         const res = await controller.stop();
         if (!("error" in res)) {
-          stoppedState = { kind: "stopped", host: res.host, url: res.url, steps: [...res.steps], ...(res.note ? { note: res.note } : {}), stepJournalIds: res.stepJournalIds };
+          stoppedState = { kind: "stopped", host: res.host, url: res.url, steps: [...res.steps], ...(res.note ? { note: res.note } : {}) };
         }
         renderSlot();
         notify();
@@ -299,18 +299,7 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
       ];
       const header = `# Recorded steps on ${taken.url}\n`;
       const note = taken.note ? `${taken.note}\n` : "";
-      // 002 — each journaled step carries its own id, so the model can pass the
-      // right id to `export_test` instead of guessing from the tool block's
-      // whole range. A step with no journal entry gets no suffix. Only the
-      // MODEL-facing text adds this: the panel's own list above uses bare
-      // `stepLine`, unchanged (see `renderSlot`).
-      const idOf = taken.stepJournalIds;
-      const lines = taken.steps
-        .map((step, i) => {
-          const id = idOf?.[i];
-          return `${i + 1}. ${stepLine(step)}${id === undefined ? "" : ` (journal #${id})`}`;
-        })
-        .join("\n");
+      const lines = taken.steps.map((step, i) => `${i + 1}. ${stepLine(step)}`).join("\n");
       const stepsText = `${header}${note}${lines}`;
       const textPart: MessagePart = { type: "text", text: stepsText };
       const typed = payload.parts

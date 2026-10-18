@@ -74,7 +74,7 @@ describe("page-recorder", () => {
     expect(s[0].kind).toBe("click");
     expect(s[0].line).toBe('click button "Apply"');
     expect(s[0].ref).toBeUndefined();
-    expect(s[0].target?.locator).toBe("getByRole('button', { name: 'Apply' })");
+    expect(s[0].target).toMatchObject({ role: "button", name: "Apply" });
   });
 
   it("a step carries no ref, for every step kind", () => {
@@ -559,7 +559,7 @@ describe("page-recorder", () => {
       expect(s).toHaveLength(1);
       expect(s[0].kind).toBe("click");
       expect(s[0].line).toBe('click button "Add to cart"');
-      expect(s[0].target?.locator).toBe("getByRole('button', { name: 'Add to cart' })");
+      expect(s[0].target).toMatchObject({ role: "button", name: "Add to cart" });
     });
 
     it("click on a slotted <span> inside such a button records the same click on the inner <button>", () => {
@@ -573,7 +573,7 @@ describe("page-recorder", () => {
       const s = steps();
       expect(s).toHaveLength(1);
       expect(s[0].line).toBe('click button "Add to cart"');
-      expect(s[0].target?.locator).toBe("getByRole('button', { name: 'Add to cart' })");
+      expect(s[0].target).toMatchObject({ role: "button", name: "Add to cart" });
     });
 
     it("typing into an <input> inside an open shadow root records fill and updates in place", () => {

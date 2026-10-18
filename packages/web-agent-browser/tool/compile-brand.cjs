@@ -18,10 +18,10 @@ const AGENT_PROMPT_KEYS = ["inPage"];
 /** The side panel skills every agent may name in `skills` / `excludeSkills`
  *  without shipping its own `brand/skills/` file — the built-in sets
  *  `mergeBrandSkills` spreads for the side panel (`tabSkills()` names, plus
- *  `website_edit`, `playwright_script`, `test_plan` and `test_healer`). A name
+ *  `website_edit` and `test_plan`). A name
  *  here builds even when its group is switched off; the group switch removes it
  *  at run time. */
-const BUILTIN_SIDE_PANEL_SKILLS = ["tab_management", "page_agent", "website_edit", "playwright_script", "test_plan", "test_healer"];
+const BUILTIN_SIDE_PANEL_SKILLS = ["tab_management", "page_agent", "website_edit", "test_plan"];
 
 /** The three wire formats the bubble accepts
  *  (src/lib/types.ts:20). A fourth value is a typo, not an extension point. */
@@ -40,9 +40,9 @@ const TOOL_GROUPS = ["scheduler", "todo", "data", "genui"];
 
 /** The six skill groups `plugin.yml`'s `skills` block may switch. They are the
  *  built-in sets the two agents spread today: core, dom and pageFetch in the
- *  bubble (src/content.ts, `mount`), tab, websiteEdit and playwright in the
+ *  bubble (src/content.ts, `mount`), tab, websiteEdit and testing in the
  *  side panel (src/sidepanel.ts, `buildAgentPanel`). */
-const SKILL_GROUPS = ["core", "dom", "pageFetch", "tab", "websiteEdit", "playwright"];
+const SKILL_GROUPS = ["core", "dom", "pageFetch", "tab", "websiteEdit", "testing"];
 
 /** The shape a skill's `name` must take. It is what the model calls and what
  *  the user types after a slash, so a space or a capital cannot be invoked. */

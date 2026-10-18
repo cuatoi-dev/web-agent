@@ -10,8 +10,7 @@ import {
 } from "@cuatoi/web-agent-dom";
 import { buildLocator, journalTarget } from "./locator-builder";
 import { runVerify } from "./page-verify";
-import type { JournalTarget } from "./action-journal.types";
-import type { FileSpec, VerifyInput, VerifyOutcome, LocatorBuildResult } from "./types";
+import type { ElementTarget, FileSpec, VerifyInput, VerifyOutcome, LocatorBuildResult } from "./types";
 import type { HelperDescribe } from "./helper-api.types";
 
 export type { HelperDescribe } from "./helper-api.types";
@@ -38,9 +37,9 @@ export function describe(el: Element, ref: string): HelperDescribe {
   return out;
 }
 
-/** The journal target for `el`, once an action has been performed on it. Same
+/** The target for `el`, once an action has been performed on it. Same
  *  label shape `content-act-by-ref.ts:195` and `:281` built today. */
-export function target(el: Element, ref: string, desc: string): JournalTarget {
+export function target(el: Element, ref: string, desc: string): ElementTarget {
   return journalTarget(el, document, `[${ref}] ${desc}`);
 }
 
@@ -105,7 +104,7 @@ export function setFiles(
   el: Element,
   ref: string,
   specs: FileSpec[],
-): { ok: true; desc: string; sizes: number[]; target: JournalTarget } | { ok: false; message: string } {
+): { ok: true; desc: string; sizes: number[]; target: ElementTarget } | { ok: false; message: string } {
   const desc = describeElement(el);
   if (!(el instanceof HTMLInputElement) || el.type !== "file") {
     return { ok: false, message: `Element [${ref}] ${desc} is not a file input.` };

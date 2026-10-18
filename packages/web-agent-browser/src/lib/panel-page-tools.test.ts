@@ -68,7 +68,6 @@ const NO_VISION_NAMES = [
   "page_select_option",
   "page_verify",
   "page_generate_locator",
-  "export_test",
   "page_network",
   "page_dialog",
   "page_upload_file",
@@ -90,7 +89,7 @@ describe("panelPageTools", () => {
     expect(providers[0].required).toBe(false);
 
     const tools = await providers[0].load();
-    expect(tools).toHaveLength(20);
+    expect(tools).toHaveLength(19);
     expect(tools.map((tool) => tool.name)).toEqual(NO_VISION_NAMES);
     expect(tools[2].description).toBeTruthy();
     expect(tools[2].inputSchema).toBeTruthy();
@@ -295,7 +294,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       const { pageClick } = tools({ debuggerSession: session, helper: fakeHelper({ call, centre }) });
 
       const result = await pageClick.execute({ tabId: 1, ref: "4" }, toolCtx());
-      expect(result).toEqual({ content: 'Clicked [4] button "Apply". (journal #1)' });
+      expect(result).toEqual({ content: 'Clicked [4] button "Apply".' });
       expect(centre).toHaveBeenCalledWith(1, "4");
       expect(api.sendCommand).toHaveBeenCalledWith(1, "Input.dispatchMouseEvent", {
         type: "mouseMoved",
@@ -315,23 +314,6 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
         y: 50,
         button: "left",
         clickCount: 1,
-      });
-    });
-
-    it("click with no locator is not journaled", async () => {
-      const { session } = started();
-      await session.start(1);
-
-      const call = callQueue({
-        describe: [{ ok: true, value: { connected: true, name: "Apply", desc: 'button "Apply"', permission: "allow", disabled: false } }],
-        target: [{ ok: true, value: { role: "generic", name: "", label: "[4] generic", isPassword: false } }],
-      });
-      const centre = vi.fn().mockResolvedValue({ ok: true, x: 40, y: 50 });
-      const { pageClick } = tools({ debuggerSession: session, helper: fakeHelper({ call, centre }) });
-
-      const result = await pageClick.execute({ tabId: 1, ref: "4" }, toolCtx());
-      expect(result).toEqual({
-        content: 'Clicked [4] button "Apply". (not journaled: no stable locator for [4] generic)',
       });
     });
 
@@ -513,7 +495,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       );
 
       expect(result).toEqual({
-        content: 'Filled 2 fields: [7] textbox "Coupon", [9] textbox "Email". (journal #1–#2)',
+        content: 'Filled 2 fields: [7] textbox "Coupon", [9] textbox "Email".',
       });
 
       const focusCalls = api.sendCommand.mock.calls.filter(([, method]) => method === "DOM.focus");
@@ -574,7 +556,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       );
 
       expect(result.content).toBe(
-        'Filled 1 field: [7] textbox "Coupon".\n[7] textbox "Coupon": set "SAVE10" but value read back as "SAVE1". (journal #1)',
+        'Filled 1 field: [7] textbox "Coupon".\n[7] textbox "Coupon": set "SAVE10" but value read back as "SAVE1".',
       );
     });
 
@@ -616,43 +598,6 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
         isError: true,
       });
       expect(api.sendCommand).not.toHaveBeenCalledWith(1, "Input.insertText", { text: "qa@example.com" });
-    });
-
-    it("fill with one field without a locator", async () => {
-      const { session } = started();
-      await session.start(1);
-
-      const describeQueue = [
-        { ok: true, value: { connected: true, name: "Coupon", desc: 'textbox "Coupon"', permission: "allow", disabled: false } },
-        { ok: true, value: { connected: true, name: "Email", desc: 'textbox "Email"', permission: "allow", disabled: false } },
-      ];
-      const targetQueue = [
-        { ok: true, value: COUPON_TARGET },
-        { ok: true, value: { role: "textbox", name: "Email", label: '[9] textbox "Email"', isPassword: false } },
-      ];
-      const call = vi.fn((_tabId: number, _ref: string, fn: string) => {
-        if (fn === "describe") return Promise.resolve(describeQueue.shift());
-        if (fn === "fillPrepare") return Promise.resolve({ ok: true, value: { ok: true, hadText: false } });
-        if (fn === "target") return Promise.resolve(targetQueue.shift());
-        if (fn === "readValue") return Promise.resolve({ ok: true, value: {} });
-        throw new Error(`unexpected helper call: ${fn}`);
-      });
-      const { pageFillForm } = tools({ debuggerSession: session, helper: fakeHelper({ call }) });
-
-      const result = await pageFillForm.execute(
-        {
-          tabId: 1,
-          fields: [
-            { ref: "7", value: "SAVE10" },
-            { ref: "9", value: "qa@example.com" },
-          ],
-        },
-        toolCtx(),
-      );
-
-      expect(result.content).toBe(
-        'Filled 2 fields: [7] textbox "Coupon", [9] textbox "Email". (journal #1) (not journaled: no stable locator for [9] textbox "Email")',
-      );
     });
 
     it("Cancel mid-fill returns Cancel gate error", async () => {
@@ -764,7 +709,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       const result = await pageSelectOption.execute({ tabId: 1, ref: "6", values: ["Gift wrap", "Card"] }, toolCtx());
 
       expect(result.isError).toBeFalsy();
-      expect(result.content).toBe('Selected "Gift wrap", "Card" in [6] combobox "Extras". (journal #1)');
+      expect(result.content).toBe('Selected "Gift wrap", "Card" in [6] combobox "Extras".');
     });
   });
 
@@ -809,7 +754,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       const { pageVerify } = getVerifyLocatorTools(fakeHelper({ call }), session);
 
       const result = await pageVerify.execute({ tabId: 1, kind: "value", ref: "2", value: "" }, toolCtx());
-      expect(result.content).toBe('PASS [2] textbox "Coupon" has value "". (journal #1)');
+      expect(result.content).toBe('PASS [2] textbox "Coupon" has value "".');
       expect(result.isError).toBeFalsy();
     });
 
@@ -824,23 +769,6 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
       const result = await pageVerify.execute({ tabId: 1, kind: "text_visible", text: "Enter a code" }, toolCtx());
       expect(result.content).toBe('FAIL expected text "Enter a code" to be visible; found no matching text.');
       expect(result.isError).toBeFalsy();
-    });
-
-    it("PASS without a locator", async () => {
-      const { session } = started();
-      await session.start(1);
-      const callOnDocument = callOnDocumentQueue({
-        verify: [{
-          ok: true,
-          value: { text: 'PASS button "Apply" is visible.', isError: false, target: { role: "button", name: "Apply", label: 'button "Apply"', isPassword: false } },
-        }],
-      });
-      const { pageVerify } = getVerifyLocatorTools(fakeHelper({ callOnDocument }), session);
-
-      const result = await pageVerify.execute({ tabId: 1, kind: "element_visible", role: "button", name: "Apply" }, toolCtx());
-      expect(result.content).toBe(
-        'PASS button "Apply" is visible. (not journaled: no stable locator for button "Apply")',
-      );
     });
 
     it("page_verify and page_generate_locator gate before debugging starts", async () => {
@@ -898,7 +826,7 @@ describe("createPanelPageTools — 124/007 phrases", () => {
   const PHRASED_NAMES = [
     "page_snapshot", "page_click", "page_fill_form", "page_select_option",
     "page_verify", "page_generate_locator", "page_network", "page_dialog",
-    "start_recording", "stop_recording", "export_test",
+    "start_recording", "stop_recording",
     "start_debugging", "stop_debugging", "page_hover", "page_press_key",
     "page_upload_file", "page_emulate", "page_screenshot",
   ];

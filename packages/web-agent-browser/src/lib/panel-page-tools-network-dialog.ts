@@ -9,10 +9,8 @@ import { base64ByteLength, cap, formatHeaders, networkLine, originOf } from "./d
 import { createDebuggerSession } from "./debugger-session";
 import { createHelperWorlds, STALE_REF } from "./debugger-helper-world";
 import { checkFileSpecs, formatSize } from "./upload-files";
-import { createActionJournal, dialogEntry, journalSuffix, notJournaledSuffix, uploadEntry } from "./action-journal";
 import type { HelperDescribe } from "./helper-api";
-import type { JournalTarget } from "./action-journal.types";
-import type { PanelPageToolsOptions } from "./types";
+import type { ElementTarget, PanelPageToolsOptions } from "./types";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -26,7 +24,6 @@ export function createNetworkDialogPageTools(options: PanelPageToolsOptions = {}
   // createPanelPageTools always passes one; a direct caller gets its own.
   const session = options.debuggerSession ?? createDebuggerSession();
   const helper = options.helper ?? createHelperWorlds(session);
-  const journal = options.journal ?? createActionJournal();
 
   const pageNetwork: CustomToolDef = {
     name: "page_network",
@@ -109,8 +106,7 @@ export function createNetworkDialogPageTools(options: PanelPageToolsOptions = {}
         content:
           `The next dialog will be ${accept ? "accepted" : "dismissed"}.` +
           (promptText !== undefined ? ` A prompt will receive "${promptText}".` : "") +
-          (g.state.lastDialog ? ` Last dialog: ${g.state.lastDialog}` : "") +
-          journalSuffix(journal.append([dialogEntry(accept, promptText)])),
+          (g.state.lastDialog ? ` Last dialog: ${g.state.lastDialog}` : ""),
       });
     },
   };
@@ -154,7 +150,7 @@ export function createNetworkDialogPageTools(options: PanelPageToolsOptions = {}
       if (d.value.refusal !== undefined) return { content: d.value.refusal, isError: true };
 
       const set = await helper.call<
-        { ok: true; desc: string; sizes: number[]; target: JournalTarget } | { ok: false; message: string }
+        { ok: true; desc: string; sizes: number[]; target: ElementTarget } | { ok: false; message: string }
       >(tabId, ref, "setFiles", [ref, checked.files]);
       if (!set.ok) return { content: set.error, isError: true };
       const result = set.value;
@@ -163,10 +159,7 @@ export function createNetworkDialogPageTools(options: PanelPageToolsOptions = {}
       const n = checked.files.length;
       const list = checked.files.map((f, i) => `${f.name} (${formatSize(result.sizes[i] ?? 0)})`).join(", ");
       const content = `Uploaded ${n} ${n === 1 ? "file" : "files"} to [${ref}] ${result.desc}: ${list}.`;
-      const { target } = result;
-      const chain = await helper.frameChain(tabId, ref);
-      if (target.locator === undefined) return { content: content + notJournaledSuffix(target.label) };
-      return { content: content + journalSuffix(journal.append([uploadEntry(target, target.locator, checked.files, chain)])) };
+      return { content };
     },
   };
 

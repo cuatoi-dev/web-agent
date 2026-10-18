@@ -169,7 +169,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     const results = await runPlan(panelPage, "Start debugging and hover the Cart link.", 3);
 
     expect(results[2].isError).toBe(false);
-    expect(results[2].text).toMatch(/^Hovered \[\d+\] link "Cart \(2\)"\. \(journal #\d+\)$/);
+    expect(results[2].text).toMatch(/^Hovered \[\d+\] link "Cart \(2\)"\.$/);
     await expect(sitePage.locator("#cart-link")).toHaveCSS("color", "rgb(255, 0, 0)");
 
     await context.close();
@@ -194,7 +194,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
 
     expect(results[1].tool).toBe("page_press_key");
     expect(results[1].isError).toBe(false);
-    expect(results[1].text).toMatch(/^Pressed Enter\. \(journal #\d+\)$/);
+    expect(results[1].text).toMatch(/^Pressed Enter\.$/);
     await expect(sitePage.locator("#coupon-status")).toHaveText("Discount: -$4.20", { timeout: 15_000 });
 
     await context.close();
@@ -217,7 +217,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Start debugging and select all coupon text.", 2);
 
-    expect(results[1].text).toMatch(/^Pressed Control\+a\. \(journal #\d+\)$/);
+    expect(results[1].text).toMatch(/^Pressed Control\+a\.$/);
     const selection = await sitePage.evaluate(() => {
       const el = document.getElementById("coupon") as HTMLInputElement;
       return { start: el.selectionStart, end: el.selectionEnd, length: el.value.length };
@@ -328,7 +328,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
 
     expect(results1[1].tool).toBe("page_emulate");
     expect(results1[1].isError).toBe(false);
-    expect(results1[1].text).toMatch(/^Emulating iPhone 15 \(393 × 659, scale 3, mobile, touch\)\. \(journal #\d+\)$/);
+    expect(results1[1].text).toMatch(/^Emulating iPhone 15 \(393 × 659, scale 3, mobile, touch\)\.$/);
     await expect(sitePage.locator("#viewport-status")).toHaveText("393");
     await expect(sitePage.locator("#pointer-status")).toHaveText("true");
 
@@ -341,7 +341,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
 
     expect(results2[2].tool).toBe("page_emulate");
     expect(results2[2].isError).toBe(false);
-    expect(results2[2].text).toMatch(/^Emulation was reset\. \(journal #\d+\)$/);
+    expect(results2[2].text).toMatch(/^Emulation was reset\.$/);
     await expect(sitePage.locator("#viewport-status")).toHaveText(baselineWidth ?? "");
     await expect(sitePage.locator("#pointer-status")).toHaveText("false");
 

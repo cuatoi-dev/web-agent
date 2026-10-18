@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolContext } from "@cuatoi/web-agent-core";
-import { notJournaledSuffix } from "./action-journal";
 import { createPanelPageTools } from "./panel-page-tools";
 import type { DebuggerSession } from "./debugger-tools.types";
 import type { RecordingController, RecordingResult, RecordingState } from "./recorder.types";
@@ -118,16 +117,13 @@ describe("panel-page-tools-recording", () => {
         { recordingId: "r", seq: 1, kind: "click", line: 'click button "Pay"', frameOrigin: "http://pay.test" },
         { recordingId: "r", seq: 2, kind: "check", line: 'check checkbox "Gift"' },
       ],
-      journalIds: [1, 2, 3],
-      stepJournalIds: { 0: 1, 1: 2, 2: 3 },
-      unjournaled: [],
     };
     vi.mocked(controller.stop).mockResolvedValue(recordingResult);
     const { stopTool } = getTools();
 
     const res = await stopTool.execute({ tabId: 7 }, toolCtx());
     const expected =
-      'Recorded 3 steps on localhost:10040:\n1. click button "Apply" (journal #1)\n2. (frame http://pay.test) click button "Pay" (journal #2)\n3. check checkbox "Gift" (journal #3) (journal #1–#3)';
+      'Recorded 3 steps on localhost:10040:\n1. click button "Apply"\n2. (frame http://pay.test) click button "Pay"\n3. check checkbox "Gift"';
     expect(res.content).toBe(expected);
     expect(res.isError).toBeUndefined();
     expect(res.content).not.toContain("[");
@@ -139,9 +135,6 @@ describe("panel-page-tools-recording", () => {
       url: "http://localhost:10040/checkout.html",
       note: "Recording stopped: debugging was canceled.",
       steps: [{ recordingId: "r", seq: 0, kind: "click", line: 'click button "Apply"' }],
-      journalIds: [1],
-      stepJournalIds: { 0: 1 },
-      unjournaled: [],
     };
     vi.mocked(controller.stop).mockResolvedValue(recordingResult);
     const { stopTool } = getTools();
@@ -155,55 +148,12 @@ describe("panel-page-tools-recording", () => {
       host: "localhost:10040",
       url: "http://localhost:10040/checkout.html",
       steps: [{ recordingId: "r", seq: 0, kind: "click", line: 'click button "Apply"' }],
-      journalIds: [1],
-      stepJournalIds: { 0: 1 },
-      unjournaled: [],
     };
     vi.mocked(controller.stop).mockResolvedValue(recordingResult);
     const { stopTool } = getTools();
 
     const res = await stopTool.execute({ tabId: 7 }, toolCtx());
     expect(res.content.startsWith("Recorded 1 step on localhost:10040:")).toBe(true);
-  });
-
-  it("U-T9: stop_recording with an unjournaled label", async () => {
-    const recordingResult: RecordingResult = {
-      host: "localhost:10040",
-      url: "http://localhost:10040/checkout.html",
-      steps: [{ recordingId: "r", seq: 0, kind: "click", line: 'click button "Apply"' }],
-      journalIds: [1],
-      stepJournalIds: { 0: 1 },
-      unjournaled: ['button "Apply"'],
-    };
-    vi.mocked(controller.stop).mockResolvedValue(recordingResult);
-    const { stopTool } = getTools();
-
-    const res = await stopTool.execute({ tabId: 7 }, toolCtx());
-    expect(res.content.endsWith(notJournaledSuffix('button "Apply"'))).toBe(true);
-  });
-
-  it("U-T15: journaled steps carry their own id; an unjournaled step carries none", async () => {
-    const recordingResult: RecordingResult = {
-      host: "localhost:10040",
-      url: "http://localhost:10040/checkout.html",
-      steps: [
-        { recordingId: "r", seq: 0, kind: "click", line: 'click button "Apply"' },
-        { recordingId: "r", seq: 1, kind: "click", line: 'click custom "Special"' },
-        { recordingId: "r", seq: 2, kind: "click", line: 'click button "Pay"' },
-      ],
-      journalIds: [1, 2],
-      stepJournalIds: { 0: 1, 2: 2 },
-      unjournaled: ['custom "Special"'],
-    };
-    vi.mocked(controller.stop).mockResolvedValue(recordingResult);
-    const { stopTool } = getTools();
-
-    const res = await stopTool.execute({ tabId: 7 }, toolCtx());
-    const expected =
-      'Recorded 3 steps on localhost:10040:\n1. click button "Apply" (journal #1)\n2. click custom "Special"\n3. click button "Pay" (journal #2) (journal #1–#2)';
-    expect(res.content.startsWith(expected)).toBe(true);
-    expect(res.content).not.toContain('2. click custom "Special" (journal');
-    expect(res.content.endsWith(notJournaledSuffix('custom "Special"'))).toBe(true);
   });
 
   it("U-T10: stop_recording when controller is idle and the tab is not gated returns the gate error", async () => {
@@ -236,9 +186,6 @@ describe("panel-page-tools-recording", () => {
       host: "localhost:10040",
       url: "http://localhost:10040/checkout.html",
       steps: [{ recordingId: "r", seq: 0, kind: "click", line: 'click button "Apply"' }],
-      journalIds: [1],
-      stepJournalIds: { 0: 1 },
-      unjournaled: [],
     };
     vi.mocked(controller.stop).mockResolvedValue(recordingResult);
     const { stopTool } = getTools();

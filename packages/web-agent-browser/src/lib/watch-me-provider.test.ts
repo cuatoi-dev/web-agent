@@ -239,29 +239,25 @@ describe("watch-me-provider", () => {
     expect(harness.controller.state().kind).toBe("idle");
   });
 
-  it("002: onUserPrompt() gives each journaled step its own id and leaves an unjournaled step bare", async () => {
+  it("002: onUserPrompt() lists every step in order, bare", async () => {
     const p = makeProvider();
     await p.pick();
     harness.step(0, 'click button "Apply"', undefined, {
       role: "button",
       name: "Apply",
       label: 'button "Apply"',
-      locator: "getByRole('button', { name: 'Apply' })",
       isPassword: false,
     });
-    // No locator, so `recordedStepEntry` returns undefined and this step gets
-    // no journal entry — it must render with NO suffix.
     harness.step(1, 'click custom "Special"');
     harness.step(2, 'click button "Pay"', undefined, {
       role: "button",
       name: "Pay",
       label: 'button "Pay"',
-      locator: "getByRole('button', { name: 'Pay' })",
       isPassword: false,
     });
     await p.pick(); // user presses Stop
 
-    // The panel's own list stays bare — the ids are for the model, not the UI.
+    // The panel's own list shows each step line.
     const root = p.slot?.();
     expect([...root!.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
       'click button "Apply"',
@@ -275,9 +271,9 @@ describe("watch-me-provider", () => {
     const r = result as { parts: { type: string; text: string }[] };
     expect(r.parts[0].text).toBe(
       `# Recorded steps on ${TAB_INFO.url}` +
-        '\n1. click button "Apply" (journal #1)' +
+        '\n1. click button "Apply"' +
         '\n2. click custom "Special"' +
-        '\n3. click button "Pay" (journal #2)',
+        '\n3. click button "Pay"',
     );
   });
 

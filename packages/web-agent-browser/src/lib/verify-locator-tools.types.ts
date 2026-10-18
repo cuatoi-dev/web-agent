@@ -1,8 +1,8 @@
 // The shapes for the panel's page_verify and page_generate_locator tools
-// (122/002). Imports only the journal target type, mirroring act-by-ref-tools.types.ts; spliced into
+// (122/002). Imports only the element target type, mirroring act-by-ref-tools.types.ts; spliced into
 // types.ts's BridgeMessage union and re-exported from there.
 
-import type { JournalTarget } from "./action-journal.types";
+import type { ElementTarget } from "./element-target.types";
 
 /** A ref resolved for page_verify, or the tool result to return instead. */
 export type VerifyResolved = { ok: true; el: Element; desc: string } | { ok: false; outcome: VerifyOutcome };
@@ -25,8 +25,8 @@ export interface VerifyInput {
 export interface VerifyOutcome {
   text: string;
   isError: boolean;
-  /** 124/004 — a PASS check's element, for the journal. Absent for text_visible and FAIL. */
-  target?: JournalTarget;
+  /** 124/004 — a PASS check's element. Absent for text_visible and FAIL. */
+  target?: ElementTarget;
 }
 
 /** The locator builder's answer: a full result line, or no locator at all. */

@@ -5,7 +5,6 @@
 import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { errorMessage } from "./error-message";
-import { journalSuffix, notJournaledSuffix } from "./action-journal";
 import type { PanelPageToolsOptions } from "./types";
 import type { RecordingResult } from "./recorder.types";
 
@@ -13,24 +12,18 @@ function tabIdText(input: Record<string, unknown>): string {
   return typeof input.tabId === "number" || typeof input.tabId === "string" ? String(input.tabId) : "(none)";
 }
 
-/** The plan's stop_recording body, plus the journal ids every other journaled
- *  tool reports (journalSuffix) — the agent needs them to call export_test. */
+/** The plan's stop_recording body. */
 function report(result: RecordingResult): string {
   const n = result.steps.length;
   const header = `Recorded ${n} ${n === 1 ? "step" : "steps"} on ${result.host}:`;
   const note = result.note ? `\n${result.note}` : "";
-  const idOf = result.stepJournalIds;
   const lines = result.steps
     .map((s, i) => {
       const prefix = s.frameOrigin === undefined ? "" : `(frame ${s.frameOrigin}) `;
-      const id = idOf[i];
-      const suffix = id === undefined ? "" : ` (journal #${id})`;
-      return `\n${i + 1}. ${prefix}${s.line}${suffix}`;
+      return `\n${i + 1}. ${prefix}${s.line}`;
     })
     .join("");
-  let out = header + note + lines + journalSuffix(result.journalIds);
-  for (const label of result.unjournaled) out += notJournaledSuffix(label);
-  return out;
+  return header + note + lines;
 }
 
 export function createRecordingPageTools(options: PanelPageToolsOptions): CustomToolDef[] {
@@ -74,7 +67,7 @@ export function createRecordingPageTools(options: PanelPageToolsOptions): Custom
   const stopRecording: CustomToolDef = {
     name: "stop_recording",
     description:
-      "Stop recording the user in a browser tab and list what they did, in order, with a journal id per step so you can pass them to export_test. When reporting recorded steps to the user, list all steps in order and preserve any <password> redaction marker. A recording that already stopped because the tab closed or debugging stopped is returned the same way, with the reason.",
+      "Stop recording the user in a browser tab and list what they did, in order. When reporting recorded steps to the user, list all steps in order and preserve any <password> redaction marker. A recording that already stopped because the tab closed or debugging stopped is returned the same way, with the reason.",
     inputSchema: z.object({
       tabId: z.number().describe("The ID of the tab. Call read_tabs first and pass the ID it reports."),
     }),

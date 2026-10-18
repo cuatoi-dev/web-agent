@@ -30,7 +30,6 @@ describe("agent-options", () => {
           "page_select_option",
           "page_verify",
           "page_generate_locator",
-          "export_test",
           "page_network",
           "page_dialog",
           "page_upload_file",
@@ -124,14 +123,14 @@ describe("agent-options", () => {
 
   it("O6 skill names", () => {
     expect(skillNames(base)).toEqual([
-      { heading: null, names: ["tab_management", "page_agent", "website_edit", "playwright_script", "test_plan", "test_healer"] },
+      { heading: null, names: ["tab_management", "page_agent", "website_edit", "test_plan"] },
     ]);
   });
 
   it("O7 skill group off and brand skill", () => {
     const brand = {
       ...base,
-      skills: { playwright: { enabled: false } },
+      skills: { testing: { enabled: false } },
       skillDefs: [{ name: "acme_skill", description: "d", definition: "x" }],
     } as unknown as AgentBrand;
     expect(skillNames(brand)).toEqual([

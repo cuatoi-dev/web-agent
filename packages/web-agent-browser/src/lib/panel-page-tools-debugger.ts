@@ -5,18 +5,8 @@ import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { createHelperWorlds, STALE_REF } from "./debugger-helper-world";
 import type { HelperDescribe } from "./helper-api";
-import type { JournalTarget } from "./action-journal.types";
 import type { PanelPageToolsOptions } from "./types";
 import type { DevicePreset, KeyDef } from "./panel-page-tools-debugger.types";
-import {
-  createActionJournal,
-  emulateEntry,
-  emulateResetEntry,
-  hoverEntry,
-  journalSuffix,
-  notJournaledSuffix,
-  pressKeyEntry,
-} from "./action-journal";
 
 function tabIdText(input: Record<string, unknown>): string {
   return typeof input.tabId === "number" || typeof input.tabId === "string" ? String(input.tabId) : "(none)";
@@ -95,7 +85,6 @@ export function createDebuggerPageTools(options: PanelPageToolsOptions): CustomT
   const session = options.debuggerSession;
   if (!session) return [];
   const helper = options.helper ?? createHelperWorlds(session);
-  const journal = options.journal ?? createActionJournal();
 
   const startDebugging: CustomToolDef = {
     name: "start_debugging",
@@ -173,13 +162,7 @@ export function createDebuggerPageTools(options: PanelPageToolsOptions): CustomT
       } finally {
         await options.recording?.resume(tabId);
       }
-      const t = await helper.call<JournalTarget>(tabId, ref, "target", [ref, d.value.desc]);
-      const chain = await helper.frameChain(tabId, ref);
-      const content = `Hovered [${ref}] ${d.value.desc}.`;
-      if (!t.ok || t.value.locator === undefined) {
-        return { content: content + notJournaledSuffix(t.ok ? t.value.label : `[${ref}] ${d.value.desc}`) };
-      }
-      return { content: content + journalSuffix(journal.append([hoverEntry(t.value, t.value.locator, chain)])) };
+      return { content: `Hovered [${ref}] ${d.value.desc}.` };
     },
   };
 
@@ -242,7 +225,7 @@ export function createDebuggerPageTools(options: PanelPageToolsOptions): CustomT
       }
 
       const combo = `${mods.length ? `${mods.join("+")}+` : ""}${key}`;
-      return { content: `Pressed ${combo}.` + journalSuffix(journal.append([pressKeyEntry(combo)])) };
+      return { content: `Pressed ${combo}.` };
     },
   };
 
@@ -293,7 +276,7 @@ export function createDebuggerPageTools(options: PanelPageToolsOptions): CustomT
 
       if (hasReset) {
         await session.resetEmulation(tabId, g.state);
-        return { content: "Emulation was reset." + journalSuffix(journal.append([emulateResetEntry()])) };
+        return { content: "Emulation was reset." };
       }
 
       if (hasPreset) {
@@ -356,17 +339,7 @@ export function createDebuggerPageTools(options: PanelPageToolsOptions): CustomT
       const content = hasPreset
         ? `Emulating ${String(input.preset)} (${v.width} × ${v.height}, scale ${v.scale}, ${mobileLabel}, ${touchLabel}).`
         : `Emulating a custom device (${v.width} × ${v.height}, scale ${v.scale}, ${mobileLabel}, ${touchLabel}).`;
-      const ids = journal.append([
-        emulateEntry({
-          ...(hasPreset ? { preset: input.preset as string } : {}),
-          width: v.width,
-          height: v.height,
-          scale: v.scale,
-          mobile: v.mobile,
-          touch: v.touch,
-        }),
-      ]);
-      return { content: content + journalSuffix(ids) };
+      return { content };
     },
   };
 

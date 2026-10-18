@@ -16,7 +16,6 @@ import {
   type ToolContext,
   type ToolProvider,
 } from "@cuatoi/web-agent-core";
-import { createActionJournal } from "./lib/action-journal";
 import { createRecordingController, hostOf } from "./lib/recording-controller";
 import { createWatchMeProvider } from "./lib/watch-me-provider";
 
@@ -35,9 +34,7 @@ import { createTabStateActions, watchActiveTab } from "./lib/tab-state-sync";
 import { tabTools } from "./lib/tab-tools";
 import { tabSkills } from "./lib/tab-skill";
 import { websiteEditSkill } from "./lib/website-edit-skill";
-import { playwrightScriptSkill } from "./lib/playwright-script-skill";
 import { testPlanSkill } from "./lib/test-plan-skill";
-import { testHealerSkill } from "./lib/test-healer-skill";
 import {
   agentAllows,
   effectiveSettings,
@@ -157,16 +154,6 @@ function buildAgentPanel(
     ...(p.name === "vfs" && !canReadFiles ? { attachmentProviders: [] } : {}),
   });
 
-  // Fix round 1 (124/006) — one journal per panel, built here (not left to
-  // createPanelPageTools's own default) so the recording controller below and
-  // panelPageTools's own journaled tools (export_test included) share the
-  // SAME journal. Building the recording controller with no journal, as the
-  // first pass did, gave it its own private one: steps recorded via
-  // start_recording landed there, never in the journal export_test reads
-  // from — "Journal entry #1 does not exist in this chat."
-  // 124/004 — a new chat or a session switch empties the action journal.
-  const journal = createActionJournal(() => panel.session?.getState().activeSessionId ?? "");
-
   // 124/006 — one recording controller per panel, shared by the
   // start_recording/stop_recording tools below and by the Watch me composer
   // control, so the agent and the user watch (and can stop) the same
@@ -174,7 +161,6 @@ function buildAgentPanel(
   // an agent without it gets no controller and no icon.
   const recordingController = agentAllows(agent.tools, agent.excludeTools, "start_recording")
     ? createRecordingController({
-        journal,
         session: debuggerSession,
         recorder,
       })
@@ -209,9 +195,6 @@ function buildAgentPanel(
       debuggerSession,
       helper,
       recorder,
-      journal,
-      // 124/004 — a new chat or a session switch empties the action journal.
-      activeSessionId: () => panel.session?.getState().activeSessionId ?? "",
       recording: recordingController,
     }),
     // 069/003 — the agent file system, on chrome.storage rather than this
@@ -251,14 +234,14 @@ function buildAgentPanel(
   // over.
   // 118/005 — `websiteEdit` is its own group, so a brand that ships no page
   // tools also ships no skill telling the agent to use them.
-  // 120/005 — `playwright` is its own group too. The group switch runs
+  // 120/005 — `testing` is its own group too. The group switch runs
   // first, so a group switched off removes the skill even from an agent
   // whose `skills` list names it.
   panel.skills = mergeBrandSkills(
     {
       tab: tabSkills(),
       websiteEdit: [websiteEditSkill],
-      playwright: [playwrightScriptSkill, testPlanSkill, testHealerSkill],
+      testing: [testPlanSkill],
     },
     brand,
   ).filter((s) => agentAllows(agent.skills, agent.excludeSkills, s.name));

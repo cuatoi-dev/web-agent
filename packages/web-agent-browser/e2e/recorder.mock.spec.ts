@@ -169,7 +169,7 @@ async function userFlow(sitePage: Page): Promise<void> {
 }
 
 test.describe("recorder and recording tools mock e2e (124/005, on the debugger since 131/004)", () => {
-  test("M1 user flow, redacted password, export_test and screenshots", async ({ context, extensionId }) => {
+  test("M1 user flow, redacted password and screenshots", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
 
     const sitePage = await context.newPage();
@@ -219,14 +219,14 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     const lines = stopText.split("\n");
     expect(lines[0]).toBe("Recorded 8 steps on localhost:10040:");
-    expect(lines[1]).toBe("1. scroll down 400 px (journal #1)");
-    expect(lines[2]).toBe('2. hover link "Cart (2)" (journal #2)');
-    expect(lines[3]).toBe('3. click link "Cart (2)" (journal #3)');
-    expect(lines[4]).toBe('4. fill textbox "Coupon" "SAVE10" (journal #4)');
-    expect(lines[5]).toBe('5. fill textbox "Password" <password> (journal #5)');
-    expect(lines[6]).toBe('6. select combobox "Shipping" "Express" (journal #6)');
-    expect(lines[7]).toBe('7. check checkbox "Gift" (journal #7)');
-    expect(lines[8]).toBe("8. press Enter (journal #8) (journal #1–#8)");
+    expect(lines[1]).toBe("1. scroll down 400 px");
+    expect(lines[2]).toBe('2. hover link "Cart (2)"');
+    expect(lines[3]).toBe('3. click link "Cart (2)"');
+    expect(lines[4]).toBe('4. fill textbox "Coupon" "SAVE10"');
+    expect(lines[5]).toBe('5. fill textbox "Password" <password>');
+    expect(lines[6]).toBe('6. select combobox "Shipping" "Express"');
+    expect(lines[7]).toBe('7. check checkbox "Gift"');
+    expect(lines[8]).toBe("8. press Enter");
 
     // M1b: Verify password was never leaked
     expect(stopText).not.toContain("secret123");
@@ -241,39 +241,6 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     await panelPage.emulateMedia({ colorScheme: "dark" });
     await panelPage.evaluate(() => document.documentElement.setAttribute("data-theme", "wa2-dark"));
     await panelPage.screenshot({ path: path.join(ARTIFACTS_DIR, "mock-recorder-steps-dark.png") });
-
-    // M1c: export_test with journalIds [1..8]
-    await nextPlan(panelPage, [
-      {
-        name: "export_test",
-        input: {
-          format: "playwright",
-          suite: "Recorded checkout flow",
-          url: CHECKOUT_URL,
-          cases: [
-            {
-              id: "TC-01",
-              title: "Recorded flow",
-              steps: [{ text: "Recorded steps", journal: [1, 2, 3, 4, 5, 6, 7, 8] }],
-            },
-          ],
-        },
-      },
-    ]);
-    await sendMessage(panelPage, "Export this test.");
-    const results4 = await waitForResults(panelPage, 4);
-    const exportRes = results4[3];
-    const exportText = exportRes.text;
-
-    expect(exportText).toContain("await page.mouse.wheel(0, 400);");
-    expect(exportText).toContain(".hover();");
-    expect(exportText).toContain(".click();");
-    expect(exportText).toContain(".fill('SAVE10');");
-    expect(exportText).toContain(".fill(process.env.TEST_PASSWORD ?? '');");
-    expect(exportText).toContain(".selectOption('Express');");
-    expect(exportText).toContain(".check();");
-    expect(exportText).toContain(".press('Enter');");
-    expect(exportText).not.toContain("secret123");
 
     await context.close();
   });
@@ -411,9 +378,9 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     expect(stopRes.text).toContain("Recorded 3 steps on localhost:10040:");
     expect(stopRes.text).not.toContain("Recording stopped: the page navigated.");
     const lines = stopRes.text.split("\n");
-    expect(lines[1]).toBe('1. click button "Go to cart" (journal #1)');
-    expect(lines[2]).toBe("2. route to /cart (journal #2)");
-    expect(lines[3]).toBe('3. click button "Apply" (journal #3) (journal #1–#3)');
+    expect(lines[1]).toBe('1. click button "Go to cart"');
+    expect(lines[2]).toBe("2. route to /cart");
+    expect(lines[3]).toBe('3. click button "Apply"');
 
     await context.close();
   });

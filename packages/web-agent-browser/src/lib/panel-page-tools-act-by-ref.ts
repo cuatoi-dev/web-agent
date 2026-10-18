@@ -17,8 +17,7 @@
 //   5. permission === "ask" && options.confirmInteraction  -> today's confirm and
 //      today's "was not confirmed" text on a decline (NOT an error)
 //   6. act
-//   7. const t = await helper.call<JournalTarget>(tabId, ref, "target", [ref, d.value.desc])
-//   8. today's result text + journalSuffix / notJournaledSuffix
+//   7. today's result text
 // page_hover skips step 5 (it has no confirm today). page_snapshot skips 5-7.
 import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
@@ -28,15 +27,6 @@ import { createHelperWorlds, SCOPE_MISSING, STALE_REF } from "./debugger-helper-
 import type { RefTarget } from "./debugger-helper-world.types";
 import { renderAxSnapshot } from "./ax-snapshot";
 import { collectAxFrames } from "./panel-frame-snapshot";
-import {
-  clickEntry,
-  createActionJournal,
-  fillEntry,
-  journalSuffix,
-  notJournaledSuffix,
-  selectEntry,
-} from "./action-journal";
-import type { NewJournalEntry, JournalTarget } from "./action-journal.types";
 import type { HelperDescribe } from "./helper-api";
 import type { SelectPrepareResult } from "./helper-api-actions";
 import type { PanelPageToolsOptions } from "./types";
@@ -45,7 +35,6 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
   // createPanelPageTools always passes one; a direct caller gets its own.
   const session = options.debuggerSession ?? createDebuggerSession();
   const helper = options.helper ?? createHelperWorlds(session);
-  const journal = options.journal ?? createActionJournal();
 
   /** A debugger command failed. If Chrome's Cancel or a closed tab caused it,
    *  the gate now says so; otherwise the browser's own message is returned. */
@@ -157,13 +146,7 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
         await options.recording?.resume(tabId);
       }
 
-      const t = await helper.call<JournalTarget>(tabId, ref, "target", [ref, d.value.desc]);
-      const chain = await helper.frameChain(tabId, ref);
-      const content = `Clicked [${ref}] ${d.value.desc}.`;
-      if (!t.ok || t.value.locator === undefined) {
-        return { content: content + notJournaledSuffix(t.ok ? t.value.label : `[${ref}] ${d.value.desc}`) };
-      }
-      return { content: content + journalSuffix(journal.append([clickEntry(t.value, t.value.locator, chain)])) };
+      return { content: `Clicked [${ref}] ${d.value.desc}.` };
     },
   };
 
@@ -229,8 +212,6 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
 
       const doneDescriptions: string[] = [];
       const mismatches: string[] = [];
-      const pending: NewJournalEntry[] = [];
-      const unjournaled: string[] = [];
       // Same text the removed in-page fill handler produced (content-act-by-ref.ts:152-159).
       const failed = (ref: string, message: string) => {
         const doneList =
@@ -274,10 +255,6 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
 
           const description = `[${f.ref}] ${d.desc}`.trim();
           doneDescriptions.push(description);
-          const t = await helper.call<JournalTarget>(tabId, f.ref, "target", [f.ref, d.desc]);
-          const chain = await helper.frameChain(tabId, f.ref);
-          if (t.ok && t.value.locator !== undefined) pending.push(fillEntry(t.value, t.value.locator, f.value, chain));
-          else unjournaled.push(t.ok ? t.value.label : description);
 
           const readBack = await helper.call<{ value?: string }>(tabId, f.ref, "readValue", []);
           if (readBack.ok && readBack.value.value !== undefined && readBack.value.value !== f.value) {
@@ -293,8 +270,6 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
       if (mismatches.length > 0) {
         content += `\n${mismatches.join("\n")}`;
       }
-      content += journalSuffix(journal.append(pending));
-      for (const label of unjournaled) content += notJournaledSuffix(label);
       return { content };
     },
   };
@@ -353,13 +328,7 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
 
       const executed = await helper.call<{ text: string }>(tabId, ref, "selectExecute", [ref, values]);
       if (!executed.ok) return { content: executed.error, isError: true };
-      const chain = await helper.frameChain(tabId, ref);
-
-      const { target } = prepared.value;
-      if (target.locator === undefined) return { content: executed.value.text + notJournaledSuffix(target.label) };
-      return {
-        content: executed.value.text + journalSuffix(journal.append([selectEntry(target, target.locator, values, chain)])),
-      };
+      return { content: executed.value.text };
     },
   };
 

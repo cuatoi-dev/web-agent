@@ -6,7 +6,6 @@ import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { AGENT_UI_SELECTOR } from "./constants";
 import { createDebuggerSession } from "./debugger-session";
 import { createHelperWorlds, STALE_REF } from "./debugger-helper-world";
-import { checkEntry, createActionJournal, journalSuffix, notJournaledSuffix } from "./action-journal";
 import type { HelperDescribe } from "./helper-api";
 import type { VerifyOutcome, PanelPageToolsOptions } from "./types";
 
@@ -35,7 +34,6 @@ export function verifyInputError(input: Record<string, unknown>): string | undef
 export function createVerifyLocatorPageTools(options: PanelPageToolsOptions): CustomToolDef[] {
   const session = options.debuggerSession ?? createDebuggerSession();
   const helper = options.helper ?? createHelperWorlds(session);
-  const journal = options.journal ?? createActionJournal();
 
   const pageVerify: CustomToolDef = {
     name: "page_verify",
@@ -89,10 +87,7 @@ export function createVerifyLocatorPageTools(options: PanelPageToolsOptions): Cu
       if (r.value.isError || !r.value.text.startsWith("PASS ")) {
         return { content: r.value.text, isError: r.value.isError };
       }
-      const chain = ref === undefined ? [] : await helper.frameChain(tabId, ref);
-      const entry = checkEntry(input, r.value.target, chain);
-      if (!entry) return { content: r.value.text + notJournaledSuffix(r.value.target?.label ?? "") };
-      return { content: r.value.text + journalSuffix(journal.append([entry])) };
+      return { content: r.value.text };
     },
   };
 

@@ -440,10 +440,10 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // Both default agents have the Playwright, website edit and tab skills.
-  test("E10: default dist — both tesagent's and Chromagent's search_skills list playwright_script", async ({ context, extensionId }) => {
+  // Both default agents have the testing, website edit and tab skills.
+  test("E10: default dist — both tesagent's and Chromagent's search_skills list test_plan", async ({ context, extensionId }) => {
     const page = await context.newPage();
-    await installSkillCallMock(page, { name: "search_skills", input: { query: "playwright" } });
+    await installSkillCallMock(page, { name: "search_skills", input: { query: "test" } });
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
     await expect(page.locator("#agent-combo .name")).toHaveText("Chromagent");
@@ -453,13 +453,11 @@ test.describe("Brand skills and feature flags", () => {
     expect(chromaSkills).toContain("tab_management");
     expect(chromaSkills).toContain("page_agent");
     expect(chromaSkills).toContain("website_edit");
-    expect(chromaSkills).toContain("playwright_script");
     expect(chromaSkills).toContain("test_plan");
-    expect(chromaSkills).toContain("test_healer");
 
-    await sendToPanel(page, "Which skills do you have for Playwright?");
+    await sendToPanel(page, "Which skills do you have for testing?");
     await page.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
-    expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).toContain("playwright_script —");
+    expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).toContain("test_plan —");
 
     await page.evaluate(() => {
       window.__SEARCH_SKILLS_RESULT__ = undefined;
@@ -471,48 +469,46 @@ test.describe("Brand skills and feature flags", () => {
     expect(tesagentSkills).toContain("tab_management");
     expect(tesagentSkills).toContain("page_agent");
     expect(tesagentSkills).toContain("website_edit");
-    expect(tesagentSkills).toContain("playwright_script");
     expect(tesagentSkills).toContain("test_plan");
-    expect(tesagentSkills).toContain("test_healer");
 
-    await sendToPanel(page, "Which skills do you have for Playwright?");
+    await sendToPanel(page, "Which skills do you have for testing?");
     await page.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
-    expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).toContain("playwright_script —");
+    expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).toContain("test_plan —");
   });
 
   // 120/005 E11 — criterion 3.
-  test("E11: skills: { playwright: { enabled: false } } — tesagent's search_skills does not list playwright_script", async () => {
+  test("E11: skills: { testing: { enabled: false } } — tesagent's search_skills does not list test_plan", async () => {
     const dir = await patchedBrand(PLAYWRIGHT_DIR, {
       defaultAgent: "tesagent",
-      skills: { playwright: { enabled: false } },
+      skills: { testing: { enabled: false } },
     });
     const { ctx, extensionId } = await launchPatchedContext(dir);
     try {
       const page = await ctx.newPage();
-      await installSkillCallMock(page, { name: "search_skills", input: { query: "playwright" } });
+      await installSkillCallMock(page, { name: "search_skills", input: { query: "test" } });
       await page.setViewportSize({ width: 400, height: 700 });
       await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
       await expect(page.locator("#agent-combo .name")).toHaveText("Tesagent");
       await expect(page.locator("#chat agent-chat-panel:not([hidden])")).toBeAttached();
 
       const skills = await visiblePanelSkillNames(page);
-      expect(skills).not.toContain("playwright_script");
+      expect(skills).not.toContain("test_plan");
       expect(skills).toContain("website_edit");
 
-      await sendToPanel(page, "Which skills do you have for Playwright?");
+      await sendToPanel(page, "Which skills do you have for testing?");
       await page.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
-      expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).not.toContain("playwright_script");
+      expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).not.toContain("test_plan");
     } finally {
       await ctx.close();
     }
   });
 
   // 120/005 E12 — criterion 4 (run-time half; the build half is unit T3).
-  test("E12: an agent with skills: [playwright_script] lists only playwright_script among built-in skills", async () => {
+  test("E12: an agent with skills: [test_plan] lists only test_plan among built-in skills", async () => {
     const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8")) as {
       agents: { id: string; skills: unknown }[];
     };
-    const agents = brand.agents.map((a) => (a.id === "tesagent" ? { ...a, skills: ["playwright_script"] } : a));
+    const agents = brand.agents.map((a) => (a.id === "tesagent" ? { ...a, skills: ["test_plan"] } : a));
     const dir = await patchedBrand(PLAYWRIGHT_DIR, { defaultAgent: "tesagent", agents });
     const { ctx, extensionId } = await launchPatchedContext(dir);
     try {
@@ -524,12 +520,12 @@ test.describe("Brand skills and feature flags", () => {
       await expect(page.locator("#agent-combo .name")).toHaveText("Tesagent");
       await expect(page.locator("#chat agent-chat-panel:not([hidden])")).toBeAttached();
 
-      expect(await visiblePanelSkillNames(page)).toEqual(["playwright_script"]);
+      expect(await visiblePanelSkillNames(page)).toEqual(["test_plan"]);
 
       await sendToPanel(page, "List your skills.");
       await page.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
       const result = (await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)) ?? "";
-      expect(result).toContain("playwright_script —");
+      expect(result).toContain("test_plan —");
       expect(result).not.toContain("tab_management");
       expect(result).not.toContain("page_agent");
       expect(result).not.toContain("website_edit");
@@ -538,38 +534,8 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // 120/005 E13 — criterion 5. 124/004 extended playwright_script to survey with
-  // page_snapshot, get locators from page_generate_locator, confirm checks with
-  // page_verify, and build the file with export_test.
-  test("E13: tesagent's load_skill for playwright_script returns the five steps", async ({ context, extensionId }) => {
-    const page = await context.newPage();
-    await installSkillCallMock(page, { name: "load_skill", input: { name: "playwright_script" } });
-    await page.setViewportSize({ width: 400, height: 700 });
-    await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-    await expect(page.locator("#chat agent-chat-panel:not([hidden])")).toBeAttached();
-    await chooseAgent(page, "tesagent");
-    await expect(page.locator("#agent-combo .name")).toHaveText("Tesagent");
-
-    await sendToPanel(page, "Load playwright_script.");
-    await page.waitForFunction(() => window.__LOAD_SKILL_RESULT__ !== undefined, { timeout: 15_000 });
-    const def = (await page.evaluate(() => window.__LOAD_SKILL_RESULT__)) ?? "";
-
-    // Step 1 — survey with page_snapshot / page_screenshot.
-    expect(def).toContain("page_snapshot");
-    expect(def).toContain("page_screenshot");
-    // Step 2 — locators from page_generate_locator.
-    expect(def).toContain("page_generate_locator");
-    // Step 3 — confirm checks with page_verify.
-    expect(def).toContain("page_verify");
-    // Step 4 — build the file with export_test.
-    expect(def).toContain("export_test");
-    expect(def).toContain('format: "playwright"');
-    // Step 5 — the run command.
-    expect(def).toContain("npx playwright test");
-  });
-
   // 120/005 E14 — criterion 6.
-  test("E14: the in-page bubble's search_skills does not list playwright_script", async ({ context }) => {
+  test("E14: the in-page bubble's search_skills does not list test_plan", async ({ context }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
     await worker.evaluate(async () => {
@@ -577,16 +543,16 @@ test.describe("Brand skills and feature flags", () => {
     });
 
     const page = await context.newPage();
-    await installSkillCallMock(page, { name: "search_skills", input: { query: "playwright" } });
+    await installSkillCallMock(page, { name: "search_skills", input: { query: "test" } });
     await page.goto(SITE);
     await page.locator("web-agent-bubble #launcher").click();
     await expect(page.locator("web-agent-bubble agent-chat-panel")).toBeAttached();
-    expect(await bubbleSkillNames(page)).not.toContain("playwright_script");
+    expect(await bubbleSkillNames(page)).not.toContain("test_plan");
 
     await page.locator("web-agent-bubble #input").click();
-    await page.keyboard.type("Which skills do you have for Playwright?");
+    await page.keyboard.type("Which skills do you have for testing?");
     await page.keyboard.press("Enter");
     await page.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
-    expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).not.toContain("playwright_script");
+    expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).not.toContain("test_plan");
   });
 });

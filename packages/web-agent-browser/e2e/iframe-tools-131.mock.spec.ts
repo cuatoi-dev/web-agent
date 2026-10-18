@@ -403,50 +403,6 @@ test.describe("Iframe tools 131 mock e2e (131/003)", () => {
     await context.close();
   });
 
-  test("T10 export_test writes iframe steps through frameLocator, top-page steps unchanged", async ({
-    context,
-    extensionId,
-  }) => {
-    const { tabId } = await openCheckout(context);
-
-    const plan: PlannedCall[] = [
-      { name: "start_debugging", input: {} },
-      { name: "page_snapshot", input: {} },
-      { name: "page_click", input: { ref: "@Top button" } },
-      { name: "page_click", input: { ref: "@Pay" } },
-      { name: "page_fill_form", input: { fields: [{ ref: "@Card number", value: "4242 4242 4242 4242" }] } },
-      {
-        name: "export_test",
-        input: {
-          format: "playwright",
-          suite: "Iframe checkout",
-          cases: [
-            {
-              id: "TC-01",
-              title: "Pay in the cross-site frame",
-              steps: [
-                { text: "click top button", journal: [1] },
-                { text: "click pay", journal: [2] },
-                { text: "fill the card number", journal: [3] },
-              ],
-            },
-          ],
-        },
-      },
-    ];
-    const panelPage = await openPanel(context, extensionId, tabId, plan);
-    const results = await runPlan(panelPage, "Click Top button, click Pay, fill the card number, then export a Playwright test.", 6);
-
-    for (let i = 2; i < 5; i++) expect(results[i].isError).toBe(false);
-    const spec = results[5].text;
-    expect(spec).toContain("await page.getByRole('button', { name: 'Top button' }).click();");
-    expect(spec).toContain("page.frameLocator('iframe#payment').");
-    expect(spec).toMatch(/page\.frameLocator\('iframe#payment'\)[^\n]*\.click\(\);/);
-    expect(spec).toMatch(/page\.frameLocator\('iframe#payment'\)[^\n]*\.fill\(/);
-
-    await context.close();
-  });
-
   test("T11 page_console returns an iframe message prefixed with its origin", async ({ context, extensionId }) => {
     const { tabId } = await openCheckout(context);
 

@@ -1,9 +1,9 @@
-import { test, expect, ask, expectCall } from "./demo-helpers";
+import { test, expect, ask } from "./demo-helpers";
 
 const FIXTURE_URL = "http://localhost:10040/checkout.html";
 
-test.describe("Watch me export — live proof", () => {
-  test("export: turn a recording into a Playwright test", async ({ demoExtension }) => {
+test.describe("Watch me steps — live proof", () => {
+  test("list: the model lists a recording", async ({ demoExtension }) => {
     test.setTimeout(150_000);
 
     const sitePage = await demoExtension.context.newPage();
@@ -35,9 +35,9 @@ test.describe("Watch me export — live proof", () => {
     await expect(recordedSteps).toHaveCount(2);
     await pickWatchMe();
 
-    const prompt = "Turn what I just did into a Playwright test";
-    const { trace } = await ask(panelPage, prompt, { model: demoExtension.model });
-    expectCall(trace, "export_test");
+    const prompt = "List what I just did";
+    const { reply } = await ask(panelPage, prompt, { model: demoExtension.model });
+    expect(reply).toContain("SAVE10");
 
     await panelPage.close();
     await sitePage.close();

@@ -14,9 +14,7 @@ import { createPanelPageTools } from "./panel-page-tools";
 import { createPageAgentTools } from "./page-agent-tools";
 import { tabSkills } from "./tab-skill";
 import { websiteEditSkill } from "./website-edit-skill";
-import { playwrightScriptSkill } from "./playwright-script-skill";
 import { testPlanSkill } from "./test-plan-skill";
-import { testHealerSkill } from "./test-healer-skill";
 import { mergeBrandSkills } from "./brand-capabilities";
 
 /** A writable registry, so create_skill is listed: skill-tools.ts:132 adds
@@ -79,7 +77,7 @@ export function skillNames(brand: AgentBrand): MultiSelectGroup[] {
     {
       tab: tabSkills(),
       websiteEdit: [websiteEditSkill],
-      playwright: [playwrightScriptSkill, testPlanSkill, testHealerSkill],
+      testing: [testPlanSkill],
     },
     brand,
   );

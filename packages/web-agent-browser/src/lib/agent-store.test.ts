@@ -31,7 +31,7 @@ const CHROMAGENT = {
   instructions: "Chromagent instructions.",
   tools: "*" as const,
   skills: "*" as const,
-  excludeSkills: ["playwright_script"],
+  excludeSkills: ["test_plan"],
 };
 
 const TESAGENT = {
@@ -124,7 +124,7 @@ describe("listAgents", () => {
 
   it("U5: keeps chromagent excludeSkills intact", () => {
     const out = listAgents(brand(), {}, []);
-    expect(out[0].excludeSkills).toEqual(["playwright_script"]);
+    expect(out[0].excludeSkills).toEqual(["test_plan"]);
   });
 
   it("U6: applies a stored edit, replacing all editable fields and setting edited true", () => {

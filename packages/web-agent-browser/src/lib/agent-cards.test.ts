@@ -16,7 +16,7 @@ const CHROMAGENT = {
   instructions: "Chromagent instructions.",
   tools: "*" as const,
   skills: "*" as const,
-  excludeSkills: ["playwright_script"],
+  excludeSkills: ["test_plan"],
 };
 
 const TESAGENT = {
@@ -61,7 +61,7 @@ describe("summary", () => {
   });
 
   it("C2: returns All except N when the list is * and exclude has items", () => {
-    expect(summary("*", ["playwright_script"])).toBe("All except 1");
+    expect(summary("*", ["test_plan"])).toBe("All except 1");
     expect(summary("*", ["a", "b"])).toBe("All except 2");
   });
 

@@ -211,7 +211,27 @@ describe("compileBrand", () => {
       );
     });
 
-    it("an agent with skills: [playwright_script] builds and keeps the list", () => {
+    it("an agent with skills: [test_plan] builds and keeps the list", () => {
+      const tempDir = makeTempDir();
+      writeAgent(
+        tempDir,
+        "tesagent.yml",
+        'displayName: tesagent\ndescription: "Test."\ninstructions: "Be helpful."\ntools: "*"\nskills:\n  - test_plan\n',
+      );
+      writePlugin(tempDir, "defaultAgent: tesagent\n");
+      const brand = compileBrand(tempDir) as { agents: { id: string; skills: unknown }[] };
+      expect(brand.agents.find((a) => a.id === "tesagent")?.skills).toEqual(["test_plan"]);
+    });
+
+    it("an agent with excludeSkills: [test_plan] builds and keeps the list", () => {
+      const tempDir = makeTempDir();
+      writeAgent(tempDir, "chromagent.yml", `${VALID_AGENT_YAML}excludeSkills:\n  - test_plan\n`);
+      writePlugin(tempDir, "defaultAgent: chromagent\n");
+      const brand = compileBrand(tempDir) as { agents: { id: string; excludeSkills?: unknown }[] };
+      expect(brand.agents.find((a) => a.id === "chromagent")?.excludeSkills).toEqual(["test_plan"]);
+    });
+
+    it("an agent naming a removed skill fails the build", () => {
       const tempDir = makeTempDir();
       writeAgent(
         tempDir,
@@ -219,16 +239,7 @@ describe("compileBrand", () => {
         'displayName: tesagent\ndescription: "Test."\ninstructions: "Be helpful."\ntools: "*"\nskills:\n  - playwright_script\n',
       );
       writePlugin(tempDir, "defaultAgent: tesagent\n");
-      const brand = compileBrand(tempDir) as { agents: { id: string; skills: unknown }[] };
-      expect(brand.agents.find((a) => a.id === "tesagent")?.skills).toEqual(["playwright_script"]);
-    });
-
-    it("an agent with excludeSkills: [playwright_script] builds and keeps the list", () => {
-      const tempDir = makeTempDir();
-      writeAgent(tempDir, "chromagent.yml", `${VALID_AGENT_YAML}excludeSkills:\n  - playwright_script\n`);
-      writePlugin(tempDir, "defaultAgent: chromagent\n");
-      const brand = compileBrand(tempDir) as { agents: { id: string; excludeSkills?: unknown }[] };
-      expect(brand.agents.find((a) => a.id === "chromagent")?.excludeSkills).toEqual(["playwright_script"]);
+      expect(() => compileBrand(tempDir)).toThrow(/playwright_script.*not a side panel skill/);
     });
 
     it("chromagent has every side panel tool and skill; tesagent lacks the three in-page agent tools (155400-001)", () => {
@@ -256,7 +267,7 @@ describe("compileBrand", () => {
         expect(tesagentTools, `tesagent must not offer ${name}`).not.toContain(name);
       }
       const chromagent = agentOf("chromagent");
-      for (const name of ["playwright_script", "test_plan", "test_healer"]) {
+      for (const name of ["test_plan"]) {
         expect(agentAllows(chromagent.skills, chromagent.excludeSkills, name)).toBe(true);
       }
     });
@@ -823,7 +834,7 @@ describe("compileBrand", () => {
       writeDefaultAgent(tempDir);
       writePlugin(tempDir, "defaultAgent: chromagent\nskills:\n  coer: { enabled: false }\n");
       expect(() => compileBrand(tempDir)).toThrow(
-        "plugin.yml skills.coer is not a known skill group; expected core, dom, pageFetch, tab, websiteEdit or playwright",
+        "plugin.yml skills.coer is not a known skill group; expected core, dom, pageFetch, tab, websiteEdit or testing",
       );
     });
 
@@ -844,12 +855,12 @@ describe("compileBrand", () => {
       expect(brand.skills).toEqual({ websiteEdit: { enabled: false } });
     });
 
-    it("C23: skills: { playwright: { enabled: false } } compiles through", () => {
+    it("C23: skills: { testing: { enabled: false } } compiles through", () => {
       const tempDir = makeTempDir();
       writeDefaultAgent(tempDir);
-      writePlugin(tempDir, "defaultAgent: chromagent\nskills:\n  playwright: { enabled: false }\n");
+      writePlugin(tempDir, "defaultAgent: chromagent\nskills:\n  testing: { enabled: false }\n");
       const brand = compileBrand(tempDir);
-      expect(brand.skills).toEqual({ playwright: { enabled: false } });
+      expect(brand.skills).toEqual({ testing: { enabled: false } });
     });
 
     it("C21: a plugin.yml with neither block leaves tools and skills empty", () => {

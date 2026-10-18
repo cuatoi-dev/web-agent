@@ -12,7 +12,7 @@ import {
   pwLabels,
   pwNormalizeWhiteSpace,
 } from "./playwright-match";
-import type { JournalTarget, LocatorBuildResult, LocatorCandidate } from "./types";
+import type { ElementTarget, LocatorBuildResult, LocatorCandidate } from "./types";
 
 /** A single-quoted JavaScript string literal body: escapes `\` then `'`. */
 export function escapeLiteral(s: string): string {
@@ -63,15 +63,12 @@ export function journalLocator(el: Element, doc: Document): string | undefined {
   return first ? `${first.source}.nth(${first.matches.indexOf(el)})` : undefined;
 }
 
-/** 124/004 — what the panel's journal needs about `el`. `label` is the text
- *  after "no stable locator for " when `locator` is absent. */
-export function journalTarget(el: Element, doc: Document, label: string): JournalTarget {
-  const locator = journalLocator(el, doc);
+/** What the page tools report about `el`: its role, name and `label`. */
+export function journalTarget(el: Element, _doc: Document, label: string): ElementTarget {
   return {
     role: getRole(el),
     name: getName(el),
     label,
-    ...(locator !== undefined ? { locator } : {}),
     isPassword: el instanceof HTMLInputElement && el.type === "password",
   };
 }

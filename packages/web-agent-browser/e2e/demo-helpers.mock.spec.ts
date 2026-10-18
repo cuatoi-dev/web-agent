@@ -43,7 +43,7 @@ customElements.define("agent-chat-panel", class extends HTMLElement {
   async send(text) {
     this.messages = [
       { role: "user", text: ${JSON.stringify(userText)}.replace("__PROMPT__", text) },
-      { role: "assistant", text: "done", trace: [{ name: "export_test", input: { format: "playwright" }, outcomeSummary: "ok" }] },
+      { role: "assistant", text: "done", trace: [{ name: "page_verify", input: { kind: "text_visible", text: "ok" }, outcomeSummary: "ok" }] },
     ];
     return { ran: "message" };
   }
@@ -53,14 +53,14 @@ customElements.define("agent-chat-panel", class extends HTMLElement {
 test("ask finds a prompt that is the whole user message", async ({ page }) => {
   await page.setContent(PANEL_STAND_IN("__PROMPT__"));
   const { trace, reply } = await ask(page, "Export it");
-  expect(trace.map((t) => t.name)).toEqual(["export_test"]);
+  expect(trace.map((t) => t.name)).toEqual(["page_verify"]);
   expect(reply).toBe("done");
 });
 
 test("ask finds a prompt that an attachment put text before", async ({ page }) => {
-  await page.setContent(PANEL_STAND_IN("# Recorded steps on http://localhost:10040/checkout.html\n1. fill #coupon (journal #1)\n__PROMPT__"));
+  await page.setContent(PANEL_STAND_IN("# Recorded steps on http://localhost:10040/checkout.html\n1. fill #coupon\n__PROMPT__"));
   const { trace } = await ask(page, "Export it");
-  expect(trace.map((t) => t.name)).toEqual(["export_test"]);
+  expect(trace.map((t) => t.name)).toEqual(["page_verify"]);
 });
 
 const STALLED_PANEL_STAND_IN = `<!doctype html><script>
@@ -69,7 +69,7 @@ customElements.define("agent-chat-panel", class extends HTMLElement {
     { role: "user", text: "An earlier turn" },
     { role: "assistant", text: "earlier", trace: [{ name: "stale_tool", input: {}, outcomeSummary: "ok" }] },
     { role: "user", text: "# Recorded steps on http://localhost:10040/checkout.html\\nExport it" },
-    { role: "assistant", text: "", trace: [{ name: "export_test", input: { format: "playwright" }, outcomeSummary: "ok" }] },
+    { role: "assistant", text: "", trace: [{ name: "page_verify", input: { kind: "text_visible", text: "ok" }, outcomeSummary: "ok" }] },
   ];
   error = null;
   running = true;
@@ -88,7 +88,7 @@ test("a timed-out turn reports only its own tool trace", async ({ page }) => {
     failure = err instanceof Error ? err.message : String(err);
   }
   expect(failure).toContain("turn timed out after 500ms");
-  expect(failure).toContain("export_test");
+  expect(failure).toContain("page_verify");
   expect(failure).not.toContain("stale_tool");
 });
 

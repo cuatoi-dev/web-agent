@@ -1,15 +1,14 @@
 import type { SkillDef } from "@cuatoi/web-agent-core";
 
-/** 124/004 — the side panel's `playwright` skill group: plan, run, report and
- *  export a test suite (idea 122). */
+/** The side panel's `testing` skill group: plan, run and report a test suite. */
 export const testPlanSkill: SkillDef = {
   name: "test_plan",
   description:
-    "Plan a numbered test suite for a page, run every case with the page tools, report each case with evidence, and export it as a Playwright spec and a BDD case.",
+    "Plan a numbered test suite for a page, run every case with the page tools, and report each case with evidence.",
   command: false,
   definition: `# test_plan
 
-Plan a test suite for a page, run it, report it, and export it.
+Plan a test suite for a page, run it, and report it.
 
 1. **Plan as a suite.** Start with an overview of the application. Then write
    independent test cases that each start from a fresh state. Number them
@@ -40,10 +39,5 @@ Plan a test suite for a page, run it, report it, and export it.
 
    Omit \`Network\`, \`Console errors\` or \`Screenshot\` only when there is
    nothing to show, and write "none" instead.
-5. **Then call \`export_test\` twice** — \`format: "playwright"\` and
-   \`format: "bdd"\` — with the same case ids. Map each step to its journal
-   ids: a successful action or PASS check result ends with
-   \`(journal #<id>)\` or \`(journal #<a>–#<b>)\`. Show both results in code
-   blocks.
 `,
 };

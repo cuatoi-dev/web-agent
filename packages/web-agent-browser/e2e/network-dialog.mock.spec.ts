@@ -341,13 +341,13 @@ test.describe("page_network, page_dialog and page_upload_file mock e2e (124/003)
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Start debugging and dismiss next dialog.", 2);
 
-    expect(results[1].text).toMatch(/^The next dialog will be dismissed\. \(journal #\d+\)$/);
+    expect(results[1].text).toMatch(/^The next dialog will be dismissed\.$/);
 
     await sitePage.frameLocator("#dialog-frame").locator("#ask-btn").click();
     await expect(sitePage.frameLocator("#dialog-frame").locator("#result")).toHaveText("false");
 
     const results2 = await rerun(panelPage, [{ name: "page_dialog", input: { accept: true } }], "Configure next dialog.");
-    expect(results2[0].text).toMatch(/^The next dialog will be accepted\. Last dialog: confirm "Continue\?" → dismissed \(journal #\d+\)$/);
+    expect(results2[0].text).toMatch(/^The next dialog will be accepted\. Last dialog: confirm "Continue\?" → dismissed$/);
 
     await context.close();
   });
@@ -368,7 +368,7 @@ test.describe("page_network, page_dialog and page_upload_file mock e2e (124/003)
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Start debugging and accept prompt with text.", 2);
 
-    expect(results[1].text).toMatch(/^The next dialog will be accepted\. A prompt will receive "hi"\. \(journal #\d+\)$/);
+    expect(results[1].text).toMatch(/^The next dialog will be accepted\. A prompt will receive "hi"\.$/);
 
     await sitePage.click("#gift-message-btn");
     await expect(sitePage.locator("#gift-status")).toHaveText("hi");
@@ -440,7 +440,7 @@ test.describe("page_network, page_dialog and page_upload_file mock e2e (124/003)
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Start debugging, snapshot, and upload text file.", 3);
 
-    expect(results[2].text).toMatch(/^Uploaded 1 file to \[\d+\] .+: orders\.csv \(8 B\)\. \(journal #\d+\)$/);
+    expect(results[2].text).toMatch(/^Uploaded 1 file to \[\d+\] .+: orders\.csv \(8 B\)\.$/);
     await expect(sitePage.locator("#upload-status")).toHaveText("orders.csv|text/csv|8");
 
     const results2 = await rerun(
@@ -458,7 +458,7 @@ test.describe("page_network, page_dialog and page_upload_file mock e2e (124/003)
       "Upload big.bin.",
     );
 
-    expect(results2[1].text).toMatch(/big\.bin \(5\.0 MB\)\. \(journal #\d+\)$/);
+    expect(results2[1].text).toMatch(/big\.bin \(5\.0 MB\)\.$/);
     await expect(sitePage.locator("#upload-status")).toHaveText("big.bin|application/octet-stream|5242880");
 
     await context.close();

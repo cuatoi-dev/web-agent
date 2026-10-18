@@ -144,7 +144,6 @@ describe("page-verify", () => {
         role: "textbox",
         name: "Coupon",
         label: '[2] textbox "Coupon"',
-        locator: "getByRole('textbox', { name: 'Coupon' })",
         isPassword: false,
       },
     });
@@ -170,7 +169,6 @@ describe("page-verify", () => {
         role: "button",
         name: "Apply",
         label: 'button "Apply"',
-        locator: "getByRole('button', { name: 'Apply' })",
       },
     });
   });
@@ -209,7 +207,6 @@ describe("page-verify", () => {
         role: "list",
         name: "Order summary",
         label: 'list "Order summary"',
-        locator: "getByRole('list', { name: 'Order summary' })",
       },
     });
 

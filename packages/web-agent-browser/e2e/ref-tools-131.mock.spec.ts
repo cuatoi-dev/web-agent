@@ -299,7 +299,7 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
     const results = await runPlan(panelPage, "Start debugging, snapshot, then upload a text file.", 3);
 
     expect(results[2].isError).toBe(false);
-    expect(results[2].text).toMatch(/orders\.csv \(8 B\)\. \(journal #\d+\)$/);
+    expect(results[2].text).toMatch(/orders\.csv \(8 B\)\.$/);
     await expect(sitePage.locator("#upload-status")).toHaveText("orders.csv|text/csv|8");
 
     const results2 = await appendPlan(
@@ -317,7 +317,7 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
       4,
     );
     expect(results2[3].isError).toBe(false);
-    expect(results2[3].text).toMatch(/note\.bin \(2 B\)\. \(journal #\d+\)$/);
+    expect(results2[3].text).toMatch(/note\.bin \(2 B\)\.$/);
     await expect(sitePage.locator("#upload-status")).toHaveText("note.bin|application/octet-stream|2");
 
     const results3 = await appendPlan(
@@ -394,7 +394,7 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
 
     // text_visible
     expect(results[1].isError).toBe(false);
-    expect(results[1].text).toMatch(/^PASS text "Discount: -\$4\.20" is visible\. \(journal #\d+\)$/);
+    expect(results[1].text).toMatch(/^PASS text "Discount: -\$4\.20" is visible\.$/);
     expect(results[2]).toEqual({
       tool: "page_verify",
       text: 'FAIL expected text "Enter a code" to be visible; found no matching text.',
@@ -403,12 +403,12 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
 
     // value
     expect(results[4].isError).toBe(false);
-    expect(results[4].text).toMatch(/^PASS \[\d+\] textbox "Coupon" has value "SAVE10"\. \(journal #\d+\)$/);
+    expect(results[4].text).toMatch(/^PASS \[\d+\] textbox "Coupon" has value "SAVE10"\.$/);
     expect(results[5]).toEqual({ tool: "page_verify", text: 'page_verify kind "value" needs value.', isError: true });
 
     // element_visible
     expect(results[6].isError).toBe(false);
-    expect(results[6].text).toMatch(/^PASS button "Apply" is visible\. \(journal #\d+\)$/);
+    expect(results[6].text).toMatch(/^PASS button "Apply" is visible\.$/);
     expect(results[7]).toEqual({
       tool: "page_verify",
       text: 'FAIL expected button "Clear saved cards" to be visible; found 1 matching, none visible.',
@@ -417,7 +417,7 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
 
     // list
     expect(results[8].isError).toBe(false);
-    expect(results[8].text).toMatch(/^PASS list "Order summary" shows all 2 items\. \(journal #\d+\)$/);
+    expect(results[8].text).toMatch(/^PASS list "Order summary" shows all 2 items\.$/);
     expect(results[9]).toEqual({
       tool: "page_verify",
       text: 'FAIL expected list "Order summary" to show "Refund"; not found.',

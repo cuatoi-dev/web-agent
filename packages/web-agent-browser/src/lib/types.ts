@@ -7,7 +7,6 @@ import type { SkillsRequestMessage, SkillsResultMessage } from "./skill-registry
 import type { RecordingController } from "./recorder.types";
 import type { DebuggerToolsOptions } from "./debugger-tools.types";
 import type { DebuggerRecorder } from "./debugger-recorder.types";
-import type { JournalToolsOptions } from "./action-journal.types";
 import type { HelperWorlds } from "./debugger-helper-world.types";
 
 // --- constants.ts ----------------------------------------------------------
@@ -106,8 +105,8 @@ export type BrandToolGroup = "scheduler" | "todo" | "data" | "genui";
 
 /** The six skill groups `plugin.yml` may switch — the built-in sets the two
  *  agents spread. `core`, `dom` and `pageFetch` belong to the in-page bubble;
- *  `tab`, `websiteEdit` and `playwright` to the side panel. */
-export type BrandSkillGroup = "core" | "dom" | "pageFetch" | "tab" | "websiteEdit" | "playwright";
+ *  `tab`, `websiteEdit` and `testing` to the side panel. */
+export type BrandSkillGroup = "core" | "dom" | "pageFetch" | "tab" | "websiteEdit" | "testing";
 
 export type BrandToolFlags = Partial<Record<BrandToolGroup, BrandFlag>>;
 export type BrandSkillFlags = Partial<Record<BrandSkillGroup, BrandFlag>>;
@@ -406,7 +405,7 @@ export type { WatchMeProvider, WatchMeProviderOptions, WatchMeProviderState } fr
 
 export type * from "./act-by-ref-tools.types";
 export type * from "./verify-locator-tools.types";
-export type * from "./action-journal.types";
+export type * from "./element-target.types";
 
 // --- page-screenshot-tool.ts ------------------------------------------------
 
@@ -419,7 +418,7 @@ export interface RecordingToolsOptions {
 }
 
 export interface PanelPageToolsOptions
-  extends PageScreenshotToolOptions, DebuggerToolsOptions, JournalToolsOptions, RecordingToolsOptions {
+  extends PageScreenshotToolOptions, DebuggerToolsOptions, RecordingToolsOptions {
   /** The panel's own confirm gate for the "ask" permission tier on
    *  `page_click`, `page_fill_form` and `page_select_option` (122/001). Absent
    *  means every "ask"-tier action proceeds unconfirmed. */

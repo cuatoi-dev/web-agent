@@ -1,6 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { REC_RESUME_DELAY_MS } from "./constants";
-import { createActionJournal } from "./action-journal";
 import { createRecordingController, hostOf } from "./recording-controller";
 import type { DebuggerGate, DebuggerSession, DebuggerToolText } from "./debugger-tools.types";
 import type { DebuggerRecorder } from "./debugger-recorder.types";
@@ -294,12 +293,11 @@ describe("recording-controller", () => {
     expect(res.steps[0]).toMatchObject({ path: "/#/store", seq: 0.000001 });
   });
 
-  it("stop() calls recorder.uninstall and returns journalIds / unjournaled", async () => {
+  it("stop() calls recorder.uninstall and returns the steps", async () => {
     const stepListeners: ((tabId: number, step: RecordedStep) => void)[] = [];
     const session = fakeSession({ gate: vi.fn(() => ({ ok: true, state: {} as never }) satisfies DebuggerGate) });
     const recorder = fakeRecorder({ onStep: (l) => stepListeners.push(l) });
-    const journal = createActionJournal();
-    const c = createRecordingController({ api, session, recorder, journal });
+    const c = createRecordingController({ api, session, recorder });
     await c.start(7, { host: "x", url: "http://x" }, "tool");
     const recordingId = c.state().kind === "recording" ? c.state().recordingId : "";
     stepListeners[0](7, {
@@ -307,7 +305,7 @@ describe("recording-controller", () => {
       seq: 0,
       kind: "click",
       line: 'click button "Apply"',
-      target: { role: "button", name: "Apply", label: 'button "Apply"', locator: "getByRole('button', { name: 'Apply' })", isPassword: false },
+      target: { role: "button", name: "Apply", label: 'button "Apply"', isPassword: false },
     });
     stepListeners[0](7, {
       recordingId,
@@ -320,47 +318,7 @@ describe("recording-controller", () => {
     const res = await c.stop();
     if ("error" in res) throw new Error("expected recording result");
     expect(recorder.uninstall).toHaveBeenCalledWith(7);
-    expect(res.journalIds).toEqual([1]);
-    expect(res.stepJournalIds).toEqual({ 0: 1 });
-    expect(res.unjournaled).toEqual(['custom "Special"']);
-  });
-
-  it("keeps the step index for each journal id across an unjournaled hole", async () => {
-    const stepListeners: ((tabId: number, step: RecordedStep) => void)[] = [];
-    const session = fakeSession({ gate: vi.fn(() => ({ ok: true, state: {} as never }) satisfies DebuggerGate) });
-    const recorder = fakeRecorder({ onStep: (l) => stepListeners.push(l) });
-    const journal = createActionJournal();
-    const c = createRecordingController({ api, session, recorder, journal });
-    await c.start(7, { host: "x", url: "http://x" }, "tool");
-    const recordingId = c.state().kind === "recording" ? c.state().recordingId : "";
-
-    stepListeners[0](7, {
-      recordingId,
-      seq: 0,
-      kind: "click",
-      line: 'click button "Apply"',
-      target: { role: "button", name: "Apply", label: 'button "Apply"', locator: "getByRole('button', { name: 'Apply' })", isPassword: false },
-    });
-    stepListeners[0](7, {
-      recordingId,
-      seq: 1,
-      kind: "click",
-      line: 'click custom "Special"',
-      target: { role: "custom", name: "Special", label: 'custom "Special"', isPassword: false },
-    });
-    stepListeners[0](7, {
-      recordingId,
-      seq: 2,
-      kind: "click",
-      line: 'click button "Pay"',
-      target: { role: "button", name: "Pay", label: 'button "Pay"', locator: "getByRole('button', { name: 'Pay' })", isPassword: false },
-    });
-
-    const res = await c.stop();
-    if ("error" in res) throw new Error("expected recording result");
-    expect(res.journalIds).toEqual([1, 2]);
-    expect(res.stepJournalIds).toEqual({ 0: 1, 2: 2 });
-    expect(res.unjournaled).toEqual(['custom "Special"']);
+    expect(res.steps.map((st) => st.line)).toEqual(['click button "Apply"', 'click custom "Special"']);
   });
 
   it("pause / resume call through to the recorder only while a recording is live on that tab", async () => {

@@ -21,12 +21,6 @@ export type WatchMeProviderState =
       url: string;
       steps: RecordedStep[];
       note?: string;
-      /** 002 — step index (into `steps`) to journal id, copied from
-       *  `controller.stop()`'s result. Absent for a recording that ended
-       *  without anyone calling `stop()` (a navigation or a closed tab), where
-       *  the controller exposes no ids. The model-facing attachment text uses
-       *  it; the UI list does not. */
-      stepJournalIds?: Partial<Record<number, number>>;
     };
 
 /** `createWatchMeProvider`'s return type. */

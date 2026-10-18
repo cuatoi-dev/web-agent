@@ -1,8 +1,8 @@
 // 124/005 — the recorder's step and message shapes, and the panel-side
 // recording controller. Split out of types.ts to stay under that file's
-// 500-line cap (eslint.config.mjs max-lines); imports only the journal target
+// 500-line cap (eslint.config.mjs max-lines); imports only the element target
 // type, mirroring act-by-ref-tools.types.ts.
-import type { JournalTarget } from "./action-journal.types";
+import type { ElementTarget } from "./element-target.types";
 
 /** What the user did. `check`/`uncheck` are a click on a checkbox or radio. */
 export type RecordedStepKind =
@@ -21,8 +21,7 @@ export type RecordedStepKind =
  *
  *  `line` is the readable text the plan fixes, for example
  *  `click button "Apply"`. It is computed here, once, and reused verbatim as
- *  the journal entry's text so the `stop_recording` list and an exported spec's
- *  step comments can never drift apart.
+ *  the text of the `stop_recording` list.
  *
  *  `value` carries a `fill`'s text; `values` carries a `select`'s chosen option
  *  labels (the plan's "value = selected option labels", as a list so
@@ -39,13 +38,13 @@ export interface RecordedStep {
   deltaY?: number;
   path?: string;
   line: string;
-  /** Role, name and the Playwright locator, read before the step is posted.
+  /** Role, name and label, read before the step is posted.
    *  Absent for `scroll` and for a `press` with no focused element. */
-  target?: JournalTarget;
+  target?: ElementTarget;
   /** 131/004 — the `<iframe>` selectors from the top page down to this
    *  step's frame, top-down. Absent for a top-frame step. Built by the
    *  helper world, the same way 131/003 builds them for the agent's own
-   *  actions (action-journal.types.ts:23-27). */
+   *  actions. */
   frames?: string[];
   /** 131/004 — the origin of the frame the step happened in, e.g.
    *  "http://pay.test". Absent for the top frame. */
@@ -65,14 +64,6 @@ export interface RecordingResult {
   url: string;
   steps: RecordedStep[];
   note?: string;
-  /** The journal ids `finish()` appended, in step order. */
-  journalIds: number[];
-  /** Step index (into `steps`) to journal id, for every step that got a
-   *  journal entry. Steps that got no entry (see `unjournaled`) are absent,
-   *  so a lookup by index is `number | undefined`. */
-  stepJournalIds: Partial<Record<number, number>>;
-  /** `JournalTarget.label` for every step that got no journal entry. */
-  unjournaled: string[];
 }
 
 /** The browser calls the controller makes. A unit test supplies fakes. */

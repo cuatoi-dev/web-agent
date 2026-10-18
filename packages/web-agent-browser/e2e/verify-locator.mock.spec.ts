@@ -118,7 +118,7 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
     const results = await panelPage.evaluate(() => window.__VERIFY_RESULTS__ ?? []);
     expect(results[0].tool).toBe("page_verify");
     expect(results[0].isError).toBe(false);
-    expect(results[0].text).toMatch(/^PASS text "Discount: -\$4\.20" is visible\. \(journal #\d+\)$/);
+    expect(results[0].text).toMatch(/^PASS text "Discount: -\$4\.20" is visible\.$/);
     expect(results[1]).toEqual({
       tool: "page_verify",
       text: 'FAIL expected text "Enter a code" to be visible; found no matching text.',
@@ -228,7 +228,7 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
     await panelPage.waitForFunction(() => (window.__VERIFY_RESULTS__?.length ?? 0) >= 2, { timeout: 15_000 });
 
     const results = await panelPage.evaluate(() => window.__VERIFY_RESULTS__ ?? []);
-    expect(results[0].text).toMatch(/^PASS \[\d+\] textbox "Coupon" has value "SAVE10"\. \(journal #\d+\)$/);
+    expect(results[0].text).toMatch(/^PASS \[\d+\] textbox "Coupon" has value "SAVE10"\.$/);
     expect(results[0].isError).toBe(false);
     expect(results[1]).toEqual({
       tool: "page_verify",
@@ -318,7 +318,7 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
     const results = await panelPage.evaluate(() => window.__VERIFY_RESULTS__ ?? []);
     expect(results[0].tool).toBe("page_verify");
     expect(results[0].isError).toBe(false);
-    expect(results[0].text).toMatch(/^PASS button "Apply" is visible\. \(journal #\d+\)$/);
+    expect(results[0].text).toMatch(/^PASS button "Apply" is visible\.$/);
     expect(results[1]).toEqual({
       tool: "page_verify",
       text: 'FAIL expected button "Clear saved cards" to be visible; found 1 matching, none visible.',
@@ -407,7 +407,7 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
     const results = await panelPage.evaluate(() => window.__VERIFY_RESULTS__ ?? []);
     expect(results[0].tool).toBe("page_verify");
     expect(results[0].isError).toBe(false);
-    expect(results[0].text).toMatch(/^PASS list "Order summary" shows all 2 items\. \(journal #\d+\)$/);
+    expect(results[0].text).toMatch(/^PASS list "Order summary" shows all 2 items\.$/);
     expect(results[1]).toEqual({
       tool: "page_verify",
       text: 'FAIL expected list "Order summary" to show "Refund"; not found.',

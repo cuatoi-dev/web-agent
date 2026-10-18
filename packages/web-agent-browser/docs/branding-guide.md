@@ -271,15 +271,15 @@ own `tools` list — an agent set to `tools: "*"` still loses the group.
 ```yaml
 skills:
   websiteEdit: { enabled: false }
-  playwright:  { enabled: false }
+  testing:     { enabled: false }
 ```
 
 The `skills` block turns off built-in skills. It does not add skills. To add
 skills, see [Custom skills](./custom-skills.md), which also lists the skills in
 each group. As with tool groups, a side panel agent's own `skills` list still
-loses a group switched off here. For example, `playwright: { enabled: false }`
-removes the `playwright_script` skill from every side panel agent, even from an
-agent whose `skills` list names `playwright_script`.
+loses a group switched off here. For example, `testing: { enabled: false }`
+removes the `test_plan` skill from every side panel agent, even from an
+agent whose `skills` list names `test_plan`.
 
 ## Step 6: Replace the icon
 
