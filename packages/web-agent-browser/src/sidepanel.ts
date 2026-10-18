@@ -48,6 +48,7 @@ import { createHelperWorlds } from "./lib/debugger-helper-world";
 import { createDebuggerRecorder } from "./lib/debugger-recorder";
 import { DirectoryBackend, vfsTools } from "@cuatoi/web-agent-vfs";
 import { filesScreen } from "@cuatoi/web-agent-vfs/lit";
+import { seedHomeAgentsMd } from "./lib/seed-home-agents-md";
 import { ChromeStorageBackend } from "./lib/chrome-storage-backend";
 import { extensionSkillRegistry } from "./lib/skill-registry";
 import { createAgentSwitcher, orderAgents } from "./lib/agent-switcher";
@@ -176,6 +177,11 @@ function buildAgentPanel(
       provider: vfs, panel, directoryBackend: DirectoryBackend,
     };
   }
+  // 127/004 — the brand's starter /home/agent/AGENTS.md, written once when the
+  // file is missing. The promise is awaited in the vfs provider's load() below,
+  // so the first prompt of a fresh install already has the file for the
+  // <agents-md> block (packages/web-agent-vfs/src/index.ts:144-171).
+  const seedHome = seedHomeAgentsMd(vfs.vfs, agent.homeAgentsMd);
 
   panel.toolProviders = [
     ...tabTools({
@@ -201,10 +207,12 @@ function buildAgentPanel(
     // 069/003 — the agent file system, on chrome.storage rather than this
     // page's own Web Storage. /tmp and /home/agent are namespaced per agent,
     // so two side panel agents never see each other's files; /home/shared is
-    // one namespace, so they do. NOT spread: vfsTools returns ONE
-    // ToolProvider (web-agent-vfs/src/index.ts:27), unlike the three helpers
-    // above, which return arrays.
-    vfs,
+    // one namespace, so they do. vfsTools returns ONE ToolProvider
+    // (web-agent-vfs/src/index.ts:36), unlike the three helpers above, which
+    // return arrays.
+    // 127/004 — the same provider with a load() that awaits the starter seed
+    // first. A failed seed resolves, so the session still starts.
+    { ...vfs, load: async () => { await seedHome; return vfs.load(); } },
   ].map(filterProvider);
 
   panel.screens = [filesScreen(vfs.vfs)];

@@ -52,6 +52,10 @@ const SKILL_NAME = /^[a-z][a-z0-9_]*$/;
  *  default brand ships the folder holding nothing else. */
 const SKILLS_README = "README.md";
 
+/** The one file a `brand/agents/<id>.home/` folder may hold. The starter text
+ *  is seeded into that agent's `/home/agent/AGENTS.md` once (127/004). */
+const HOME_AGENTS_MD = "AGENTS.md";
+
 /** Every key `dist/brand.json` carries, all empty. A brand that leaves a block
  *  out keeps the key with its empty value, so a reader never has to test for a
  *  missing key. */
@@ -527,6 +531,28 @@ function compileAgents(brandDir, modelIds, skillNames, toolNames) {
     if (doc.model !== undefined) agent.model = doc.model;
     if (doc.excludeTools !== undefined) agent.excludeTools = doc.excludeTools;
     if (doc.excludeSkills !== undefined) agent.excludeSkills = doc.excludeSkills;
+
+    // 127/004 — the optional starter file. A folder that holds anything other
+    // than one plain AGENTS.md fails the build, so a brand owner never ships a
+    // second file that the runtime silently ignores.
+    const homeDir = path.join(dir, `${id}.home`);
+    if (fs.existsSync(homeDir)) {
+      const homeWhere = `brand/agents/${id}.home`;
+      if (!fs.statSync(homeDir).isDirectory()) {
+        throw new Error(`${homeWhere} must be a folder`);
+      }
+      const entries = fs.readdirSync(homeDir).sort();
+      if (entries.length !== 1 || entries[0] !== HOME_AGENTS_MD) {
+        throw new Error(
+          `${homeWhere} may only contain AGENTS.md (found: ${entries.join(", ") || "nothing"})`,
+        );
+      }
+      const starterPath = path.join(homeDir, HOME_AGENTS_MD);
+      if (!fs.statSync(starterPath).isFile()) {
+        throw new Error(`${homeWhere}/${HOME_AGENTS_MD} must be a file`);
+      }
+      agent.homeAgentsMd = fs.readFileSync(starterPath, "utf8");
+    }
     agents.push(agent);
   }
 

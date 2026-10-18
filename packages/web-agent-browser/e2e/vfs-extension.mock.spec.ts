@@ -213,7 +213,12 @@ test.describe("VFS extension wiring (069/003)", () => {
     expect(keys).toContain("web-agent-vfs:home:chromagent:index");
     expect(keys).toContain("web-agent-vfs:shared:f:/USER.md");
     expect(keys).toContain("web-agent-vfs:shared:index");
-    expect(keys.some((k) => k.startsWith("web-agent-vfs:home:tesagent:"))).toBe(false);
+    // 127/004 — selecting tesagent seeds its starter AGENTS.md and nothing
+    // else. It still cannot see chromagent's /SOUL.md (asserted above).
+    expect(keys).toContain("web-agent-vfs:home:tesagent:f:/AGENTS.md");
+    expect(keys).toContain("web-agent-vfs:home:tesagent:index");
+    expect(keys.filter((k) => k.startsWith("web-agent-vfs:home:tesagent:f:")))
+      .toEqual(["web-agent-vfs:home:tesagent:f:/AGENTS.md"]);
 
     // E6 — chromagent's /home/agent survives a panel reload.
     await chooseAgent(panelPage, "chromagent");

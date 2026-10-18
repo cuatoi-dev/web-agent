@@ -194,6 +194,11 @@ defaultAgent: acme
 `defaultAgent` is required, and must name a file in `brand/agents/`. The side
 panel runs that agent (`src/lib/brand-capabilities.ts:resolveAgent`).
 
+An agent can also ship a starter `/home/agent/AGENTS.md`. Create
+`brand/agents/<id>.home/AGENTS.md`; the side panel writes it into the agent's
+file system once, when the file does not exist. It never overwrites a file the
+user or the agent has changed. The folder may hold only `AGENTS.md`.
+
 ### The in-page bubble's prompt
 
 Open `brand/plugin.yml` and edit the `prompts` block:
@@ -551,6 +556,9 @@ Source: `tool/compile-brand.cjs:compileAgents`.
 | `brand/agents/<file> <key> must be a list of names` | Write `excludeTools` and `excludeSkills` as a YAML list. |
 | `brand/agents/<file> <key> lists "<name>", which is not a side panel tool; expected "*" or names such as read_tabs, page_eval, page_screenshot` | Use a real side panel tool name. |
 | `brand/agents/<file> <key> lists "<name>", which is not a side panel skill; expected "*" or names such as <names>` | Use a real side panel skill name. |
+| `brand/agents/<id>.home must be a folder` | Replace the file named `<id>.home` with a folder, or delete it. |
+| `brand/agents/<id>.home may only contain AGENTS.md (found: <names>)` | Delete every other entry. A starter folder holds one file, `AGENTS.md`. |
+| `brand/agents/<id>.home/AGENTS.md must be a file` | Replace the folder named `AGENTS.md` with a text file. |
 
 ### `brand/model.yml`
 

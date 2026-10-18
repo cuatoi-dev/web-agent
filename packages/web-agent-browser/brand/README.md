@@ -87,6 +87,7 @@ default agent, and `tesagent.yml`. Chromagent has every tool and skill.
 
 The build fails, and writes no `dist/`, when:
 
+- `<id>.home/` exists but holds anything except one plain `AGENTS.md` file
 - `brand/agents/` is missing or has no `.yml` files
 - a file name does not match the lowercase / digits / `-` / `_` rule
 - `displayName`, `description` or `instructions` is missing, not a string, or
@@ -99,6 +100,18 @@ The build fails, and writes no `dist/`, when:
 
 The failure message names the file, the key, and — for an unknown name — the
 name and a sample of the accepted ones.
+
+### Starter file
+
+An agent can ship a starter `/home/agent/AGENTS.md`. Create
+`brand/agents/<id>.home/AGENTS.md`; the side panel writes it into that agent's
+file system once, when `/home/agent/AGENTS.md` does not exist. It never
+overwrites a file the user or the agent has changed, so edits survive panel
+reloads and extension updates.
+
+The folder may hold only `AGENTS.md`. Any other entry fails the build, and the
+message names the extra entry. An agent with no `<id>.home/` folder has no
+starter file.
 
 ### Options
 

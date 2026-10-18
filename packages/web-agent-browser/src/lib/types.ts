@@ -128,6 +128,10 @@ export interface BrandAgent {
   displayName: string;
   description: string;
   instructions: string;
+  /** The text of `brand/agents/<id>.home/AGENTS.md`. The side panel seeds it
+   *  into this agent's `/home/agent/AGENTS.md` once, when that file does not
+   *  exist (127/004). Absent means the agent has no starter file. */
+  homeAgentsMd?: string;
   /** An id from `model.yml`. Absent means the options page settings decide. */
   model?: string;
   tools: "*" | string[];

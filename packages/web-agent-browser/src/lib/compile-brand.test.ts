@@ -69,6 +69,15 @@ describe("compileBrand", () => {
     writeAgent(dir, "chromagent.yml", VALID_AGENT_YAML);
   }
 
+  /** Writes `<id>.home/<name>` for every entry, creating the folder. */
+  function writeHome(dir: string, id: string, files: Record<string, string>): void {
+    const home = path.join(dir, "agents", `${id}.home`);
+    fs.mkdirSync(home, { recursive: true });
+    for (const [name, contents] of Object.entries(files)) {
+      fs.writeFileSync(path.join(home, name), contents);
+    }
+  }
+
   it("the default brand compiles to all ten keys", () => {
     const brand = compileBrand(BRAND_DIR);
     expect(Object.keys(brand).sort()).toEqual([
@@ -229,6 +238,75 @@ describe("compileBrand", () => {
       writePlugin(tempDir, "defaultAgent: chromagent\n");
       const brand = compileBrand(tempDir) as { agents: { id: string; excludeSkills?: unknown }[] };
       expect(brand.agents.find((a) => a.id === "chromagent")?.excludeSkills).toEqual(["test_plan"]);
+    });
+
+    it("reads <id>.home/AGENTS.md into homeAgentsMd (127/004)", () => {
+      const tempDir = makeTempDir();
+      writeDefaultAgent(tempDir);
+      writeHome(tempDir, "chromagent", { "AGENTS.md": "# Starter\n\nLayout.\n" });
+      writePlugin(tempDir, "defaultAgent: chromagent\n");
+      const brand = compileBrand(tempDir) as { agents: { id: string; homeAgentsMd?: string }[] };
+      expect(brand.agents.find((a) => a.id === "chromagent")?.homeAgentsMd)
+        .toBe("# Starter\n\nLayout.\n");
+    });
+
+    it("an agent with no .home folder carries no homeAgentsMd", () => {
+      const tempDir = makeTempDir();
+      writeDefaultAgent(tempDir);
+      writePlugin(tempDir, "defaultAgent: chromagent\n");
+      const brand = compileBrand(tempDir) as { agents: Record<string, unknown>[] };
+      expect("homeAgentsMd" in brand.agents[0]).toBe(false);
+    });
+
+    it("a second entry in <id>.home fails the build and names it", () => {
+      const tempDir = makeTempDir();
+      writeDefaultAgent(tempDir);
+      writeHome(tempDir, "chromagent", { "AGENTS.md": "starter", "notes.txt": "extra" });
+      writePlugin(tempDir, "defaultAgent: chromagent\n");
+      expect(() => compileBrand(tempDir)).toThrow(
+        "brand/agents/chromagent.home may only contain AGENTS.md (found: AGENTS.md, notes.txt)",
+      );
+    });
+
+    it("an empty <id>.home folder fails the build", () => {
+      const tempDir = makeTempDir();
+      writeDefaultAgent(tempDir);
+      writeHome(tempDir, "chromagent", {});
+      writePlugin(tempDir, "defaultAgent: chromagent\n");
+      expect(() => compileBrand(tempDir)).toThrow(
+        "brand/agents/chromagent.home may only contain AGENTS.md (found: nothing)",
+      );
+    });
+
+    it("<id>.home that is a file, or AGENTS.md that is a folder, fails the build", () => {
+      const fileTemp = makeTempDir();
+      writeDefaultAgent(fileTemp);
+      fs.mkdirSync(path.join(fileTemp, "agents"), { recursive: true });
+      fs.writeFileSync(path.join(fileTemp, "agents", "chromagent.home"), "not a folder");
+      writePlugin(fileTemp, "defaultAgent: chromagent\n");
+      expect(() => compileBrand(fileTemp)).toThrow(
+        "brand/agents/chromagent.home must be a folder",
+      );
+
+      const dirTemp = makeTempDir();
+      writeDefaultAgent(dirTemp);
+      fs.mkdirSync(path.join(dirTemp, "agents", "chromagent.home", "AGENTS.md"), { recursive: true });
+      writePlugin(dirTemp, "defaultAgent: chromagent\n");
+      expect(() => compileBrand(dirTemp)).toThrow(
+        "brand/agents/chromagent.home/AGENTS.md must be a file",
+      );
+    });
+
+    it("the default brand seeds tesagent and not chromagent", () => {
+      const brand = compileBrand(BRAND_DIR) as {
+        agents: { id: string; homeAgentsMd?: string }[];
+      };
+      const starter = fs.readFileSync(
+        path.join(BRAND_DIR, "agents", "tesagent.home", "AGENTS.md"),
+        "utf8",
+      );
+      expect(brand.agents.find((a) => a.id === "tesagent")?.homeAgentsMd).toBe(starter);
+      expect("homeAgentsMd" in (brand.agents.find((a) => a.id === "chromagent") ?? {})).toBe(false);
     });
 
     it("an agent naming a removed skill fails the build", () => {

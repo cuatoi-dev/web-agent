@@ -459,7 +459,10 @@ test.describe("attach-folder mock suite", () => {
 
     const texts = await page.evaluate(() => window.__USER_TEXTS__);
     const threeText = texts?.[texts.length - 1];
-    expect(threeText).toBe("three");
+    expect(threeText).toContain('<agents-md path="/home/agent/AGENTS.md">');
+    expect(threeText).not.toContain("The user attached the folder");
+    expect(threeText).not.toContain("The user removed the folder");
+    expect(threeText?.replace(/<agents-md[^>]*>[\s\S]*?<\/agents-md>\s*/, "").trim()).toBe("three");
   });
 
   test("11. a reload drops chips and mounts", async ({ context, extensionId }) => {
