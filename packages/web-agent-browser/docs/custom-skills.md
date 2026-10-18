@@ -132,7 +132,7 @@ The extension has built-in skills in six groups
 | `pageFetch` | In-page | `page_fetch` | `src/lib/page-fetch-skill.ts:4` |
 | `tab` | Side panel | `tab_management`, `page_agent` | `src/lib/tab-skill.ts:55-57` |
 | `websiteEdit` | Side panel | `website_edit` | `src/lib/website-edit-skill.ts:4` |
-| `testing` | Side panel | `test_plan` | `src/lib/test-plan-skill.ts` |
+| `testing` | Side panel | `test_plan`, `test_report` | `src/lib/test-plan-skill.ts`, `src/lib/test-report-skill.ts` |
 
 **To turn off a group**, set its `enabled` flag to `false` in
 `brand/plugin.yml`. For example, this removes the `website_edit` skill from the
@@ -156,7 +156,7 @@ The `skills` flag and a brand skill work together. If you turn off
 `websiteEdit` and also ship a skill named `website_edit`, the side panel has
 your skill, because brand skills are added after the groups are removed.
 
-The default brand gives `test_plan` to both Chromagent and tesagent. To give
+The default brand gives `test_plan` and `test_report` to both Chromagent and tesagent. To give
 it to one agent only, add `excludeSkills: [test_plan]` to the other agent's
 file in `brand/agents/`.
 

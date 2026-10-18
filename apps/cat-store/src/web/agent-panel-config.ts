@@ -305,7 +305,7 @@ function buildPanelProps(
         required: true,
       },
     ]),
-    // 069 — the agent's virtual file system (nine tools), default layout:
+    // 069 — the agent's virtual file system (ten tools), default layout:
     // /tmp on sessionStorage, /home/agent and /home/shared on localStorage.
     // 125/001: read-only host mount at /store for store promotions.
     ...(() => {

@@ -21,7 +21,7 @@ const AGENT_PROMPT_KEYS = ["inPage"];
  *  `website_edit` and `test_plan`). A name
  *  here builds even when its group is switched off; the group switch removes it
  *  at run time. */
-const BUILTIN_SIDE_PANEL_SKILLS = ["tab_management", "page_agent", "website_edit", "test_plan"];
+const BUILTIN_SIDE_PANEL_SKILLS = ["tab_management", "page_agent", "website_edit", "test_plan", "test_report"];
 
 /** The three wire formats the bubble accepts
  *  (src/lib/types.ts:20). A fourth value is a typo, not an extension point. */

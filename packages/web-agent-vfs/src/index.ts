@@ -15,6 +15,7 @@ import { deleteFileTool } from "./tools/delete-file.js";
 import { moveFileTool } from "./tools/move-file.js";
 import { jsonGetTool } from "./tools/json-get.js";
 import { jsonEditTool } from "./tools/json-edit.js";
+import { bundleHtmlTool } from "./tools/bundle-html.js";
 import { attachFolderProvider } from "./attach-folder-provider.js";
 import { saveToolResult, TOOL_RESULT_DIR } from "./tool-results.js";
 
@@ -184,6 +185,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
         moveFileTool(mounts, tracker),
         jsonGetTool(mounts, tracker),
         jsonEditTool(mounts, tracker),
+        bundleHtmlTool(vfs),
       ];
     },
   };

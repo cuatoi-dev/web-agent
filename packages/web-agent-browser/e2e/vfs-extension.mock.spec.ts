@@ -137,17 +137,17 @@ test.describe("VFS extension wiring (069/003)", () => {
     });
   });
 
-  test("E1 the side panel agent is offered all nine file tools", async ({ context, extensionId }) => {
+  test("E1 the side panel agent is offered all ten file tools", async ({ context, extensionId }) => {
     const panelPage = await openPanel(context, extensionId);
     await sendMessage(panelPage, "hi");
     await panelPage.waitForFunction(() => window.__WA_TOOLS__ !== undefined, { timeout: 15_000 });
     const tools = await panelPage.evaluate(() => window.__WA_TOOLS__);
-    for (const name of ["read_file", "write_file", "edit_file", "glob_files", "search_files", "delete_file", "move_file", "json_get", "json_edit"]) {
+    for (const name of ["read_file", "write_file", "edit_file", "glob_files", "search_files", "delete_file", "move_file", "json_get", "json_edit", "bundle_html"]) {
       expect(tools).toContain(name);
     }
   });
 
-  test("E2 the in-page agent is offered all nine file tools", async ({ context }) => {
+  test("E2 the in-page agent is offered all ten file tools", async ({ context }) => {
     const page = await context.newPage();
     await page.addInitScript(installMockScript);
     await page.goto(SITE_A);
@@ -155,7 +155,7 @@ test.describe("VFS extension wiring (069/003)", () => {
     await sendBubbleMessage(page, "hi");
     await page.waitForFunction(() => window.__WA_TOOLS__ !== undefined, { timeout: 15_000 });
     const tools = await page.evaluate(() => window.__WA_TOOLS__);
-    for (const name of ["read_file", "write_file", "edit_file", "glob_files", "search_files", "delete_file", "move_file", "json_get", "json_edit"]) {
+    for (const name of ["read_file", "write_file", "edit_file", "glob_files", "search_files", "delete_file", "move_file", "json_get", "json_edit", "bundle_html"]) {
       expect(tools).toContain(name);
     }
   });

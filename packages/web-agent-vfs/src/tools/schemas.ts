@@ -162,3 +162,17 @@ export const JSON_EDIT_SCHEMA: JsonSchemaObject = {
 
 export const JSON_EDIT_DESCRIPTION =
   "Apply a list of edits to a JSON file by path: set, delete, append, insert, update, remove, or upsert. All changes apply or none are saved.";
+
+export const BUNDLE_HTML_SCHEMA: JsonSchemaObject = {
+  type: "object",
+  properties: {
+    src: { type: "string", description: "Absolute path of the HTML file to bundle, for example /tmp/runs/2026-10-19-101500/report.src.html." },
+    out: { type: "string", description: "Absolute path to write the bundled HTML to, for example /tmp/runs/2026-10-19-101500/report.html. Overwrites an existing file." },
+  },
+  required: ["src", "out"],
+  additionalProperties: false,
+};
+
+export const BUNDLE_HTML_DESCRIPTION =
+  "Copy an HTML file and replace every <img src=\"/path\"> with the image's own bytes as a base64 data URI, so the result is one self-contained file. A src that does not start with / (http, data:, relative) is left unchanged. Fails and writes nothing when an image is missing. Use this for a report the user pastes into a mail.";
+

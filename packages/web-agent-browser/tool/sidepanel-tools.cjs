@@ -59,6 +59,7 @@ const SIDE_PANEL_TOOL_NAMES = [
   "move_file",
   "json_get",
   "json_edit",
+  "bundle_html",
 ];
 
 /** The 18 side panel tools that require an active debugger session (start_debugging). */

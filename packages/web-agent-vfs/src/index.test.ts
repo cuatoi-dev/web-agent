@@ -67,7 +67,7 @@ describe("vfsTools", () => {
     expect(provider.required).toBe(false);
   });
 
-  it("load() resolves to the nine tool defs, each with a phrase and inProgressPhrase", async () => {
+  it("load() resolves to the ten tool defs, each with a phrase and inProgressPhrase", async () => {
     const provider = vfsTools({ mounts: {} });
     const defs = await provider.load();
     expect(defs.map((d) => d.name)).toEqual([
@@ -80,6 +80,7 @@ describe("vfsTools", () => {
       "move_file",
       "json_get",
       "json_edit",
+      "bundle_html",
     ]);
     for (const def of defs) {
       expect(typeof def.phrase).toBe("function");

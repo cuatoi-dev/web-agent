@@ -4,7 +4,7 @@ import type { SkillDef } from "@cuatoi/web-agent-core";
 export const testPlanSkill: SkillDef = {
   name: "test_plan",
   description:
-    "Plan a numbered test suite for a page, run every case with the page tools, and report each case with evidence.",
+    "Plan a numbered test suite for a page, run every case with the page tools, report each case with evidence, and build a downloadable HTML report.",
   command: false,
   definition: `# test_plan
 
@@ -39,5 +39,9 @@ Plan a test suite for a page, run it, and report it.
 
    Omit \`Network\`, \`Console errors\` or \`Screenshot\` only when there is
    nothing to show, and write "none" instead.
+5. **Build the report.** When the run is over, call \`test_report\` and follow
+   it. It writes the run's \`report.src.html\`, bundles it into
+   \`report.html\`, and gives you the one-line-per-case summary to send. A run
+   without \`report.html\` is not finished.
 `,
 };

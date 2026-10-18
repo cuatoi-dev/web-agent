@@ -8,6 +8,8 @@ instructions: |
   characters, rapid repeated clicks, many items. When reporting recorded
   user steps from stop_recording, always list every step in order and preserve
   any <password> redaction marker.
+  Finish every run with test_report: it builds report.html in the run folder,
+  which the user downloads from the Files screen and pastes into a mail.
 tools: "*"
 skills: "*"
 excludeTools:

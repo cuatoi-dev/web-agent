@@ -123,7 +123,7 @@ describe("agent-options", () => {
 
   it("O6 skill names", () => {
     expect(skillNames(base)).toEqual([
-      { heading: null, names: ["tab_management", "page_agent", "website_edit", "test_plan"] },
+      { heading: null, names: ["tab_management", "page_agent", "website_edit", "test_plan", "test_report"] },
     ]);
   });
 

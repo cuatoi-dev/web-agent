@@ -2,7 +2,7 @@
 
 Virtual file system tools for the web-agent in-app browser agent — a mounted file
 tree with `read_file`, `write_file`, `edit_file`, `glob_files`, `search_files`,
-`delete_file`, `move_file`, `json_get` and `json_edit`, backed by browser storage
+`delete_file`, `move_file`, `json_get`, `json_edit` and `bundle_html`, backed by browser storage
 so files survive a page reload.
 
 ## Install
@@ -120,6 +120,13 @@ text.
   rewrites the file as `JSON.stringify(document, null, 2)`, keeping key order.
   `update` and `remove` take an optional `expect` count, which fails the call
   when it does not match. `json_edit` needs no earlier read.
+- **`bundle_html(src, out)`** — copies an HTML file and replaces every
+  `<img src="/path">` with the image's bytes as a `data:` URI, so the result is
+  one self-contained file. `.png`, `.jpg`, `.jpeg`, `.gif` and `.webp` are
+  supported. A `src` that does not start with `/` is left unchanged. A missing
+  image fails the call with `Error: Images not found: <paths>` and writes
+  nothing. The result line is `Saved <out> (<N> images inlined, <KB> KB)`.
+  The output path is overwritten, and needs no earlier read.
 
 Both `json_*` tools mark the file as read for the session, so a `write_file` or
 `edit_file` on it right after needs no `read_file` first.

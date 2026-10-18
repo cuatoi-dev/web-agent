@@ -186,7 +186,7 @@ skills:
 | `pageFetch` | the in-page agent | `page_fetch` |
 | `tab` | the side panel's agents | `tab_management`, `page_agent` |
 | `websiteEdit` | the side panel's agents | `website_edit` |
-| `testing` | the side panel's agents | `test_plan` |
+| `testing` | the side panel's agents | `test_plan`, `test_report` |
 
 The skills in `brand/skills/` go to **every** agent — the in-page bubble and
 every side panel agent — and are added on top of whichever groups are still
