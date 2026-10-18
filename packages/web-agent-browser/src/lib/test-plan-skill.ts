@@ -35,6 +35,12 @@ Run and maintain an app's test suite, or explore the app first, then report it.
      Element column and Role + name column of the page table. Read
      W/apps/<app>/secrets.md only when a login step needs a password, and never
      copy a password into another file or the chat.
+   - **Resolve every row the case uses before that step runs.** Take the row's
+     CSS value and, when it has one, its XPath value, and check with page_eval
+     that each resolves to exactly one element. A row whose CSS or XPath
+     resolves to no element is stale, even when its Role + name still finds the
+     element, so treat it as the "element not found by its table row" case
+     below instead of letting the step pass on a ref alone.
    - Check each Then step with page_verify.
    - Update the files with one edit_file change at a time (using today's date
      <date> as yyyy-mm-dd):
@@ -44,7 +50,10 @@ Run and maintain an app's test suite, or explore the app first, then report it.
      - **Element not found by its table row, but the same element is on the
        page and behaviour is right:** call page_generate_locator on the
        element's current ref, edit_file that row in W/apps/<app>/pages/<page>.md,
-       edit_file the TC file to "Last result: PASS <date>", and mark the case
+       write the new CSS chain complete from the document (start at the
+       light-DOM host and keep every >> step, so the chain resolves from
+       document and not only from an inner root), edit_file the TC file to
+       "Last result: PASS <date>", and mark the case
        as "updated: locator".
      - **A step's wording no longer fits the page, and behaviour is right:**
        edit_file the scenario line in the TC file, edit_file the TC file to

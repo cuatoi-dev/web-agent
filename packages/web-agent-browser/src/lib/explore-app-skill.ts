@@ -65,6 +65,16 @@ write one BDD test case per file after the user approves the proposed list.
        \`page_generate_locator\` with its \`ref\` from \`page_snapshot\`. Do
        not add temporary attributes before calling \`page_generate_locator\`,
        so every CSS and XPath in the table matches the real page element.
+     - **Write every CSS chain complete from the document, not from a
+       convenience root.** When the page sits inside an app shell, the chain
+       starts at the light-DOM host (for cat-store that is
+       \`#app > app-root\`) and continues through each shadow root with
+       \`>>\`. Before you write a row, check from \`document\` that the whole
+       chain resolves to exactly one element. A chain such as
+       \`store-view >> #cat-filter\` resolves to 0 from \`document\` and is a
+       defect: write \`#app > app-root >> store-view >> #cat-filter\`
+       instead. A table whose chains only resolve from an inner root is
+       useless to the next agent.
      - Write \`W/apps/<app>/pages/<page>.md\` with the page title and path on
        line 1, a one-sentence purpose, and one locator table with the seven
        columns below. Give each row a clear \`Element\` name (disambiguating

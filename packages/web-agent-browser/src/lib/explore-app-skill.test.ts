@@ -20,6 +20,7 @@ describe("exploreAppSkill", () => {
     }
     expect(exploreAppSkill.definition).toContain("| Element | Role + name | id | data-testid | name | CSS | XPath |");
     expect(exploreAppSkill.definition).toContain("page_generate_locator");
+    expect(exploreAppSkill.definition).toContain("complete from the document");
   });
 
   it("requires user approval before writing TC-<nn>-<slug>.md files and defines nextTc numbering", () => {
@@ -39,6 +40,7 @@ describe("testPlanSkill manual-testing and maintenance rules", () => {
     expect(testPlanSkill.definition).toContain("explore_app");
     expect(testPlanSkill.definition).toContain("## Site map");
     expect(testPlanSkill.definition).toContain("page_verify");
+    expect(testPlanSkill.definition).toContain("resolves to no element is stale");
   });
 
   it("documents PASS, FAIL, updated: locator, updated: steps, Known defects, and the final chat summary", () => {
