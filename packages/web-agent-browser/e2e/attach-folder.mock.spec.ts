@@ -122,10 +122,12 @@ async function seed(page: Page, dir: string, files: Seed): Promise<void> {
 }
 
 async function sendMessage(page: Page, text: string): Promise<void> {
+  const before = await page.evaluate(() => window.__USER_TEXTS__?.length ?? 0);
   const inputArea = page.locator("agent-chat-panel:not([hidden]) #input");
   await inputArea.click();
   await page.keyboard.type(text);
   await page.keyboard.press("Enter");
+  await page.waitForFunction((count) => (window.__USER_TEXTS__?.length ?? 0) > count, before);
 }
 
 async function patchedBrand(dir: string, patch: Record<string, unknown>): Promise<string> {
@@ -389,19 +391,14 @@ test.describe("attach-folder mock suite", () => {
       window.__PICK_NEXT__ = "reports";
     });
 
-    const inputArea = page.locator("agent-chat-panel:not([hidden]) #input");
-    await inputArea.click();
-    await page.keyboard.type("first");
-    await page.keyboard.press("Enter");
+    await sendMessage(page, "first");
     await expect(panel(page).locator('wa-icon-button[label="Stop"]')).toBeVisible();
 
     await folderBtn(page).click();
     await menuItems(page).nth(0).click();
     await expect(chips(page).first()).toContainText("/share/reports · read only");
 
-    await inputArea.click();
-    await page.keyboard.type("second");
-    await page.keyboard.press("Enter");
+    await sendMessage(page, "second");
 
     await expect(panel(page).locator('wa-icon-button[label="Send"]')).toBeVisible({ timeout: 10000 });
 
