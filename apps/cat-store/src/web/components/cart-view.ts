@@ -48,6 +48,7 @@ export class CartView extends LitElement {
       border: 1px solid var(--wa-button-border-color, #ccc);
       border-radius: var(--wa-border-radius-m, 4px);
       background: var(--wa-button-background-color, #f5f5f5);
+      color: var(--wa-button-text-color, #222);
       cursor: pointer;
       font-size: 1.1em;
       line-height: 1;
@@ -55,6 +56,7 @@ export class CartView extends LitElement {
     }
     .qty-stepper button:hover {
       background: var(--wa-button-background-color-hover, #e0e0e0);
+      color: var(--wa-button-text-color-hover, #222);
     }
     .qty-val {
       min-width: 28px;

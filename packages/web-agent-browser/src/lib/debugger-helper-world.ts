@@ -23,6 +23,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+const CONTEXT_GONE = "Cannot find context with specified id";
+
+function isContextGone(message: string): boolean {
+  return message.includes(CONTEXT_GONE);
+}
+
 export function createHelperWorlds(session: DebuggerSession, loadSource?: () => Promise<string>): HelperWorlds {
   let sourcePromise: Promise<string> | undefined;
   const source = (): Promise<string> => {
@@ -127,7 +133,31 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
     return undefined;
   }
 
+  /** A cached context id can outlive its world: the debug session of an earlier
+   *  extension instance may have created the world, and Chrome then rejects the
+   *  id for this client. The cache cannot see that, so the first call that
+   *  uses the id learns it from this error. */
   async function callOn<T>(
+    tabId: number,
+    at: { sessionId?: string; frameId: string },
+    resolveObjectId: (ctx: number) => Promise<{ ok: true; objectId: string } | { ok: false; error: string }>,
+    fn: string,
+    args: unknown[],
+  ): Promise<{ ok: true; value: T } | { ok: false; error: string }> {
+    let first: { ok: true; value: T } | { ok: false; error: string };
+    try {
+      first = await callOnOnce<T>(tabId, at, resolveObjectId, fn, args);
+    } catch (err) {
+      if (!isContextGone(errorMessage(err))) throw err;
+      first = { ok: false, error: errorMessage(err) };
+    }
+    if (first.ok || !isContextGone(first.error)) return first;
+    // Drop the dead world and install a new one, once.
+    forgetFrame(tabId, at.sessionId, at.frameId);
+    return callOnOnce<T>(tabId, at, resolveObjectId, fn, args);
+  }
+
+  async function callOnOnce<T>(
     tabId: number,
     at: { sessionId?: string; frameId: string },
     resolveObjectId: (ctx: number) => Promise<{ ok: true; objectId: string } | { ok: false; error: string }>,
@@ -186,8 +216,9 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
             { backendNodeId: at.backendNodeId, executionContextId: ctx },
             at.sessionId,
           );
-        } catch {
-          return { ok: false, error: STALE_REF(ref) };
+        } catch (err) {
+          // A dead world is not a stale ref: callOn recreates the world and retries.
+          return { ok: false, error: isContextGone(errorMessage(err)) ? errorMessage(err) : STALE_REF(ref) };
         }
         const objectId =
           isRecord(resolved) && isRecord(resolved.object) && typeof resolved.object.objectId === "string"

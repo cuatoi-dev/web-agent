@@ -204,6 +204,100 @@ describe("createHelperWorlds — call", () => {
   });
 });
 
+describe("createHelperWorlds — a world Chrome no longer knows", () => {
+  const GONE = "Cannot find context with specified id";
+
+  /** The first call of `method` (that carries a contextId when `needsContext`)
+   *  rejects with Chrome's text, as after an extension reload; later calls
+   *  succeed. Each createIsolatedWorld hands out the next context id. */
+  function goneOnce(method: string, ok: unknown, needsContext = false) {
+    let failed = false;
+    let nextContext = 1;
+    return {
+      "Page.getFrameTree": { frameTree: { frame: { id: "F1" } } },
+      "Page.createIsolatedWorld": () => ({ executionContextId: ++nextContext }),
+      "DOM.resolveNode": { object: { objectId: "obj1" } },
+      "Runtime.callFunctionOn": { result: { value: { connected: true } } },
+      [method]: (params: unknown) => {
+        const hasContext = typeof params === "object" && params !== null && "contextId" in params;
+        if (!failed && (!needsContext || hasContext)) {
+          failed = true;
+          throw new Error(GONE);
+        }
+        return ok;
+      },
+    };
+  }
+
+  const worldsCreated = (api: { sendCommand: { mock: { calls: unknown[][] } } }) =>
+    api.sendCommand.mock.calls.filter(([, m]) => m === "Page.createIsolatedWorld").length;
+
+  it("recreates the world and retries when installing the helper source is rejected", async () => {
+    const { api, session } = await startedSession(goneOnce("Runtime.evaluate", { result: {} }, true));
+    const helper = createHelperWorlds(session, vi.fn().mockResolvedValue("SOURCE"));
+    const result = await helper.call(1, "7", "describe", ["7"]);
+    expect(result).toEqual({ ok: true, value: { connected: true } });
+    expect(worldsCreated(api)).toBe(2);
+  });
+
+  it("recreates the world and retries when resolveNode is rejected, instead of reporting a stale ref", async () => {
+    const { api, session } = await startedSession(goneOnce("DOM.resolveNode", { object: { objectId: "obj1" } }));
+    const helper = createHelperWorlds(session, vi.fn().mockResolvedValue("SOURCE"));
+    const result = await helper.call(1, "7", "describe", ["7"]);
+    expect(result).toEqual({ ok: true, value: { connected: true } });
+    expect(worldsCreated(api)).toBe(2);
+    const resolves = api.sendCommand.mock.calls.filter(([, m]) => m === "DOM.resolveNode");
+    expect(resolves.map(([, , p]) => (p as { executionContextId: number }).executionContextId)).toEqual([2, 3]);
+  });
+
+  it("recreates the world and retries when callFunctionOn is rejected", async () => {
+    const { api, session } = await startedSession(goneOnce("Runtime.callFunctionOn", { result: { value: 5 } }));
+    const helper = createHelperWorlds(session, vi.fn().mockResolvedValue("SOURCE"));
+    const result = await helper.call(1, "7", "describe", ["7"]);
+    expect(result).toEqual({ ok: true, value: 5 });
+    expect(worldsCreated(api)).toBe(2);
+  });
+
+  it("retries a document call the same way", async () => {
+    const { api, session } = await startedSession(
+      goneOnce("Runtime.evaluate", { result: { objectId: "doc1" } }, true),
+    );
+    const helper = createHelperWorlds(session, vi.fn().mockResolvedValue("SOURCE"));
+    const result = await helper.callOnDocument(1, "describe", []);
+    expect(result.ok).toBe(true);
+    expect(worldsCreated(api)).toBe(2);
+  });
+
+  it("retries once only: a world that stays gone returns the error", async () => {
+    const { api, session } = await startedSession({
+      "Page.getFrameTree": { frameTree: { frame: { id: "F1" } } },
+      "Page.createIsolatedWorld": { executionContextId: 2 },
+      "DOM.resolveNode": () => {
+        throw new Error(GONE);
+      },
+    });
+    const helper = createHelperWorlds(session, vi.fn().mockResolvedValue("SOURCE"));
+    const result = await helper.call(1, "7", "describe", ["7"]);
+    expect(result).toEqual({ ok: false, error: GONE });
+    expect(worldsCreated(api)).toBe(2);
+  });
+
+  it("does not retry any other error", async () => {
+    const { api, session } = await startedSession({
+      "Page.getFrameTree": { frameTree: { frame: { id: "F1" } } },
+      "Page.createIsolatedWorld": { executionContextId: 2 },
+      "DOM.resolveNode": { object: { objectId: "obj1" } },
+      "Runtime.callFunctionOn": () => {
+        throw new Error("boom");
+      },
+    });
+    const helper = createHelperWorlds(session, vi.fn().mockResolvedValue("SOURCE"));
+    const result = await helper.call(1, "7", "describe", ["7"]);
+    expect(result).toEqual({ ok: false, error: "boom" });
+    expect(worldsCreated(api)).toBe(1);
+  });
+});
+
 describe("createHelperWorlds — centre and box", () => {
   it("centre scrolls first, then reads the box, and returns the quad's centre", async () => {
     const { api, session } = await startedSession({
