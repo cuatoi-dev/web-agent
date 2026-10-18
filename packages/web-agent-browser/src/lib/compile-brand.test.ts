@@ -240,6 +240,34 @@ describe("compileBrand", () => {
       expect(brand.agents.find((a) => a.id === "chromagent")?.excludeSkills).toEqual(["test_plan"]);
     });
 
+    it("accepts every built-in side panel skill name in skills and excludeSkills", () => {
+      const builtIn = [
+        "tab_management",
+        "page_agent",
+        "website_edit",
+        "test_plan",
+        "test_report",
+        "explore_app",
+      ];
+      for (const s of builtIn) {
+        const skillsDir = makeTempDir();
+        writeAgent(
+          skillsDir,
+          "chromagent.yml",
+          `${VALID_AGENT_YAML.replace('skills: "*"\n', `skills:\n  - ${s}\n`)}`,
+        );
+        writePlugin(skillsDir, "defaultAgent: chromagent\n");
+        const brand = compileBrand(skillsDir) as { agents: { skills: unknown }[] };
+        expect(brand.agents[0].skills).toEqual([s]);
+
+        const excludeDir = makeTempDir();
+        writeAgent(excludeDir, "chromagent.yml", `${VALID_AGENT_YAML}excludeSkills:\n  - ${s}\n`);
+        writePlugin(excludeDir, "defaultAgent: chromagent\n");
+        const excluded = compileBrand(excludeDir) as { agents: { excludeSkills?: unknown }[] };
+        expect(excluded.agents[0].excludeSkills).toEqual([s]);
+      }
+    });
+
     it("reads <id>.home/AGENTS.md into homeAgentsMd (127/004)", () => {
       const tempDir = makeTempDir();
       writeDefaultAgent(tempDir);

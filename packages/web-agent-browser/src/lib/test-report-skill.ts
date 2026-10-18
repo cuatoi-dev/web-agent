@@ -12,9 +12,9 @@ export const testReportSkill: SkillDef = {
 Build the self-contained HTML report for a test run, then hand it to the user.
 
 1. **Collect the cases.** One row per case, in the order they ran: its id
-   (TC-01, TC-02, …), the title with its Given and When steps, the expected
-   result (Then), the real result you observed, the word PASS or FAIL, and the
-   screenshot path from the run.
+   (TC-01, TC-02, …), the title with its Given and When steps (from the
+   TC-<nn>-<slug>.md files), the expected result (Then), the real result you
+   observed, the word PASS or FAIL, and the screenshot path from the run.
 2. **Every row needs a result capture.** It is the element capture or the
    outlined viewport that test_plan step 4 saved in /tmp/runs/<stamp>/. If a
    case has none, or only a plain viewport capture with nothing outlined, and
@@ -36,15 +36,23 @@ Build the self-contained HTML report for a test run, then hand it to the user.
    It replaces every file-system image with base64 data. An error that names a
    missing image means that file is not there: fix the path, do not drop the
    image.
-6. **Answer with a list, one item per case**, so each case is on its own line:
+6. **Answer with a list, one item per case**, so each case is on its own line,
+   then the saved paths and the two reminders:
 
        - TC-01 Add a cat to the cart — PASS
-       - TC-02 Cart count updates — PASS
+       - TC-02 Cart count updates — updated: locator
        - TC-03 Out-of-stock item has no button — FAIL
 
-   Then one more line:
-   Report: /tmp/runs/<stamp>/report.html — download it from Files, open it in
-   the browser, select all and paste it into Outlook.
+   Then these lines:
+
+       Saved: apps/<app>/<suite>/TC-01-….md, /tmp/runs/<stamp>/report.html
+       Download them from Files.
+       The run folder is gone after a browser restart; ask me to keep it.
+
+   You may also note on the report line that the user can open
+   /tmp/runs/<stamp>/report.html in the browser, select all and paste it into
+   Outlook. Do not wrap the summary in a code block, and do not repeat the
+   full HTML report in the chat reply.
 
 ## Starter template
 

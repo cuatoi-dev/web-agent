@@ -23,7 +23,7 @@ The tool names come from `src/lib/tab-tools.ts:58` (`read_tabs`), `:84`
 (`close_tab`). The `navigate_tab` wait is at `src/lib/tab-tools.ts:24-50` and
 `:124-139`.
 
-The side panel agents also include five reference skills:
+The side panel agents also include six reference skills:
 
 - `tab_management` guides it to read tabs before acting, use the returned tab
   IDs, and handle restricted browser URLs such as `chrome://`.
@@ -31,8 +31,11 @@ The side panel agents also include five reference skills:
   [Page agent tools](./page-agent-tools.md).
 - `website_edit` teaches it to restyle a page and check the result. See
   [Website edit skill](./website-edit.md).
-- `test_plan` teaches it to plan numbered test cases, run them with the page
-  tools, and report each case with evidence.
+- `explore_app` teaches it to explore an app, record its site map and
+  `pages/<page>.md` locator tables, propose suites and cases, and write one
+  `TC-<nn>-<slug>.md` file per approved case.
+- `test_plan` teaches it to run and maintain saved `TC-<nn>-<slug>.md` cases
+  with the page tools and `page_verify`, and report each case with evidence.
 - `test_report` teaches it to build the run's HTML report with every screenshot
   inlined, and where the user downloads it.
 

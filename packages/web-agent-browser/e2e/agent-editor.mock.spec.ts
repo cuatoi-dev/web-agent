@@ -77,7 +77,7 @@ test.describe("Agent card editor", () => {
     await expect(tesagent.locator(".card-title .d")).toHaveText("Display name and id come from the brand and cannot be changed.");
     await expect(page.locator("#edit-tesagent-displayName")).toHaveCount(0);
     await expect(page.locator("#edit-tesagent-description")).toHaveValue("Test agent — explores a website, writes and runs test cases");
-    await expect(page.locator("#edit-tesagent-instructions")).toHaveValue(/^You are Tesagent, a test agent\./);
+    await expect(page.locator("#edit-tesagent-instructions")).toHaveValue(/^You are Tesagent, a manual tester\./);
     await expect(page.locator("#edit-tesagent-model")).toHaveValue("");
     expect(await chips(page, "edit-tesagent-skills")).toEqual(["*"]);
     expect(await chips(page, "edit-tesagent-tools")).toEqual(["*"]);

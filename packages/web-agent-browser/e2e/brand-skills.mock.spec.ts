@@ -470,6 +470,7 @@ test.describe("Brand skills and feature flags", () => {
     expect(tesagentSkills).toContain("page_agent");
     expect(tesagentSkills).toContain("website_edit");
     expect(tesagentSkills).toContain("test_plan");
+    expect(tesagentSkills).toContain("explore_app");
 
     await sendToPanel(page, "Which skills do you have for testing?");
     await page.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
@@ -493,6 +494,7 @@ test.describe("Brand skills and feature flags", () => {
 
       const skills = await visiblePanelSkillNames(page);
       expect(skills).not.toContain("test_plan");
+      expect(skills).not.toContain("explore_app");
       expect(skills).toContain("website_edit");
 
       await sendToPanel(page, "Which skills do you have for testing?");
@@ -529,6 +531,32 @@ test.describe("Brand skills and feature flags", () => {
       expect(result).not.toContain("tab_management");
       expect(result).not.toContain("page_agent");
       expect(result).not.toContain("website_edit");
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  // 127/008 — excludeSkills drops only the named skill from the testing group.
+  test("E16: excludeSkills: [test_plan] hides test_plan but keeps explore_app", async () => {
+    const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8")) as {
+      agents: { id: string; excludeSkills?: unknown }[];
+    };
+    const agents = brand.agents.map((a) =>
+      a.id === "tesagent" ? { ...a, excludeSkills: ["test_plan"] } : a,
+    );
+    const dir = await patchedBrand(PLAYWRIGHT_DIR, { defaultAgent: "tesagent", agents });
+    const { ctx, extensionId } = await launchPatchedContext(dir);
+    try {
+      const page = await ctx.newPage();
+      await page.setViewportSize({ width: 400, height: 700 });
+      await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+      await expect(page.locator("#agent-combo .name")).toHaveText("Tesagent");
+
+      const names = await visiblePanelSkillNames(page);
+      expect(names).not.toContain("test_plan");
+      expect(names).toContain("explore_app");
+      expect(names).toContain("test_report");
+      expect(names).toContain("tab_management");
     } finally {
       await ctx.close();
     }

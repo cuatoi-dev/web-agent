@@ -36,6 +36,7 @@ import { tabSkills } from "./lib/tab-skill";
 import { websiteEditSkill } from "./lib/website-edit-skill";
 import { testPlanSkill } from "./lib/test-plan-skill";
 import { testReportSkill } from "./lib/test-report-skill";
+import { exploreAppSkill } from "./lib/explore-app-skill";
 import {
   agentAllows,
   effectiveSettings,
@@ -254,7 +255,7 @@ function buildAgentPanel(
     {
       tab: tabSkills(),
       websiteEdit: [websiteEditSkill],
-      testing: [testPlanSkill, testReportSkill],
+      testing: [testPlanSkill, testReportSkill, exploreAppSkill],
     },
     brand,
   ).filter((s) => agentAllows(agent.skills, agent.excludeSkills, s.name));
