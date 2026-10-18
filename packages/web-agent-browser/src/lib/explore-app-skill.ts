@@ -1,4 +1,3 @@
-/* eslint-disable wa/no-raw-colour -- the page-locator example contains the id selector "#add-1", which the rule reads as a raw colour. */
 import type { SkillDef } from "@cuatoi/web-agent-core";
 
 /** The side panel's `testing` skill group: explore an app, write page locator tables, and create BDD test cases. */
@@ -65,16 +64,32 @@ write one BDD test case per file after the user approves the proposed list.
        \`page_generate_locator\` with its \`ref\` from \`page_snapshot\`. Do
        not add temporary attributes before calling \`page_generate_locator\`,
        so every CSS and XPath in the table matches the real page element.
-     - **Write every CSS chain complete from the document, not from a
-       convenience root.** When the page sits inside an app shell, the chain
-       starts at the light-DOM host (for cat-store that is
-       \`#app > app-root\`) and continues through each shadow root with
-       \`>>\`. Before you write a row, check from \`document\` that the whole
-       chain resolves to exactly one element. A chain such as
-       \`store-view >> #cat-filter\` resolves to 0 from \`document\` and is a
-       defect: write \`#app > app-root >> store-view >> #cat-filter\`
-       instead. A table whose chains only resolve from an inner root is
-       useless to the next agent.
+     - **One row per concrete element, one selector per row.** A row that
+       breaks any rule below is a defect, not a note to pass on:
+       - A row names one concrete element. When a list repeats the same
+         control, write one row per item the cases use, named for that item
+         (\`Add to cart (Salmon Pâté)\`, \`Product card (Salmon Pâté)\`).
+         Never write one generic row for "the nth item", and never put a
+         placeholder (\`<n>\`, \`<name>\`, \`…\`) in any cell: a placeholder is
+         not a selector and can never match.
+       - The CSS cell holds the selector only: no \`shadow: \` prefix, no
+         comment, no ellipsis, nothing a reader must strip. It must be
+         copy-pasteable exactly as written. The \`>>\` between steps is this
+         table's own convention for "descend into the previous element's
+         shadow root"; explain that in one line above the table, not inside a
+         cell.
+       - The chain starts at the document. When the page sits inside an app
+         shell, the first step is the light-DOM host (for cat-store,
+         \`#app > app-root\`), then one step per shadow root. A chain such as
+         \`store-view >> #cat-filter\` resolves to 0 from \`document\`.
+       - Before you write the row, walk the whole chain with \`page_eval\`
+         from \`document\`, one step at a time, and check that the last step
+         returns exactly one element.
+       - Check the row in the page state where the element exists. If an
+         element exists only in one state (the empty-cart message, an error
+         line, a filtered grid), say the state in the Element name, for
+         example \`Empty cart message (empty cart)\`, and check the row in that
+         state.
      - Write \`W/apps/<app>/pages/<page>.md\` with the page title and path on
        line 1, a one-sentence purpose, and one locator table with the seven
        columns below. Give each row a clear \`Element\` name (disambiguating
@@ -84,10 +99,12 @@ write one BDD test case per file after the user approves the proposed list.
        \`\`\`markdown
        # Store — /store
        Lists the cats for sale. Each card has an Add to cart button.
+       Each CSS cell is a shadow chain: every >> step descends into the
+       previous element's shadow root.
 
        | Element | Role + name | id | data-testid | name | CSS | XPath |
        |---|---|---|---|---|---|---|
-       | Add to cart (Mochi) | button "Add to cart" (matches 3) | add-1 | — | — | #add-1 | //*[@id='add-1'] |
+       | Add to cart (Salmon Pâté) | button "Add Salmon Pâté to cart" (matches 1) | button | — | — | #app > app-root >> store-view >> product-card:nth-of-type(1) >> md-filled-button >> #button | — |
        \`\`\`
 
      - Add or replace the page's line under \`## Site map\` in

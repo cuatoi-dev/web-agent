@@ -50,11 +50,12 @@ Run and maintain an app's test suite, or explore the app first, then report it.
      - **Element not found by its table row, but the same element is on the
        page and behaviour is right:** call page_generate_locator on the
        element's current ref, edit_file that row in W/apps/<app>/pages/<page>.md,
-       write the new CSS chain complete from the document (start at the
-       light-DOM host and keep every >> step, so the chain resolves from
-       document and not only from an inner root), edit_file the TC file to
-       "Last result: PASS <date>", and mark the case
-       as "updated: locator".
+       write the selector only: no shadow: prefix, no placeholder such as
+       <n>, complete from the document: start at the light-DOM host and keep
+       every >> step so the chain resolves from document, then check with
+       page_eval that it returns exactly one element in the state named by the
+       row. Then edit_file the TC file to "Last result: PASS <date>", and mark
+       the case as "updated: locator".
      - **A step's wording no longer fits the page, and behaviour is right:**
        edit_file the scenario line in the TC file, edit_file the TC file to
        "Last result: PASS <date>", and mark the case as "updated: steps".
