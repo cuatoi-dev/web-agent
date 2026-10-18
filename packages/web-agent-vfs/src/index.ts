@@ -20,6 +20,7 @@ import { attachFolderProvider } from "./attach-folder-provider.js";
 import { saveToolResult, TOOL_RESULT_DIR } from "./tool-results.js";
 
 export type { VfsBackend, VfsEntry, VfsFile, VfsHandle, VfsMountInfo, VfsOptions, VfsResolvedEntry, VfsToolProvider } from "./types.js";
+export type { FolderStore, SavedFolder } from "./attach-folder-provider.types.js";
 export { MemoryBackend } from "./backends/memory.js";
 export { StorageBackend } from "./backends/storage.js";
 export { DirectoryBackend } from "./backends/directory-handle.js";
@@ -134,7 +135,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
   };
 
   // 128/003 — the composer's folder button, on the same handle as the tools.
-  const folderProvider = attachFolderProvider(vfs);
+  const folderProvider = attachFolderProvider(vfs, { store: options?.folderStore, seedAgentsMd: options?.seedAgentsMd });
 
   return {
     name: "vfs",
@@ -149,24 +150,35 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
             try { await vfs.delete(file.abs); } catch { /* Continue cleanup. */ }
           }
         } catch { /* Continue prompt handling. */ }
-        let res: ReturnType<typeof resolve>;
-        try {
-          res = resolve(getMounts(), "/home/agent/AGENTS.md");
-        } catch {
-          return;
+        // 127/007 — the restore must finish first, so a remembered folder's
+        // AGENTS.md is in the first message after a reload.
+        await folderProvider.ready;
+        const paths = [
+          "/home/agent/AGENTS.md",
+          ...folderProvider.mountedFolders().map((m) => `${m.prefix}/AGENTS.md`),
+        ];
+        const blocks: string[] = [];
+        for (const path of paths) {
+          let res: ReturnType<typeof resolve>;
+          try {
+            res = resolve(getMounts(), path);
+          } catch {
+            return;
+          }
+          if (!res.mount || !res.rel) continue;
+          let f: import("./types.js").VfsFile | undefined;
+          try {
+            f = await res.mount.backend.get(res.rel);
+          } catch {
+            continue;
+          }
+          if (!f || f.encoding !== "utf8") continue;
+          agentsMdTracker.record(sessionId, path, f.mtimeMs);
+          blocks.push(`<agents-md path="${path}">\n${f.content}\n</agents-md>`);
         }
-        if (!res.mount || !res.rel) return;
-        let f: import("./types.js").VfsFile | undefined;
-        try {
-          f = await res.mount.backend.get(res.rel);
-        } catch {
-          return;
-        }
-        if (!f || f.encoding !== "utf8") return;
-        agentsMdTracker.record(sessionId, "/home/agent/AGENTS.md", f.mtimeMs);
-        const blockText = `<agents-md path="/home/agent/AGENTS.md">\n${f.content}\n</agents-md>`;
+        if (blocks.length === 0) return;
         return {
-          parts: [{ type: "text", text: blockText + "\n\n" }, ...parts],
+          parts: [{ type: "text", text: blocks.join("\n\n") + "\n\n" }, ...parts],
           userDisplayText: displayText,
         };
       },

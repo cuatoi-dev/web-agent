@@ -49,6 +49,7 @@ import { createHelperWorlds } from "./lib/debugger-helper-world";
 import { createDebuggerRecorder } from "./lib/debugger-recorder";
 import { DirectoryBackend, vfsTools } from "@cuatoi/web-agent-vfs";
 import { filesScreen } from "@cuatoi/web-agent-vfs/lit";
+import { indexedDbFolderStore } from "./lib/folder-store";
 import { seedHomeAgentsMd } from "./lib/seed-home-agents-md";
 import { ChromeStorageBackend } from "./lib/chrome-storage-backend";
 import { extensionSkillRegistry } from "./lib/skill-registry";
@@ -172,6 +173,8 @@ function buildAgentPanel(
     tmp: ChromeStorageBackend(chrome.storage.session, `tmp:${agent.id}`),
     home: ChromeStorageBackend(chrome.storage.local, `home:${agent.id}`),
     shared: ChromeStorageBackend(chrome.storage.local, "shared"),
+    ...(canReadFiles ? { folderStore: indexedDbFolderStore(agent.id) } : {}),
+    seedAgentsMd: agent.homeAgentsMd,
   });
   if (window.__WA_ENABLE_VFS_PROOF__ === true) {
     (window.__WA_VFS_PROOF__ ??= {})[agent.id] = {

@@ -1,5 +1,14 @@
 # Tesagent workspace
 
+## Workspace
+
+Look for your workspace in both /home/agent/ and the attached folders under
+/share/. An app can live in either: find it in the Apps list of each AGENTS.md
+and work in the folder that has it. Put a new app where the user says; if they
+do not say, use the attached folder when there is one, otherwise /home/agent/.
+Runs, screenshots and recordings stay in /tmp/.
+
+
 ## Where files go
 
 Every path below is relative to the folder that holds this file. That folder is

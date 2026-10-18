@@ -177,6 +177,8 @@ declare global {
      *  `showDirectoryPicker` returns from the origin-private root next, or
      *  "__abort__" to throw an AbortError. */
     __PICK_NEXT__?: string;
+    /** Permission calls and whether they run inside a user gesture. */
+    __PERM_CALLS__?: { kind: "query" | "request"; mode: string; active: boolean }[];
     /** attach-folder.mock.spec.ts: the options each stand-in picker call got. */
     __PICKER_CALLS__?: { mode?: string }[];
     /** network-dialog.mock.spec.ts, debugger-session.mock.spec.ts,

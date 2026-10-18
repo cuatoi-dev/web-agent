@@ -465,7 +465,7 @@ test.describe("attach-folder mock suite", () => {
     expect(threeText?.replace(/<agents-md[^>]*>[\s\S]*?<\/agents-md>\s*/, "").trim()).toBe("three");
   });
 
-  test("11. a reload drops chips and mounts", async ({ context, extensionId }) => {
+  test("11. a reload mounts a remembered folder again at the same path with no picker", async ({ context, extensionId }) => {
     const page = await openTesagent(context, extensionId);
     await seed(page, "reports", { "q3-sales.csv": "a" });
     await page.evaluate(() => { window.__PICK_NEXT__ = "reports"; });
@@ -477,9 +477,11 @@ test.describe("attach-folder mock suite", () => {
     await page.locator("#agent-combo").click();
     await page.locator("#agent-option-tesagent").click();
 
-    await expect(chips(page)).toHaveCount(0);
+    await expect(chips(page)).toHaveCount(1);
+    await expect(chips(page).first()).toContainText("/share/reports · read only");
+    expect(await page.evaluate(() => window.__PICKER_CALLS__)).toEqual([]);
     const mounts = await page.evaluate(() => window.__WA_VFS_PROOF__?.tesagent?.provider?.vfs?.mounts());
-    expect(mounts?.filter((m) => m.prefix.startsWith("/share/"))).toEqual([]);
+    expect(mounts?.filter((m) => m.prefix.startsWith("/share/")).map((m) => m.prefix)).toEqual(["/share/reports"]);
   });
 
   test("12. without showDirectoryPicker the menu offers the read-only copy, and it goes through the real webkitdirectory input", async ({ context, extensionId }) => {

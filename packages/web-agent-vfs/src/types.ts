@@ -60,6 +60,10 @@ export interface VfsResolution {
 /** `vfsTools(options)`. Each of the three defaults can be replaced, and
  *  `mounts` adds host mounts at any free path. */
 export interface VfsOptions {
+  /** Remembers attached folders across page loads. */
+  folderStore?: import("./attach-folder-provider.types.js").FolderStore;
+  /** Starter for writable attached folders without AGENTS.md. */
+  seedAgentsMd?: string;
   toolResults?: { maxChars?: number; previewChars?: number };
   tmp?: VfsBackend;
   home?: VfsBackend;

@@ -212,4 +212,26 @@ no extra code: any `agent-chat-panel` that loads the provider shows it.
 - A chip above the composer shows each folder and its mode. × removes it.
 - The next message tells the model what was attached or removed, in front
   of the typed text. The chat shows only the typed text and the chip.
-- A page reload removes every folder.
+- Without a folder store, a page reload removes every folder.
+- Pass `folderStore` to remember folders across page loads. Each saved folder
+  mounts again at the same `/share/<name>` when the browser still allows
+  access. Otherwise its chip reads `<name> · needs permission` with an Allow
+  button, or `<name> · unavailable` when the folder was moved or deleted.
+  A folder from the read-only copy is never remembered.
+- Pass `seedAgentsMd` to write that text to `AGENTS.md` in a folder the user
+  attaches read and write when the folder has no `AGENTS.md`. An existing file
+  is never changed, and a read-only folder is never written.
+- The first message of every chat lists each attached folder
+  (`Attached folder: /share/<name> (<mode>).`) and carries each folder's root
+  `AGENTS.md` in an `<agents-md>` block, after the one for
+  `/home/agent/AGENTS.md`.
+
+```ts
+const provider = vfsTools({
+  folderStore: {
+    load: () => db.get("folders"),            // resolves SavedFolder[]
+    save: (folders) => db.put("folders", folders),
+  },
+  seedAgentsMd: "# Workspace\n",
+});
+```

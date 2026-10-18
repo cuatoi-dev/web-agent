@@ -588,3 +588,58 @@ describe("vfsTools long tool results (002)", () => {
     });
   });
 });
+
+function fakeDir(name: string, files: Record<string, string>, perm: { query?: PermissionState | Error; request?: PermissionState } = {}): FileSystemDirectoryHandle {
+  const fileHandle = (n: string) => ({
+    kind: "file" as const,
+    name: n,
+    createWritable: () => Promise.resolve({
+      write: (body: string) => { files[n] = body; return Promise.resolve(); },
+      close: () => Promise.resolve(),
+    }),
+    getFile: () => {
+      const f = new File([files[n]], n, { type: "text/csv", lastModified: 1000 });
+      Object.defineProperty(f, "text", { value: () => Promise.resolve(files[n]) });
+      return Promise.resolve(f);
+    },
+  });
+  return {
+    queryPermission: () => Promise.resolve(perm.query ?? "granted"),
+    requestPermission: () => Promise.resolve(perm.request ?? "granted"),
+    kind: "directory" as const,
+    name,
+    async *entries() {
+      for (const n of Object.keys(files)) {
+        await Promise.resolve();
+        yield [n, fileHandle(n)] as [string, ReturnType<typeof fileHandle>];
+      }
+    },
+    getDirectoryHandle: () => Promise.reject(Object.assign(new Error("nf"), { name: "NotFoundError" })),
+    getFileHandle: (n: string, options?: { create?: boolean }) => {
+      if (options?.create && !(n in files)) files[n] = "";
+      if (!(n in files)) return Promise.reject(Object.assign(new Error("nf"), { name: "NotFoundError" }));
+      return Promise.resolve(fileHandle(n));
+    },
+  } as unknown as FileSystemDirectoryHandle;
+}
+
+
+describe("shared folder rules at chat start", () => {
+  for (const withHome of [true, false]) {
+    it(withHome ? "first prompt carries each mounted folder's AGENTS.md after the home one" : "a folder AGENTS.md is injected even with no home AGENTS.md", async () => {
+      const home = MemoryBackend();
+      if (withHome) await home.set!("/AGENTS.md", { content: "Home rule", encoding: "utf8", mimeType: "text/markdown", mtimeMs: 1 });
+      const provider = vfsTools({ tmp: MemoryBackend(), home, shared: MemoryBackend(), folderStore: {
+        load: () => Promise.resolve([{ name: "team", mode: "read only", handle: fakeDir("team", { "AGENTS.md": "Team rule", "x.txt": "x" }) }]),
+        save: () => Promise.resolve(),
+      } });
+      const r = await provider.hooks!.onUserPrompt!({ parts: [], firstInChat: true, sessionId: "s1", displayText: "hi" });
+      const expected = (withHome ? '<agents-md path="/home/agent/AGENTS.md">\nHome rule\n</agents-md>\n\n' : "")
+        + '<agents-md path="/share/team/AGENTS.md">\nTeam rule\n</agents-md>\n\n';
+      expect(r!.parts![0]).toEqual({ type: "text", text: expected });
+      const tools = await provider.load();
+      const out = await tools.find((t) => t.name === "read_file")!.execute({ file_path: "/share/team/x.txt" }, { sessionId: "s1" } as ToolContext);
+      expect(out.content).not.toContain('<agents-md path="/share/team/AGENTS.md">');
+    });
+  }
+});
