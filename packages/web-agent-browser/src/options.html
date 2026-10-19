@@ -298,7 +298,9 @@
   .mid { font-family: ui-monospace, monospace; font-size: 12.5px; }
   .model-table svg.logo { width: 20px; height: 20px; flex: none; }
   .pill.brand { border-color: var(--wa-action-color-info); }
-  .pill.vision { border-color: var(--wa-action-color-success); }
+  .pill.vision, .pill.add { border-color: var(--wa-action-color-success); }
+  .pill.remove { border-color: var(--wa-action-color-error); }
+  .model-table tr.sel-row td { background: var(--wa-action-color-info-10opc); }
   .count { font-size: 12px; white-space: nowrap; }
   .sw { display: inline-flex; align-items: center; position: relative; margin: 0; font-weight: 400; cursor: pointer; }
   .sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
@@ -314,11 +316,32 @@
   .sw input:checked + .track { background: var(--wa-action-color-info); border-color: var(--wa-action-color-info); }
   .sw input:checked + .track::after { left: 15px; background: var(--wa-input-background-color); opacity: 1; }
   .sw input:focus-visible + .track { outline: 3px solid var(--wa-outline-color); outline-offset: 1px; }
-  .key-btn { margin-top: 0; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
-  .key-btn svg.logo { width: 18px; height: 18px; }
-  .key-dialog h2 { font-size: 15px; margin: 0 0 8px; }
+  .key-btn, .edit-btn, .refresh-models-btn { margin-top: 0; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+  .key-btn svg.logo, .refresh-models-btn svg.logo { width: 18px; height: 18px; flex: none; }
+  .key-dialog h2, .provider-dialog h2, .diff-dialog h2, .model-delete-dialog h2, .refresh-error-dialog h2 { font-size: 15px; margin: 0 0 8px; }
   .key-dialog label { margin: 12px 0 4px; }
   .key-dialog .hint { margin: 4px 0 12px; }
+  .model-toolbar { margin: 4px 0 8px; }
+  .model-toolbar .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .model-toolbar .row[hidden], .refresh-models-btn[hidden] { display: none; }
+  .provider-dialog { max-width: min(640px, calc(100vw - 48px)); width: 100%; }
+  .provider-dialog label { margin: 10px 0 4px; }
+  .confirm-dialog.provider-dialog .hint, .confirm-dialog.diff-dialog .hint { margin: 4px 0 12px; font-size: 12px; }
+  .confirm-dialog.provider-dialog .field-error { margin: 4px 0 0; font-size: 12px; }
+  .provider-dialog .dialog-actions, .diff-dialog .dialog-actions { margin-top: 16px; }
+  .form-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .section-head label { margin: 0; }
+  .section-head .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .header-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-top: 6px; }
+  .form-model-cols { display: grid; grid-template-columns: 1fr 1fr 76px 32px; gap: 8px; font-size: 12px; opacity: 0.82; margin-top: 6px; }
+  .form-model-row { display: grid; grid-template-columns: 1fr 1fr 76px 32px; gap: 8px; align-items: center; margin-top: 6px; }
+  .vision-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; font-size: 13px; cursor: pointer; }
+  .vision-check input { width: auto; padding: 0; margin: 0; }
+  .diff-dialog { max-width: min(520px, calc(100vw - 48px)); width: 100%; }
+  .diff-group { border-top: 1px solid var(--wa-border-color); padding-top: 10px; margin-top: 10px; }
+  .diff-group-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .diff-list { margin: 0; padding-left: 20px; font-size: 13px; }
   #status { margin-top: 16px; min-height: 1.2em; }
   #status.error { border-left: 4px solid var(--wa-action-color-error); padding-left: 8px; }
 </style>
@@ -332,7 +355,13 @@
   </div>
 
   <section role="tabpanel" id="tab-models" aria-labelledby="tab-btn-models">
-  <p class="hint" id="model-count"></p>
+  <div class="toolbar model-toolbar" id="model-toolbar">
+    <p class="hint" id="model-count"></p>
+    <div class="row" id="model-toolbar-actions">
+      <button type="button" id="add-model-btn" class="btn primary">+ Add model</button>
+      <button type="button" id="delete-models-btn" class="btn danger" disabled>Delete selected</button>
+    </div>
+  </div>
   <div class="table-wrap"><table id="model-table" class="model-table"></table></div>
   <p class="field-error" id="model-table-hint" role="alert" hidden></p>
 

@@ -6,10 +6,22 @@ import { readAgentStore, chromeAgentStorage, listAgents } from "./lib/agent-stor
 import { mountAgentEditor } from "./lib/agent-editor";
 import { getSettings, getToken, setSettings, setToken } from "./lib/settings";
 import { registerBrandThemes, applyTheme, listThemes, type ThemeBinding } from "./lib/theme";
-import { listModels, readModelStore, setBrandKey, setDefault, setEnabled, writeModelStore } from "./lib/model-store";
-import { modelCountText, renderModelTable } from "./lib/model-table";
+import {
+  deleteModels,
+  listModels,
+  readModelStore,
+  saveCustomProvider,
+  setBrandKey,
+  setDefault,
+  setEnabled,
+  writeModelStore,
+} from "./lib/model-store";
+import { deleteButtonText, modelCountText, renderModelTable } from "./lib/model-table";
 import { openBrandKeyDialog } from "./lib/brand-key-dialog";
-import type { AgentBrand, ModelStore } from "./lib/types";
+import { openProviderDialog } from "./lib/provider-dialog";
+import { openModelDeleteDialog } from "./lib/model-delete-dialog";
+import { deleteDialogMessage, deleteDialogTitle } from "./lib/provider-form-rules";
+import type { AgentBrand, ModelRef, ModelStore } from "./lib/types";
 
 const tabModels = document.getElementById("tab-btn-models") as HTMLButtonElement;
 const tabSkills = document.getElementById("tab-btn-skills") as HTMLButtonElement;
@@ -20,6 +32,9 @@ const panelAgents = document.getElementById("tab-agents") as HTMLElement;
 const agentCards = document.getElementById("agent-cards") as HTMLDivElement;
 const modelTable = document.getElementById("model-table") as HTMLTableElement;
 const modelCount = document.getElementById("model-count") as HTMLParagraphElement;
+const modelToolbarActions = document.getElementById("model-toolbar-actions") as HTMLDivElement;
+const addModelBtn = document.getElementById("add-model-btn") as HTMLButtonElement;
+const deleteModelsBtn = document.getElementById("delete-models-btn") as HTMLButtonElement;
 const modelTableHint = document.getElementById("model-table-hint") as HTMLParagraphElement;
 const theme = document.getElementById("theme") as HTMLSelectElement;
 const token = document.getElementById("token") as HTMLInputElement;
@@ -58,13 +73,36 @@ function applyPageTheme(pref: string): void {
   themeBinding = applyTheme(document.documentElement, pref, pageThemeEnv());
 }
 
+let currentBrand: AgentBrand | null = null;
+let currentModelStore: ModelStore | null = null;
+let selectedRefs = new Set<ModelRef>();
+
+function syncDeleteButton(): void {
+  const n = selectedRefs.size;
+  deleteModelsBtn.textContent = deleteButtonText(n);
+  deleteModelsBtn.disabled = n === 0;
+}
+
 /** Paints the model table and the count line from `store`. Every switch,
- *  radio and Key save writes the store at once and repaints (136/005). */
+ *  radio, Key save, provider save and delete writes the store at once and
+ *  repaints (136/005, 136/006). */
 function paintModels(brand: AgentBrand, store: ModelStore): void {
+  currentBrand = brand;
+  currentModelStore = store;
+  const locked = brand.options.lockModel === true;
+  modelToolbarActions.hidden = locked;
   const entries = listModels(brand, store);
+  const validCustomRefs = new Set(entries.filter((e) => e.kind === "custom").map((e) => e.ref));
+  selectedRefs = new Set([...selectedRefs].filter((r) => validCustomRefs.has(r)));
+  syncDeleteButton();
   modelCount.textContent = modelCountText(entries);
   renderModelTable(modelTable, entries, store, {
-    lockModel: brand.options.lockModel === true,
+    lockModel: locked,
+    selected: selectedRefs,
+    onSelectionChange: (next) => {
+      selectedRefs = next;
+      syncDeleteButton();
+    },
     onToggle: (ref, on) => {
       const result = setEnabled(entries, store, ref, on);
       if (!result.ok) {
@@ -91,6 +129,15 @@ function paintModels(brand: AgentBrand, store: ModelStore): void {
         void commitModels(brand, setBrandKey(store, provider.id, value));
       });
     },
+    onEdit: (providerId) => {
+      const existing = store.providers.find((p) => p.id === providerId);
+      if (!existing) return;
+      void openProviderDialog({ provider: existing }).then((saved) => {
+        if (!saved) return;
+        modelTableHint.hidden = true;
+        void commitModels(brand, saveCustomProvider(brand, store, saved));
+      });
+    },
   });
 }
 
@@ -98,6 +145,39 @@ async function commitModels(brand: AgentBrand, next: ModelStore): Promise<void> 
   await writeModelStore(next);
   paintModels(brand, next);
 }
+
+addModelBtn.addEventListener("click", () => {
+  if (!currentBrand || !currentModelStore) return;
+  const brand = currentBrand;
+  const store = currentModelStore;
+  void openProviderDialog().then((saved) => {
+    if (!saved) return;
+    modelTableHint.hidden = true;
+    void commitModels(brand, saveCustomProvider(brand, store, saved));
+  });
+});
+
+deleteModelsBtn.addEventListener("click", () => {
+  if (!currentBrand || !currentModelStore || selectedRefs.size === 0) return;
+  const brand = currentBrand;
+  const store = currentModelStore;
+  const picked = new Set(selectedRefs);
+  const result = deleteModels(brand, store, picked);
+  if (!result.ok) {
+    modelTableHint.textContent = result.hint;
+    modelTableHint.hidden = false;
+    return;
+  }
+  const entries = listModels(brand, store);
+  const title = deleteDialogTitle(picked.size);
+  const msg = deleteDialogMessage(entries, store, picked);
+  void openModelDeleteDialog(title, msg).then((confirmed) => {
+    if (!confirmed) return;
+    modelTableHint.hidden = true;
+    selectedRefs.clear();
+    void commitModels(brand, result.store);
+  });
+});
 
 /** Fills the theme picker, the theme, the token and the model table.
  *

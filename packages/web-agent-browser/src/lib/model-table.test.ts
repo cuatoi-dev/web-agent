@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from "vitest";
-import { renderModelTable, modelCountText } from "./model-table";
+import { renderModelTable, modelCountText, providerSubText, deleteButtonText } from "./model-table";
 import { listModels, EMPTY_MODEL_STORE } from "./model-store";
-import type { AgentBrand, ModelStore } from "./types";
+import type { AgentBrand, CustomProvider, ModelStore, ResolvedProvider } from "./types";
 
 const FIXTURE_BRAND: AgentBrand = {
   name: "Test",
@@ -206,5 +206,107 @@ describe("model-table", () => {
     };
     const entries = listModels(FIXTURE_BRAND, store);
     expect(modelCountText(entries)).toBe("2 of 3 models enabled");
+  });
+});
+
+const CUSTOM: CustomProvider = {
+  id: "p1",
+  name: "Local",
+  wireFormat: "openai",
+  endpoint: "http://localhost:8000/v1",
+  apiKey: "sk-test-9876",
+  headers: [{ name: "X-Team", value: "web" }],
+  models: [
+    { model: "m1", label: "M1", vision: true },
+    { model: "m2", label: "M2", vision: false },
+  ],
+};
+
+function paintCustom(h: Partial<Parameters<typeof renderModelTable>[3]> = {}) {
+  const table = document.createElement("table");
+  const store: ModelStore = { ...EMPTY_MODEL_STORE, providers: [CUSTOM] };
+  const handlers = {
+    lockModel: false,
+    onToggle: vi.fn(),
+    onDefault: vi.fn(),
+    onKey: vi.fn(),
+    onEdit: vi.fn(),
+    onSelectionChange: vi.fn(),
+    ...h,
+  };
+  renderModelTable(table, listModels(FIXTURE_BRAND, store), store, handlers);
+  return { table, handlers };
+}
+
+describe("providerSubText", () => {
+  const base: ResolvedProvider = {
+    id: "p",
+    kind: "custom",
+    name: "P",
+    endpoint: "http://x/v1",
+    wireFormat: "openai",
+    apiKey: "",
+    headers: [],
+  };
+  it("shows the endpoint alone for a bare custom provider", () => {
+    expect(providerSubText(base)).toBe("http://x/v1");
+  });
+  it("adds the key tail and the header count", () => {
+    expect(providerSubText({ ...base, apiKey: "sk-test-9876", headers: [{ name: "A", value: "1" }] })).toBe(
+      "http://x/v1 · key ••••9876 · 1 custom header",
+    );
+    expect(
+      providerSubText({
+        ...base,
+        headers: [
+          { name: "A", value: "1" },
+          { name: "B", value: "2" },
+        ],
+      }),
+    ).toBe("http://x/v1 · 2 custom headers");
+  });
+  it("keeps the shared Token wording for brand providers", () => {
+    expect(providerSubText({ ...base, kind: "brand" })).toBe("http://x/v1 · shared Token");
+  });
+});
+
+describe("deleteButtonText", () => {
+  it("names the count only when something is ticked", () => {
+    expect(deleteButtonText(0)).toBe("Delete selected");
+    expect(deleteButtonText(3)).toBe("Delete selected (3)");
+  });
+});
+
+describe("custom rows", () => {
+  it("renders an enabled provider checkbox, an Edit button and model checkboxes", () => {
+    const { table, handlers } = paintCustom();
+    const prov = table.querySelector<HTMLInputElement>('tr[data-provider-id="p1"] .prov-select');
+    expect(prov?.disabled).toBe(false);
+    expect(table.querySelectorAll(".model-select").length).toBe(2);
+    table.querySelector<HTMLButtonElement>(".edit-btn")?.click();
+    expect(handlers.onEdit).toHaveBeenCalledWith("p1");
+  });
+
+  it("syncs provider and model ticks both ways", () => {
+    const { table, handlers } = paintCustom();
+    const prov = table.querySelector<HTMLInputElement>(".prov-select:not(:disabled)")!;
+    prov.checked = true;
+    prov.dispatchEvent(new Event("change"));
+    const boxes = [...table.querySelectorAll<HTMLInputElement>(".model-select")];
+    expect(boxes.every((b) => b.checked)).toBe(true);
+    expect(table.querySelectorAll("tr.sel-row").length).toBe(2);
+    expect(handlers.onSelectionChange).toHaveBeenLastCalledWith(new Set(["p1/m1", "p1/m2"]));
+
+    boxes[0].checked = false;
+    boxes[0].dispatchEvent(new Event("change"));
+    expect(prov.checked).toBe(false);
+    expect(handlers.onSelectionChange).toHaveBeenLastCalledWith(new Set(["p1/m2"]));
+  });
+
+  it("shows no custom provider, checkbox or Edit under lockModel", () => {
+    const { table } = paintCustom({ lockModel: true });
+    expect(table.querySelector('tr[data-provider-id="p1"]')).toBeNull();
+    expect(table.querySelector(".edit-btn")).toBeNull();
+    expect(table.querySelectorAll("input[type=checkbox]:not([role=switch])").length).toBe(0);
   });
 });

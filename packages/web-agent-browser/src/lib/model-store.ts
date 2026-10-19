@@ -167,6 +167,66 @@ export function setBrandKey(store: ModelStore, providerId: string, key: string):
   return { ...store, brandKeys: { ...store.brandKeys, [providerId]: key.trim() } };
 }
 
+/** Upserts `provider` in `store.providers` (same index when editing, else
+ *  appended). Newly added model refs are enabled (not in `disabled`). Refs of
+ *  `provider` that no longer exist are removed from `disabled`; if
+ *  `defaultModel` was one of them, `defaultModel` moves to the first enabled
+ *  model. */
+export function saveCustomProvider(
+  brand: AgentBrand,
+  store: ModelStore,
+  provider: CustomProvider,
+): ModelStore {
+  const idx = store.providers.findIndex((p) => p.id === provider.id);
+  const providers =
+    idx >= 0
+      ? store.providers.map((p, i) => (i === idx ? provider : p))
+      : [...store.providers, provider];
+  const prefix = `${provider.id}/`;
+  const keptRefs = new Set(provider.models.map((m) => `${provider.id}/${m.model}`));
+  const disabled = store.disabled.filter((r) => !r.startsWith(prefix) || keptRefs.has(r));
+  const draft: ModelStore = { ...store, providers, disabled };
+  const defaultRemoved =
+    store.defaultModel !== null && store.defaultModel.startsWith(prefix) && !keptRefs.has(store.defaultModel);
+  const defaultModel = defaultRemoved
+    ? (enabledModels(listModels(brand, draft))[0]?.ref ?? null)
+    : store.defaultModel;
+  return { ...draft, defaultModel };
+}
+
+/** Deletes the custom models in `refs` (brand refs are ignored). Refuses when
+ *  deleting `refs` would leave zero enabled models. Removes any custom
+ *  provider whose models are all deleted, prunes `disabled`, and moves
+ *  `defaultModel` to the first remaining enabled model when the current
+ *  default was deleted. */
+export function deleteModels(
+  brand: AgentBrand,
+  store: ModelStore,
+  refs: ReadonlySet<ModelRef>,
+): SetEnabledResult {
+  const entries = listModels(brand, store);
+  const customRefs = new Set(
+    entries.filter((e) => e.kind === "custom" && refs.has(e.ref)).map((e) => e.ref),
+  );
+  if (customRefs.size === 0) return { ok: true, store };
+  const remainingEnabled = enabledModels(entries).filter((e) => !customRefs.has(e.ref));
+  if (remainingEnabled.length === 0) {
+    return { ok: false, hint: LAST_MODEL_HINT };
+  }
+  const currentDefault = resolveDefault(entries, store)?.ref ?? null;
+  const providers: CustomProvider[] = [];
+  for (const p of store.providers) {
+    const models = p.models.filter((m) => !customRefs.has(`${p.id}/${m.model}`));
+    if (models.length > 0) providers.push({ ...p, models });
+  }
+  const disabled = store.disabled.filter((r) => !customRefs.has(r));
+  const defaultModel =
+    currentDefault && customRefs.has(currentDefault)
+      ? (remainingEnabled[0]?.ref ?? null)
+      : store.defaultModel;
+  return { ok: true, store: { ...store, providers, disabled, defaultModel } };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

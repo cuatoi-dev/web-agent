@@ -516,3 +516,265 @@ test.describe("Model store, relay and switchers", () => {
     }
   });
 });
+
+// Screenshots go to E2E_ARTIFACTS_DIR when set, else to the package's temp folder.
+const ARTIFACTS_006 = process.env.E2E_ARTIFACTS_DIR ?? path.resolve(HERE, "../temp/e2e-artifacts/custom-providers");
+const ENDPOINT_006 = "http://localhost:10040/v1";
+
+async function openAddDialog(page: Page): Promise<Locator> {
+  await page.locator("#add-model-btn").click();
+  const dialog = page.locator("dialog.provider-dialog");
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+/** Stores a custom provider with models m1..mN (all enabled) and reloads the options page. */
+async function seedProvider(page: Page, worker: import("@playwright/test").Worker, models: string[], extra: Record<string, unknown> = {}): Promise<void> {
+  await worker.evaluate(
+    async ({ models, extra }) => {
+      await chrome.storage.local.set({
+        modelStore: {
+          providers: [
+            {
+              id: "p1",
+              name: "Local",
+              wireFormat: "openai",
+              endpoint: "http://localhost:10040/v1",
+              apiKey: "",
+              headers: [],
+              models: models.map((m) => ({ model: m, label: m.toUpperCase(), vision: false })),
+            },
+          ],
+          disabled: [],
+          brandKeys: {},
+          defaultModel: null,
+          ...extra,
+        },
+      });
+    },
+    { models, extra },
+  );
+  await page.reload();
+  await optionsReady(page);
+}
+
+test.describe("Custom providers, multi-select delete and Refresh from /models (136/006)", () => {
+  test.beforeAll(async () => {
+    await fs.mkdir(ARTIFACTS_006, { recursive: true });
+  });
+
+  test("P1: Add form validates, toggles Refresh by format, and saves a provider with two models", async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    const dialog = await openAddDialog(page);
+    await expect(dialog.locator(".form-model-row")).toHaveCount(1);
+    await expect(dialog.locator(".header-row")).toHaveCount(0);
+    await expect(dialog.locator(".refresh-models-btn svg")).toHaveCount(1);
+    await dialog.screenshot({ path: path.join(ARTIFACTS_006, "provider-form-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await dialog.screenshot({ path: path.join(ARTIFACTS_006, "provider-form-dark.png") });
+    await page.emulateMedia({ colorScheme: "light" });
+
+    // Errors.
+    await dialog.locator("#provider-endpoint").fill("ftp://x");
+    await dialog.locator(".save-provider-btn").click();
+    await expect(dialog.locator(".provider-endpoint-error")).toHaveText("Enter an endpoint URL that starts with http:// or https://.");
+    await expect(dialog.locator(".provider-models-error")).toHaveText("Add at least one model.");
+
+    await dialog.locator("#provider-endpoint").fill(ENDPOINT_006);
+    await dialog.locator(".form-model-id").first().fill("m1");
+    await dialog.locator(".add-model-row-btn").click();
+    await dialog.locator(".form-model-id").nth(1).fill("m1");
+    await dialog.locator(".save-provider-btn").click();
+    await expect(dialog.locator(".provider-models-error")).toHaveText("Each model ID can appear only once.");
+    await expect(dialog.locator(".provider-endpoint-error")).toBeHidden();
+
+    // Refresh follows the format.
+    await dialog.locator("#provider-format").selectOption("anthropic");
+    await expect(dialog.locator(".refresh-models-btn")).toBeHidden();
+    await dialog.locator("#provider-format").selectOption("openai");
+    await expect(dialog.locator(".refresh-models-btn")).toBeVisible();
+
+    // Save a (vision) and b.
+    await dialog.locator("#provider-name").fill("Mine");
+    await dialog.locator(".form-model-id").nth(0).fill("a");
+    await dialog.locator(".form-model-label").nth(0).fill("Alpha");
+    await dialog.locator(".form-model-vision").nth(0).check();
+    await dialog.locator(".form-model-id").nth(1).fill("b");
+    await dialog.locator("#provider-api-key").fill("sk-test-9876");
+    await dialog.locator(".add-header-btn").click();
+    await dialog.locator(".header-name").fill("X-Team");
+    await dialog.locator(".header-value").fill("web");
+    await dialog.locator(".save-provider-btn").click();
+    await expect(dialog).toBeHidden();
+
+    const prov = page.locator("#model-table tr.prov").filter({ hasText: "Mine" });
+    await expect(prov.locator(".prov-sub")).toHaveText(`${ENDPOINT_006} · key ••••9876 · 1 custom header`);
+    const rows = page.locator("#model-table tr.model-row").filter({ has: page.locator(".model-select") });
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0).locator(".pill.vision")).toHaveText("Vision");
+    await expect(rows.nth(1).locator("td").nth(3)).toHaveText("—");
+    await expect(rows.nth(0).locator("input.model-enabled")).toBeChecked();
+    await expect(rows.nth(1).locator("input.model-enabled")).toBeChecked();
+    await page.screenshot({ path: path.join(ARTIFACTS_006, "table-with-custom.png") });
+
+    // Side panel: both in the switcher; the request carries the header and the key.
+    const panelPage = await context.newPage();
+    const seen: Record<string, string>[] = [];
+    await panelPage.route("http://localhost:10040/v1/**", async (route) => {
+      seen.push(route.request().headers());
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(OPENAI_REPLY) });
+    });
+    await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+    await panelPage.waitForSelector("agent-chat-panel");
+    const panelLoc = panelPage.locator("agent-chat-panel");
+    await openKebab(panelLoc);
+    await expect(modelItem(panelLoc, "Alpha")).toHaveCount(1);
+    await expect(modelItem(panelLoc, "b")).toHaveCount(1);
+    await modelItem(panelLoc, "Alpha").click();
+    await panelPage.evaluate(() => {
+      void (document.querySelector("agent-chat-panel") as any).send("hi");
+    });
+    await expect.poll(() => seen.length).toBeGreaterThan(0);
+    expect(seen[0]["x-team"]).toBe("web");
+    expect(seen[0]["authorization"]).toBe("Bearer sk-test-9876");
+    expect(seen[0]["x-web-agent-token"]).toBeUndefined();
+
+    // Edit: values come back; a new label reaches the table and the switcher.
+    await prov.locator(".edit-btn").click();
+    const edit = page.locator("dialog.provider-dialog");
+    await expect(edit.locator("#provider-name")).toHaveValue("Mine");
+    await expect(edit.locator("#provider-endpoint")).toHaveValue(ENDPOINT_006);
+    await expect(edit.locator("#provider-api-key")).toHaveValue("sk-test-9876");
+    await expect(edit.locator(".header-name")).toHaveValue("X-Team");
+    await expect(edit.locator(".form-model-id")).toHaveCount(2);
+    await expect(edit.locator(".form-model-vision").nth(0)).toBeChecked();
+    await edit.locator(".form-model-label").nth(0).fill("Alpha2");
+    await edit.locator(".save-provider-btn").click();
+    await expect(edit).toBeHidden();
+    await expect(page.locator("#model-table")).toContainText("Alpha2");
+    await panelPage.reload();
+    await panelPage.waitForSelector("agent-chat-panel");
+    await openKebab(panelPage.locator("agent-chat-panel"));
+    await expect(modelItem(panelPage.locator("agent-chat-panel"), "Alpha2")).toHaveCount(1);
+  });
+
+  test("R1: Refresh compares /models with the form; Cancel keeps it, Apply merges", async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    let mode: "ok" | "401" | "empty" = "ok";
+    await page.route(`${ENDPOINT_006}/models`, async (route) => {
+      if (mode === "401") {
+        await route.fulfill({ status: 401, body: "{}" });
+      } else {
+        const body = mode === "empty" ? {} : { data: [{ id: "a" }, { id: "b" }, { id: "c" }] };
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+      }
+    });
+    const dialog = await openAddDialog(page);
+    await dialog.locator("#provider-endpoint").fill(ENDPOINT_006);
+    await dialog.locator(".form-model-id").first().fill("b");
+    await dialog.locator(".form-model-vision").first().check();
+    await dialog.locator(".add-model-row-btn").click();
+    await dialog.locator(".form-model-id").nth(1).fill("x");
+    const ids = () => dialog.locator(".form-model-id").evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+
+    // Errors change nothing.
+    mode = "401";
+    await dialog.locator(".refresh-models-btn").click();
+    const err = page.locator("dialog.refresh-error-dialog");
+    await expect(err).toContainText("The endpoint answered 401");
+    await expect(err).toContainText("Nothing was changed.");
+    await err.locator(".close-btn").click();
+    mode = "empty";
+    await dialog.locator(".refresh-models-btn").click();
+    await expect(err).toContainText("The endpoint did not return a model list.");
+    await expect(err).toContainText("Nothing was changed.");
+    await err.locator(".close-btn").click();
+    expect(await ids()).toEqual(["b", "x"]);
+
+    // Compare, Cancel.
+    mode = "ok";
+    await dialog.locator(".refresh-models-btn").click();
+    const diff = page.locator("dialog.diff-dialog");
+    await expect(diff).toBeVisible();
+    await expect(diff.locator(".diff-add")).toContainText("Add 2");
+    await expect(diff.locator(".diff-add li")).toHaveText(["a", "c"]);
+    await expect(diff.locator(".diff-remove")).toContainText("Remove 1");
+    await expect(diff.locator(".diff-remove")).toContainText("not returned by the endpoint");
+    await expect(diff.locator(".diff-remove li")).toHaveText(["x"]);
+    await expect(diff.locator(".diff-keep")).toContainText("Keep 1");
+    await expect(diff.locator(".diff-keep li")).toHaveText(["b"]);
+    await diff.screenshot({ path: path.join(ARTIFACTS_006, "compare-dialog-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await diff.screenshot({ path: path.join(ARTIFACTS_006, "compare-dialog-dark.png") });
+    await page.emulateMedia({ colorScheme: "light" });
+    await diff.locator(".cancel-btn").click();
+    expect(await ids()).toEqual(["b", "x"]);
+
+    // Apply.
+    await dialog.locator(".refresh-models-btn").click();
+    await diff.locator(".apply-btn").click();
+    expect(await ids()).toEqual(["b", "a", "c"]);
+    const vision = await dialog.locator(".form-model-vision").evaluateAll((els) => els.map((e) => (e as HTMLInputElement).checked));
+    expect(vision).toEqual([true, false, false]);
+  });
+
+  test("D1: Ticking a provider selects its models; Delete asks first, then removes them", async ({ context, extensionId, }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await seedProvider(page, worker, ["m1", "m2", "m3"]);
+
+    const del = page.locator("#delete-models-btn");
+    await expect(del).toBeDisabled();
+    await page.locator('#model-table tr.prov[data-provider-id="p1"] .prov-select').check();
+    await expect(page.locator(".model-select:checked")).toHaveCount(3);
+    await expect(del).toHaveText("Delete selected (3)");
+    await del.click();
+    const confirm = page.locator("dialog.model-delete-dialog");
+    await expect(confirm).toContainText("Delete 3 models?");
+    await expect(confirm).toContainText("This removes M1, M2, and M3 (and the Local provider with them). You cannot undo this.");
+    await confirm.screenshot({ path: path.join(ARTIFACTS_006, "delete-confirm-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await confirm.screenshot({ path: path.join(ARTIFACTS_006, "delete-confirm-dark.png") });
+    await page.emulateMedia({ colorScheme: "light" });
+    await confirm.locator(".cancel-btn").click();
+    await expect(page.locator('#model-table tr.prov[data-provider-id="p1"]')).toHaveCount(1);
+    await expect(page.locator("#model-table tr.model-row .model-select")).toHaveCount(3);
+
+    await del.click();
+    await confirm.locator(".confirm-delete-btn").click();
+    await expect(page.locator('#model-table tr.prov[data-provider-id="p1"]')).toHaveCount(0);
+    await expect(del).toBeDisabled();
+    await expect(del).toHaveText("Delete selected");
+  });
+
+  test("D2: Deleting the default moves it; deleting every enabled model is refused", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    const page = await context.newPage();
+    await openOptions(page, extensionId);
+    await seedProvider(page, worker, ["m1", "m2"], { defaultModel: "p1/m1" });
+    await expect(page.locator('tr.model-row[data-ref="p1/m1"] input.model-default')).toBeChecked();
+
+    await page.locator('tr.model-row[data-ref="p1/m1"] .model-select').check();
+    await page.locator("#delete-models-btn").click();
+    await page.locator("dialog.model-delete-dialog .confirm-delete-btn").click();
+    await expect(page.locator('tr.model-row[data-ref="p1/m1"]')).toHaveCount(0);
+    await expect(page.locator('tr.model-row[data-ref="brand:anthropic-sonnet"] input.model-default')).toBeChecked();
+
+    // Turn every brand model off so only p1/m2 stays on, then try to delete it.
+    const brandRefs = await page.locator('tr.model-row[data-ref^="brand:"]').evaluateAll((rows) => rows.map((r) => (r as HTMLElement).dataset.ref!));
+    await seedProvider(page, worker, ["m2"], { disabled: brandRefs, defaultModel: "p1/m2" });
+    await page.locator('tr.model-row[data-ref="p1/m2"] .model-select').check();
+    await page.locator("#delete-models-btn").click();
+    await expect(page.locator("#model-table-hint")).toHaveText("At least one model must stay on.");
+    await expect(page.locator("dialog.model-delete-dialog")).toHaveCount(0);
+    await expect(page.locator('tr.model-row[data-ref="p1/m2"]')).toHaveCount(1);
+  });
+});

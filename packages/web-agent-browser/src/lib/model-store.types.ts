@@ -144,9 +144,12 @@ export interface ModelSwitch {
 /** The callbacks of the options page model table. */
 export interface ModelTableHandlers {
   lockModel: boolean;
+  selected?: ReadonlySet<ModelRef>;
   onToggle(ref: ModelRef, on: boolean): void;
   onDefault(ref: ModelRef): void;
   onKey(provider: ResolvedProvider): void;
+  onEdit?(providerId: string): void;
+  onSelectionChange?(selected: Set<ModelRef>): void;
 }
 
 /** What the brand Key dialog shows. */
@@ -156,4 +159,50 @@ export interface BrandKeyDialogOptions {
   endpoint: string;
   /** The stored key, shown in the password field. "" when none. */
   current: string;
+}
+
+/** One model row inside the provider form before trimming/validation. */
+export interface ProviderFormModelRow {
+  model: string;
+  label: string;
+  vision: boolean;
+}
+
+/** The raw values read from the provider form. */
+export interface ProviderFormDraft {
+  id?: string;
+  builtIn?: string;
+  name: string;
+  wireFormat: WireFormat;
+  endpoint: string;
+  apiKey: string;
+  headers: HeaderPair[];
+  models: ProviderFormModelRow[];
+}
+
+/** Field errors for the provider form (`undefined` when valid). */
+export interface ProviderFormErrors {
+  endpoint?: string;
+  models?: string;
+}
+
+/** The comparison result for Refresh from /models. */
+export interface ModelsDiff {
+  returnedCount: number;
+  add: string[];
+  remove: string[];
+  keep: string[];
+}
+
+/** Injected dependencies for Refresh from /models and Save permission checks. */
+export interface ProviderDialogDeps {
+  requestPermission?: (this: void, origin: string) => Promise<boolean>;
+  fetchImpl?: typeof fetch;
+  newId?: (this: void) => string;
+}
+
+/** Options for opening the custom provider dialog. */
+export interface ProviderDialogOptions extends ProviderDialogDeps {
+  /** Existing provider when editing; omitted when adding a new provider. */
+  provider?: CustomProvider;
 }

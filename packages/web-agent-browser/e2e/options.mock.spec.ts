@@ -477,6 +477,8 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
+      await expect(page.locator("#add-model-btn")).toBeHidden();
+      await expect(page.locator("#delete-models-btn")).toBeHidden();
       await expect(page.locator('#model-table input[type="checkbox"]:not([role="switch"])')).toHaveCount(0);
       await expect(page.locator("#model-table th")).toHaveCount(6);
       await expect(page.locator("#model-table .key-btn")).toHaveCount(3);
@@ -637,7 +639,7 @@ test.describe("Options page full-width flex layout", () => {
     await openOptions(page, extensionId);
     await page.locator("#tab-btn-agents").click();
 
-    const toolbarBox = await page.locator(".toolbar").evaluate((el) => el.getBoundingClientRect());
+    const toolbarBox = await page.locator("#tab-agents .toolbar").evaluate((el) => el.getBoundingClientRect());
     expect(toolbarBox.left).toBe(24);
     expect(toolbarBox.right).toBe(1256);
 

@@ -6,11 +6,13 @@ import {
   setEnabled,
   setDefault,
   setBrandKey,
+  saveCustomProvider,
+  deleteModels,
   readModelStore,
   writeModelStore,
   EMPTY_MODEL_STORE,
 } from "./model-store";
-import type { AgentBrand, ModelStore } from "./types";
+import type { AgentBrand, CustomProvider, ModelStore } from "./types";
 
 const FIXTURE_BRAND: AgentBrand = {
   name: "Test",
@@ -276,5 +278,84 @@ describe("model-store", () => {
     // Write
     await writeModelStore(EMPTY_MODEL_STORE, fakeStorage);
     expect(setFn).toHaveBeenCalledWith({ modelStore: EMPTY_MODEL_STORE });
+  });
+});
+
+const CUSTOM: CustomProvider = {
+  id: "p1",
+  name: "Local",
+  wireFormat: "openai",
+  endpoint: "http://localhost:8000/v1",
+  apiKey: "",
+  headers: [],
+  models: [
+    { model: "m1", label: "M1", vision: true },
+    { model: "m2", label: "M2", vision: false },
+  ],
+};
+
+describe("saveCustomProvider", () => {
+  it("appends a new provider with all its models enabled", () => {
+    const next = saveCustomProvider(FIXTURE_BRAND, EMPTY_MODEL_STORE, CUSTOM);
+    expect(next.providers).toEqual([CUSTOM]);
+    const custom = listModels(FIXTURE_BRAND, next).filter((e) => e.kind === "custom");
+    expect(custom.map((e) => e.enabled)).toEqual([true, true]);
+  });
+
+  it("updates in place, keeps surviving disabled refs, drops stale ones and moves the default", () => {
+    const other: CustomProvider = { ...CUSTOM, id: "p2", models: [{ model: "z", label: "Z", vision: false }] };
+    const store: ModelStore = {
+      ...EMPTY_MODEL_STORE,
+      providers: [CUSTOM, other],
+      disabled: ["p1/m1", "p1/m2", "brand:a"],
+      defaultModel: "p1/m2",
+    };
+    // m1 stays (still disabled), m2 is removed, m3 is new.
+    const edited: CustomProvider = {
+      ...CUSTOM,
+      models: [
+        { model: "m1", label: "M1", vision: true },
+        { model: "m3", label: "M3", vision: false },
+      ],
+    };
+    const next = saveCustomProvider(FIXTURE_BRAND, store, edited);
+    expect(next.providers.map((p) => p.id)).toEqual(["p1", "p2"]);
+    expect(next.providers[0]).toEqual(edited);
+    expect(next.disabled).toEqual(["p1/m1", "brand:a"]);
+    // old default p1/m2 no longer exists: the first enabled model takes over.
+    expect(next.defaultModel).toBe("brand:b");
+  });
+});
+
+describe("deleteModels", () => {
+  const store: ModelStore = { ...EMPTY_MODEL_STORE, providers: [CUSTOM], defaultModel: "p1/m1" };
+
+  it("removes models, empties the provider, prunes disabled and moves the default", () => {
+    const withOff: ModelStore = { ...store, disabled: ["p1/m2"] };
+    const r = deleteModels(FIXTURE_BRAND, withOff, new Set(["p1/m1", "p1/m2"]));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.store.providers).toEqual([]);
+    expect(r.store.disabled).toEqual([]);
+    expect(r.store.defaultModel).toBe("brand:a");
+  });
+
+  it("keeps a provider that still has models", () => {
+    const r = deleteModels(FIXTURE_BRAND, store, new Set(["p1/m2"]));
+    expect(r.ok && r.store.providers[0].models.map((m) => m.model)).toEqual(["m1"]);
+  });
+
+  it("ignores brand refs", () => {
+    const r = deleteModels(FIXTURE_BRAND, store, new Set(["brand:a"]));
+    expect(r).toEqual({ ok: true, store });
+  });
+
+  it("refuses to leave no enabled model", () => {
+    const onlyCustom: ModelStore = {
+      ...store,
+      disabled: ["brand:a", "brand:b", "brand:c"],
+    };
+    const r = deleteModels(FIXTURE_BRAND, onlyCustom, new Set(["p1/m1", "p1/m2"]));
+    expect(r).toEqual({ ok: false, hint: "At least one model must stay on." });
   });
 });

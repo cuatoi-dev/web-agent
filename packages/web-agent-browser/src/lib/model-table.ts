@@ -1,6 +1,6 @@
 import { iconNode } from "@cuatoi/web-agent-lit/ui/icon-svgs";
 import { resolveDefault } from "./model-store";
-import type { ModelEntry, ModelStore, ModelTableHandlers } from "./types";
+import type { ModelEntry, ModelRef, ModelStore, ModelTableHandlers, ResolvedProvider } from "./types";
 
 export const FROM_BRAND = "From brand";
 export const BRAND_CHECKBOX_TITLE = "Brand models cannot be deleted";
@@ -12,10 +12,31 @@ export function modelCountText(entries: ModelEntry[]): string {
   return `${on} of ${entries.length} models enabled`;
 }
 
+/** "Delete selected" when N == 0, else "Delete selected (N)". */
+export function deleteButtonText(count: number): string {
+  return count > 0 ? `Delete selected (${count})` : "Delete selected";
+}
+
 /** "key ••••3f9a" when a key is stored, else "shared Token". */
 export function keyHint(apiKey: string): string {
   const key = apiKey.trim();
   return key ? `key ••••${key.slice(-4)}` : SHARED_TOKEN_TEXT;
+}
+
+/** Subtitle under a provider row:
+ *  - Brand:  `<endpoint> · key ••••xxxx` or `<endpoint> · shared Token`
+ *  - Custom: `<endpoint>[ · key ••••xxxx][ · N custom header(s)]` */
+export function providerSubText(p: ResolvedProvider): string {
+  if (p.kind === "brand") {
+    return `${p.endpoint} · ${keyHint(p.apiKey)}`;
+  }
+  const parts = [p.endpoint];
+  const key = p.apiKey.trim();
+  if (key) parts.push(`key ••••${key.slice(-4)}`);
+  const n = p.headers.length;
+  if (n === 1) parts.push("1 custom header");
+  else if (n > 1) parts.push(`${n} custom headers`);
+  return parts.join(" · ");
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = "", text = ""): HTMLElementTagNameMap[K] {
@@ -34,7 +55,7 @@ function icon(name: string): Element {
   return svg;
 }
 
-/** Paints the Models tab table (mockup state 1; state 8 under lockModel):
+/** Paints the Models tab table (mockup states 1 and 2; state 8 under lockModel):
  *  one provider row per provider, its models as rows under it. */
 export function renderModelTable(
   table: HTMLTableElement,
@@ -44,6 +65,7 @@ export function renderModelTable(
 ): void {
   table.textContent = "";
   const showCheck = !h.lockModel;
+  const selected = new Set<ModelRef>(h.selected ?? []);
   const headRow = table.createTHead().insertRow();
   const headings = [...(showCheck ? [""] : []), "Provider / model", "Format", "Vision", "Enabled", "Default", ""];
   for (const text of headings) headRow.append(el("th", "", text));
@@ -63,19 +85,27 @@ export function renderModelTable(
     const prov = body.insertRow();
     prov.className = "prov";
     prov.dataset.providerId = p.id;
+    let provBox: HTMLInputElement | null = null;
+    const modelBoxes: { ref: ModelRef; box: HTMLInputElement; row: HTMLTableRowElement }[] = [];
+
     if (showCheck) {
-      const box = el("input");
+      const box = el("input", "prov-select");
       box.type = "checkbox";
       box.disabled = p.kind === "brand";
-      if (p.kind === "brand") box.title = BRAND_CHECKBOX_TITLE;
+      if (p.kind === "brand") {
+        box.title = BRAND_CHECKBOX_TITLE;
+      } else {
+        box.checked = group.length > 0 && group.every((e) => selected.has(e.ref));
+      }
       box.setAttribute("aria-label", `Select ${p.name}`);
       prov.insertCell().append(box);
+      provBox = box;
     }
     const nameCell = prov.insertCell();
     const name = el("div", "prov-name");
     name.append(icon("dns"), el("span", "prov-label", p.name));
     if (p.kind === "brand") name.append(el("span", "pill brand", FROM_BRAND));
-    nameCell.append(name, el("div", "prov-sub", `${p.endpoint} · ${keyHint(p.apiKey)}`));
+    nameCell.append(name, el("div", "prov-sub", providerSubText(p)));
     prov.insertCell().textContent = p.wireFormat;
     prov.insertCell();
     const count = prov.insertCell();
@@ -91,13 +121,39 @@ export function renderModelTable(
       keyBtn.append(icon("key"), document.createTextNode("Key"));
       keyBtn.addEventListener("click", () => h.onKey(p));
       actions.append(keyBtn);
+    } else if (!h.lockModel) {
+      const editBtn = el("button", "btn edit-btn");
+      editBtn.type = "button";
+      editBtn.dataset.providerId = p.id;
+      editBtn.setAttribute("aria-label", `Edit ${p.name}`);
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", () => h.onEdit?.(p.id));
+      actions.append(editBtn);
     }
 
     for (const e of group) {
       const row = body.insertRow();
-      row.className = "model-row";
+      const isSelected = e.kind === "custom" && selected.has(e.ref);
+      row.className = isSelected ? "model-row sel-row" : "model-row";
       row.dataset.ref = e.ref;
-      if (showCheck) row.insertCell();
+      if (showCheck) {
+        const cell = row.insertCell();
+        if (e.kind === "custom") {
+          const mbox = el("input", "model-select");
+          mbox.type = "checkbox";
+          mbox.checked = isSelected;
+          mbox.setAttribute("aria-label", `Select ${e.label}`);
+          mbox.addEventListener("change", () => {
+            if (mbox.checked) selected.add(e.ref);
+            else selected.delete(e.ref);
+            row.classList.toggle("sel-row", mbox.checked);
+            if (provBox) provBox.checked = modelBoxes.every((m) => m.box.checked);
+            h.onSelectionChange?.(new Set(selected));
+          });
+          cell.append(mbox);
+          modelBoxes.push({ ref: e.ref, box: mbox, row });
+        }
+      }
       const label = row.insertCell();
       label.className = "model";
       label.append(el("span", "model-label", e.label), document.createTextNode(" "), el("span", "mid", e.model));
@@ -129,6 +185,19 @@ export function renderModelTable(
       });
       row.insertCell().append(radio);
       row.insertCell();
+    }
+
+    if (provBox && p.kind === "custom") {
+      const box = provBox;
+      box.addEventListener("change", () => {
+        for (const m of modelBoxes) {
+          m.box.checked = box.checked;
+          m.row.classList.toggle("sel-row", box.checked);
+          if (box.checked) selected.add(m.ref);
+          else selected.delete(m.ref);
+        }
+        h.onSelectionChange?.(new Set(selected));
+      });
     }
   }
 }
