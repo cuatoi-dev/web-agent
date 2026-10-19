@@ -167,7 +167,7 @@ describe("panel-setup", () => {
   describe("createDirectFetch", () => {
     it("adds no auth header when the provider has no key", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const prov = makeProv({ apiKey: "" });
+      const prov = makeProv({ apiKey: "", endpoint: "https://api.example.com" });
       const customFetch = createDirectFetch(() => prov, spy);
 
       await customFetch("https://api.example.com/chat", { method: "POST" });
@@ -184,6 +184,7 @@ describe("panel-setup", () => {
       const prov = makeProv({
         wireFormat: "openai",
         apiKey: "sk-openai-key",
+        endpoint: "https://api.openai.com/v1",
       });
       const customFetch = createDirectFetch(() => prov, spy);
 
@@ -201,6 +202,7 @@ describe("panel-setup", () => {
       const prov = makeProv({
         wireFormat: "anthropic",
         apiKey: "sk-ant-key",
+        endpoint: "https://api.anthropic.com/v1",
       });
       const customFetch = createDirectFetch(() => prov, spy);
 
@@ -218,6 +220,7 @@ describe("panel-setup", () => {
       const prov = makeProv({
         wireFormat: "gemini",
         apiKey: "gemini-key-123",
+        endpoint: "https://generativelanguage.googleapis.com/v1",
       });
       const customFetch = createDirectFetch(() => prov, spy);
 
@@ -228,9 +231,88 @@ describe("panel-setup", () => {
       expect(headers.get("x-goog-api-key")).toBe("gemini-key-123");
     });
 
+    it("adds no auth header when request URL is to another origin", async () => {
+      const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
+      const prov = makeProv({
+        wireFormat: "openai",
+        apiKey: "sk-secret-key",
+        endpoint: "https://provider.example/v1",
+      });
+      const customFetch = createDirectFetch(() => prov, spy);
+
+      await customFetch("https://unrelated.example/collect", { method: "POST" });
+
+      expect(spy).toHaveBeenCalledOnce();
+      const [, init] = spy.mock.calls[0];
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Authorization")).toBeNull();
+    });
+
+    it("adds no auth header when request URL path is outside provider endpoint path", async () => {
+      const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
+      const prov = makeProv({
+        wireFormat: "openai",
+        apiKey: "sk-secret-key",
+        endpoint: "https://provider.example/v1",
+      });
+      const customFetch = createDirectFetch(() => prov, spy);
+
+      await customFetch("https://provider.example/other/path", { method: "POST" });
+
+      expect(spy).toHaveBeenCalledOnce();
+      const [, init] = spy.mock.calls[0];
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Authorization")).toBeNull();
+    });
+
+    it("reads provider at request time so changed provider does not send key to old endpoint", async () => {
+      const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
+      const provA = makeProv({
+        wireFormat: "openai",
+        apiKey: "sk-key-a",
+        endpoint: "https://provider-a.example/v1",
+      });
+      const provB = makeProv({
+        wireFormat: "anthropic",
+        apiKey: "sk-key-b",
+        endpoint: "https://provider-b.example/v1",
+      });
+      let current = provA;
+      const customFetch = createDirectFetch(() => current, spy);
+
+      current = provB;
+      await customFetch("https://provider-a.example/v1/chat", { method: "POST" });
+
+      const [, init] = spy.mock.calls[0];
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Authorization")).toBeNull();
+      expect(headers.get("x-api-key")).toBeNull();
+    });
+
+    it("preserves Request headers when input is a Request", async () => {
+      const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
+      const prov = makeProv({
+        wireFormat: "openai",
+        apiKey: "sk-key",
+        endpoint: "https://api.openai.com/v1",
+      });
+      const customFetch = createDirectFetch(() => prov, spy);
+
+      const req = new Request("https://api.openai.com/v1/chat", {
+        headers: { "X-Caller": "caller-val" },
+      });
+      await customFetch(req);
+
+      expect(spy).toHaveBeenCalledOnce();
+      const [, init] = spy.mock.calls[0];
+      const headers = new Headers(init?.headers);
+      expect(headers.get("X-Caller")).toBe("caller-val");
+      expect(headers.get("Authorization")).toBe("Bearer sk-key");
+    });
+
     it("preserves URL, method, body, and caller headers", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const prov = makeProv({ apiKey: "" });
+      const prov = makeProv({ apiKey: "", endpoint: "https://gateway.example.com/v1" });
       const customFetch = createDirectFetch(() => prov, spy);
 
       const payload = JSON.stringify({ prompt: "hello" });
@@ -256,8 +338,8 @@ describe("panel-setup", () => {
 
     it("per-request getter call reads provider A then provider B", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const provA = makeProv({ wireFormat: "openai", apiKey: "key-a" });
-      const provB = makeProv({ wireFormat: "anthropic", apiKey: "key-b" });
+      const provA = makeProv({ wireFormat: "openai", apiKey: "key-a", endpoint: "https://test.com/a" });
+      const provB = makeProv({ wireFormat: "anthropic", apiKey: "key-b", endpoint: "https://test.com/b" });
       let current = provA;
       const customFetch = createDirectFetch(() => current, spy);
 

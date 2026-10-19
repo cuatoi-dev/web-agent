@@ -1,6 +1,7 @@
 import { PANEL_SESSION_NAMESPACE } from "./constants";
 import { authHeaders } from "./auth-headers";
 import { brandToolConfig } from "./brand-capabilities";
+import { urlMatchesProvider } from "./relay-handler";
 import type { AgentBrand, PanelLike, ResolvedProvider } from "./types";
 
 export type { PanelLike } from "./types";
@@ -17,14 +18,27 @@ export type { PanelLike } from "./types";
  *
  * 136/005 — `getProvider` is read on every request, so a model switch in the kebab
  * menu sends the next request with the new provider's headers.
+ * 137/001 — headers are only added when `url` matches the current provider's endpoint.
  */
 export function createDirectFetch(
   getProvider: () => ResolvedProvider,
   impl: typeof fetch = fetch,
 ): typeof fetch {
-  return (input: RequestInfo | URL, init: RequestInit = {}) => {
-    const headers = new Headers(init.headers);
-    for (const [name, value] of Object.entries(authHeaders(getProvider()))) {
+  return (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    const provider = getProvider();
+    if (!urlMatchesProvider(url, provider.endpoint)) {
+      return impl(input, init);
+    }
+    let headers: Headers;
+    if (init?.headers !== undefined) {
+      headers = new Headers(init.headers);
+    } else if (typeof input === "object" && "headers" in input && input.headers) {
+      headers = new Headers(input.headers);
+    } else {
+      headers = new Headers();
+    }
+    for (const [name, value] of Object.entries(authHeaders(provider))) {
       headers.set(name, value);
     }
     return impl(input, { ...init, headers });
