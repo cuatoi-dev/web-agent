@@ -63,8 +63,7 @@ export const DEFAULT_CONFIG: Omit<AgentConfig, "model"> = {
   cues: { enabled: true, speed: "slow" },
   imageInput: true,
   streaming: false,
-  requestTimeoutMs: 300_000,
-  streamIdleTimeoutMs: 120_000,
+  requestTimeoutMs: 900_000,
   maxRetries: 5,
   appendSystemPrompt: undefined,
 };

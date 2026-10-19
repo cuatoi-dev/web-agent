@@ -72,8 +72,8 @@ export interface TextBlock             { type: "text";              text: string
 export interface ThinkingBlock         { type: "thinking";          thinking: string; signature?: string }
 /** Why `input` is `{}` rather than what the model sent. `"empty"` = no argument
  *  JSON arrived; `"unparsable"` = a payload arrived and JSON.parse rejected it.
- *  Absent when the arguments parsed normally. Produced by the streaming
- *  reassembler (`transport/stream-parts.ts`).
+ *  Absent when the arguments parsed normally. The tool argument parser
+ *  reports this issue. A custom provider can attach it to a tool-use block.
  *
  *  `"unparsable"` is read by the loop's tool dispatch (`loop/agent.ts`), which
  *  answers the model with `argumentsUnparsable(...)` instead of running the

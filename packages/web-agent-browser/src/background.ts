@@ -52,9 +52,8 @@ chrome.runtime.onConnect.addListener((port) => {
           for (;;) {
             const { done, value } = await reader.read();
             if (done) break;
-            // Each chunk message also resets the worker's 30-second idle
-            // timer, which is what carries a 48-second queued stream
-            // (sse-reader.ts:72).
+            // Each chunk message resets the worker's 30-second idle timer
+            // while response bytes arrive.
             port.postMessage({ type: "chunk", b64: bytesToBase64(value) });
           }
         }

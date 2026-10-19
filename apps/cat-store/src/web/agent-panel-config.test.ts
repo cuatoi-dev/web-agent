@@ -495,6 +495,5 @@ describe("PROVIDER_ENTRIES", () => {
       endpointType: ANY_MODEL_ENDPOINT_TYPE,
     });
     expect(typeof model.generate).toBe("function");
-    expect(typeof model.doStream).toBe("function");
   });
 });

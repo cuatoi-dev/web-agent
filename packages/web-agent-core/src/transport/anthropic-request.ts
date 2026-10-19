@@ -1,7 +1,5 @@
-import type { MessageStreamEvent } from "./wire.types.js";
 import type { AnthropicRequestOptions } from "./types.js";
 export type { AnthropicRequestOptions } from "./types.js";
-import { readSseStream } from "./sse-reader.js";
 
 /** An HTTP failure, carrying the status under both names the existing error
  *  mapping reads (middleware.ts:203-205, loop/errors.ts:50-51). */
@@ -79,13 +77,4 @@ async function send(opts: AnthropicRequestOptions): Promise<Response> {
 export async function requestJson<T>(opts: AnthropicRequestOptions): Promise<T> {
   const res = await send(opts);
   return (await res.json()) as T;
-}
-
-/** Streaming call: returns events as they arrive. */
-export async function requestStream<T = MessageStreamEvent>(
-  opts: AnthropicRequestOptions,
-): Promise<AsyncIterable<T>> {
-  const res = await send(opts);
-  if (!res.body) throw new Error("Anthropic streaming response has no body.");
-  return readSseStream<T>(res.body, opts.onProgress);
 }

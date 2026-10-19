@@ -2,7 +2,6 @@ import { AgentError } from "./errors.js";
 import { ContextManager } from "./context-manager.js";
 import type { TurnResult, UsageLike } from "./types.js";
 export type { TurnResult } from "./types.js";
-import type { StreamPart } from "../transport/provider.types.js";
 import type { ToolContext } from "../tools/types.js";
 
 import type { createPageAgent } from "./agent.js";
@@ -19,7 +18,6 @@ export async function runTurn(
   signal: AbortSignal,
   cfg: AgentConfig,
   onStep?: () => void,
-  onStreamPart?: (part: StreamPart) => void,
 ): Promise<TurnResult> {
   // 1. Reassign signal per turn (F5)
   ctx.signal = signal;
@@ -43,7 +41,7 @@ export async function runTurn(
     input.promptMeta,
   );
 
-  return driveGenerate(agent, cm, signal, cfg, onStep, onStreamPart);
+  return driveGenerate(agent, cm, signal, cfg, onStep);
 }
 
 /**
@@ -65,10 +63,9 @@ export async function resumeTurn(
   signal: AbortSignal,
   cfg: AgentConfig,
   onStep?: () => void,
-  onStreamPart?: (part: StreamPart) => void,
 ): Promise<TurnResult> {
   ctx.signal = signal;
-  return driveGenerate(agent, cm, signal, cfg, onStep, onStreamPart);
+  return driveGenerate(agent, cm, signal, cfg, onStep);
 }
 
 /**
@@ -88,7 +85,6 @@ async function driveGenerate(
   signal: AbortSignal,
   cfg: AgentConfig,
   onStep?: () => void,
-  onStreamPart?: (part: StreamPart) => void,
 ): Promise<TurnResult> {
   try {
     if (signal.aborted) {
@@ -100,7 +96,6 @@ async function driveGenerate(
       messages: cm.compose(),
       abortSignal: signal,
       onStep,
-      onStreamPart,
     });
 
     // 4. Commit turn (idempotent additions)

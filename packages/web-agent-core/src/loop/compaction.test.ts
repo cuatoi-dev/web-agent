@@ -690,3 +690,118 @@ describe("summariseInCachedConversation", () => {
     ).rejects.toMatchObject({ name: "AgentError", kind: "aborted" });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Compaction deadline: inherits `requestTimeoutMs`, default 15 minutes.
+//
+// The context manager, the agent, the retry middleware and `runCompaction` are
+// real. Only the network boundary (an injected fetch) is stubbed.
+// ---------------------------------------------------------------------------
+describe("Compaction deadline", () => {
+  const SUMMARY_BODY = {
+    id: "msg_summary",
+    type: "message",
+    role: "assistant",
+    model: "test-model",
+    content: [{ type: "text", text: "THE SUMMARY" }],
+    stop_reason: "end_turn",
+    usage: { input_tokens: 1, output_tokens: 1 },
+  };
+
+  /** A fetch whose summary reply arrives after `delayMs`, or never. */
+  function delayedFetch(delayMs: number | undefined) {
+    return vi.fn((_url: unknown, init?: { signal?: AbortSignal | null }) => new Promise<Response>((resolve, reject) => {
+      if (delayMs === undefined) return;
+      const t = setTimeout(() => {
+        resolve(new Response(JSON.stringify(SUMMARY_BODY), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      }, delayMs);
+      init?.signal?.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(new DOMException("aborted", "AbortError"));
+      }, { once: true });
+    })) as unknown as typeof fetch;
+  }
+
+  function setup(over: Partial<AgentConfig>, fetchImpl: typeof fetch) {
+    const cfg: AgentConfig = {
+      ...TEST_AGENT_CFG,
+      endpointType: "anthropic",
+      maxRetries: 0,
+      fetch: fetchImpl,
+      ...over,
+    };
+    const cm = new ContextManager(cfg.context);
+    for (let i = 1; i <= 3; i++) {
+      cm.appendUser({ role: "user", content: `Turn ${i}` });
+      cm.recordStep([{ role: "assistant", content: `Reply ${i}` }]);
+      cm.commitTurn();
+    }
+    const agent = createPageAgent(cfg, { app: {}, signal: new AbortController().signal }, cm);
+    return { cfg, cm, agent };
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("with no configured timeout, a summary that arrives at 600000 ms completes", async () => {
+    const { cfg, cm, agent } = setup({ requestTimeoutMs: undefined }, delayedFetch(600_000));
+    const onSettle = vi.fn();
+    const p = runCompaction(cm, agent, cfg, { observer: { onSettle } });
+    let settled = false;
+    p.then(() => { settled = true; }, () => { settled = true; });
+
+    await vi.advanceTimersByTimeAsync(120_001);
+    expect(settled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(600_000 - 120_001);
+    const result = await p;
+    expect(result.outcome).toBe("compacted");
+    expect(cm.journal.filter((e) => e.meta.tombstone)).toHaveLength(1);
+    expect(lastTombstone(cm)?.meta.tombstone?.summary).toBe("THE SUMMARY");
+    expect(onSettle).toHaveBeenCalledTimes(1);
+    expect(onSettle.mock.calls[0][0]).toBe("compacted");
+  });
+
+  it("with no configured timeout, a summary that never arrives fails at 900000 ms", async () => {
+    const { cfg, cm, agent } = setup({ requestTimeoutMs: undefined }, delayedFetch(undefined));
+    const p = runCompaction(cm, agent, cfg);
+    let settled = false;
+    const assertion = expect(p).rejects.toBeDefined();
+    p.catch(() => { settled = true; });
+
+    await vi.advanceTimersByTimeAsync(899_999);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await assertion;
+    expect(cm.journal.some((e) => e.meta.tombstone)).toBe(false);
+  });
+
+  it("inherits a configured requestTimeoutMs", async () => {
+    const { cfg, cm, agent } = setup({ requestTimeoutMs: 50 }, delayedFetch(10_000));
+    const p = runCompaction(cm, agent, cfg);
+    const assertion = expect(p).rejects.toBeDefined();
+    await vi.advanceTimersByTimeAsync(50);
+    await assertion;
+    expect(cm.journal.some((e) => e.meta.tombstone)).toBe(false);
+  });
+
+  it("an explicit timeoutMs wins over the configured requestTimeoutMs", async () => {
+    // The explicit 20 ms limit fires before the configured 50 ms request deadline.
+    const { cfg, cm, agent } = setup({ requestTimeoutMs: 50 }, delayedFetch(10_000));
+    const p = runCompaction(cm, agent, cfg, { timeoutMs: 20 });
+    let settled = false;
+    p.catch(() => { settled = true; });
+    const assertion = expect(p).rejects.toThrow("Compaction timeout");
+    await vi.advanceTimersByTimeAsync(19);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await assertion;
+  });
+});

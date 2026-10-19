@@ -162,34 +162,18 @@ export interface AgentConfig {
    * registration order and awaited inline with NO timeout. See {@link AgentHooks}.
    */
   hooks?: AgentHooks;
-  /**
-   * When true, requests `stream: true` and reassembles the SSE stream instead of one JSON response.
-   * Required for gateways that only return valid Anthropic format over SSE.
-   * Default false (non-streaming) so existing hosts are unaffected.
-   */
+  /** Ignored. Every call is non-streaming. Removed in a later release. */
   streaming?: boolean;
   /**
-   * Per-attempt idle timeout (ms) applied by the withRetry transport
-   * middleware. The window restarts every time the transport receives bytes,
-   * including server-sent-events keep-alive comments, so a slow but live
-   * stream is never aborted. An attempt that receives nothing for this long
-   * is aborted and (if retries remain) retried. On the non-streaming path no
-   * bytes arrive until the response is complete, so there the window is
-   * effectively a total deadline. Default 300000 (5 minutes).
+   * Hard deadline (ms) for one request attempt, applied by the withRetry
+   * transport middleware. Nothing restarts it while the response arrives. An
+   * attempt that is not complete by then is aborted and, if retries remain,
+   * retried with a new full deadline. Compaction inherits this value unless
+   * it is given its own timeout. Default 900000 (15 minutes).
    */
   requestTimeoutMs?: number;
   /**
-   * Per-chunk stream idle timeout (ms), applied by the withRetry transport
-   * middleware (and the fallback-chain provider) once a stream's first
-   * content part has arrived. The window restarts every time a further
-   * content part arrives, so a slow but steady stream is never aborted; a
-   * stream that goes silent mid-flight for this long is treated as a
-   * retryable failure and goes through the same retry/backoff as any other
-   * transport error. Default 120000 (2 minutes).
-   */
-  streamIdleTimeoutMs?: number;
-  /**
-   * Max transport-level retries (withRetry middleware) for empty/dead streams
+   * Max transport-level retries (withRetry middleware) for empty incomplete responses
    * and transient network/parse failures. Default 5. Deterministic client
    * errors (400/401/403) and user aborts are never retried.
    */

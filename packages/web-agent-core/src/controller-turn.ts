@@ -11,7 +11,6 @@ import { runHooks } from "./hooks/run-hooks.js";
 import { isRetryableError } from "./transport/middleware.js";
 import { isEmptyCompletedTurn } from "./controller-messages.js";
 import { toAvailableTools } from "./controller-tools.js";
-import type { StreamPart } from "./transport/provider.types.js";
 import type { ImageAttachment, UserMessageInput } from "./utils/types.js";
 import type { MessagePart } from "./types.js";
 import type { SessionRuntime, TurnInvoker } from "./controller-runtime.types.js";
@@ -111,24 +110,14 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
       });
     }
 
-    const onStreamPart = (part: StreamPart) => {
-      if (st.sessionEpoch !== sessionEpoch) return;
-      if (part.type !== "text-delta") return;   // text only, by scope
-      st.streamingText += part.delta;
-      notifyListeners(st);
-    };
-
     const onStep = () => {
       if (st.sessionEpoch !== sessionEpoch) return;
       // Runs right after cm.recordStep() journaled this step's assistant
-      // message (loop/agent.ts:377-380). Clearing here and notifying once
-      // swaps the partial text for the committed message in a single state
-      // update — no empty frame, no duplicate.
-      st.streamingText = "";
+      // message (loop/agent.ts). Notifying once shows the committed message.
       notifyListeners(st);
     };
 
-    const turnPromise = invoke(st.controller.signal, onStep, onStreamPart);
+    const turnPromise = invoke(st.controller.signal, onStep);
 
     notifyListeners(st);
 
@@ -165,9 +154,6 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
     if (st.sessionEpoch === sessionEpoch) {
       st.running = false;
       st.controller = undefined;
-      // Abort or error: the step never journaled, so the partial text belongs to
-      // nothing. Drop it before the final repaint.
-      st.streamingText = "";
       flushTurn(st);
       notifyListeners(st);
       if (turnResult) {
@@ -227,7 +213,7 @@ export async function runUserTurn(
   const agent = st.agent;
   const cm = st.cm;
   const ctx = st.ctx;
-  await driveTurn(st, (signal, onStep, onStreamPart) =>
+  await driveTurn(st, (signal, onStep) =>
     runTurn(
       agent,
       cm,
@@ -236,7 +222,6 @@ export async function runUserTurn(
       signal,
       st.agentConfig,
       onStep,
-      onStreamPart,
     ));
 }
 
@@ -372,7 +357,7 @@ async function resumeLastTurn(st: SessionRuntime, turnId: string): Promise<void>
   st.cachedStateKey = "";
 
   emitEvent(st, { type: "retry:start" });
-  await driveTurn(st, (signal, onStep, onStreamPart) =>
+  await driveTurn(st, (signal, onStep) =>
     resumeTurn(
       st.agent,
       st.cm,
@@ -380,7 +365,6 @@ async function resumeLastTurn(st: SessionRuntime, turnId: string): Promise<void>
       signal,
       st.agentConfig,
       onStep,
-      onStreamPart,
     ));
   emitRetryOutcome(st);
 }

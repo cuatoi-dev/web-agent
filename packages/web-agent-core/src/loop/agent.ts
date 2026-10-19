@@ -12,8 +12,6 @@ import { buildSystemPromptParts } from "../prompt/system-prompt.js";
 import type { ModelMessage, ContentPart, ToolResultPart, ToolImage } from "../types.js";
 import { providerRegistry } from "../transport/registry.js";
 import type { LanguageModel, ProviderCallOptions } from "../transport/provider.types.js";
-import { reassembleStream } from "../transport/stream-parts.js";
-import type { StreamPart } from "../transport/provider.types.js";
 import type { AnthropicLanguageModel } from "../transport/anthropic-provider.js";
 import { imageReachesModel, modelSupportsVision } from "../transport/vision.js";
 
@@ -116,17 +114,6 @@ function deriveAudit(step: { toolResults: StepToolResult[] }): AuditEntry[] {
   return list;
 }
 
-// Tees each part to the callback then re-yields it, for the onStreamPart seam.
-async function* tapStream<T>(
-  iter: AsyncIterable<T>,
-  fn: (item: T) => void,
-): AsyncIterable<T> {
-  for await (const item of iter) {
-    fn(item);
-    yield item;
-  }
-}
-
 export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextManager) {
   // P8: ctx.skills is what search_skills and load_skill read, so opted-out
   // skills are absent from both. The user-facing command list is built in the
@@ -158,11 +145,9 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
   /**
    * Build the exact `ProviderCallOptions` a live turn sends for `messages` —
    * same `tools`, same `systemPrompt`/`providerOptions` (so cache breakpoints
-   * A/B land on identical blocks), same model, same `streaming`. `overrides`
+   * A/B land on identical blocks), same model. `overrides`
    * may replace `maxOutputTokens` and `abortSignal` — nothing else, since any
-   * other difference breaks Anthropic's tools→system→messages cache prefix
-   * (or, for `streaming`, degrades `withRetry`'s per-attempt idle timeout to
-   * a hard deadline — see the note on `summariseInCachedConversation`).
+   * other difference breaks Anthropic's tools→system→messages cache prefix.
    *
    * Compaction (`loop/compaction.ts`) calls this with the composed history
    * plus one appended user turn, so its request reads that same cached
@@ -194,7 +179,6 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
         ? {}
         : { temperature: settings.temperature, topP: settings.topP, topK: settings.topK }),
       stopSequences: settings.stopSequences,
-      streaming: cfg.streaming,
       abortSignal: overrides?.abortSignal,
     };
   }
@@ -222,7 +206,7 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
     customToolDefs: defs,
     async callModel(opts: ProviderCallOptions) { return _model.generate(opts); },
 
-    async generate(opts: { messages: ModelMessage[]; abortSignal: AbortSignal; onStreamPart?: (part: StreamPart) => void; onStep?: () => void }) {
+    async generate(opts: { messages: ModelMessage[]; abortSignal: AbortSignal; onStep?: () => void }) {
       const { abortSignal } = opts;
       const workingMessages: ModelMessage[] = [...opts.messages];
       const accumulatedMessages: ModelMessage[] = [];
@@ -273,12 +257,7 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
           if (abortSignal.aborted) {
             throw new DOMException("The user aborted a request.", "AbortError");
           }
-          if (cfg.streaming && _model.doStream && opts.onStreamPart) {
-            const { stream } = await _model.doStream(callOpts);
-            genResult = await reassembleStream(tapStream(stream, opts.onStreamPart));
-          } else {
-            genResult = await _model.generate(callOpts);
-          }
+          genResult = await _model.generate(callOpts);
         } catch (err) {
           throw mapToAgentError(err);
         }
@@ -458,7 +437,6 @@ export async function runBareTurn(
           topK: settings.topK,
         }),
     stopSequences: settings.stopSequences,
-    streaming: cfg.streaming,
     abortSignal: opts?.signal,
   };
 

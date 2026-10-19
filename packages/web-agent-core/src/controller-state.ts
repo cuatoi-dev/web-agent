@@ -15,7 +15,7 @@ export function getState(st: SessionRuntime): SessionState {
 
   const canCompact = st.cm.hasCompactableTurns();
   const compactionsKey = st.compactionRows.map((r) => `${r.id}:${r.status}:${r.afterTurnId}`).join(";");
-  const stateKey = `${cmVersion}|${inProgressTurnId ?? ""}|${st.streamingText}|${st.running}|${st.compacting}|${canCompact}|${st.error ?? ""}|${st.activeSessionId}|${st.toolBlocksVersion}|${compactionsKey}`;
+  const stateKey = `${cmVersion}|${inProgressTurnId ?? ""}|${st.running}|${st.compacting}|${canCompact}|${st.error ?? ""}|${st.activeSessionId}|${st.toolBlocksVersion}|${compactionsKey}`;
 
   let messages: SessionMessage[];
 
@@ -31,7 +31,6 @@ export function getState(st: SessionRuntime): SessionState {
       toolBlocks: st.toolBlocks,
       toolBlocksVersion: st.toolBlocksVersion,
       running: st.running,
-      streamingText: st.streamingText,
     });
 
     st.cachedStateMessages = messages;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { Mock } from "vitest";
 import { z } from "zod";
 import { runBareTurn, buildGenerateSettings, createPageAgent } from "./agent.js";
@@ -10,9 +10,8 @@ import { ContextManager } from "./context-manager.js";
 import type { AuditEntry } from "./context-manager.js";
 import type { ToolContext, CustomToolDef } from "../tools/build-tools.js";
 import { AgentError } from "./errors.js";
-import type { Message, MessageCreateParams, ContentBlockParam, ImageBlockParam, MessageStreamEvent } from "../transport/wire.types.js";
+import type { Message, MessageCreateParams, ContentBlockParam, ImageBlockParam } from "../transport/wire.types.js";
 import { createMockProvider } from "../transport/mock-provider.js";
-import type { StreamPart } from "../transport/stream-parts.js";
 import type { ProviderWarning } from "../transport/provider.types.js";
 
 /** The shape of `_client.messages.create`'s mock in these tests — one request
@@ -627,184 +626,6 @@ describe("PageAgent.generate() — prepareStep / onStepFinish / delta", () => {
   });
 });
 
-// Convert a mock Anthropic.Message to the stream events the incremental msgToParts expects.
-function msgToStreamEvents(msg: Message): MessageStreamEvent[] {
-  const events: MessageStreamEvent[] = [
-    // Only `.usage` is read from message_start (see anthropic-provider.ts) — the
-    // fixture is intentionally partial; the cast documents that.
-    { type: "message_start", message: { usage: msg.usage } as Message },
-  ];
-  msg.content.forEach((block, index) => {
-    if (block.type === "text") {
-      events.push({ type: "content_block_start", index, content_block: { type: "text", text: "" } });
-      events.push({ type: "content_block_delta", index, delta: { type: "text_delta", text: block.text } });
-      events.push({ type: "content_block_stop", index });
-    } else if (block.type === "thinking") {
-      events.push({ type: "content_block_start", index, content_block: { type: "thinking", thinking: "" } });
-      events.push({ type: "content_block_delta", index, delta: { type: "thinking_delta", thinking: block.thinking } });
-      if (block.signature) events.push({ type: "content_block_delta", index, delta: { type: "signature_delta", signature: block.signature } });
-      events.push({ type: "content_block_stop", index });
-    } else if (block.type === "tool_use") {
-      const inputStr = JSON.stringify(block.input ?? {});
-      events.push({ type: "content_block_start", index, content_block: { type: "tool_use", id: block.id, name: block.name, input: {} } });
-      events.push({ type: "content_block_delta", index, delta: { type: "input_json_delta", partial_json: inputStr } });
-      events.push({ type: "content_block_stop", index });
-    }
-  });
-  events.push({ type: "message_delta", delta: { stop_reason: msg.stop_reason }, usage: { output_tokens: msg.usage.output_tokens } });
-  events.push({ type: "message_stop" });
-  return events;
-}
-
-// Not `async function*` — no `await` in the body, and `for await...of` (the
-// only way anthropic-provider.ts consumes this) falls back to the sync
-// iterator protocol transparently per spec. Behaviourally identical.
-function* asyncStream(events: MessageStreamEvent[]): Iterable<MessageStreamEvent> {
-  for (const e of events) yield e;
-}
-
-// Throws synchronously when called (not lazily on first `.next()`), which is
-// unobservably different here: production always does
-// `await this._client.messages.create(...)`, and a synchronous throw during
-// that call's evaluation is caught by the enclosing async function exactly
-// like an awaited rejection would be.
-function abortingStream(): never {
-  throw new DOMException("Aborted", "AbortError");
-}
-
-type StreamMock = Mock<[MessageCreateParams], Iterable<MessageStreamEvent>>;
-
-function makeStreamAgent(opts: { cfg?: Partial<AgentConfig>; mockStream: StreamMock }) {
-  const ctx: ToolContext = {
-    app: { appName: "Test" },
-    signal: new AbortController().signal,
-  };
-  const cm = { compose: () => [], recordStep: vi.fn(), commitTurn: vi.fn(), recordUsage: vi.fn() } as unknown as ContextManager;
-  const agent = createPageAgent({ ...testCfg, streaming: true, ...(opts.cfg ?? {}) }, ctx, cm);
-  // doStream() now uses the low-level raw stream: create({ ..., stream:true }).
-  // Branch the create mock so the streaming path delegates to opts.mockStream
-  // (called with the request params) and the non-streaming path returns a msg.
-  // The non-streaming fallback is never exercised by these streaming-mode
-  // tests; the cast documents that it's a placeholder, not a real Message.
-  const create = vi.fn<[MessageCreateParams], Iterable<MessageStreamEvent> | Promise<Message>>().mockImplementation((params) =>
-    params?.stream === true ? opts.mockStream(params) : Promise.resolve({ content: [], usage: {} } as unknown as Message),
-  );
-  agent._client = { messages: { create: create as unknown as RealCreate } };
-  return { agent, ctx, cm, create };
-}
-
-describe("PageAgent.generate() — streaming transport (cfg.streaming=true)", () => {
-  it("uses the low-level raw stream (create stream:true) when streaming:true", async () => {
-    const mockStream: StreamMock = vi.fn<[MessageCreateParams], Iterable<MessageStreamEvent>>().mockImplementation(() => asyncStream(msgToStreamEvents(anthropicTextResponse("streamed"))));
-    const { agent, ctx, create } = makeStreamAgent({ mockStream });
-
-    const result = await agent.generate({ messages: [{ role: "user", content: "hi" }], abortSignal: ctx.signal });
-    expect(mockStream).toHaveBeenCalledTimes(1);
-    expect(result.text).toBe("streamed");
-    // the streaming path goes through create({ ..., stream:true })
-    expect(create).toHaveBeenCalledTimes(1);
-    expect(create.mock.calls[0][0].stream).toBe(true);
-  });
-
-  it("thinking block and tool round-trip work correctly in streaming mode", async () => {
-    const thinkingAndTool: Message = {
-      id: "msg_1",
-      type: "message",
-      role: "assistant",
-      content: [
-        { type: "thinking", thinking: "Pondering", signature: "sig_s" },
-        { type: "tool_use", id: "call_s", name: "snapshot_page", input: {} },
-      ],
-      stop_reason: "tool_use",
-      model: "test",
-      usage: { input_tokens: 5, output_tokens: 10, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
-    };
-    const mockStream: StreamMock = vi.fn<[MessageCreateParams], Iterable<MessageStreamEvent>>()
-      .mockImplementationOnce(() => asyncStream(msgToStreamEvents(thinkingAndTool)))
-      .mockImplementationOnce(() => asyncStream(msgToStreamEvents(anthropicTextResponse("done"))));
-
-    const { agent, ctx } = makeStreamAgent({ cfg: { thinking: { enabled: true, budgetTokens: 1024 } }, mockStream });
-    const result = await agent.generate({ messages: [{ role: "user", content: "hi" }], abortSignal: ctx.signal });
-
-    expect(mockStream).toHaveBeenCalledTimes(2);
-    // First assistant message must contain thinking block
-    const assistantContent = result.response.messages[0].content as ContentPart[];
-    expect(assistantContent[0]).toEqual({ type: "thinking", thinking: "Pondering", signature: "sig_s" });
-    // Second stream call must replay the thinking block verbatim
-    const secondCallParams = mockStream.mock.calls[1][0];
-    const replayedAssistant = secondCallParams.messages[1];
-    expect(replayedAssistant.role).toBe("assistant");
-    expect((replayedAssistant.content as ContentBlockParam[])[0]).toEqual({
-      type: "thinking",
-      thinking: "Pondering",
-      signature: "sig_s",
-    });
-    expect(result.text).toBe("done");
-  });
-
-  it("pre-abort: throws AgentError (aborted) and does not call stream", async () => {
-    const mockStream: StreamMock = vi.fn<[MessageCreateParams], Iterable<MessageStreamEvent>>();
-    const { agent } = makeStreamAgent({ mockStream });
-    const controller = new AbortController();
-    controller.abort();
-
-    await expect(
-      agent.generate({ messages: [{ role: "user", content: "hi" }], abortSignal: controller.signal })
-    ).rejects.toThrow(/aborted|AbortError/);
-    expect(mockStream).not.toHaveBeenCalled();
-  });
-
-  it("mid-stream abort: AbortError thrown from async iterable is mapped to AgentError", async () => {
-    const mockStream: StreamMock = vi.fn<[MessageCreateParams], Iterable<MessageStreamEvent>>().mockImplementation(() => abortingStream());
-    const { agent, ctx } = makeStreamAgent({ mockStream });
-
-    await expect(
-      agent.generate({ messages: [{ role: "user", content: "hi" }], abortSignal: ctx.signal })
-    ).rejects.toMatchObject({ name: "AgentError", kind: "aborted" });
-  });
-});
-
-describe("runBareTurn — streaming transport (cfg.streaming=true)", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("streams via the injected fetch when streaming:true and returns text", async () => {
-    const mockMessage: Message = {
-      id: "msg_s",
-      type: "message",
-      role: "assistant",
-      content: [{ type: "text", text: "streamed reply" }],
-      stop_reason: "end_turn",
-      model: "test",
-      usage: { input_tokens: 5, output_tokens: 3 },
-    };
-    const sseBody = msgToStreamEvents(mockMessage).map((e) => `data: ${JSON.stringify(e)}\n\n`).join("");
-    const mockFetch = vi.fn<Parameters<typeof globalThis.fetch>, ReturnType<typeof globalThis.fetch>>().mockResolvedValue(
-      new Response(sseBody, { status: 200, headers: { "content-type": "text/event-stream" } }),
-    );
-
-    const result = await runBareTurn("Say hi", { ...testCfg, streaming: true }, { fetch: mockFetch });
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect((JSON.parse(mockFetch.mock.calls[0][1]!.body as string) as MessageCreateParams).stream).toBe(true);
-    expect(result).toBe("streamed reply");
-  });
-
-  it("streaming: pre-abort throws AgentError with kind=aborted without calling fetch", async () => {
-    const mockFetch = vi.fn();
-
-    const aborted = AbortSignal.abort();
-    try {
-      await runBareTurn("hi", { ...testCfg, streaming: true }, { fetch: mockFetch, signal: aborted });
-      expect.fail("expected rejection");
-    } catch (err: unknown) {
-      expect((err as AgentError).name).toBe("AgentError");
-      expect((err as AgentError).kind).toBe("aborted");
-    }
-    expect(mockFetch).not.toHaveBeenCalled();
-  });
-});
-
 describe("PageAgent.generate() and runBareTurn() — thinking and error taxonomy", () => {
   it("createPageAgent().generate() includes thinking config and omits temperature/topP/topK when enabled", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>().mockResolvedValue(anthropicTextResponse("done"));
@@ -932,134 +753,6 @@ describe("PageAgent.generate() and runBareTurn() — thinking and error taxonomy
     expect(capturedReq.temperature).toBeUndefined();
     expect(capturedReq.top_p).toBeUndefined();
     expect(capturedReq.top_k).toBeUndefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// PageAgent.generate() — onStreamPart seam (030-3)
-// ---------------------------------------------------------------------------
-import type { StreamPart } from "../transport/stream-parts.js";
-import type { LanguageModel } from "../transport/provider.types.js";
-
-function makeStreamingAgentWithModel(opts: {
-  mockModel: LanguageModel;
-  cfg?: Partial<AgentConfig>;
-}) {
-  const ctx: ToolContext = {
-    app: { appName: "Test" },
-    signal: new AbortController().signal,
-  };
-  const cm = { compose: () => [], recordStep: vi.fn(), commitTurn: vi.fn(), recordUsage: vi.fn() } as unknown as ContextManager;
-  const agent = createPageAgent({ ...testCfg, streaming: true, ...(opts.cfg ?? {}) }, ctx, cm);
-  agent._model = opts.mockModel;
-  return { agent, ctx };
-}
-
-describe("PageAgent.generate() — onStreamPart seam", () => {
-  it("onStreamPart receives parts in order and result text matches reassembled stream", async () => {
-    const mockParts: StreamPart[] = [
-      { type: "stream-start", warnings: [] },
-      { type: "text-start", id: "t1" },
-      { type: "text-delta", id: "t1", delta: "Hello" },
-      { type: "text-delta", id: "t1", delta: " world" },
-      { type: "text-end", id: "t1" },
-      { type: "finish", finishReason: "stop", usage: { inputTokens: 5, outputTokens: 3 } },
-    ];
-
-    const mockDoStream = vi.fn().mockResolvedValue({
-      // Not async — no await in the body, and for-await-of falls back to the
-      // sync iterator protocol transparently (see asyncStream above).
-      stream: (function* () { yield* mockParts; })(),
-    });
-
-    const generateMock = vi.fn();
-    const mockModel: LanguageModel = {
-      provider: "mock",
-      modelId: "mock",
-      generate: generateMock,
-      doStream: mockDoStream,
-    };
-
-    const { agent, ctx } = makeStreamingAgentWithModel({ mockModel });
-
-    const received: StreamPart[] = [];
-    const result = await agent.generate({
-      messages: [{ role: "user", content: "hi" }],
-      abortSignal: ctx.signal,
-      onStreamPart: p => received.push(p),
-    });
-
-    expect(mockDoStream).toHaveBeenCalledTimes(1);
-    expect(generateMock).not.toHaveBeenCalled();
-
-    expect(received.map(p => p.type)).toEqual([
-      "stream-start", "text-start", "text-delta", "text-delta", "text-end", "finish",
-    ]);
-    const textDelta = received.find(
-      (p): p is Extract<StreamPart, { type: "text-delta" }> => p.type === "text-delta" && p.delta === "Hello"
-    );
-    expect(textDelta?.delta).toBe("Hello");
-    expect(result.text).toBe("Hello world");
-  });
-
-  it("without onStreamPart, falls back to _model.generate() even with doStream present", async () => {
-    const mockGenerate = vi.fn().mockResolvedValue({
-      content: [{ type: "text", text: "from generate" }],
-      finishReason: "stop" as const,
-      usage: { inputTokens: 1, outputTokens: 1 },
-      warnings: [],
-    });
-    const mockDoStream = vi.fn();
-
-    const mockModel: LanguageModel = {
-      provider: "mock",
-      modelId: "mock",
-      generate: mockGenerate,
-      doStream: mockDoStream,
-    };
-
-    const { agent, ctx } = makeStreamingAgentWithModel({ mockModel });
-
-    const result = await agent.generate({
-      messages: [{ role: "user", content: "hi" }],
-      abortSignal: ctx.signal,
-      // onStreamPart NOT provided
-    });
-
-    expect(mockGenerate).toHaveBeenCalledTimes(1);
-    expect(mockDoStream).not.toHaveBeenCalled();
-    expect(result.text).toBe("from generate");
-  });
-
-  it("abort mid-stream via onStreamPart path → AgentError (aborted)", async () => {
-    const controller = new AbortController();
-
-    const mockDoStream = vi.fn().mockResolvedValue({
-      // Not async — same reasoning as asyncStream above.
-      stream: (function* () {
-        yield { type: "stream-start", warnings: [] } as StreamPart;
-        yield { type: "text-start", id: "t1" } as StreamPart;
-        // Simulate abort error propagating from the stream
-        throw new DOMException("Aborted", "AbortError");
-      })(),
-    });
-
-    const mockModel: LanguageModel = {
-      provider: "mock",
-      modelId: "mock",
-      generate: vi.fn(),
-      doStream: mockDoStream,
-    };
-
-    const { agent } = makeStreamingAgentWithModel({ mockModel });
-
-    await expect(
-      agent.generate({
-        messages: [{ role: "user", content: "hi" }],
-        abortSignal: controller.signal,
-        onStreamPart: vi.fn(),
-      })
-    ).rejects.toMatchObject({ name: "AgentError", kind: "aborted" });
   });
 });
 
@@ -1260,60 +953,91 @@ describe("a failing tool result reaches the provider request as is_error (001)",
 });
 
 // ---------------------------------------------------------------------------
-// T13 — argumentsIssue never reaches the assistant ContentPart
+// Tool-argument handling and audit propagation, driven by complete model
+// results. The context manager, the agent loop and the tool dispatch are real;
+// only the model is scripted.
 // ---------------------------------------------------------------------------
+
+type ToolUseResult = Extract<import("../types.js").ResponseBlock, { type: "tool_use" }>;
+
+function toolUse(
+  id: string,
+  name: string,
+  input: Record<string, unknown>,
+  argumentsIssue?: "empty" | "unparsable",
+): ToolUseResult {
+  return { type: "tool_use", id, name, input, ...(argumentsIssue ? { argumentsIssue } : {}) };
+}
+
+async function runScripted(
+  toolStep: ToolUseResult[],
+  tools: CustomToolDef[],
+) {
+  const mockModel = createMockProvider([
+    { content: toolStep, finishReason: "tool-calls" },
+    { text: "done", finishReason: "stop" },
+  ]);
+  const ctx: ToolContext = {
+    app: { appName: "Test" },
+    signal: new AbortController().signal,
+  };
+  const cm = new ContextManager(testCfg.context);
+  cm.appendUser({ role: "user", content: "test" });
+  const agent = createPageAgent({ ...testCfg, tools: () => tools }, ctx, cm);
+  agent._model = mockModel;
+  const result = await agent.generate({
+    messages: cm.compose(),
+    abortSignal: new AbortController().signal,
+  });
+  return { cm, result };
+}
+
+function toolResultOf(cm: ContextManager) {
+  const toolEntry = cm.journal.find((e) => e.msg.role === "tool");
+  expect(toolEntry).toBeDefined();
+  const part = (toolEntry!.msg.content as Array<{ type: string; isError?: boolean; output: string }>).find(
+    (p) => p.type === "tool-result",
+  );
+  expect(part).toBeDefined();
+  return part!;
+}
+
+describe("PageAgent — complete tool-call results", () => {
+  it("one reply with two tool calls runs both tools with their own inputs", async () => {
+    const seen: Array<{ tool: string; input: unknown }> = [];
+    const mk = (name: string): CustomToolDef => ({
+      name,
+      description: name,
+      inputSchema: z.object({ path: z.string() }),
+      execute: (input: unknown) => {
+        seen.push({ tool: name, input });
+        return Promise.resolve({ content: `${name} ok` });
+      },
+    });
+    const { cm } = await runScripted(
+      [toolUse("call_a", "read_a", { path: "a" }), toolUse("call_b", "read_b", { path: "b" })],
+      [mk("read_a"), mk("read_b")],
+    );
+    expect(seen).toEqual([
+      { tool: "read_a", input: { path: "a" } },
+      { tool: "read_b", input: { path: "b" } },
+    ]);
+    const toolEntry = cm.journal.find((e) => e.msg.role === "tool");
+    const results = (toolEntry!.msg.content as Array<{ type: string; toolCallId: string }>).filter(
+      (p) => p.type === "tool-result",
+    );
+    expect(results.map((r) => r.toolCallId)).toEqual(["call_a", "call_b"]);
+  });
+});
 
 describe("PageAgent — argumentsIssue is not journaled to the assistant message", () => {
   it("argumentsIssue never reaches the assistant message ContentPart", async () => {
-    // Stream carries an unparsable tool payload; the block is still emitted
-    // (tool-call part is present, so complete=true) but with argumentsIssue.
-    // The assistant ContentPart built in agent.ts:293-299 must NOT include it.
-    const unparsableToolStreamParts: StreamPart[] = [
-      { type: "tool-input-start", id: "call_bad", toolName: "snapshot_page" },
-      { type: "tool-input-delta", id: "call_bad", delta: "{invalid" },
-      { type: "tool-input-end", id: "call_bad" },
-      { type: "tool-call", toolCallId: "call_bad", toolName: "snapshot_page", input: "{invalid" },
-    ];
-
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
-      const mockModel = createMockProvider({
-        streamParts: unparsableToolStreamParts,
-        finishReason: "tool-calls",
-      });
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn<[{ inputTokens?: number; cacheReadTokens?: number; cacheCreationTokens?: number } | number], void>(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      // Swap in the mock provider (runs reassembleStream and the loop for real).
-      agent._model = mockModel;
-
-      const streamParts: StreamPart[] = [];
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: (p) => streamParts.push(p),
-      });
-
-      // The loop journals via cm.recordStep; the first call contains the assistant message.
-      expect(cm.recordStep).toHaveBeenCalled();
-      const delta = cm.recordStep.mock.calls[0][0];
-      const assistantMsg = delta.find((m: ModelMessage) => m.role === "assistant");
-      expect(assistantMsg).toBeDefined();
-      const toolCallPart = (assistantMsg!.content as ContentPart[]).find(
+      const { cm } = await runScripted([toolUse("call_bad", "snapshot_page", {}, "unparsable")], []);
+      const assistantEntry = cm.journal.find((e) => e.msg.role === "assistant");
+      expect(assistantEntry).toBeDefined();
+      const toolCallPart = (assistantEntry!.msg.content as ContentPart[]).find(
         (p): p is Extract<ContentPart, { type: "tool-call" }> => p.type === "tool-call",
       );
       expect(toolCallPart).toBeDefined();
@@ -1325,12 +1049,6 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
   });
 
   it("an unparsable tool payload produces the parse-failure result (003)", async () => {
-    const unparsableToolStreamParts: StreamPart[] = [
-      { type: "tool-input-start", id: "call_bad", toolName: "ping" },
-      { type: "tool-input-delta", id: "call_bad", delta: "{invalid" },
-      { type: "tool-input-end", id: "call_bad" },
-      { type: "tool-call", toolCallId: "call_bad", toolName: "ping", input: "{invalid" },
-    ];
     const pingExecutor = vi.fn().mockResolvedValue({ content: "pong" });
     const pingTool: CustomToolDef = {
       name: "ping",
@@ -1338,69 +1056,16 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
       inputSchema: z.object({ a: z.string() }).strict(),
       execute: pingExecutor,
     };
-
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const mockModel = createMockProvider([
-        {
-          streamParts: unparsableToolStreamParts,
-          finishReason: "tool-calls",
-        },
-        {
-          text: "done",
-          finishReason: "stop",
-        },
-      ]);
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true, tools: () => [pingTool] },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      agent._model = mockModel;
-
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: () => {},
-      });
-
-      expect(pingExecutor).not.toHaveBeenCalled();
-      expect(cm.recordStep).toHaveBeenCalled();
-      const delta = cm.recordStep.mock.calls[0][0];
-      const toolMsg = delta.find((m: ModelMessage) => m.role === "tool");
-      expect(toolMsg).toBeDefined();
-      const toolResultPart = (toolMsg!.content as Array<{ type: string; isError?: boolean; output: string }>).find(
-        (p) => p.type === "tool-result",
-      );
-      expect(toolResultPart).toBeDefined();
-      expect(toolResultPart!.isError).toBe(true);
-      expect(toolResultPart!.output).toContain("Could not read the arguments for ping");
-      expect(toolResultPart!.output).not.toContain("Invalid input for");
-      expect(toolResultPart!.output).not.toContain("required");
-    } finally {
-      warnSpy.mockRestore();
-    }
+    const { cm } = await runScripted([toolUse("call_bad", "ping", {}, "unparsable")], [pingTool]);
+    expect(pingExecutor).not.toHaveBeenCalled();
+    const part = toolResultOf(cm);
+    expect(part.isError).toBe(true);
+    expect(part.output).toContain("Could not read the arguments for ping");
+    expect(part.output).not.toContain("Invalid input for");
+    expect(part.output).not.toContain("required");
   });
 
   it("an empty tool payload still runs an all-optional tool (003)", async () => {
-    const emptyToolStreamParts: StreamPart[] = [
-      { type: "tool-input-start", id: "call_empty", toolName: "ping" },
-      { type: "tool-input-delta", id: "call_empty", delta: "" },
-      { type: "tool-input-end", id: "call_empty" },
-      { type: "tool-call", toolCallId: "call_empty", toolName: "ping", input: "" },
-    ];
     const pingExecutor = vi.fn().mockResolvedValue({ content: "pong" });
     const pingTool: CustomToolDef = {
       name: "ping",
@@ -1408,60 +1073,15 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
       inputSchema: z.object({ a: z.string().optional() }),
       execute: pingExecutor,
     };
-
-    const mockModel = createMockProvider([
-      {
-        streamParts: emptyToolStreamParts,
-        finishReason: "tool-calls",
-      },
-      {
-        text: "done",
-        finishReason: "stop",
-      },
-    ]);
-
-    const ctx: ToolContext = {
-      app: { appName: "Test" },
-      signal: new AbortController().signal,
-    };
-    const cm = {
-      compose: (): ModelMessage[] => [],
-      recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-      commitTurn: vi.fn<[ModelMessage[]?], void>(),
-      recordUsage: vi.fn(),
-    };
-
-    const agent = createPageAgent(
-      { ...testCfg, streaming: true, tools: () => [pingTool] },
-      ctx,
-      cm as unknown as ContextManager,
-    );
-    agent._model = mockModel;
-
-    await agent.generate({
-      messages: [{ role: "user", content: "test" }],
-      abortSignal: new AbortController().signal,
-      onStreamPart: () => {},
-    });
-
+    const { cm } = await runScripted([toolUse("call_empty", "ping", {}, "empty")], [pingTool]);
     expect(pingExecutor).toHaveBeenCalledTimes(1);
     expect(pingExecutor.mock.calls[0][0]).toEqual({});
-    const delta = cm.recordStep.mock.calls[0][0];
-    const toolMsg = delta.find((m: ModelMessage) => m.role === "tool");
-    const toolResultPart = (toolMsg!.content as Array<{ type: string; isError?: boolean; output: string }>).find(
-      (p) => p.type === "tool-result",
-    );
-    expect(toolResultPart!.output).toBe("pong");
-    expect(toolResultPart!.isError).toBeUndefined();
+    const part = toolResultOf(cm);
+    expect(part.output).toBe("pong");
+    expect(part.isError).toBeUndefined();
   });
 
   it("an empty tool payload for a required-argument tool reports the missing property (003)", async () => {
-    const emptyToolStreamParts: StreamPart[] = [
-      { type: "tool-input-start", id: "call_empty", toolName: "ping" },
-      { type: "tool-input-delta", id: "call_empty", delta: "" },
-      { type: "tool-input-end", id: "call_empty" },
-      { type: "tool-call", toolCallId: "call_empty", toolName: "ping", input: "" },
-    ];
     const pingExecutor = vi.fn().mockResolvedValue({ content: "pong" });
     const pingTool: CustomToolDef = {
       name: "ping",
@@ -1469,325 +1089,69 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
       inputSchema: z.object({ a: z.string() }).strict(),
       execute: pingExecutor,
     };
-
-    const mockModel = createMockProvider([
-      {
-        streamParts: emptyToolStreamParts,
-        finishReason: "tool-calls",
-      },
-      {
-        text: "done",
-        finishReason: "stop",
-      },
-    ]);
-
-    const ctx: ToolContext = {
-      app: { appName: "Test" },
-      signal: new AbortController().signal,
-    };
-    const cm = {
-      compose: (): ModelMessage[] => [],
-      recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-      commitTurn: vi.fn<[ModelMessage[]?], void>(),
-      recordUsage: vi.fn(),
-    };
-
-    const agent = createPageAgent(
-      { ...testCfg, streaming: true, tools: () => [pingTool] },
-      ctx,
-      cm as unknown as ContextManager,
-    );
-    agent._model = mockModel;
-
-    await agent.generate({
-      messages: [{ role: "user", content: "test" }],
-      abortSignal: new AbortController().signal,
-      onStreamPart: () => {},
-    });
-
+    const { cm } = await runScripted([toolUse("call_empty", "ping", {}, "empty")], [pingTool]);
     expect(pingExecutor).not.toHaveBeenCalled();
-    const delta = cm.recordStep.mock.calls[0][0];
-    const toolMsg = delta.find((m: ModelMessage) => m.role === "tool");
-    const toolResultPart = (toolMsg!.content as Array<{ type: string; isError?: boolean; output: string }>).find(
-      (p) => p.type === "tool-result",
-    );
-    expect(toolResultPart!.isError).toBe(true);
-    expect(toolResultPart!.output).toContain("a: Required");
-    expect(toolResultPart!.output).not.toContain("Could not read the arguments");
+    const part = toolResultOf(cm);
+    expect(part.isError).toBe(true);
+    expect(part.output).toContain("a: Required");
+    expect(part.output).not.toContain("Could not read the arguments");
   });
 
   describe("AuditEntry.failed propagation", () => {
     it("marks audit as failed for unparsable arguments", async () => {
-      const unparsableToolParts: StreamPart[] = [
-        { type: "tool-input-start", id: "call_bad", toolName: "echo" },
-        { type: "tool-input-delta", id: "call_bad", delta: "{invalid" },
-        { type: "tool-input-end", id: "call_bad" },
-        { type: "tool-call", toolCallId: "call_bad", toolName: "echo", input: "{invalid", argumentsIssue: "unparsable" },
-      ];
       const echoTool: CustomToolDef = {
         name: "echo",
         description: "echo tool",
         inputSchema: z.object({ text: z.string() }),
         execute: vi.fn().mockResolvedValue({ content: "ok" }),
       };
-
-      const mockModel = createMockProvider([
-        {
-          streamParts: unparsableToolParts,
-          finishReason: "tool-calls",
-        },
-        {
-          text: "done",
-          finishReason: "stop",
-        },
-      ]);
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true, tools: () => [echoTool] },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      agent._model = mockModel;
-
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: () => {},
-      });
-
-      expect(cm.recordStep).toHaveBeenCalled();
-      const audits = cm.recordStep.mock.calls[0][1];
-      expect(audits).toBeDefined();
-      expect(audits![0].failed).toBe(true);
-      expect(audits![0].outcomeSummary).toContain("Could not read the arguments for echo");
+      const { cm } = await runScripted([toolUse("call_bad", "echo", {}, "unparsable")], [echoTool]);
+      expect(cm.audit).toHaveLength(1);
+      expect(cm.audit[0].failed).toBe(true);
+      expect(cm.audit[0].outcomeSummary).toContain("Could not read the arguments for echo");
     });
 
     it("marks audit as failed for schema validation errors", async () => {
-      const invalidToolParts: StreamPart[] = [
-        { type: "tool-input-start", id: "call_inv", toolName: "echo" },
-        { type: "tool-input-delta", id: "call_inv", delta: "" },
-        { type: "tool-input-end", id: "call_inv" },
-        { type: "tool-call", toolCallId: "call_inv", toolName: "echo", input: "" },
-      ];
       const echoTool: CustomToolDef = {
         name: "echo",
         description: "echo tool",
         inputSchema: z.object({ text: z.string() }),
         execute: vi.fn().mockResolvedValue({ content: "ok" }),
       };
-
-      const mockModel = createMockProvider([
-        {
-          streamParts: invalidToolParts,
-          finishReason: "tool-calls",
-        },
-        {
-          text: "done",
-          finishReason: "stop",
-        },
-      ]);
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true, tools: () => [echoTool] },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      agent._model = mockModel;
-
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: () => {},
-      });
-
-      expect(cm.recordStep).toHaveBeenCalled();
-      const audits = cm.recordStep.mock.calls[0][1];
-      expect(audits).toBeDefined();
-      expect(audits![0].failed).toBe(true);
+      const { cm } = await runScripted([toolUse("call_inv", "echo", {}, "empty")], [echoTool]);
+      expect(cm.audit[0].failed).toBe(true);
     });
 
     it("marks audit as failed for throwing tools", async () => {
-      const toolParts: StreamPart[] = [
-        { type: "tool-input-start", id: "call_throw", toolName: "boom" },
-        { type: "tool-input-delta", id: "call_throw", delta: "{}" },
-        { type: "tool-input-end", id: "call_throw" },
-        { type: "tool-call", toolCallId: "call_throw", toolName: "boom", input: "{}" },
-      ];
       const boomTool: CustomToolDef = {
         name: "boom",
         description: "exploding tool",
         inputSchema: z.object({}),
         execute: vi.fn().mockRejectedValue(new Error("disk write error")),
       };
-
-      const mockModel = createMockProvider([
-        {
-          streamParts: toolParts,
-          finishReason: "tool-calls",
-        },
-        {
-          text: "done",
-          finishReason: "stop",
-        },
-      ]);
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true, tools: () => [boomTool] },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      agent._model = mockModel;
-
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: () => {},
-      });
-
-      expect(cm.recordStep).toHaveBeenCalled();
-      const audits = cm.recordStep.mock.calls[0][1];
-      expect(audits).toBeDefined();
-      expect(audits![0].failed).toBe(true);
-      expect(audits![0].outcomeSummary).toContain("disk write error");
+      const { cm } = await runScripted([toolUse("call_throw", "boom", {})], [boomTool]);
+      expect(cm.audit[0].failed).toBe(true);
+      expect(cm.audit[0].outcomeSummary).toContain("disk write error");
     });
 
     it("marks audit as failed for unknown tools", async () => {
-      const unknownToolParts: StreamPart[] = [
-        { type: "tool-input-start", id: "call_unk", toolName: "ghost_tool" },
-        { type: "tool-input-delta", id: "call_unk", delta: "{}" },
-        { type: "tool-input-end", id: "call_unk" },
-        { type: "tool-call", toolCallId: "call_unk", toolName: "ghost_tool", input: "{}" },
-      ];
-
-      const mockModel = createMockProvider([
-        {
-          streamParts: unknownToolParts,
-          finishReason: "tool-calls",
-        },
-        {
-          text: "done",
-          finishReason: "stop",
-        },
-      ]);
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true, tools: () => [] },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      agent._model = mockModel;
-
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: () => {},
-      });
-
-      expect(cm.recordStep).toHaveBeenCalled();
-      const audits = cm.recordStep.mock.calls[0][1];
-      expect(audits).toBeDefined();
-      expect(audits![0].failed).toBe(true);
-      expect(audits![0].outcomeSummary).toContain("Unknown tool: ghost_tool");
-      expect(audits![0].unknownTool).toBe(true);
+      const { cm } = await runScripted([toolUse("call_unk", "ghost_tool", {})], []);
+      expect(cm.audit[0].failed).toBe(true);
+      expect(cm.audit[0].outcomeSummary).toContain("Unknown tool: ghost_tool");
+      expect(cm.audit[0].unknownTool).toBe(true);
     });
 
     it("marks audit as failed=false for successful tool calls", async () => {
-      const goodToolParts: StreamPart[] = [
-        { type: "tool-input-start", id: "call_ok", toolName: "ok_tool" },
-        { type: "tool-input-delta", id: "call_ok", delta: "{}" },
-        { type: "tool-input-end", id: "call_ok" },
-        { type: "tool-call", toolCallId: "call_ok", toolName: "ok_tool", input: "{}" },
-      ];
+      const execute = vi.fn().mockResolvedValue({ content: "all good" });
       const okTool: CustomToolDef = {
         name: "ok_tool",
         description: "working tool",
         inputSchema: z.object({}),
-        execute: vi.fn().mockResolvedValue({ content: "all good" }),
+        execute,
       };
-
-      const mockModel = createMockProvider([
-        {
-          streamParts: goodToolParts,
-          finishReason: "tool-calls",
-        },
-        {
-          text: "done",
-          finishReason: "stop",
-        },
-      ]);
-
-      const ctx: ToolContext = {
-        app: { appName: "Test" },
-        signal: new AbortController().signal,
-      };
-      const cm = {
-        compose: (): ModelMessage[] => [],
-        recordStep: vi.fn<[ModelMessage[], AuditEntry[]?], void>(),
-        commitTurn: vi.fn<[ModelMessage[]?], void>(),
-        recordUsage: vi.fn(),
-      };
-
-      const agent = createPageAgent(
-        { ...testCfg, streaming: true, tools: () => [okTool] },
-        ctx,
-        cm as unknown as ContextManager,
-      );
-      agent._model = mockModel;
-
-      await agent.generate({
-        messages: [{ role: "user", content: "test" }],
-        abortSignal: new AbortController().signal,
-        onStreamPart: () => {},
-      });
-
-      expect(cm.recordStep).toHaveBeenCalled();
-      const audits = cm.recordStep.mock.calls[0][1];
-      expect(audits).toBeDefined();
-      expect(audits![0].failed).toBe(false);
+      const { cm } = await runScripted([toolUse("call_ok", "ok_tool", {})], [okTool]);
+      expect(execute).toHaveBeenCalledTimes(1);
+      expect(cm.audit[0].failed).toBe(false);
     });
   });
 });

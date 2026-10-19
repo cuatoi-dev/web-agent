@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { getAbsoluteBaseURL } from "./provider.js";
-import { parseAnthropicSseText } from "./sse-reader.js";
 import { AnthropicLanguageModel } from "./anthropic-provider.js";
 import type { AgentConfig } from "../config.js";
 
@@ -31,82 +30,6 @@ describe("getAbsoluteBaseURL", () => {
   });
   it("resolves relative URLs against window.location.origin in browser-like (jsdom) env", () => {
     expect(getAbsoluteBaseURL("/api/anthropic/v1")).toBe("http://localhost:3000/api/anthropic/v1");
-  });
-});
-
-describe("parseAnthropicSseText", () => {
-  it("successfully parses complete SSE stream of text and thinking", () => {
-    const sse = [
-      `event: message_start`,
-      `data: {"type":"message_start","message":{"id":"msg_123","type":"message","role":"assistant","content":[],"stop_reason":null,"usage":{"input_tokens":10}}}`,
-      ``,
-      `event: content_block_start`,
-      `data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"","signature":"sig_abc"}}`,
-      ``,
-      `event: content_block_delta`,
-      `data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"Deep thinking"}}`,
-      ``,
-      `event: content_block_stop`,
-      `data: {"type":"content_block_stop","index":0}`,
-      ``,
-      `event: content_block_start`,
-      `data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":""}}`,
-      ``,
-      `event: content_block_delta`,
-      `data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"Hello world"}}`,
-      ``,
-      `event: content_block_stop`,
-      `data: {"type":"content_block_stop","index":1}`,
-      ``,
-      `event: message_delta`,
-      `data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":20}}`,
-      ``,
-      `event: message_stop`,
-      `data: {"type":"message_stop"}`,
-      `data: [DONE]`
-    ].join("\n");
-
-    const message = parseAnthropicSseText(sse);
-    expect(message).toBeDefined();
-    expect(message!.id).toBe("msg_123");
-    expect(message!.stop_reason).toBe("end_turn");
-    expect(message!.usage.input_tokens).toBe(10);
-    expect(message!.usage.output_tokens).toBe(20);
-    expect(message!.content).toHaveLength(2);
-    expect(message!.content[0]).toEqual({ type: "thinking", thinking: "Deep thinking", signature: "sig_abc" });
-    expect(message!.content[1]).toEqual({ type: "text", text: "Hello world" });
-  });
-
-  it("successfully parses tool_use SSE stream", () => {
-    const sse = [
-      `event: message_start`,
-      `data: {"type":"message_start","message":{"id":"msg_456","type":"message","role":"assistant","content":[],"stop_reason":null,"usage":{"input_tokens":5}}}`,
-      ``,
-      `event: content_block_start`,
-      `data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"tu_999","name":"click","input":{}}}`,
-      ``,
-      `event: content_block_delta`,
-      `data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"ref\\":\\""}}`,
-      ``,
-      `event: content_block_delta`,
-      `data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"12\\"}"}}`,
-      ``,
-      `event: content_block_stop`,
-      `data: {"type":"content_block_stop","index":0}`,
-      ``,
-      `event: message_delta`,
-      `data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":5}}`,
-      ``,
-      `event: message_stop`,
-      `data: {"type":"message_stop"}`
-    ].join("\n");
-
-    const message = parseAnthropicSseText(sse);
-    expect(message).toBeDefined();
-    expect(message!.id).toBe("msg_456");
-    expect(message!.stop_reason).toBe("tool_use");
-    expect(message!.content).toHaveLength(1);
-    expect(message!.content[0]).toEqual({ type: "tool_use", id: "tu_999", name: "click", input: { ref: "12" } });
   });
 });
 

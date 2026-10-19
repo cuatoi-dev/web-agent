@@ -42,7 +42,6 @@ function params(
     toolBlocks: new Map(),
     toolBlocksVersion: 0,
     running: false,
-    streamingText: "",
   };
 }
 

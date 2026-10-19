@@ -1,7 +1,6 @@
 import type {
   Message,
   ContentBlock,
-  MessageStreamEvent,
   StopReason,
 } from "./wire.types.js";
 import type { FinishReason, ProviderWarning, ToolChoice, Tool } from "./provider.types.js";
@@ -10,7 +9,6 @@ import type {
   GeminiContent,
   GeminiGenerateContentResponse,
   GeminiPart,
-  GeminiStreamChunk,
   GeminiTool,
   GeminiToolConfig,
 } from "./gemini-wire.types.js";
@@ -308,148 +306,4 @@ export function fromGeminiResponse(
     ...(reasoningTokens !== undefined ? { reasoningTokens } : {}),
     ...(Object.keys(signatures).length > 0 ? { thoughtSignatures: signatures } : {}),
   };
-}
-
-export class GeminiStreamTranslator {
-  private textStarted = false;
-  private thinkingStarted = false;
-  private nextToolBlockIndex = 2; // index 0 reserved for text, 1 for thinking
-  private sawFunctionCall = false;
-  private inputTokens?: number;
-  private outputTokens = 0;
-  private lastFinishReason: FinishReason = "unknown";
-  private lastReasoningTokens?: number;
-  private signatures: Record<string, string> = {};
-
-  get finishReason(): FinishReason {
-    return this.lastFinishReason;
-  }
-
-  get reasoningTokens(): number | undefined {
-    return this.lastReasoningTokens;
-  }
-
-  get thoughtSignatures(): Record<string, string> {
-    return this.signatures;
-  }
-
-  push(chunk: GeminiStreamChunk): MessageStreamEvent[] {
-    const events: MessageStreamEvent[] = [];
-
-    // Track usage (cumulative, overwritten)
-    if (chunk.usageMetadata) {
-      if (chunk.usageMetadata.promptTokenCount !== undefined) {
-        this.inputTokens = chunk.usageMetadata.promptTokenCount;
-      }
-      if (chunk.usageMetadata.candidatesTokenCount !== undefined) {
-        this.outputTokens = chunk.usageMetadata.candidatesTokenCount;
-      }
-      if (chunk.usageMetadata.thoughtsTokenCount !== undefined) {
-        this.lastReasoningTokens = chunk.usageMetadata.thoughtsTokenCount;
-      }
-    }
-
-    const candidate = chunk.candidates?.[0];
-    const parts = candidate?.content?.parts ?? [];
-
-    for (const part of parts) {
-      if (part.thought === true && part.text) {
-        if (!this.thinkingStarted) {
-          this.thinkingStarted = true;
-          events.push({
-            type: "content_block_start",
-            index: 1,
-            content_block: { type: "thinking", thinking: "" },
-          });
-        }
-        events.push({
-          type: "content_block_delta",
-          index: 1,
-          delta: { type: "thinking_delta", thinking: part.text },
-        });
-      } else if (part.text) {
-        if (!this.textStarted) {
-          this.textStarted = true;
-          events.push({
-            type: "content_block_start",
-            index: 0,
-            content_block: { type: "text", text: "" },
-          });
-        }
-        events.push({
-          type: "content_block_delta",
-          index: 0,
-          delta: { type: "text_delta", text: part.text },
-        });
-      } else if (part.functionCall) {
-        this.sawFunctionCall = true;
-        const fc = part.functionCall;
-        const blockIndex = this.nextToolBlockIndex++;
-        const id = fc.id ?? `${fc.name}_${blockIndex}`;
-        if (part.thoughtSignature) {
-          this.signatures[id] = part.thoughtSignature;
-        }
-        events.push({
-          type: "content_block_start",
-          index: blockIndex,
-          content_block: { type: "tool_use", id, name: fc.name, input: {} },
-        });
-        events.push({
-          type: "content_block_delta",
-          index: blockIndex,
-          delta: {
-            type: "input_json_delta",
-            partial_json: JSON.stringify(fc.args ?? {}),
-          },
-        });
-        events.push({
-          type: "content_block_stop",
-          index: blockIndex,
-        });
-      }
-    }
-
-    if (candidate?.finishReason) {
-      this.lastFinishReason = fromGeminiFinishReason(
-        candidate.finishReason,
-        this.sawFunctionCall
-      );
-    }
-
-    if (chunk.usageMetadata || candidate?.finishReason) {
-      events.push({
-        type: "message_delta",
-        delta: {
-          stop_reason: candidate?.finishReason
-            ? fromGeminiStopReason(candidate.finishReason, this.sawFunctionCall)
-            : null,
-        },
-        usage: {
-          output_tokens: this.outputTokens,
-          ...(this.inputTokens !== undefined ? { input_tokens: this.inputTokens } : {}),
-        },
-      });
-    }
-
-    return events;
-  }
-
-  end(): MessageStreamEvent[] {
-    const events: MessageStreamEvent[] = [];
-    if (this.thinkingStarted) {
-      events.push({
-        type: "content_block_stop",
-        index: 1,
-      });
-      this.thinkingStarted = false;
-    }
-    if (this.textStarted) {
-      events.push({
-        type: "content_block_stop",
-        index: 0,
-      });
-      this.textStarted = false;
-    }
-    return events;
-  }
 }

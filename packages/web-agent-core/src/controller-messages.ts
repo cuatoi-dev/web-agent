@@ -121,7 +121,6 @@ export function buildSessionMessages(params: BuildMessagesParams): SessionMessag
     toolBlocks,
     toolBlocksVersion,
     running,
-    streamingText,
   } = params;
   const audit = params.audit;
 
@@ -359,7 +358,6 @@ export function buildSessionMessages(params: BuildMessagesParams): SessionMessag
 
       if (userMessage) messages.push(userMessage);
 
-      const streamingHere = !!streamingText;
       let assistantText = "";
       for (const entry of turnEntries) {
         if (entry.msg.role === "assistant") {
@@ -372,8 +370,7 @@ export function buildSessionMessages(params: BuildMessagesParams): SessionMessag
       if (
         assistantText ||
         (turnAudits[tid] && turnAudits[tid].length > 0) ||
-        turnCompactions.length > 0 ||
-        streamingHere
+        turnCompactions.length > 0
       ) {
         const parts = getAssistantParts(tid, journal, turnAudits[tid] || [], toolBlocks);
         for (const r of turnCompactions) {
@@ -384,9 +381,6 @@ export function buildSessionMessages(params: BuildMessagesParams): SessionMessag
               ...(r.stats ? { stats: r.stats } : {}),
             },
           });
-        }
-        if (streamingHere) {
-          parts.push({ kind: "text", text: streamingText });
         }
         const textParts = parts.filter((p): p is { kind: "text"; text: string } => p.kind === "text");
         const blockParts = parts.filter((p): p is { kind: "block"; block: RenderableBlock } => p.kind === "block");

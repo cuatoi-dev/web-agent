@@ -16,7 +16,6 @@ import type { CompactionObserver } from "./loop/types.js";
 import type { ImageAttachment } from "./utils/types.js";
 import type { SchedulerRegistry } from "./scheduler.types.js";
 import type { TodoStore } from "./todo.types.js";
-import type { StreamPart } from "./transport/provider.types.js";
 import type { TurnResult } from "./loop/run-turn.js";
 import type {
   AvailableTool,
@@ -38,7 +37,6 @@ import type {
 export type TurnInvoker = (
   signal: AbortSignal,
   onStep: () => void,
-  onStreamPart: (part: StreamPart) => void,
 ) => Promise<TurnResult>;
 
 export interface SessionRuntime {
@@ -70,10 +68,6 @@ export interface SessionRuntime {
   /** Changes when an old turn must stop mutating this session's state. */
   sessionEpoch: number;
   running: boolean;
-  /** Text deltas of the step currently streaming, in arrival order. Empty
-   *  whenever no step is streaming. Cleared the moment the step's real
-   *  assistant message is journaled, so the two never both show. */
-  streamingText: string;
   queuedMessages: QueuedMessage[];
   error: string | undefined;
   usage: { input: number; output: number };

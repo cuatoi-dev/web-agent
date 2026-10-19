@@ -158,8 +158,6 @@ export type {
   ContextConfig,
 } from "./config.js";
 
-export type { StreamPart } from "./transport/stream-parts.js";
-export { reassembleStream } from "./transport/stream-parts.js";
 
 export { createMockProvider, ECHO_SCRIPT } from "./transport/mock-provider.js";
 export type { MockResponse, MockScript } from "./transport/mock-provider.js";

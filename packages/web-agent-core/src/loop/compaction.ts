@@ -74,18 +74,8 @@ export function hasUnansweredToolUse(messages: ModelMessage[]): boolean {
  * match at byte zero — so `SUMMARY_INSTRUCTION` itself tells the model not to
  * call one.
  *
- * `streaming` is left at whatever the live turn uses (`cfg.streaming`), NOT
- * forced to non-streaming: `withRetry`'s per-attempt idle timeout
- * (`requestTimeoutMs`, default 5 min) only resets on transport progress, and a
- * non-streaming call gets none — no bytes arrive until the whole response is
- * ready — so it degrades to a hard 5-minute deadline. A large summary (up to
- * `compactionMaxTokens` output tokens, over a 19-tool/full-history prompt)
- * routinely takes longer than that; observed directly in this task's live
- * proof as a `net::ERR_ABORTED` retry storm ending in "Compaction timeout".
- * `agent.callModel()` (`_model.generate()`) still returns one awaited
- * `ProviderResult` when streaming — the provider reassembles the stream
- * internally (`transport/anthropic-provider.ts`) — so this changes nothing
- * about what the caller receives.
+ * Every call is non-streaming, and `withRetry` applies its hard per-attempt
+ * deadline (`requestTimeoutMs`) to this request like any other.
  *
  * The appended turn is never journalled and never appears in the transcript —
  * it exists only in this request.
@@ -139,13 +129,9 @@ export async function runCompaction(
     observer?: CompactionObserver;
   }
 ): Promise<CompactionResult> {
-  // 2 minutes. The previous 10s default lost the race most of the time:
-  // measured 2026-08-30 over 6 real summarize calls (same route and model the
-  // browser uses, output capped at 700 tokens), 4 of 6 took longer than 10s —
-  // 8.3s, 9.6s, 9.7s, 11.3s, 17.9s, 18.9s. Latency is dominated by output
-  // generation, so the tail is long by construction. Compaction failing here
-  // is what produced the "failed" rows in the transcript.
-  const timeoutMs = opts?.timeoutMs ?? 120000;
+  // Inherits the configured hard deadline (default 15 minutes). An explicit
+  // `opts.timeoutMs` still wins.
+  const timeoutMs = opts?.timeoutMs ?? cfg.requestTimeoutMs ?? 900_000;
   let signal: AbortSignal | undefined;
   try {
     const toCompact = cm.turnsToCompact();

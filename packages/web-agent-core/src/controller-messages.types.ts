@@ -13,5 +13,4 @@ export interface BuildMessagesParams {
   toolBlocks: Map<string, RenderableBlock>;
   toolBlocksVersion: number;
   running: boolean;
-  streamingText: string;
 }

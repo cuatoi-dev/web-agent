@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { createMockProvider, makeMockError } from "./mock-provider.js";
-import { reassembleStream } from "./stream-parts.js";
 import type { ProviderCallOptions } from "./provider.types.js";
-import type { StreamPart } from "./stream-parts.js";
 import type { TextBlock } from "../types.js";
 
 const baseOpts: ProviderCallOptions = {
@@ -102,56 +100,6 @@ describe("createMockProvider — generate()", () => {
   });
 });
 
-describe("createMockProvider — doStream()", () => {
-  it("text-only: reassembleStream deep-equals generate()", async () => {
-    const m = createMockProvider({ text: "hello stream" });
-    const expected = await m.generate(baseOpts);
-    const { stream } = await m.doStream!(baseOpts);
-    const actual = await reassembleStream(stream);
-    expect(actual.content).toEqual(expected.content);
-    expect(actual.finishReason).toBe(expected.finishReason);
-    expect(actual.usage).toEqual(expected.usage);
-  });
-
-  it("tool-call: reassembleStream deep-equals generate()", async () => {
-    const m = createMockProvider({
-      toolCalls: [{ id: "tc1", name: "click", input: { ref: "btn" } }],
-    });
-    const expected = await m.generate(baseOpts);
-    const { stream } = await m.doStream!(baseOpts);
-    const actual = await reassembleStream(stream);
-    expect(actual.content).toEqual(expected.content);
-    expect(actual.finishReason).toBe(expected.finishReason);
-  });
-
-  it("explicit streamParts are yielded verbatim", async () => {
-    const parts = [
-      { type: "stream-start" as const, warnings: [] },
-      { type: "text-start" as const, id: "x" },
-      { type: "text-delta" as const, id: "x", delta: "raw" },
-      { type: "text-end" as const, id: "x" },
-      { type: "finish" as const, finishReason: "stop" as const, usage: { inputTokens: 1, outputTokens: 1 } },
-    ];
-    const m = createMockProvider({ streamParts: parts, text: "ignored" });
-    const { stream } = await m.doStream!(baseOpts);
-    const collected: StreamPart[] = [];
-    for await (const p of stream) collected.push(p);
-    // Should start with stream-start and end with finish, with raw parts in between
-    expect(collected[0]).toEqual({ type: "stream-start", warnings: [] });
-    expect(collected.find(p => p.type === "text-delta")?.delta).toBe("raw");
-    expect(collected[collected.length - 1].type).toBe("finish");
-  });
-
-  it("abortSignal already aborted throws AbortError in doStream", async () => {
-    const ctrl = new AbortController();
-    ctrl.abort();
-    const m = createMockProvider({ text: "x" });
-    await expect(m.doStream!({ ...baseOpts, abortSignal: ctrl.signal })).rejects.toMatchObject({
-      name: "AbortError",
-    });
-  });
-});
-
 describe("createMockProvider — error injection", () => {
   it("generate throws with status", async () => {
     const provider = createMockProvider({ error: { status: 429, message: "rate limited" } });
@@ -159,15 +107,6 @@ describe("createMockProvider — error injection", () => {
     await expect(provider.generate(baseOpts)).rejects.toMatchObject({
       status: 429,
       statusCode: 429,
-    });
-  });
-
-  it("doStream throws at acquisition", async () => {
-    const provider = createMockProvider({ error: { status: 429, message: "rate limited" } });
-    await expect(provider.doStream!(baseOpts)).rejects.toMatchObject({
-      status: 429,
-      statusCode: 429,
-      message: "rate limited",
     });
   });
 

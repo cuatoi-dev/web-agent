@@ -1,14 +1,12 @@
 import type {
   Message,
   ContentBlock,
-  MessageStreamEvent,
   StopReason,
 } from "./wire.types.js";
 import type { FinishReason, ProviderWarning, ToolChoice, Tool } from "./provider.types.js";
 import type { ModelMessage } from "../types.js";
 import type {
   OpenAIChatCompletion,
-  OpenAIChatCompletionChunk,
   OpenAIContentPart,
   OpenAIMessageParam,
   OpenAITool,
@@ -17,9 +15,9 @@ import type {
 } from "./openai-wire.types.js";
 import { assertImagePayload } from "../utils/image.js";
 import { imageReachesModel } from "./vision.js";
-import { safeJsonParse } from "./stream-parts.js";
+import { safeJsonParse } from "./tool-arguments.js";
 import { dropEmptyAssistantMessages } from "./message-filters.js";
-import type { ActiveToolCall, OpenAITranslatedResponse } from "./types.js";
+import type { OpenAITranslatedResponse } from "./types.js";
 export type { OpenAITranslatedResponse } from "./types.js";
 
 // --- request direction ----------------------------------------------------
@@ -228,9 +226,8 @@ export function fromOpenAIResponse(
     // `?? ""` rather than `|| "{}"`: absent arguments must reach safeJsonParse
     // as an empty string so they are reported as "the model sent no argument
     // JSON" instead of being quietly turned into a valid empty object.
-    // Only `.input` is used here: this path builds SDK `ContentBlock`s, not our
-    // `ToolUseBlock`, so there is nowhere to carry the marker. Task 001 scopes
-    // the marker to the streaming reassembler.
+    // This conversion preserves the parsed input; diagnostic markers are not
+    // copied into vendor content blocks.
     const { input } = safeJsonParse(tc.function.arguments ?? "", {
       toolName: tc.function.name,
       toolCallId: tc.id,
@@ -275,214 +272,4 @@ export function fromOpenAIResponse(
     finishReason: toFinishReason(normalizedFinish),
     ...(reasoningTokens !== undefined ? { reasoningTokens } : {}),
   };
-}
-
-export class OpenAIStreamTranslator {
-  private textStarted = false;
-  private reasoningStarted = false;
-  // Keyed by the tool call's own id, not the wire `index`: a gateway may
-  // stream multiple parallel tool calls under the same index (observed live;
-  // mirrors LiteLLM #21331), and an index-keyed map would route the second
-  // call's argument deltas onto the first call's block, concatenating two
-  // JSON objects into one unparsable string.
-  private activeToolCallsById = new Map<string, ActiveToolCall>();
-  // Routes a later delta that carries only `index` (no `id`, as OpenAI's wire
-  // format omits `id` after the first chunk of a call) to the right call.
-  private indexToId = new Map<number, string>();
-  private nextToolBlockIndex = 2; // index 0 reserved for text, 1 for reasoning
-  private lastFinishReason: FinishReason = "unknown";
-  private lastReasoningTokens: number | undefined = undefined;
-
-  get finishReason(): FinishReason {
-    return this.lastFinishReason;
-  }
-
-  get reasoningTokens(): number | undefined {
-    return this.lastReasoningTokens;
-  }
-
-  push(chunk: OpenAIChatCompletionChunk): MessageStreamEvent[] {
-    const events: MessageStreamEvent[] = [];
-
-    if (chunk.usage) {
-      if (chunk.usage.completion_tokens_details?.reasoning_tokens !== undefined) {
-        this.lastReasoningTokens = chunk.usage.completion_tokens_details.reasoning_tokens;
-      }
-      events.push({
-        type: "message_delta",
-        delta: { stop_reason: toAnthropicStopReason(null) },
-        usage: {
-          output_tokens: chunk.usage.completion_tokens ?? 0,
-          ...(chunk.usage.prompt_tokens !== undefined
-            ? { input_tokens: chunk.usage.prompt_tokens }
-            : {}),
-        },
-      });
-    }
-
-    const choice = chunk.choices?.[0];
-    if (!choice) return events;
-
-    if (choice.finish_reason != null) {
-      const hasToolCalls = this.activeToolCallsById.size > 0;
-      const normalizedFinish =
-        hasToolCalls && choice.finish_reason === "stop"
-          ? "tool_calls"
-          : choice.finish_reason;
-      this.lastFinishReason = toFinishReason(normalizedFinish);
-      if (this.textStarted) {
-        events.push({ type: "content_block_stop", index: 0 });
-        this.textStarted = false;
-      }
-      if (this.reasoningStarted) {
-        events.push({ type: "content_block_stop", index: 1 });
-        this.reasoningStarted = false;
-      }
-      for (const active of this.activeToolCallsById.values()) {
-        if (!active.finished) {
-          active.finished = true;
-          events.push({ type: "content_block_stop", index: active.blockIndex });
-        }
-      }
-      events.push({
-        type: "message_delta",
-        delta: { stop_reason: toAnthropicStopReason(normalizedFinish) },
-        usage: { output_tokens: 0 },
-      });
-    }
-
-    const delta = choice.delta;
-    if (!delta) return events;
-
-    if (delta.content) {
-      if (!this.textStarted) {
-        events.push({
-          type: "content_block_start",
-          index: 0,
-          content_block: { type: "text", text: "" },
-        });
-        this.textStarted = true;
-      }
-      events.push({
-        type: "content_block_delta",
-        index: 0,
-        delta: { type: "text_delta", text: delta.content },
-      });
-    }
-
-    const reasoningContent = delta.reasoning ?? delta.reasoning_content;
-    if (reasoningContent) {
-      if (!this.reasoningStarted) {
-        events.push({
-          type: "content_block_start",
-          index: 1,
-          content_block: { type: "thinking", thinking: "" },
-        });
-        this.reasoningStarted = true;
-      }
-      events.push({
-        type: "content_block_delta",
-        index: 1,
-        delta: { type: "thinking_delta", thinking: reasoningContent },
-      });
-    }
-
-    if (delta.tool_calls) {
-      for (const tcDelta of delta.tool_calls) {
-        // Resolve by id first — the only identifier that is unique per call.
-        // Fall back to the index->id map for a later delta that omits `id`.
-        // Never look the call up by raw index directly: that is what let a
-        // second call sharing `index: 0` with the first find (and corrupt)
-        // the first call's block.
-        let active: ActiveToolCall | undefined;
-        if (tcDelta.id) {
-          active = this.activeToolCallsById.get(tcDelta.id);
-        } else if (tcDelta.index != null) {
-          const mappedId = this.indexToId.get(tcDelta.index);
-          if (mappedId) active = this.activeToolCallsById.get(mappedId);
-        }
-
-        const rawIndex =
-          tcDelta.index ?? (active ? active.rawIndex : this.activeToolCallsById.size);
-
-        if (!active) {
-          if (tcDelta.type && tcDelta.type !== "function") continue;
-          // A gateway anomaly could in principle omit `id` on the first
-          // chunk of a call (OpenAI's own wire format never does); fall back
-          // to a synthetic id keyed on block index rather than dropping the
-          // call, since dropping loses the arguments silently.
-          const id = tcDelta.id ?? `call_unnamed_${this.nextToolBlockIndex}`;
-          const name = tcDelta.function?.name;
-          if (!name) continue;
-
-          const blockIndex = this.nextToolBlockIndex++;
-          active = {
-            rawIndex,
-            blockIndex,
-            id,
-            name,
-            accArguments: "",
-            finished: false,
-            extra_content: tcDelta.extra_content,
-          };
-          this.activeToolCallsById.set(id, active);
-          if (tcDelta.index != null) this.indexToId.set(tcDelta.index, id);
-
-          events.push({
-            type: "content_block_start",
-            index: blockIndex,
-            content_block: {
-              type: "tool_use",
-              id,
-              name,
-              input: {},
-              ...(tcDelta.extra_content ? { extra_content: tcDelta.extra_content } : {}),
-            },
-          });
-        }
-
-        if (tcDelta.extra_content && !active.extra_content) {
-          active.extra_content = tcDelta.extra_content;
-        }
-
-        if (active.finished) continue;
-
-        const argDelta = tcDelta.function?.arguments;
-        if (argDelta) {
-          active.accArguments += argDelta;
-          events.push({
-            type: "content_block_delta",
-            index: active.blockIndex,
-            delta: {
-              type: "input_json_delta",
-              partial_json: argDelta,
-            },
-          });
-        }
-      }
-    }
-
-    return events;
-  }
-
-  end(): MessageStreamEvent[] {
-    const events: MessageStreamEvent[] = [];
-
-    if (this.textStarted) {
-      this.textStarted = false;
-      events.push({ type: "content_block_stop", index: 0 });
-    }
-    if (this.reasoningStarted) {
-      this.reasoningStarted = false;
-      events.push({ type: "content_block_stop", index: 1 });
-    }
-    for (const active of this.activeToolCallsById.values()) {
-      if (!active.finished) {
-        active.finished = true;
-        events.push({ type: "content_block_stop", index: active.blockIndex });
-      }
-    }
-
-    return events;
-  }
 }

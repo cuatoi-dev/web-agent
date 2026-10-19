@@ -38,12 +38,11 @@ describe("providerRegistry", () => {
     const cfg = { ...DEFAULT_CONFIG, endpointType: "anthropic", model: "claude-3-5" } as AgentConfig;
     const model = providerRegistry.get(cfg);
     // Real providers are wrapped with withRetry, so the returned model is the
-    // transparent wrapper (not the raw class) but preserves identity + streaming.
+    // transparent wrapper (not the raw class) but preserves identity.
     expect(model).not.toBeInstanceOf(AnthropicLanguageModel);
     expect(model.provider).toBe("anthropic");
     expect(model.modelId).toBe("claude-3-5");
     expect(typeof model.generate).toBe("function");
-    expect(typeof model.doStream).toBe("function");
   });
 
   it("automatically registers openai provider (retry-wrapped)", () => {
@@ -62,7 +61,6 @@ describe("providerRegistry", () => {
     expect(model.provider).toBe("gemini");
     expect(model.modelId).toBe("gemini-flash-lite-latest");
     expect(typeof model.generate).toBe("function");
-    expect(typeof model.doStream).toBe("function");
   });
 
   it("supports re-registering a provider to replace it", () => {

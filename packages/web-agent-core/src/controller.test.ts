@@ -563,7 +563,7 @@ describe("AgentSession Controller", () => {
     expect(assistantMsg?.blocks?.length).toBe(0);
   });
 
-  it("transport seam uses custom fetch and forces stream: false", async () => {
+  it("transport seam uses custom fetch and sends stream: false", async () => {
     const mockFetch = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockImplementation(() => {
       return Promise.resolve(new Response(
         JSON.stringify({
@@ -600,7 +600,7 @@ describe("AgentSession Controller", () => {
     // Verify stream: false or not stream: true was forced in the body of the call
     const lastCall = mockFetch.mock.calls[0];
     const requestBody = JSON.parse(lastCall[1]!.body as string) as MessageCreateParams;
-    expect(requestBody.stream).not.toBe(true);
+    expect(requestBody.stream).toBe(false);
 
     // Verify usage was updated
     const state = session.getState();
@@ -694,7 +694,7 @@ describe("AgentSession Controller", () => {
     expect(mockFetch).toHaveBeenCalled();
     const lastCall = mockFetch.mock.calls[0];
     const requestBody = JSON.parse(lastCall[1]!.body as string) as MessageCreateParams;
-    expect(requestBody.stream).not.toBe(true);
+    expect(requestBody.stream).toBe(false);
     expect((requestBody.messages[0].content as { text: string }[])[0].text).toContain("Summarize the following conversation");
 
     // Verify the session title is set
@@ -4893,212 +4893,167 @@ describe("compaction UI signal (009)", () => {
     });
   });
 
-  describe("streaming renders incrementally", () => {
-    it("U2 & U3: text grows across multiple deltas, no duplication in final state", async () => {
-      setMockScript({
-        text: "Hello brave new world",
-        usage: { inputTokens: 11, outputTokens: 7 },
-        streamParts: [
-          { type: "text-start", id: "t1" },
-          { type: "text-delta", id: "t1", delta: "Hello " },
-          { type: "text-delta", id: "t1", delta: "brave " },
-          { type: "text-delta", id: "t1", delta: "new world" },
-          { type: "text-end", id: "t1" },
-        ],
+  describe("complete model responses", () => {
+    // A fetch whose calls settle only when the test says so.
+    function deferredFetch() {
+      const resolvers: Array<(r: Response) => void> = [];
+      const rejecters: Array<(e: unknown) => void> = [];
+      const bodies: MessageCreateParams[] = [];
+      const fn = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockImplementation((_url, init) => {
+        bodies.push(JSON.parse(init!.body as string) as MessageCreateParams);
+        return new Promise<Response>((resolve, reject) => {
+          resolvers.push(resolve);
+          rejecters.push(reject);
+        });
       });
+      const respond = (idx: number, body: Message) =>
+        resolvers[idx](new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }));
+      return { fn, bodies, respond, reject: (idx: number, e: unknown) => rejecters[idx](e) };
+    }
 
-      const session = createAgentSession({
-        model: "mock-model",
-        endpointType: "mock",
-        persist: false,
-        streaming: true,
-      });
+    const base = {
+      model: "test-model",
+      endpointType: "anthropic",
+      baseURL: "http://localhost:8080/api/anthropic/v1",
+      persist: false,
+      maxRetries: 0,
+    };
+
+    const assistantTexts = (s: SessionState) =>
+      s.messages.filter((m) => m.role === "assistant").map((m) => m.text || "");
+
+    it("a session created with streaming: true sends stream: false and shows no partial reply", async () => {
+      const d = deferredFetch();
+      const session = createAgentSession({ ...base, streaming: true, fetch: d.fn });
       await session.initPromise;
 
-      const lengths: number[] = [];
-      session.subscribe((s) => {
-        const lastMsg = s.messages[s.messages.length - 1];
-        const len = lastMsg?.role === "assistant" && lastMsg?.text ? lastMsg.text.length : 0;
-        lengths.push(len);
-      });
+      const observed: string[][] = [];
+      session.subscribe((s) => observed.push(assistantTexts(s)));
 
-      await session.send([{ type: "text", text: "hi" }]);
+      const sending = session.send([{ type: "text", text: "hi" }]);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(1));
+      expect(d.bodies[0].stream).toBe(false);
+      expect(session.getState().running).toBe(true);
+      expect(assistantTexts(session.getState()).every((t) => t === "")).toBe(true);
 
-      const finalState = session.getState();
-      const finalText = finalState.messages[finalState.messages.length - 1]?.text ?? "";
-      expect(finalText).toBe("Hello brave new world");
+      d.respond(0, mkTextResp("The whole reply"));
+      await sending;
 
-      // The substring "Hello" occurs exactly once — no-duplicate check
-      const occurrences = (finalText.match(/Hello/g) || []).length;
-      expect(occurrences).toBe(1);
-
-      // Filter to positive intermediate lengths
-      const positiveLengths = lengths.filter((l) => l > 0);
-      const distinctPositive = Array.from(new Set(positiveLengths));
-      expect(distinctPositive.length).toBeGreaterThanOrEqual(3);
-      for (let i = 1; i < distinctPositive.length; i++) {
-        expect(distinctPositive[i]).toBeGreaterThan(distinctPositive[i - 1]);
-      }
-      // At least one intermediate length is less than final length
-      expect(distinctPositive.some((l) => l > 0 && l < finalText.length)).toBe(true);
-    });
-
-    it("U4: streaming: false is byte-identical to streaming, with no intermediate lengths", async () => {
-      setMockScript({
-        text: "Hello brave new world",
-        usage: { inputTokens: 11, outputTokens: 7 },
-        streamParts: [
-          { type: "text-start", id: "t1" },
-          { type: "text-delta", id: "t1", delta: "Hello " },
-          { type: "text-delta", id: "t1", delta: "brave " },
-          { type: "text-delta", id: "t1", delta: "new world" },
-          { type: "text-end", id: "t1" },
-        ],
-      });
-
-      const session = createAgentSession({
-        model: "mock-model",
-        endpointType: "mock",
-        persist: false,
-        streaming: false,
-      });
-      await session.initPromise;
-
-      const lengths: number[] = [];
-      session.subscribe((s) => {
-        const lastMsg = s.messages[s.messages.length - 1];
-        const len = lastMsg?.role === "assistant" && lastMsg?.text ? lastMsg.text.length : 0;
-        lengths.push(len);
-      });
-
-      await session.send([{ type: "text", text: "hi" }]);
-
-      const finalState = session.getState();
-      const finalText = finalState.messages[finalState.messages.length - 1]?.text ?? "";
-      expect(finalText).toBe("Hello brave new world");
-
-      // No intermediate lengths between 0 and full length
-      const intermediateLengths = lengths.filter((l) => l > 0 && l < finalText.length);
-      expect(intermediateLengths).toHaveLength(0);
-    });
-
-    it("U5: abort mid-stream clears partial text and surfaces aborted error", async () => {
-      setMockScript({
-        text: "Hello brave new world",
-        delayMs: 50,
-        streamParts: [
-          { type: "text-start", id: "t1" },
-          { type: "text-delta", id: "t1", delta: "Hello " },
-          { type: "text-delta", id: "t1", delta: "brave " },
-          { type: "text-delta", id: "t1", delta: "new world" },
-          { type: "text-end", id: "t1" },
-        ],
-      });
-
-      const session = createAgentSession({
-        model: "mock-model",
-        endpointType: "mock",
-        persist: false,
-        streaming: true,
-      });
-      await session.initPromise;
-
-      let aborted = false;
-      session.subscribe((s) => {
-        const lastMsg = s.messages[s.messages.length - 1];
-        if (!aborted && lastMsg?.role === "assistant" && lastMsg?.text && lastMsg.text.length > 0) {
-          aborted = true;
-          session.abort();
-        }
-      });
-
-      await session.send([{ type: "text", text: "hi" }]);
-
-      const state = session.getState();
-      expect(state.error).toBeDefined();
-      // No assistant message carries leftover partial text
-      const assistantMsgs = state.messages.filter((m) => m.role === "assistant");
-      for (const m of assistantMsgs) {
-        expect(m.text || "").toBe("");
+      const final = session.getState();
+      expect(final.running).toBe(false);
+      expect(assistantTexts(final)).toEqual(["The whole reply"]);
+      // Every notification shows either no text or the complete text.
+      for (const texts of observed) {
+        for (const t of texts) expect(["", "The whole reply"]).toContain(t);
       }
     });
 
-    it("U6: mid-stream error part surfaces error and leaves no partial text", async () => {
-      setMockScript({
-        streamParts: [
-          { type: "text-start", id: "t1" },
-          { type: "text-delta", id: "t1", delta: "Hello " },
-          { type: "error", error: new Error("boom") },
-        ],
-      });
-
-      const session = createAgentSession({
-        model: "mock-model",
-        endpointType: "mock",
-        persist: false,
-        streaming: true,
-      });
+    it("keeps prior messages unchanged while the next reply is pending", async () => {
+      const d = deferredFetch();
+      const session = createAgentSession({ ...base, streaming: true, fetch: d.fn });
       await session.initPromise;
 
-      await session.send([{ type: "text", text: "hi" }]);
+      const first = session.send([{ type: "text", text: "turn 1" }]);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(1));
+      d.respond(0, mkTextResp("First reply"));
+      await first;
+      const prior = session.getState().messages.slice();
 
-      const state = session.getState();
-      expect(state.error).toBeDefined();
-      const assistantMsgs = state.messages.filter((m) => m.role === "assistant");
-      for (const m of assistantMsgs) {
-        expect(m.text || "").toBe("");
-      }
+      const second = session.send([{ type: "text", text: "turn 2" }]);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(2));
+      const pending = session.getState().messages;
+      expect(pending[0]).toBe(prior[0]);
+      expect(pending[1]).toBe(prior[1]);
+      expect(assistantTexts(session.getState()).filter((t) => t !== "")).toEqual(["First reply"]);
+
+      d.respond(1, mkTextResp("Second reply"));
+      await second;
+      const texts = assistantTexts(session.getState());
+      expect(texts).toEqual(["First reply", "Second reply"]);
     });
 
-    it("U7: tool calls receive real arguments and token usage accumulates during streaming", async () => {
-      let capturedToolInput: Record<string, unknown> | null = null;
-      const testTool: CustomToolDef = {
-        name: "lookup_item",
-        description: "Lookup an item",
+    it("running is true while the call is pending; a two-tool reply journals both steps and the final text", async () => {
+      const seen: Array<Record<string, unknown>> = [];
+      const mkTool = (name: string): CustomToolDef => ({
+        name,
+        description: name,
         inputSchema: z.object({ query: z.string() }).strict(),
         execute: (input) => {
-          capturedToolInput = input;
-          return Promise.resolve("item-details" as unknown as ToolOutcome);
+          seen.push({ tool: name, ...input });
+          return Promise.resolve(`${name} result` as unknown as ToolOutcome);
         },
+      });
+      const twoTools: Message = {
+        ...mkToolResp("call_a", "tool_a", { query: "a" }),
+        content: [
+          { type: "tool_use", id: "call_a", name: "tool_a", input: { query: "a" } },
+          { type: "tool_use", id: "call_b", name: "tool_b", input: { query: "b" } },
+        ],
       };
-
-      setMockScript([
-        {
-          content: [{ type: "tool_use", id: "call_1", name: "lookup_item", input: { query: "calico cat" } }],
-          finishReason: "tool-calls",
-          usage: { inputTokens: 10, outputTokens: 5 },
-        },
-        {
-          text: "Here is the calico cat",
-          finishReason: "stop",
-          usage: { inputTokens: 15, outputTokens: 8 },
-          streamParts: [
-            { type: "text-start", id: "t2" },
-            { type: "text-delta", id: "t2", delta: "Here is " },
-            { type: "text-delta", id: "t2", delta: "the calico cat" },
-            { type: "text-end", id: "t2" },
-          ],
-        },
-      ]);
-
+      const d = deferredFetch();
       const session = createAgentSession({
-        model: "mock-model",
-        endpointType: "mock",
-        persist: false,
-        streaming: true,
-        tools: () => [testTool],
+        ...base, fetch: d.fn, tools: () => [mkTool("tool_a"), mkTool("tool_b")],
       });
       await session.initPromise;
 
-      await session.send([{ type: "text", text: "find cat" }]);
+      const runningFlags: boolean[] = [];
+      const observed: string[][] = [];
+      session.subscribe((s) => {
+        runningFlags.push(s.running);
+        observed.push(assistantTexts(s));
+      });
 
-      expect(capturedToolInput).toEqual({ query: "calico cat" });
+      const sending = session.send([{ type: "text", text: "find" }]);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(1));
+      expect(session.getState().running).toBe(true);
+      d.respond(0, twoTools);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(2));
+      d.respond(1, mkTextResp("All done"));
+      await sending;
+
+      expect(runningFlags).toContain(true);
+      expect(session.getState().running).toBe(false);
+      expect(seen).toEqual([{ tool: "tool_a", query: "a" }, { tool: "tool_b", query: "b" }]);
+      expect(assistantTexts(session.getState())).toEqual(["All done"]);
+      for (const texts of observed) {
+        for (const t of texts) expect(["", "All done"]).toContain(t);
+      }
+    });
+
+    it("cancelling a pending request leaves no assistant text and surfaces the abort", async () => {
+      const d = deferredFetch();
+      const session = createAgentSession({ ...base, fetch: d.fn });
+      await session.initPromise;
+
+      const sending = session.send([{ type: "text", text: "hi" }]);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(1));
+      session.abort();
+      await sending;
+
       const state = session.getState();
-      const lastMsg = state.messages[state.messages.length - 1];
-      expect(lastMsg?.role === "assistant").toBe(true);
-      expect(lastMsg?.text).toBe("Here is the calico cat");
-      expect(state.usage.input).toBeGreaterThan(0);
-      expect(state.usage.output).toBeGreaterThan(0);
+      expect(state.running).toBe(false);
+      expect(state.error).toBeDefined();
+      expect(assistantTexts(state).every((t) => t === "")).toBe(true);
+      expect(d.fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("a rejected network call surfaces the error and leaves no assistant text", async () => {
+      const d = deferredFetch();
+      const session = createAgentSession({ ...base, fetch: d.fn });
+      await session.initPromise;
+
+      const sending = session.send([{ type: "text", text: "hi" }]);
+      await vi.waitFor(() => expect(d.fn).toHaveBeenCalledTimes(1));
+      d.reject(0, new TypeError("Failed to fetch"));
+      await sending;
+
+      const state = session.getState();
+      expect(state.running).toBe(false);
+      expect(state.error).toBeDefined();
+      expect(assistantTexts(state).every((t) => t === "")).toBe(true);
     });
   });
 
@@ -5134,38 +5089,28 @@ describe("compaction UI signal (009)", () => {
       }
     });
 
-    it("streaming text updates only in-progress assistant message while preserving prior messages", async () => {
+    it("the in-progress turn keeps earlier messages by reference across notifications", async () => {
+      const probe: CustomToolDef = {
+        name: "probe",
+        description: "probe",
+        inputSchema: z.object({}).strict(),
+        execute: () => Promise.resolve("probed" as unknown as ToolOutcome),
+      };
       setMockScript([
+        { text: "First turn reply", finishReason: "stop", usage: { inputTokens: 10, outputTokens: 5 } },
         {
-          text: "First turn reply",
-          finishReason: "stop",
-          usage: { inputTokens: 10, outputTokens: 5 },
-          streamParts: [
-            { type: "text-start", id: "t1" },
-            { type: "text-delta", id: "t1", delta: "First turn reply" },
-            { type: "text-end", id: "t1" },
-          ],
-        },
-        {
-          text: "Streaming chunk one chunk two done",
-          finishReason: "stop",
+          content: [{ type: "tool_use", id: "call_1", name: "probe", input: {} }],
+          finishReason: "tool-calls",
           usage: { inputTokens: 15, outputTokens: 8 },
-          streamParts: [
-            { type: "text-start", id: "t2" },
-            { type: "text-delta", id: "t2", delta: "Streaming " },
-            { type: "text-delta", id: "t2", delta: "chunk one " },
-            { type: "text-delta", id: "t2", delta: "chunk two " },
-            { type: "text-delta", id: "t2", delta: "done" },
-            { type: "text-end", id: "t2" },
-          ],
         },
+        { text: "Second turn reply", finishReason: "stop", usage: { inputTokens: 15, outputTokens: 8 } },
       ]);
 
       const session = createAgentSession({
         model: "mock-model",
         endpointType: "mock",
         persist: false,
-        streaming: true,
+        tools: () => [probe],
       });
       await session.initPromise;
 
@@ -5180,7 +5125,7 @@ describe("compaction UI signal (009)", () => {
 
       await session.send([{ type: "text", text: "turn 2" }]);
 
-      expect(capturedStates.length).toBeGreaterThanOrEqual(3);
+      expect(capturedStates.length).toBeGreaterThanOrEqual(1);
 
       for (let k = 0; k < capturedStates.length - 1; k++) {
         const curr = capturedStates[k];
@@ -5194,20 +5139,11 @@ describe("compaction UI signal (009)", () => {
 
         // Turn 2 user message preserved
         expect(curr.messages[2]).toBe(next.messages[2]);
-
-        // Turn 2 in-progress assistant message
-        const currAssistant = curr.messages[3];
-        const nextAssistant = next.messages[3];
-        expect(currAssistant).toBeDefined();
-        expect(nextAssistant).toBeDefined();
-        expect(currAssistant.pending).toBe(true);
-        expect(nextAssistant.pending).toBe(true);
       }
-
-      // Check that streaming accumulated text across notifications
-      const texts = capturedStates.map((s) => s.messages[3]?.text ?? "");
-      expect(texts[0].length).toBeGreaterThan(0);
-      expect(texts[texts.length - 1].length).toBeGreaterThan(texts[0].length);
+      for (const st of capturedStates) {
+        expect(st.messages[3]?.pending).toBe(true);
+      }
+      expect(session.getState().messages[3].text).toBe("Second turn reply");
     });
   });
 

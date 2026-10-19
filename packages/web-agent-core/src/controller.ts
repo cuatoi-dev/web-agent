@@ -78,7 +78,6 @@ export function createAgentSession(config: SessionConfig): AgentSession {
     sessionTransition: undefined,
     sessionEpoch: 0,
     running: false,
-    streamingText: "",
     queuedMessages: [],
     error: undefined,
     usage: { input: 0, output: 0 },

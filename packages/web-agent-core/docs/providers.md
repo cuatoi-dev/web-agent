@@ -12,55 +12,48 @@ provider; see [Custom providers](#custom-providers).
 
 | `endpointType` | Implementation | Wire format |
 |---|---|---|
-| `"anthropic"` (default) | `AnthropicLanguageModel` (`src/transport/anthropic-provider.ts:23`) | Anthropic Messages, built in this package (`src/transport/wire-types.ts`) |
-| `"openai"` | `OpenAILanguageModel` (`src/transport/openai-provider.ts:32`) | OpenAI chat completions, translated to and from the Anthropic shape (`src/transport/openai-to-anthropic.ts`, `src/transport/openai-wire-types.ts`) |
-| `"gemini"` | `GeminiLanguageModel` (`src/transport/gemini-provider.ts:33`) | Google Gemini `generateContent`, translated to and from the Anthropic shape (`src/transport/gemini-to-anthropic.ts`, `src/transport/gemini-wire-types.ts`) |
+| `"anthropic"` (default) | `AnthropicLanguageModel` (`src/transport/anthropic-provider.ts:23`) | Anthropic Messages, built in this package (`src/transport/wire.types.ts`) |
+| `"openai"` | `OpenAILanguageModel` (`src/transport/openai-provider.ts:32`) | OpenAI chat completions, translated to and from the Anthropic shape (`src/transport/openai-to-anthropic.ts`, `src/transport/openai-wire.types.ts`) |
+| `"gemini"` | `GeminiLanguageModel` (`src/transport/gemini-provider.ts:33`) | Google Gemini `generateContent`, translated to and from the Anthropic shape (`src/transport/gemini-to-anthropic.ts`, `src/transport/gemini-wire.types.ts`) |
 | `"mock"` | `createMockProvider()` — deterministic, network-free; drive it with `setMockScript()` | none — no network |
 
-Core depends on no vendor software development kit (SDK). Both real providers
-send their requests through `requestJson()` and `requestStream()` in
-`src/transport/anthropic-request.ts:79,85`, which call `fetch` directly.
+Core depends on no vendor software development kit (SDK). All three real
+providers send their requests through `requestJson()` in
+`src/transport/anthropic-request.ts`, which calls `fetch` directly. Every call
+is one non-streaming request.
 
 ## Retry and timeout behavior
 
-Both real providers are automatically wrapped with retry middleware: 5 retries
-by default, with fixed back-off delays of 1s, 1s, 2s, 3s, 5s — not exponential
-(`src/transport/middleware.ts:137`, `src/transport/middleware.ts:424-426`). This
-wrapping is part of the registry's built-in entries. A provider you register
-yourself is not wrapped; compose `withRetry` if you want the same behavior (see
-[Custom providers](#custom-providers)).
+All three real providers are automatically wrapped with retry middleware: 5
+retries by default, with fixed back-off delays of 1s, 1s, 2s, 3s, 5s — not
+exponential (`BACKOFF_SEQ` and `withRetry` in `src/transport/middleware.ts`).
+This wrapping is part of the registry's built-in entries. A provider you
+register yourself is not wrapped; compose `withRetry` if you want the same
+behavior (see [Custom providers](#custom-providers)).
 
-Two timeouts guard an attempt, and **neither is a deadline on the whole
-attempt**. Both are idle windows: the clock restarts whenever something arrives,
-so a slow but live stream is never cut off
-(`src/transport/middleware.ts:105-131`).
+One setting guards each attempt:
 
-| Setting | Default | When it applies | What restarts its clock |
-|---|---|---|---|
-| `requestTimeoutMs` | 300000 | from the start of the attempt until the first content part arrives | any bytes from the transport, including a server-sent-events keep-alive comment that parses to no event |
-| `streamIdleTimeoutMs` | 120000 | from the first content part to the end of the attempt | every further content part |
+| Setting | Default | What it does |
+|---|---|---|
+| `requestTimeoutMs` | 900000 | hard deadline per request attempt |
 
-So an attempt whose gateway sends `: PING` every 5 seconds for 48 seconds
-survives, because each keep-alive resets the window. Once the first content
-part arrives, `requestTimeoutMs` stops applying and `streamIdleTimeoutMs` takes
-over. A window that does expire is a retryable failure and goes through the same
-attempt loop and back-off as any other transport error, so the caller sees one
-continuous stream and never learns a retry happened — unless every attempt is
-used up. Both defaults are in `DEFAULT_CONFIG`
-(`src/config.ts:66-67`), and both are plain `AgentConfig` fields you can
-override (`src/config.types.ts:179`, `src/config.types.ts:189`).
-
-On the non-streaming path no bytes arrive until the response is complete, so
-there `requestTimeoutMs` is effectively a total deadline.
+The deadline is 15 minutes from the start of the attempt. Nothing restarts it
+while the response arrives, so a response that is not complete by then is
+aborted. Every retry has its own full deadline. An attempt that reaches the
+deadline is a retryable failure and goes through the same attempt loop and
+back-off as any other transport error. Compaction uses the same default unless
+you give it its own timeout. The default is in `DEFAULT_CONFIG`
+(`src/config.ts`), and it is a plain `AgentConfig` field you can override
+(`src/config.types.ts`).
 
 ### Empty responses
 
-The retry middleware retries an attempt that returns no content, because a
-stream that closes with nothing, or with only `[DONE]`, is a dead attempt. There
-is one exception. When the model ends its turn normally (Anthropic `end_turn` or
+The retry middleware retries an attempt that returns no content, because an
+incomplete response with nothing in it is a failed attempt. There is one
+exception. When the model ends its turn normally (Anthropic `end_turn` or
 `stop_sequence`, mapped to the finish reason `"stop"`), the attempt is a
 completed turn, even with no content, and core does not retry it
-(`src/transport/middleware.ts:210-218`, `src/transport/middleware.ts:377-383`).
+(`isEmptyResult` in `src/transport/middleware.ts`).
 A response cut off at the token limit (`"length"`) or with an unknown finish
 reason is still retried.
 
@@ -70,18 +63,19 @@ shows a notice with a Retry action. See
 empty assistant messages from the next request it sends, so the model never
 receives them (`src/transport/message-filters.ts:18-24`).
 
-### Non-streaming requests
+### Request bodies
 
-On the non-streaming path, the Anthropic and OpenAI providers always send
-`"stream": false` in the request body (`src/transport/anthropic-provider.ts:128`,
-`src/transport/openai-provider.ts:155`). The real APIs treat a missing field as
-`false`, but a gateway can read a missing field as streaming and return a
-server-sent-events body that the non-streaming parser cannot read.
+The Anthropic and OpenAI providers always send `"stream": false` in the request
+body (`src/transport/anthropic-provider.ts`, `src/transport/openai-provider.ts`).
+The real APIs treat a missing field as `false`, but a gateway can read a missing
+field as streaming and return a server-sent-events body that core cannot read.
+The Gemini provider calls the `generateContent` endpoint, which always returns
+one complete response.
 
 ## Choosing `path` / `baseURL`
 
 Core builds each request URL itself, as `baseURL + path`
-(`src/transport/anthropic-request.ts:59`). Each provider owns its own suffix, so
+(`send` in `src/transport/anthropic-request.ts`). Each provider owns its own suffix, so
 the `path` / `baseURL` you configure must differ:
 
 - **Anthropic** — the provider appends `/v1/messages`
@@ -93,9 +87,8 @@ the `path` / `baseURL` you configure must differ:
   (`src/transport/openai-provider.ts:163,212`) → set
   `path = "/api/openai/v1"` (include `/v1`).
 - **Gemini** — the provider appends
-  `/v1beta/models/{model}:generateContent`, or
-  `/v1beta/models/{model}:streamGenerateContent?alt=sse` when streaming
-  (`src/transport/gemini-provider.ts:97,147`) → set `path = "/api/gemini"`
+  `/v1beta/models/{model}:generateContent`
+  (`src/transport/gemini-provider.ts`) → set `path = "/api/gemini"`
   (no `/v1`). The model id goes in `model`, not in the path.
 
 If you use `/api/openai` without the `/v1`, core sends the request to
@@ -111,21 +104,22 @@ The host apps and the browser extension set these defaults. Paths are relative
 to the site that serves the host, except in the extension, which calls the
 local gateway by full URL.
 
-| Host | `endpointType` | `path` (baseURL) | `model` | `streaming` | Source |
-|---|---|---|---|---|---|
-| cat-store | `"anthropic"` | `/api/anthropic` | `sonnet` | `true` | `apps/cat-store/src/web/agent-panel-config.ts:54-61`, applied at `:181` |
-| docs-site | `"openai"` | `/api/openai/v1` | `sonnet` | `true` | `apps/docs-site/src/docs-embed.ts:55-56`, `:160-161` |
-| web-agent-browser | `"anthropic"` | `http://localhost:28780/api/anthropic` | `sonnet` | `true` | `packages/web-agent-browser/brand/model.yml:14-19` |
+| Host | `endpointType` | `path` (baseURL) | `model` | Source |
+|---|---|---|---|---|
+| cat-store | `"anthropic"` | `/api/anthropic` | `sonnet` | `apps/cat-store/src/web/agent-panel-config.ts:54-61`, applied at `:181` |
+| docs-site | `"openai"` | `/api/openai/v1` | `sonnet` | `apps/docs-site/src/docs-embed.ts:55-56`, `:160-161` |
+| web-agent-browser | `"anthropic"` | `http://localhost:28780/api/anthropic` | `sonnet` | `packages/web-agent-browser/brand/model.yml:14-19` |
 
 cat-store's provider switcher offers seven entries
 (`apps/cat-store/src/web/agent-panel-config.ts:53-116`): Anthropic and OpenAI
-on `sonnet`, Gemini on `gemini-flash-lite-latest`, each in a streaming and a
-non-streaming variant, plus **Any model**. **Any model** uses the host's
+on `sonnet`, Gemini on `gemini-flash-lite-latest`, each in two mode variants,
+plus **Any model**. **Any model** uses the host's
 `"fallback-chain"` endpoint type, which tries the other six combinations in
 order. cat-store registers that endpoint type itself
 (`apps/cat-store/src/web/any-model-chain.ts:10`, `:21-35`).
 
-The browser extension uses the first entry of the brand's model list on a fresh
+The two mode variants send identical complete-result requests today. The
+browser extension uses the first entry of the brand's model list on a fresh
 profile, and the options page offers the whole list
 (`packages/web-agent-browser/src/lib/brand-models.ts:17-31`). A value the user
 saves replaces the default, field by field
@@ -134,7 +128,7 @@ model list, the compiled presets in
 `packages/web-agent-browser/src/lib/presets.ts:16-23` apply.
 
 In the mock end-to-end tier, all three hosts replace the transport with
-`type: "mock"` and `streaming: false`
+`type: "mock"`
 (`apps/cat-store/src/web/agent-panel-config.ts:187-194`,
 `apps/docs-site/src/docs-embed.ts:150-158`,
 `packages/web-agent-browser/src/sidepanel.ts:114-119`).
@@ -286,8 +280,8 @@ import {
 } from "@cuatoi/web-agent-core";
 
 const CHAIN: FallbackChainEntry[] = [
-  { endpointType: "anthropic", model: "sonnet", baseURL: "/api/anthropic", streaming: true },
-  { endpointType: "openai", model: "sonnet", baseURL: "/api/openai/v1", streaming: false },
+  { endpointType: "anthropic", model: "sonnet", baseURL: "/api/anthropic" },
+  { endpointType: "openai", model: "sonnet", baseURL: "/api/openai/v1" },
 ];
 
 providerRegistry.register("my-chain", createFallbackProviderFactory(CHAIN));
@@ -296,16 +290,15 @@ providerRegistry.register("my-chain", createFallbackProviderFactory(CHAIN));
 Set `AgentConfig.endpointType` to `"my-chain"` to select it. The chain keeps
 one cursor, sticky in memory for the page load and never persisted to
 storage — it moves to the next entry on a failure and does not reset on a new
-chat session. Each entry gets exactly one attempt and keeps the transport's
-`requestTimeoutMs` idle window (default 300000, 5 minutes); failed entries are
-not retried (`src/transport/fallback-provider.ts:84-97`).
+chat session. Each entry gets exactly one complete-result attempt and keeps the
+transport's hard `requestTimeoutMs` deadline (default 900000, 15 minutes);
+failed entries are not retried (`modelFor` in
+`src/transport/fallback-provider.ts`).
 
-A failure before the response's first content part falls back silently to the
-next entry. A response that ends normally with no content is not a failure: the
-chain returns it and does not try the next entry
-(`src/transport/fallback-provider.ts:217-224`). A failure after the first content part (for example, mid-stream)
-advances the cursor and then throws, rather than retrying, so a completed tool
-call is never re-executed.
+A failed attempt falls back to the next entry. A response that ends normally
+with no content is not a failure: the chain returns it and does not try the next
+entry. A user cancellation is rethrown and does not advance the cursor, so a
+completed tool call is never re-executed.
 
 Every fallback is reported through the session's `provider:fallback` event
 (`AgentSession.subscribeEvents`), naming which entries failed and which

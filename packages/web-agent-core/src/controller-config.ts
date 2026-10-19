@@ -74,13 +74,6 @@ export function buildConfig(st: SessionRuntime) {
     streaming: st.currentConfig.streaming ?? DEFAULT_CONFIG.streaming,
     fetch: st.currentConfig.fetch,
     onRetryAttempt: (attempt: number, maxRetries: number, error: unknown) => {
-      // A retry that fires AFTER a stream-idle-timeout (006) can follow a
-      // partial answer already shown live — the failed attempt is thrown
-      // away, not appended to, so its partial text must not survive into
-      // the next attempt's preview. A pre-content retry (a dead/empty
-      // stream) finds this already empty, so clearing it here is a no-op
-      // in that case and the fix in the case that matters.
-      st.streamingText = "";
       const errorMsg = error instanceof Error ? error.message : String(error);
       emitEvent(st, {
         type: "auto-retry:attempt",

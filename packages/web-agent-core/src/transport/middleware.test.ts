@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { wrapProvider, withRetry, isRetryableError } from "./middleware.js";
 import { createMockProvider, makeMockError } from "./mock-provider.js";
-import { reassembleStream } from "./stream-parts.js";
+import { createAnthropicLanguageModel } from "./anthropic-provider.js";
 import { DEFAULT_CONFIG, type AgentConfig } from "../config.js";
 import { AgentError, mapToAgentError } from "../loop/errors.js";
 import type { LanguageModel, ProviderCallOptions, ProviderResult } from "./provider.types.js";
-import type { StreamPart } from "./stream-parts.js";
 import type { TextBlock } from "../types.js";
 
 const baseOpts: ProviderCallOptions = {
@@ -26,14 +25,6 @@ describe("wrapProvider — no-op pass-through", () => {
     expect(actual).toEqual(expected);
   });
 
-  it("doStream yields same reassembled result as inner model", async () => {
-    const inner = makeMock("hello");
-    const wrapped = wrapProvider(inner, {});
-    const { stream } = await wrapped.doStream!(baseOpts);
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("hello");
-  });
-
   it("preserves provider/modelId from inner model when no overrides", () => {
     const inner = makeMock("x");
     const wrapped = wrapProvider(inner, {});
@@ -41,15 +32,6 @@ describe("wrapProvider — no-op pass-through", () => {
     expect(wrapped.modelId).toBe(inner.modelId);
   });
 
-  it("doStream is undefined on wrapper when inner has no doStream", () => {
-    const inner: LanguageModel = {
-      provider: "p",
-      modelId: "m",
-      generate: () => Promise.resolve({ content: [], finishReason: "stop", usage: { inputTokens: 0, outputTokens: 0 } }),
-    };
-    const wrapped = wrapProvider(inner, {}) as { doStream?: unknown };
-    expect(wrapped.doStream).toBeUndefined();
-  });
 });
 
 describe("wrapProvider — transformParams", () => {
@@ -86,29 +68,6 @@ describe("wrapProvider — wrapGenerate", () => {
     const r = await wrapped.generate(baseOpts);
     expect(r.warnings).toEqual([{ type: "other", message: "injected" }]);
     expect((r.content[0] as TextBlock).text).toBe("original");
-  });
-});
-
-describe("wrapProvider — wrapStream", () => {
-  it("wraps the async iterable and still reassembles correctly", async () => {
-    const inner = makeMock("streamed");
-    let partCount = 0;
-    const wrapped = wrapProvider(inner, {
-      wrapStream: async ({ doStream }) => {
-        const { stream } = await doStream();
-        async function* counting(): AsyncGenerator<StreamPart> {
-          for await (const p of stream) {
-            partCount++;
-            yield p;
-          }
-        }
-        return { stream: counting() };
-      },
-    });
-    const { stream } = await wrapped.doStream!(baseOpts);
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("streamed");
-    expect(partCount).toBeGreaterThan(0);
   });
 });
 
@@ -179,64 +138,20 @@ const BLANK_TEXT_END_TURN_RESULT: ProviderResult = {
   usage: { inputTokens: 6, outputTokens: 2 },
 };
 
-function goodStreamParts(text = "hello"): StreamPart[] {
-  return [
-    { type: "stream-start", warnings: [] },
-    { type: "text-start", id: "t" },
-    { type: "text-delta", id: "t", delta: text },
-    { type: "text-end", id: "t" },
-    { type: "finish", finishReason: "stop", usage: { inputTokens: 0, outputTokens: 0 } },
-  ];
-}
-function emptyStreamParts(): StreamPart[] {
-  return [
-    { type: "stream-start", warnings: [] },
-    { type: "finish", finishReason: "unknown", usage: { inputTokens: 0, outputTokens: 0 } },
-  ];
-}
-function endTurnStreamParts(): StreamPart[] {
-  return [
-    { type: "stream-start", warnings: [] },
-    { type: "finish", finishReason: "stop", usage: { inputTokens: 6, outputTokens: 2 } },
-  ];
-}
-function lengthStreamParts(): StreamPart[] {
-  return [
-    { type: "stream-start", warnings: [] },
-    { type: "finish", finishReason: "length", usage: { inputTokens: 6, outputTokens: 2 } },
-  ];
-}
-// Must stay a real async generator: middleware.ts's retry loop calls
-// `stream[Symbol.asyncIterator]()` directly (not `for await...of`), so a sync
-// generator here breaks at runtime ("stream[Symbol.asyncIterator] is not a
-// function") — confirmed by a failing test run. The `await` has no effect on
-// the yielded values; it exists only to keep this a genuine async generator.
-async function* toStream(parts: StreamPart[]): AsyncGenerator<StreamPart> {
-  await Promise.resolve();
-  for (const p of parts) yield p;
-}
-
-/** Build a LanguageModel whose generate/doStream behave differently per call (by index). */
-// No return-type annotation — keeps generate/doStream typed as Mock<...>
-// (not LanguageModel's method-shorthand signatures) so `inner.generate`/
-// `inner.doStream` stay directly usable with `.toHaveBeenCalledTimes` below.
+/** Build a LanguageModel whose generate behaves differently per call (by index). */
+// No return-type annotation — keeps generate typed as Mock<...> (not
+// LanguageModel's method-shorthand signature) so `inner.generate` stays
+// directly usable with `.toHaveBeenCalledTimes` below.
 function scriptedModel(opts: {
   generate?: Array<(o: ProviderCallOptions) => Promise<ProviderResult>>;
-  stream?: Array<(o: ProviderCallOptions) => Promise<{ stream: AsyncIterable<StreamPart> }>>;
 }) {
   let gi = 0;
-  let si = 0;
   return {
     provider: "p",
     modelId: "m",
     generate: vi.fn(async (o: ProviderCallOptions) => {
       const fn = opts.generate![Math.min(gi, opts.generate!.length - 1)];
       gi++;
-      return fn(o);
-    }),
-    doStream: vi.fn(async (o: ProviderCallOptions) => {
-      const fn = opts.stream![Math.min(si, opts.stream!.length - 1)];
-      si++;
       return fn(o);
     }),
   };
@@ -252,22 +167,6 @@ describe("withRetry middleware", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it("retries an empty stream then succeeds (stream)", async () => {
-    const inner = scriptedModel({
-      stream: [
-        () => Promise.resolve({ stream: toStream(emptyStreamParts()) }),
-        () => Promise.resolve({ stream: toStream(goodStreamParts("hello")) }),
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(1000);
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("hello");
-    expect(inner.doStream).toHaveBeenCalledTimes(2);
   });
 
   it("retries an empty response then succeeds (generate)", async () => {
@@ -332,50 +231,6 @@ describe("withRetry middleware", () => {
     expect(inner.generate).toHaveBeenCalledTimes(3);
   });
 
-  it("a finish/stop ends the acquisition drain (stream)", async () => {
-    const inner = scriptedModel({
-      stream: [() => Promise.resolve({ stream: toStream(endTurnStreamParts()) })],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const { stream } = await wrapped.doStream!(baseOpts);
-    const result = await reassembleStream(stream);
-    expect(result.content).toHaveLength(0);
-    expect(result.finishReason).toBe("stop");
-    expect(inner.doStream).toHaveBeenCalledTimes(1);
-  });
-
-  it("a finish/unknown stream is still retried (stream)", async () => {
-    const inner = scriptedModel({
-      stream: [
-        () => Promise.resolve({ stream: toStream(emptyStreamParts()) }),
-        () => Promise.resolve({ stream: toStream(goodStreamParts("hello")) }),
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(1000);
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("hello");
-    expect(inner.doStream).toHaveBeenCalledTimes(2);
-  });
-
-  it("a finish/length stream is still retried (stream)", async () => {
-    const inner = scriptedModel({
-      stream: [
-        () => Promise.resolve({ stream: toStream(lengthStreamParts()) }),
-        () => Promise.resolve({ stream: toStream(goodStreamParts("hello")) }),
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(1000);
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("hello");
-    expect(inner.doStream).toHaveBeenCalledTimes(2);
-  });
-
   it("times out a hung request, retries, then throws exhausted AgentError", async () => {
     const inner = scriptedModel({
       generate: [
@@ -397,9 +252,9 @@ describe("withRetry middleware", () => {
     expect(inner.generate).toHaveBeenCalledTimes(2); // initial + 1 retry
   });
 
-  it("a config that omits requestTimeoutMs gets the 5-minute default, not 30 seconds", async () => {
+  it("a config that omits requestTimeoutMs gets the 15-minute default", async () => {
     // 110/005 P3. Do not spread DEFAULT_CONFIG's own requestTimeoutMs here —
-    // the point is the `?? 300_000` fallback at middleware.ts:425, which only
+    // the point is the `?? 900_000` fallback in withRetry, which only
     // a config that never sets the field can exercise.
     const { requestTimeoutMs: _omitted, ...withoutTimeout } = cfg({ maxRetries: 0 });
     void _omitted;
@@ -414,10 +269,10 @@ describe("withRetry middleware", () => {
     });
     const assertion = expect(p).rejects.toMatchObject({ name: "AgentError" });
 
-    await vi.advanceTimersByTimeAsync(299_000);
+    await vi.advanceTimersByTimeAsync(899_999);
     expect(settled).toBe(false);
 
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(1);
     await assertion;
     expect(settled).toBe(true);
   });
@@ -541,18 +396,40 @@ describe("withRetry — auto-retry policy (044-4)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// withRetry — idle deadline (012)
+// withRetry — hard deadline
 //
-// The per-attempt deadline is time SINCE THE LAST TRANSPORT ACTIVITY, not
-// time to first content. `onTransportProgress` (called by the SSE reader on
-// every raw chunk, including keep-alive comments) restarts the clock.
+// One deadline per attempt, never restarted. These tests run the real
+// Anthropic provider through the real middleware with an injected fetch.
 // ---------------------------------------------------------------------------
 
-function delayFake(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+const JSON_OK = {
+  id: "msg_1",
+  type: "message",
+  role: "assistant",
+  model: "m",
+  content: [{ type: "text", text: "hello" }],
+  stop_reason: "end_turn",
+  usage: { input_tokens: 1, output_tokens: 1 },
+};
+
+/** A fetch that never settles. Records the signal of every call. */
+function hangingFetch() {
+  const signals: AbortSignal[] = [];
+  const fn = vi.fn((_url: unknown, init?: { signal?: AbortSignal | null }) => {
+    if (init?.signal) signals.push(init.signal);
+    return new Promise<Response>(() => {});
+  });
+  return { fn: fn as unknown as typeof fetch, signals, calls: fn };
 }
 
-describe("withRetry — idle deadline (012)", () => {
+function realModel(config: AgentConfig, fetchImpl: typeof fetch) {
+  return wrapProvider(
+    createAnthropicLanguageModel(config, { fetch: fetchImpl }),
+    withRetry(config),
+  );
+}
+
+describe("withRetry — hard deadline", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -560,352 +437,96 @@ describe("withRetry — idle deadline (012)", () => {
     vi.useRealTimers();
   });
 
-  it("does not retry a stream that keeps reporting transport progress", async () => {
-    const onRetryAttempt = vi.fn();
-    const inner = scriptedModel({
-      stream: [
-        (o: ProviderCallOptions) => {
-          for (let i = 1; i <= 9; i++) {
-            setTimeout(() => o.onTransportProgress?.(), i * 5000);
-          }
-          async function* gen(): AsyncGenerator<StreamPart> {
-            yield { type: "stream-start", warnings: [] };
-            await delayFake(45000);
-            yield { type: "text-start", id: "t" };
-            yield { type: "text-delta", id: "t", delta: "hello" };
-            yield { type: "text-end", id: "t" };
-            yield { type: "finish", finishReason: "stop", usage: { inputTokens: 0, outputTokens: 0 } };
-          }
-          return Promise.resolve({ stream: gen() });
-        },
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ onRetryAttempt })));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(46000);
-    // Assert call count/onRetryAttempt BEFORE awaiting `p`: with the old 30 s
-    // default, pre-fix code had a second attempt still mid-flight at t=46000
-    // (its 45 s content delay started after the 30 s timeout + 1 s backoff), so
-    // awaiting `p` here would hang in real time instead of failing cleanly.
-    expect(inner.doStream).toHaveBeenCalledTimes(1);
-    expect(onRetryAttempt).not.toHaveBeenCalled();
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("hello");
-  });
+  it("aborts at 900000 ms by default, retries after backoff, and rejects when the retry also times out", async () => {
+    const { requestTimeoutMs: _omitted, ...withoutTimeout } = cfg({ maxRetries: 1 });
+    void _omitted;
+    const { fn, signals, calls } = hangingFetch();
+    const wrapped = realModel(withoutTimeout, fn);
+    const p = wrapped.generate(baseOpts);
+    const assertion = expect(p).rejects.toMatchObject({ name: "AgentError", kind: "network" });
 
-  it("still times out and retries a stream that reports no progress", async () => {
-    const inner = scriptedModel({
-      stream: [() => new Promise(() => {}), () => new Promise(() => {})],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ requestTimeoutMs: 20, maxRetries: 1 })));
-    const p = wrapped.doStream!(baseOpts);
-    const assertion = expect(p).rejects.toMatchObject({ name: "AgentError" });
-    await vi.advanceTimersByTimeAsync(20 + 1000 + 20);
+    await vi.advanceTimersByTimeAsync(899_999);
+    expect(calls).toHaveBeenCalledTimes(1);
+    expect(signals[0].aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(signals[0].aborted).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(999);
+    expect(calls).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls).toHaveBeenCalledTimes(2);
+    expect(signals[1].aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(900_000);
+    expect(signals[1].aborted).toBe(true);
     await assertion;
-    expect(inner.doStream).toHaveBeenCalledTimes(2);
   });
 
-  it("restarts the window on each progress report, then times out when progress stops", async () => {
-    const inner = scriptedModel({
-      stream: [
-        (o: ProviderCallOptions) => {
-          o.onTransportProgress?.();
-          setTimeout(() => o.onTransportProgress?.(), 10);
-          return new Promise(() => {});
-        },
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ requestTimeoutMs: 20, maxRetries: 0 })));
+  it("uses a configured deadline and does not restart it when response headers arrive", async () => {
+    // Headers arrive at 10 ms; the body never completes. A progress-based
+    // timer would restart at 10 ms and abort at 60 ms. The hard deadline
+    // aborts at 50 ms.
+    const signals: AbortSignal[] = [];
+    const fetchImpl = vi.fn((_url: unknown, init?: { signal?: AbortSignal | null }) => {
+      if (init?.signal) signals.push(init.signal);
+      return new Promise<Response>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            status: 200,
+            json: () => new Promise(() => {}),
+          } as unknown as Response);
+        }, 10);
+      });
+    }) as unknown as typeof fetch;
+    const wrapped = realModel(cfg({ requestTimeoutMs: 50, maxRetries: 0 }), fetchImpl);
     let settled = false;
-    const p = wrapped.doStream!(baseOpts);
+    const p = wrapped.generate(baseOpts);
+    const assertion = expect(p).rejects.toMatchObject({ name: "AgentError" });
     p.catch(() => {}).finally(() => {
       settled = true;
     });
-    await vi.advanceTimersByTimeAsync(29);
+    await vi.advanceTimersByTimeAsync(49);
     expect(settled).toBe(false);
-    await vi.advanceTimersByTimeAsync(2);
-    await expect(p).rejects.toMatchObject({ name: "AgentError" });
-    expect(inner.doStream).toHaveBeenCalledTimes(1);
-  });
-
-  it("ignores progress reported after the attempt's timer is cleared", async () => {
-    const inner = scriptedModel({
-      stream: [
-        (o: ProviderCallOptions) => {
-          setTimeout(() => o.onTransportProgress?.(), 5);
-          // Must stay a real async generator — see toStream above.
-          async function* gen(): AsyncGenerator<StreamPart> {
-            await Promise.resolve();
-            yield { type: "stream-start", warnings: [] };
-            yield { type: "text-start", id: "t" };
-            yield { type: "text-delta", id: "t", delta: "hello" };
-            yield { type: "text-end", id: "t" };
-            yield { type: "finish", finishReason: "stop", usage: { inputTokens: 0, outputTokens: 0 } };
-          }
-          return Promise.resolve({ stream: gen() });
-        },
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ requestTimeoutMs: 20, maxRetries: 0 })));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(1000);
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("hello");
-    expect(inner.doStream).toHaveBeenCalledTimes(1);
-  });
-
-  it("passes onTransportProgress to the inner model on both paths", async () => {
-    let seenGenerate: unknown;
-    let seenStream: unknown;
-    const inner = scriptedModel({
-      generate: [
-        (o: ProviderCallOptions) => {
-          seenGenerate = typeof o.onTransportProgress;
-          return Promise.resolve(GOOD_RESULT);
-        },
-      ],
-      stream: [
-        (o: ProviderCallOptions) => {
-          seenStream = typeof o.onTransportProgress;
-          return Promise.resolve({ stream: toStream(goodStreamParts()) });
-        },
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    await wrapped.generate(baseOpts);
-    await wrapped.doStream!(baseOpts);
-    expect(seenGenerate).toBe("function");
-    expect(seenStream).toBe("function");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// isRetryableError — centralized classification (044-2)
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// withRetry — stream idle deadline (006)
-//
-// Protects the part of the stream AFTER the first content part, which the
-// idle deadline above (012) deliberately leaves alone (see the comment on
-// withRetry). A gateway that sends one word and then goes quiet without
-// closing the connection must not hang the turn forever: it stalls, retries
-// through the same attempt loop and backoff, and only surfaces an error once
-// every retry is exhausted.
-// ---------------------------------------------------------------------------
-
-/** A stream that emits its first content part, then goes silent forever
- *  without closing — the exact shape the gateway hang was reported as. */
-function stallAfterFirstContent(o: ProviderCallOptions) {
-  async function* gen(): AsyncGenerator<StreamPart> {
-    yield { type: "stream-start", warnings: [] };
-    yield { type: "text-start", id: "t" };
-    yield { type: "text-delta", id: "t", delta: "Stalled..." };
-    await new Promise<void>((_, reject) => {
-      o.abortSignal?.addEventListener(
-        "abort",
-        () => reject(new DOMException("aborted", "AbortError")),
-        { once: true },
-      );
-    });
-  }
-  return Promise.resolve({ stream: gen() });
-}
-
-describe("withRetry — stream idle deadline (006)", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("times out after the default 2-minute idle deadline and retries, then succeeds", async () => {
-    const onRetryAttempt = vi.fn();
-    const inner = scriptedModel({
-      stream: [stallAfterFirstContent, () => Promise.resolve({ stream: toStream(goodStreamParts("recovered")) })],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ onRetryAttempt })));
-    const p = wrapped.doStream!(baseOpts);
-    const { stream } = await p;
-    const resultPromise = reassembleStream(stream);
-    await vi.advanceTimersByTimeAsync(120_000 + 1000);
-    const result = await resultPromise;
-    // Both attempts use text id "t" (stallAfterFirstContent and
-    // goodStreamParts). Before the reset this was "Stalled...recovered".
-    expect(result.content).toEqual([{ type: "text", text: "recovered" }]);
-    expect(inner.doStream).toHaveBeenCalledTimes(2);
-    expect(onRetryAttempt).toHaveBeenCalledTimes(1);
-    expect(onRetryAttempt).toHaveBeenCalledWith(1, 5, expect.any(Error));
-  });
-
-  it("times out after a configured streamIdleTimeoutMs and retries", async () => {
-    const onRetryAttempt = vi.fn();
-    const inner = scriptedModel({
-      stream: [stallAfterFirstContent, () => Promise.resolve({ stream: toStream(goodStreamParts("recovered")) })],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ streamIdleTimeoutMs: 50, onRetryAttempt })));
-    const p = wrapped.doStream!(baseOpts);
-    const { stream } = await p;
-    const resultPromise = reassembleStream(stream);
-    await vi.advanceTimersByTimeAsync(50 + 1000);
-    await resultPromise;
-    expect(inner.doStream).toHaveBeenCalledTimes(2);
-    expect(onRetryAttempt).toHaveBeenCalledTimes(1);
-  });
-
-  it("throws the friendly exhausted error once every retry stalls out", async () => {
-    const inner = scriptedModel({ stream: [stallAfterFirstContent] });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ streamIdleTimeoutMs: 10, maxRetries: 1 })));
-    const p = wrapped.doStream!(baseOpts);
-    const { stream } = await p;
-    const assertion = expect(reassembleStream(stream)).rejects.toMatchObject({
-      name: "AgentError",
-      message: "Model returned no response or request timed out after multiple retries. Please try again.",
-    });
-    await vi.advanceTimersByTimeAsync(10 + 1000 + 10);
+    await vi.advanceTimersByTimeAsync(1);
     await assertion;
-    expect(inner.doStream).toHaveBeenCalledTimes(2); // initial + 1 retry
+    expect(signals[0].aborted).toBe(true);
   });
 
-  it("resets the idle deadline on every content part so a long slow stream finishes", async () => {
-    const inner = scriptedModel({
-      stream: [
-        () => {
-          async function* gen(): AsyncGenerator<StreamPart> {
-            yield { type: "stream-start", warnings: [] };
-            yield { type: "text-start", id: "t" };
-            for (let i = 0; i < 3; i++) {
-              await delayFake(90_000);
-              yield { type: "text-delta", id: "t", delta: `chunk${i} ` };
-            }
-            yield { type: "text-end", id: "t" };
-            yield { type: "finish", finishReason: "stop", usage: { inputTokens: 0, outputTokens: 0 } };
-          }
-          return Promise.resolve({ stream: gen() });
-        },
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ streamIdleTimeoutMs: 120_000 })));
-    const { stream } = await wrapped.doStream!(baseOpts);
-    const resultPromise = reassembleStream(stream);
-    await vi.advanceTimersByTimeAsync(90_000 * 3);
-    const result = await resultPromise;
-    expect((result.content[0] as TextBlock).text).toBe("chunk0 chunk1 chunk2 ");
-    expect(inner.doStream).toHaveBeenCalledTimes(1);
-  });
-
-  it("cleans up the stream idle timer when the stream ends normally", async () => {
-    const inner = makeMock("done");
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const { stream } = await wrapped.doStream!(baseOpts);
-    await reassembleStream(stream);
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it("cleans up the stream idle timer immediately on user abort, without waiting for the deadline", async () => {
-    const inner = scriptedModel({ stream: [stallAfterFirstContent] });
-    const controller = new AbortController();
-    const wrapped = wrapProvider(inner, withRetry(cfg({ streamIdleTimeoutMs: 120_000 })));
-    const { stream } = await wrapped.doStream!({ ...baseOpts, abortSignal: controller.signal });
-    const iterator = stream[Symbol.asyncIterator]();
-    await iterator.next(); // stream-start
-    await iterator.next(); // text-start
-    await iterator.next(); // text-delta ("Stalled...")
-    const nextP = iterator.next(); // now hung on the stalled promise
-    controller.abort();
-    await expect(nextP).rejects.toMatchObject({ name: "AgentError", kind: "aborted" });
-    expect(vi.getTimerCount()).toBe(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// stream-restart signal
-// ---------------------------------------------------------------------------
-
-describe("withRetry — stream-restart signal", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("emits stream-restart before replaying a retried attempt", async () => {
-    const inner = scriptedModel({
-      stream: [stallAfterFirstContent, () => Promise.resolve({ stream: toStream(goodStreamParts("recovered")) })],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const { stream } = await wrapped.doStream!(baseOpts);
-    const parts: StreamPart[] = [];
-    const collectionPromise = (async () => {
-      for await (const p of stream) parts.push(p);
-    })();
-    await vi.advanceTimersByTimeAsync(120_000 + 1000);
-    await collectionPromise;
-    const restartParts = parts.filter(p => p.type === "stream-restart");
-    expect(restartParts).toHaveLength(1);
-    expect(restartParts[0]).toEqual({ type: "stream-restart", attempt: 1 });
-    // stream-restart must appear after the first attempt's text-delta and
-    // before the second attempt's stream-start.
-    const restartIdx = parts.findIndex(p => p.type === "stream-restart");
-    const firstTextDeltaIdx = parts.findIndex(p => p.type === "text-delta");
-    const secondStreamStartIdx = parts.findIndex((p, i) => i > restartIdx && p.type === "stream-start");
-    expect(restartIdx).toBeGreaterThan(firstTextDeltaIdx);
-    expect(secondStreamStartIdx).toBeGreaterThan(restartIdx);
-  });
-
-  it("emits no stream-restart when the first attempt succeeds", async () => {
-    const inner = scriptedModel({
-      stream: [() => Promise.resolve({ stream: toStream(goodStreamParts()) })],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const { stream } = await wrapped.doStream!(baseOpts);
-    const parts: StreamPart[] = [];
-    for await (const p of stream) parts.push(p);
-    expect(parts.every(p => p.type !== "stream-restart")).toBe(true);
-  });
-
-  it("stream-restart for a pre-content retry is emitted but is a no-op reset", async () => {
-    // emptyStreamParts has no CONTENT_PARTS, so attempt 0 fails with
-    // EmptyResponseError before any content is yielded. Attempt 1 acquires
-    // content and emits stream-restart (attempt > 0). resetBlocks() on an empty
-    // state is a no-op, so the final result is identical to a single-attempt run.
-    const inner = scriptedModel({
-      stream: [
-        () => Promise.resolve({ stream: toStream(emptyStreamParts()) }),
-        () => Promise.resolve({ stream: toStream(goodStreamParts("hello")) }),
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg()));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(1000);
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    // The content is correct despite stream-restart being emitted.
+  it("returns a response that completes before the deadline and leaves no timer behind", async () => {
+    const baseline = vi.getTimerCount();
+    const signals: AbortSignal[] = [];
+    const fetchImpl = vi.fn((_url: unknown, init?: { signal?: AbortSignal | null }) => {
+      if (init?.signal) signals.push(init.signal);
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(JSON_OK),
+      } as unknown as Response);
+    }) as unknown as typeof fetch;
+    const wrapped = realModel(cfg({ requestTimeoutMs: 50, maxRetries: 3 }), fetchImpl);
+    const result = await wrapped.generate(baseOpts);
     expect((result.content[0] as TextBlock).text).toBe("hello");
+    expect(vi.getTimerCount()).toBe(baseline);
+    await vi.advanceTimersByTimeAsync(60);
+    expect(signals[0].aborted).toBe(false);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("a stream-restart alone does not satisfy the content check", async () => {
-    // An attempt that yields only stream-start then a synthetic stream-restart
-    // (which is not in CONTENT_PARTS) must be treated as an empty response
-    // and retried.
-    const onRetryAttempt = vi.fn();
-    const inner = scriptedModel({
-      stream: [
-        () => Promise.resolve({ stream: toStream(emptyStreamParts()) }),
-        () => Promise.resolve({ stream: toStream(goodStreamParts("ok")) }),
-      ],
-    });
-    const wrapped = wrapProvider(inner, withRetry(cfg({ onRetryAttempt })));
-    const p = wrapped.doStream!(baseOpts);
-    await vi.advanceTimersByTimeAsync(1000);
-    const { stream } = await p;
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("ok");
-    expect(onRetryAttempt).toHaveBeenCalledTimes(1);
+  it("does not retry when the caller aborts a pending request, and leaves no timer behind", async () => {
+    const baseline = vi.getTimerCount();
+    const { fn, calls } = hangingFetch();
+    const wrapped = realModel(cfg({ maxRetries: 3 }), fn);
+    const controller = new AbortController();
+    const p = wrapped.generate({ ...baseOpts, abortSignal: controller.signal });
+    const assertion = expect(p).rejects.toMatchObject({ name: "AgentError", kind: "aborted" });
+    await vi.advanceTimersByTimeAsync(5);
+    controller.abort();
+    await assertion;
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(calls).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(baseline);
   });
 });
 

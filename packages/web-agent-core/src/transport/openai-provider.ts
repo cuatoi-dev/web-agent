@@ -7,24 +7,17 @@ import type {
   NormalizedUsage,
   ProviderWarning,
 } from "./provider.types.js";
-import { reassembleStream } from "./stream-parts.js";
-import type { StreamPart } from "./provider.types.js";
 import { fromAnthropicResponse } from "./message-converter.js";
-import type { MessageStreamEvent } from "./wire.types.js";
-import { isStreamEventType } from "./wire.types.js";
-import type { OpenAIBlockState } from "./types.js";
-import { requestJson, requestStream } from "./anthropic-request.js";
+import { requestJson } from "./anthropic-request.js";
 import {
   toOpenAIMessages,
   toOpenAIToolChoice,
   toOpenAITools,
   fromOpenAIResponse,
-  OpenAIStreamTranslator,
 } from "./openai-to-anthropic.js";
 import { modelSupportsVision } from "./vision.js";
 import type {
   OpenAIChatCompletion,
-  OpenAIChatCompletionChunk,
   OpenAIChatCompletionCreateParams,
   OpenAIReasoningEffort,
 } from "./openai-wire.types.js";
@@ -40,7 +33,7 @@ export class OpenAILanguageModel implements LanguageModel {
 
   /**
    * Back-compat test seam only. Real requests never set this — see generate()
-   * and doStream() below. When a test assigns a
+   * below. When a test assigns a
    * `{ chat: { completions: { create } } }` shape here, that mock is used
    * instead of a real fetch call, so the existing SDK-shaped test suites keep
    * working unmodified.
@@ -80,7 +73,7 @@ export class OpenAILanguageModel implements LanguageModel {
   }
 
   // ---------------------------------------------------------------------------
-  // buildBaseParams — shared param builder for both generate() and doStream()
+  // buildBaseParams — param builder for generate()
   // ---------------------------------------------------------------------------
   private buildBaseParams(
     opts: ProviderCallOptions,
@@ -139,14 +132,9 @@ export class OpenAILanguageModel implements LanguageModel {
   }
 
   // ---------------------------------------------------------------------------
-  // generate — non-streaming path; streaming delegates to doStream()
+  // generate — one non-streaming request
   // ---------------------------------------------------------------------------
   async generate(opts: ProviderCallOptions): Promise<ProviderResult> {
-    if (opts.streaming) {
-      const { stream } = await this.doStream(opts);
-      return reassembleStream(stream);
-    }
-
     const warnings: ProviderWarning[] = [];
     // `stream: false` is sent EXPLICITLY — see the matching note in
     // anthropic-provider.ts. A gateway may read a missing `stream` field as
@@ -188,138 +176,6 @@ export class OpenAILanguageModel implements LanguageModel {
     return result;
   }
 
-  // ---------------------------------------------------------------------------
-  // doStream — streaming via POST /chat/completions ({stream:true, include_usage})
-  // ---------------------------------------------------------------------------
-  async doStream(
-    opts: ProviderCallOptions
-  ): Promise<{ stream: AsyncIterable<StreamPart> }> {
-    const warnings: ProviderWarning[] = [];
-    const baseParams = this.buildBaseParams(opts, warnings);
-
-    const streamParams = {
-      ...baseParams,
-      stream: true as const,
-      stream_options: { include_usage: true },
-    };
-
-    const chunks: AsyncIterable<OpenAIChatCompletionChunk> = this._client
-      ? ((await this._client.chat.completions.create(streamParams, {
-          signal: opts.abortSignal,
-        })) as AsyncIterable<OpenAIChatCompletionChunk>)
-      : await requestStream<OpenAIChatCompletionChunk>({
-          baseURL: this.requestBaseURL(),
-          path: "/chat/completions",
-          headers: { "Content-Type": "application/json" },
-          body: streamParams,
-          fetch: this._fetch,
-          signal: opts.abortSignal,
-          onProgress: opts.onTransportProgress,
-        });
-
-    return { stream: this.streamToParts(chunks, warnings) };
-  }
-
-  // ---------------------------------------------------------------------------
-  // streamToParts — async generator mapping OpenAI chunks → StreamPart sequence
-  // ---------------------------------------------------------------------------
-  private async *streamToParts(
-    chunks: AsyncIterable<OpenAIChatCompletionChunk>,
-    warnings: ProviderWarning[]
-  ): AsyncGenerator<StreamPart> {
-    yield { type: "stream-start", warnings };
-
-    const TEXT_ID = "text_0";
-    const REASON_ID = "reasoning_0";
-    const translator = new OpenAIStreamTranslator();
-
-    const blocks = new Map<number, OpenAIBlockState>();
-    let inputTokens = 0;
-    let outputTokens = 0;
-
-    const handle = function* (
-      events: MessageStreamEvent[]
-    ): Generator<StreamPart> {
-      for (const event of events) {
-        if (isStreamEventType(event, "content_block_start")) {
-          const { index, content_block: cb } = event;
-          if (cb.type === "text") {
-            blocks.set(index, { kind: "text", id: TEXT_ID, accInput: "" });
-            yield { type: "text-start", id: TEXT_ID };
-          } else if (cb.type === "thinking") {
-            blocks.set(index, { kind: "thinking", id: REASON_ID, accInput: "" });
-            yield { type: "reasoning-start", id: REASON_ID };
-          } else if (cb.type === "tool_use") {
-            blocks.set(index, {
-              kind: "tool_use",
-              id: cb.id,
-              toolName: cb.name,
-              accInput: "",
-              extra_content: cb.extra_content,
-            });
-            yield { type: "tool-input-start", id: cb.id, toolName: cb.name };
-          }
-        } else if (isStreamEventType(event, "content_block_delta")) {
-          const block = blocks.get(event.index);
-          if (!block) continue;
-          if (event.delta.type === "text_delta") {
-            yield { type: "text-delta", id: block.id, delta: event.delta.text };
-          } else if (event.delta.type === "thinking_delta") {
-            yield {
-              type: "reasoning-delta",
-              id: block.id,
-              delta: event.delta.thinking,
-            };
-          } else if (event.delta.type === "input_json_delta") {
-            block.accInput += event.delta.partial_json;
-            yield {
-              type: "tool-input-delta",
-              id: block.id,
-              delta: event.delta.partial_json,
-            };
-          }
-        } else if (isStreamEventType(event, "content_block_stop")) {
-          const block = blocks.get(event.index);
-          if (!block) continue;
-          if (block.kind === "text") yield { type: "text-end", id: block.id };
-          else if (block.kind === "thinking")
-            yield { type: "reasoning-end", id: block.id };
-          else {
-            yield { type: "tool-input-end", id: block.id };
-            yield {
-              type: "tool-call",
-              toolCallId: block.id,
-              toolName: block.toolName!,
-              input: block.accInput,
-              ...(block.extra_content ? { extra_content: block.extra_content } : {}),
-            };
-          }
-          blocks.delete(event.index);
-        } else if (isStreamEventType(event, "message_delta")) {
-          outputTokens = event.usage.output_tokens;
-          if (event.usage.input_tokens !== undefined)
-            inputTokens = event.usage.input_tokens;
-        }
-      }
-    };
-
-    for await (const chunk of chunks) yield* handle(translator.push(chunk));
-    yield* handle(translator.end());
-
-    yield {
-      type: "finish",
-      finishReason: translator.finishReason,
-      // Cache fields are intentionally absent. reasoningTokens only when the
-      // stream reported it.
-      usage: {
-        inputTokens,
-        outputTokens,
-        ...(translator.reasoningTokens !== undefined
-          ? { reasoningTokens: translator.reasoningTokens }
-          : {}),
-      },
-    };
-  }
 }
 
 export function createOpenAILanguageModel(

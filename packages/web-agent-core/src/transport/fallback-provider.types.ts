@@ -12,7 +12,7 @@ export interface FallbackChainEntry {
   model: string;
   /** Base URL for this entry, in the form its provider expects. */
   baseURL: string;
-  /** true → call this entry in streaming mode. Default false. */
+  /** Ignored. Every call is non-streaming. */
   streaming?: boolean;
 }
 

@@ -1,7 +1,6 @@
 import {
   AnthropicHttpError,
   requestJson,
-  requestStream,
 } from "./anthropic-request.js";
 import { isRetryableError } from "./middleware.js";
 
@@ -101,33 +100,6 @@ describe("anthropic-request", () => {
     expect(data).toEqual({ res: "data" });
   });
 
-  it("returns parsed events for a streaming call", async () => {
-    const sseContent =
-      'event: message_start\ndata: {"type":"message_start","message":{"id":"1"}}\n\n' +
-      'event: message_stop\ndata: {"type":"message_stop"}\n\n';
-
-    const injectedFetch = vi.fn().mockResolvedValue(
-      new Response(sseContent, { status: 200 }),
-    );
-
-    const stream = await requestStream({
-      baseURL: "http://localhost",
-      path: "/messages",
-      headers: {},
-      body: { stream: true },
-      fetch: injectedFetch,
-    });
-
-    const events = [];
-    for await (const ev of stream) {
-      events.push(ev);
-    }
-
-    expect(events).toHaveLength(2);
-    expect(events[0].type).toBe("message_start");
-    expect(events[1].type).toBe("message_stop");
-  });
-
   it("throws AnthropicHttpError carrying both status and statusCode", async () => {
     const injectedFetch = vi.fn().mockResolvedValue(
       new Response("Rate limit exceeded", { status: 429 }),
@@ -189,22 +161,5 @@ describe("anthropic-request", () => {
         body: {},
       }),
     ).rejects.toThrow("No fetch implementation available.");
-  });
-
-  it("throws when a streaming response has no body", async () => {
-    const resWithoutBody = new Response(null, { status: 200 });
-    Object.defineProperty(resWithoutBody, "body", { value: null });
-
-    const injectedFetch = vi.fn().mockResolvedValue(resWithoutBody);
-
-    await expect(
-      requestStream({
-        baseURL: "http://localhost",
-        path: "/messages",
-        headers: {},
-        body: {},
-        fetch: injectedFetch,
-      }),
-    ).rejects.toThrow("Anthropic streaming response has no body.");
   });
 });

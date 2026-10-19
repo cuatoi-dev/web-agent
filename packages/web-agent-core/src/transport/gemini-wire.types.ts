@@ -39,7 +39,7 @@ export interface GeminiPart {
 }
 
 export interface GeminiContent {
-  /** "user" or "model". Absent on some streamed frames. */
+  /** "user" or "model". May be absent. */
   role?: string;
   parts: GeminiPart[];
 }
@@ -126,6 +126,3 @@ export interface GeminiGenerateContentResponse {
   responseId?: string;
   promptFeedback?: { blockReason?: string };
 }
-
-/** A streamed frame has the same shape as a complete response. */
-export type GeminiStreamChunk = GeminiGenerateContentResponse;

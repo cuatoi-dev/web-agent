@@ -4,7 +4,6 @@ import {
   createGeminiLanguageModel,
 } from "./gemini-provider.js";
 import type { AgentConfig } from "../config.js";
-import type { StreamPart } from "./stream-parts.js";
 
 interface GeminiRequestBody {
   contents: { role: string; parts: { functionCall?: unknown; thoughtSignature?: string }[] }[];
@@ -17,19 +16,6 @@ function jsonResponse(data: unknown, init?: ResponseInit): Response {
     headers: { "Content-Type": "application/json" },
     ...init,
   });
-}
-
-function sseResponse(body: string): Response {
-  const encoder = new TextEncoder();
-  return new Response(
-    new ReadableStream({
-      start(c) {
-        c.enqueue(encoder.encode(body));
-        c.close();
-      },
-    }),
-    { status: 200, headers: { "Content-Type": "text/event-stream" } }
-  );
 }
 
 const cfg: AgentConfig = {
@@ -80,42 +66,14 @@ describe("GeminiLanguageModel", () => {
     expect(url).toBe(
       "http://localhost:3000/api/gemini/v1beta/models/gemini-flash-lite-latest:generateContent"
     );
+    expect(url as string).not.toContain("alt=sse");
     const body = JSON.parse(init!.body as string) as GeminiRequestBody;
+    expect(body).not.toHaveProperty("stream");
     expect(body.contents).toEqual([{ role: "user", parts: [{ text: "hello" }] }]);
     expect(result.content).toEqual([{ type: "text", text: "Hi" }]);
     expect(result.finishReason).toBe("stop");
     expect(result.usage.inputTokens).toBe(5);
     expect(result.usage.outputTokens).toBe(2);
-  });
-
-  it("doStream() posts to /v1beta/models/<model>:streamGenerateContent?alt=sse and emits more than one text-delta part", async () => {
-    const sseBody =
-      'data: {"candidates":[{"content":{"role":"model","parts":[{"text":"Hello"}]}}]}\n\n' +
-      'data: {"candidates":[{"content":{"role":"model","parts":[{"text":" world"}]}}]}\n\n' +
-      'data: {"candidates":[{"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":2}}\n\n';
-    const stubFetch = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(sseResponse(sseBody));
-    const model = new GeminiLanguageModel(cfg, { fetch: stubFetch });
-
-    const { stream } = await model.doStream({
-      messages: [{ role: "user", content: "hi" }],
-      model: "gemini-flash-lite-latest",
-    });
-    const parts: StreamPart[] = [];
-    for await (const p of stream) parts.push(p);
-
-    const [url] = stubFetch.mock.calls[0];
-    expect(url).toBe(
-      "http://localhost:3000/api/gemini/v1beta/models/gemini-flash-lite-latest:streamGenerateContent?alt=sse"
-    );
-
-    const textDeltas = parts.filter((p) => p.type === "text-delta");
-    expect(textDeltas.length).toBeGreaterThan(1);
-    expect(textDeltas.map((p) => p.delta)).toEqual(["Hello", " world"]);
-
-    const finish = parts.find((p) => p.type === "finish")!;
-    expect(finish).toMatchObject({ type: "finish", finishReason: "stop" });
-    expect(finish.usage.inputTokens).toBe(5);
-    expect(finish.usage.outputTokens).toBe(2);
   });
 
   it("generate() captures a thought signature and supplies it on the next turn's functionCall", async () => {
@@ -180,48 +138,7 @@ describe("GeminiLanguageModel", () => {
     expect(functionCallPart!.thoughtSignature).toBe("sig_tokyo");
   });
 
-  it("doStream() tool call captures a thought signature from the stream translator", async () => {
-    const sseBody =
-      'data: {"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"id":"call_1","name":"get_weather","args":{"location":"Tokyo"}},"thoughtSignature":"sig_stream"}]}}]}\n\n' +
-      'data: {"candidates":[{"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":2}}\n\n';
-    const stubFetch = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(sseResponse(sseBody));
-    const model = new GeminiLanguageModel(cfg, { fetch: stubFetch });
-
-    const { stream } = await model.doStream({
-      messages: [{ role: "user", content: "hi" }],
-      model: "gemini-flash-lite-latest",
-    });
-    const parts: StreamPart[] = [];
-    for await (const p of stream) parts.push(p);
-
-    const toolCall = parts.find((p) => p.type === "tool-call");
-    expect(toolCall).toMatchObject({ toolCallId: "call_1", toolName: "get_weather" });
-
-    // The captured signature is instance state — the next generate() call must
-    // include it, proving the translator's signature reached the provider's map.
-    const stubFetch2 = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(
-      jsonResponse({
-        candidates: [{ content: { role: "model", parts: [{ text: "ok" }] }, finishReason: "STOP" }],
-        usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 },
-      })
-    );
-    (model as unknown as { _fetch: typeof fetch })._fetch = stubFetch2;
-    await model.generate({
-      messages: [
-        { role: "user", content: "hi" },
-        {
-          role: "assistant",
-          content: [{ type: "tool-call", toolCallId: "call_1", toolName: "get_weather", input: { location: "Tokyo" } }],
-        },
-      ],
-      model: "gemini-flash-lite-latest",
-    });
-    const body = JSON.parse(stubFetch2.mock.calls[0][1]!.body as string) as GeminiRequestBody;
-    const fcPart = body.contents.flatMap((c) => c.parts).find((p) => p.functionCall);
-    expect(fcPart!.thoughtSignature).toBe("sig_stream");
-  });
-
-  it("reports non-zero inputTokens and outputTokens in both generate() and doStream()", async () => {
+  it("reports non-zero inputTokens and outputTokens from generate()", async () => {
     const stubFetch = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(
       jsonResponse({
         candidates: [{ content: { role: "model", parts: [{ text: "Hi" }] }, finishReason: "STOP" }],
@@ -235,21 +152,6 @@ describe("GeminiLanguageModel", () => {
     });
     expect(result.usage.inputTokens).toBe(11);
     expect(result.usage.outputTokens).toBe(4);
-
-    const sseBody =
-      'data: {"candidates":[{"content":{"role":"model","parts":[{"text":"Hi"}]}}]}\n\n' +
-      'data: {"candidates":[{"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":3}}\n\n';
-    const stubFetch2 = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(sseResponse(sseBody));
-    const model2 = new GeminiLanguageModel(cfg, { fetch: stubFetch2 });
-    const { stream } = await model2.doStream({
-      messages: [{ role: "user", content: "hi" }],
-      model: "gemini-flash-lite-latest",
-    });
-    const parts: StreamPart[] = [];
-    for await (const p of stream) parts.push(p);
-    const finish = parts.find((p) => p.type === "finish")!;
-    expect(finish.usage.inputTokens).toBe(7);
-    expect(finish.usage.outputTokens).toBe(3);
   });
 
   it("passes generationConfig parameters through to the request body", async () => {

@@ -6,8 +6,7 @@ import { ToolContext, CustomToolDef } from "../tools/build-tools.js";
 import { AgentConfig } from "../config.js";
 import { z } from "zod";
 import type { Message, MessageCreateParams } from "../transport/wire.types.js";
-import type { ContentPart, ModelMessage } from "../types.js";
-import type { StreamPart } from "../transport/stream-parts.js";
+import type { ContentPart } from "../types.js";
 
 /** `_client.messages.create`'s real declared type (see anthropic-provider.ts).
  * Test mocks are typed narrowly against the real SDK's MessageCreateParams,
@@ -218,36 +217,6 @@ describe("runTurn Integration", () => {
 
       expect(result.stopReason).toBe("end_turn");
       expect(result.assistantText).toBe("An image was provided.");
-    });
-
-    it("forwards onStreamPart to agent.generate", async () => {
-      const stub = {
-        generate: vi.fn<
-          [{ messages: ModelMessage[]; abortSignal: AbortSignal; onStep?: () => void; onStreamPart?: (part: StreamPart) => void }],
-          Promise<{ text: string; response: { messages: ModelMessage[] }; steps: unknown[] }>
-        >(() => Promise.resolve({
-          text: "ok",
-          response: { messages: [] },
-          steps: [],
-        })),
-      };
-      const spy = vi.fn();
-      await runTurn(
-        stub as unknown as ReturnType<typeof createPageAgent>,
-        cm,
-        ctx,
-        "hi",
-        new AbortController().signal,
-        TEST_CFG,
-        undefined,
-        spy,
-      );
-
-      expect(stub.generate).toHaveBeenCalledTimes(1);
-      const passedCallback = stub.generate.mock.calls[0][0].onStreamPart;
-      expect(typeof passedCallback).toBe("function");
-      passedCallback!({ type: "text-delta", id: "t1", delta: "x" });
-      expect(spy).toHaveBeenCalledWith({ type: "text-delta", id: "t1", delta: "x" });
     });
   });
 

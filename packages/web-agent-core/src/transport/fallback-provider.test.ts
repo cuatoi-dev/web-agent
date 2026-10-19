@@ -4,8 +4,6 @@ import type { ProviderFallbackNotice } from "./fallback-provider.js";
 import { createMockProvider, type MockScript } from "./mock-provider.js";
 import { providerRegistry } from "./registry.js";
 import { wrapProvider, withRetry } from "./middleware.js";
-import { reassembleStream } from "./stream-parts.js";
-import type { StreamPart } from "./stream-parts.js";
 import { DEFAULT_CONFIG, type AgentConfig } from "../config.js";
 import { AgentError } from "../loop/errors.js";
 import type { ProviderCallOptions } from "./provider.types.js";
@@ -25,7 +23,6 @@ function registerEntry(name: string, script: MockScript) {
     provider: inner.provider,
     modelId: inner.modelId,
     generate: vi.fn((opts: ProviderCallOptions) => inner.generate(opts)),
-    doStream: vi.fn((opts: ProviderCallOptions) => inner.doStream!(opts)),
   };
   providerRegistry.register(name, (cfg) => wrapProvider(spy, withRetry(cfg)));
   return spy;
@@ -206,156 +203,33 @@ describe("createFallbackProviderFactory", () => {
     setItem.mockRestore();
   });
 
-  it("a stream that dies before any content falls back silently", async () => {
-    const a = registerEntry("fp-silent-a", {
-      streamParts: [{ type: "error", error: new Error("dead") }],
-    });
-    const b = registerEntry("fp-silent-b", { text: "from-b" });
-    const model = createFallbackProviderFactory([
-      { endpointType: "fp-silent-a", model: "a-model", baseURL: "", streaming: true },
-      { endpointType: "fp-silent-b", model: "b-model", baseURL: "", streaming: true },
-    ])(baseCfg);
-    const { stream } = await model.doStream!(baseOpts);
-    const result = await reassembleStream(stream);
-    expect((result.content[0] as TextBlock).text).toBe("from-b");
-    expect(a.doStream).toHaveBeenCalledTimes(1);
-    expect(b.doStream).toHaveBeenCalledTimes(1);
-  });
-
-  it("a stream that dies after a text-delta advances the cursor and throws", async () => {
-    registerEntry("fp-midstream-a", {
-      streamParts: [
-        { type: "text-start", id: "t0" },
-        { type: "text-delta", id: "t0", delta: "part" },
-        { type: "error", error: new Error("dead mid-stream") },
-      ],
-    });
-    const b = registerEntry("fp-midstream-b", { text: "from-b" });
-    const model = createFallbackProviderFactory([
-      { endpointType: "fp-midstream-a", model: "a-model", baseURL: "", streaming: true },
-      { endpointType: "fp-midstream-b", model: "b-model", baseURL: "", streaming: true },
-    ])(baseCfg);
-    const { stream } = await model.doStream!(baseOpts);
-    await expect(reassembleStream(stream)).rejects.toBeTruthy();
-    expect(b.doStream).not.toHaveBeenCalled();
-
-    // A following call hits B — the cursor advanced during the failed call.
-    const { stream: stream2 } = await model.doStream!(baseOpts);
-    const result2 = await reassembleStream(stream2);
-    expect((result2.content[0] as TextBlock).text).toBe("from-b");
-  });
-
-  it("a stream that stalls after its first content chunk advances to the next fallback entry", async () => {
-    // Not built through registerEntry/createMockProvider — its streamParts
-    // list is finite and always closes cleanly, which can't express a
-    // gateway that goes silent without closing the connection.
-    const doStream = vi.fn((o: ProviderCallOptions) => {
-      async function* gen(): AsyncGenerator<StreamPart> {
-        yield { type: "text-start", id: "t" };
-        yield { type: "text-delta", id: "t", delta: "part" };
-        await new Promise<void>((_, reject) => {
-          o.abortSignal?.addEventListener(
-            "abort",
-            () => reject(new DOMException("aborted", "AbortError")),
-            { once: true },
-          );
-        });
-      }
-      return Promise.resolve({ stream: gen() });
-    });
-    const a = { provider: "fp-stall-mid-a", modelId: "fp-stall-mid-a", generate: vi.fn(), doStream };
-    providerRegistry.register("fp-stall-mid-a", (cfg) => wrapProvider(a, withRetry(cfg)));
-    const b = registerEntry("fp-stall-mid-b", { text: "from-b" });
-    const notices: ProviderFallbackNotice[] = [];
-    const model = createFallbackProviderFactory([
-      { endpointType: "fp-stall-mid-a", model: "a-model", baseURL: "", streaming: true },
-      { endpointType: "fp-stall-mid-b", model: "b-model", baseURL: "", streaming: true },
-    ])({ ...baseCfg, streamIdleTimeoutMs: 10, onProviderFallback: (n) => notices.push(n) });
-
-    const { stream } = await model.doStream!(baseOpts);
-    const assertion = expect(reassembleStream(stream)).rejects.toBeTruthy();
-    await vi.advanceTimersByTimeAsync(10);
-    await assertion;
-    expect(b.doStream).not.toHaveBeenCalled(); // no replay within the same call
-    expect(notices[0]?.failed[0]?.provider).toBe("fp-stall-mid-a");
-
-    // A following call hits B — the cursor advanced during the stalled call.
-    const { stream: stream2 } = await model.doStream!(baseOpts);
-    const result2 = await reassembleStream(stream2);
-    expect((result2.content[0] as TextBlock).text).toBe("from-b");
-  });
-
-  it("a completed tool call before any text is past the boundary", async () => {
-    registerEntry("fp-tool-boundary-a", {
-      streamParts: [
-        { type: "tool-input-start", id: "t1", toolName: "count_me" },
-        { type: "tool-input-delta", id: "t1", delta: "{}" },
-        { type: "tool-input-end", id: "t1" },
-        { type: "tool-call", toolCallId: "t1", toolName: "count_me", input: "{}" },
-        { type: "error", error: new Error("dead") },
-      ],
-    });
-    registerEntry("fp-tool-boundary-b", { text: "from-b" });
-    const model = createFallbackProviderFactory([
-      { endpointType: "fp-tool-boundary-a", model: "a-model", baseURL: "", streaming: true },
-      { endpointType: "fp-tool-boundary-b", model: "b-model", baseURL: "", streaming: true },
-    ])(baseCfg);
-    const { stream } = await model.doStream!(baseOpts);
-    await expect(reassembleStream(stream)).rejects.toBeTruthy();
-
-    const { stream: stream2 } = await model.doStream!(baseOpts);
-    const result2 = await reassembleStream(stream2);
-    expect((result2.content[0] as TextBlock).text).toBe("from-b");
-  });
-
-  it("a non-streaming entry serves a doStream call", async () => {
-    const b = registerEntry("fp-nonstream-b", { text: "from-b" });
-    const model = createFallbackProviderFactory([
-      { endpointType: "fp-nonstream-b", model: "b-model", baseURL: "", streaming: false },
-    ])(baseCfg);
-    const { stream } = await model.doStream!(baseOpts);
-    const parts: string[] = [];
-    for await (const part of stream) parts.push(part.type);
-    expect(parts).toEqual(["stream-start", "text-start", "text-delta", "text-end", "finish"]);
-    expect(b.doStream).not.toHaveBeenCalled();
-    expect(b.generate).toHaveBeenCalledTimes(1);
-  });
-
   it("a chain entry that ends its turn empty is not failed over", async () => {
     const onProviderFallback = vi.fn();
     const a = registerEntry("fp-empty-end-a", { content: [], finishReason: "stop" });
     const b = registerEntry("fp-empty-end-b", { text: "from-b" });
     const model = createFallbackProviderFactory([
-      { endpointType: "fp-empty-end-a", model: "a-model", baseURL: "", streaming: true },
-      { endpointType: "fp-empty-end-b", model: "b-model", baseURL: "", streaming: true },
+      { endpointType: "fp-empty-end-a", model: "a-model", baseURL: "" },
+      { endpointType: "fp-empty-end-b", model: "b-model", baseURL: "" },
     ])({ ...baseCfg, onProviderFallback });
-    const { stream } = await model.doStream!(baseOpts);
-    const result = await reassembleStream(stream);
+    const result = await model.generate(baseOpts);
     expect(result.content).toHaveLength(0);
     expect(result.finishReason).toBe("stop");
-    expect(a.doStream).toHaveBeenCalledTimes(1);
-    expect(b.doStream).not.toHaveBeenCalled();
+    expect(a.generate).toHaveBeenCalledTimes(1);
     expect(b.generate).not.toHaveBeenCalled();
     expect(onProviderFallback).not.toHaveBeenCalled();
   });
 
-  it("a chain entry that dies without a finish IS failed over", async () => {
+  it("a chain entry that returns an empty incomplete result IS failed over", async () => {
     const onProviderFallback = vi.fn();
-    registerEntry("fp-dead-a", {
-      streamParts: [
-        { type: "finish", finishReason: "unknown", usage: { inputTokens: 0, outputTokens: 0 } },
-      ],
-      finishReason: "unknown",
-    });
+    registerEntry("fp-dead-a", { content: [], finishReason: "unknown" });
     const b = registerEntry("fp-dead-b", { text: "from-b" });
     const model = createFallbackProviderFactory([
-      { endpointType: "fp-dead-a", model: "a-model", baseURL: "", streaming: true },
-      { endpointType: "fp-dead-b", model: "b-model", baseURL: "", streaming: true },
+      { endpointType: "fp-dead-a", model: "a-model", baseURL: "" },
+      { endpointType: "fp-dead-b", model: "b-model", baseURL: "" },
     ])({ ...baseCfg, onProviderFallback });
-    const { stream } = await model.doStream!(baseOpts);
-    const result = await reassembleStream(stream);
+    const result = await model.generate(baseOpts);
     expect((result.content[0] as TextBlock).text).toBe("from-b");
-    expect(b.doStream).toHaveBeenCalledTimes(1);
+    expect(b.generate).toHaveBeenCalledTimes(1);
     expect(onProviderFallback).toHaveBeenCalledTimes(1);
   });
 
@@ -426,21 +300,15 @@ describe("createFallbackProviderFactory", () => {
 
     registerEntry("fp-tool-turn-a", [
       { toolCalls: [{ id: "t1", name: "count_me", input: {} }], finishReason: "tool-calls" },
-      {
-        streamParts: [
-          { type: "text-start", id: "t2" },
-          { type: "text-delta", id: "t2", delta: "partial" },
-          { type: "error", error: new Error("dead mid-stream") },
-        ],
-      },
+      { error: { status: 500, message: "a-down" } },
     ]);
-    registerEntry("fp-tool-turn-b", { text: "unused" });
+    registerEntry("fp-tool-turn-b", { error: { status: 500, message: "b-down" } });
 
     providerRegistry.register(
       "fp-tool-turn-chain",
       createFallbackProviderFactory([
-        { endpointType: "fp-tool-turn-a", model: "a-model", baseURL: "", streaming: true },
-        { endpointType: "fp-tool-turn-b", model: "b-model", baseURL: "", streaming: true },
+        { endpointType: "fp-tool-turn-a", model: "a-model", baseURL: "" },
+        { endpointType: "fp-tool-turn-b", model: "b-model", baseURL: "" },
       ]),
     );
 
@@ -448,7 +316,6 @@ describe("createFallbackProviderFactory", () => {
       model: "unused",
       endpointType: "fp-tool-turn-chain",
       persist: false,
-      streaming: true,
       tools: () => [countTool],
     });
     await session.initPromise;
