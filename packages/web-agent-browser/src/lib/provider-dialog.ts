@@ -69,7 +69,7 @@ function appendModelRow(
   initial: ProviderFormModelRow = { model: "", label: "", vision: false },
 ): void {
   const row = el("div", "form-model-row");
-  const idInput = el("input", "mid form-model-id");
+  const idInput = el("input", "form-model-id");
   idInput.type = "text";
   idInput.placeholder = "model-id";
   idInput.value = initial.model;

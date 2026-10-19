@@ -74,6 +74,11 @@ test("B1: one-form Add model starts on OpenRouter and applies Anthropic", async 
     await expect(page.locator(".refresh-models-btn")).toBeHidden();
     for (const colorScheme of ["light", "dark"] as const) {
       await page.emulateMedia({ colorScheme });
+      const heights = await page.locator(".form-model-row").first().evaluate((row) => ({
+        id: row.querySelector(".form-model-id")!.getBoundingClientRect().height,
+        label: row.querySelector(".form-model-label")!.getBoundingClientRect().height,
+      }));
+      expect(Math.abs(heights.id - heights.label)).toBeLessThanOrEqual(1);
       await form.screenshot({ path: path.join(ARTIFACTS, `anthropic-form-${colorScheme}.png`) });
     }
     await page.locator(".cancel-btn").click();
