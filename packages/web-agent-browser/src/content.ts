@@ -70,7 +70,6 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
       el.path = settings.endpoint;
       el.type = settings.wireFormat;
       el.model = settings.model;
-      el.streaming = settings.streaming;
       el.launcherIcon = LAUNCHER_ICON_SVG;
       el.closeIcon = CLOSE_ICON_SVG;
       el.fetch = createRelayFetch();
@@ -83,7 +82,6 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
         // too (chat-panel-props.ts:83). That gap is in web-agent-lit, out of scope for
         // this package; the assignment itself is sound.
         (el as unknown as { type: string }).type = "mock";
-        el.streaming = false;
       }
 
       // 116/003 — the same three built-in groups, each droppable from

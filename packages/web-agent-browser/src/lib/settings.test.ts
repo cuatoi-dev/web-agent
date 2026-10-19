@@ -9,8 +9,8 @@ import type { AgentBrand, BrandAgent } from "./types";
 const BRAND_MODELS: AgentBrand = {
   ...EMPTY_BRAND,
   models: [
-    { id: "brand-a", label: "Brand A", endpoint: "https://a.test/api/anthropic", wireFormat: "anthropic", model: "a-model", streaming: true },
-    { id: "brand-b", label: "Brand B", endpoint: "https://b.test/api/openai/v1", wireFormat: "openai", model: "b-model", streaming: false },
+    { id: "brand-a", label: "Brand A", endpoint: "https://a.test/api/anthropic", wireFormat: "anthropic", model: "a-model" },
+    { id: "brand-b", label: "Brand B", endpoint: "https://b.test/api/openai/v1", wireFormat: "openai", model: "b-model" },
   ],
 };
 
@@ -84,7 +84,7 @@ describe("settings", () => {
   });
 
   it("round-trips a saved settings object", async () => {
-    const settings = { endpoint: "https://x/v1", wireFormat: "gemini" as const, model: "m", streaming: false, apiKey: "k", theme: "auto" as const };
+    const settings = { endpoint: "https://x/v1", wireFormat: "gemini" as const, model: "m", apiKey: "k", theme: "auto" as const };
     await setSettings(settings);
     expect(await getSettings()).toEqual(settings);
   });
@@ -96,7 +96,6 @@ describe("settings", () => {
     expect(result.model).toBe("only-model");
     expect(result.endpoint).toBe(defaultSettings(EMPTY_BRAND).endpoint);
     expect(result.wireFormat).toBe(defaultSettings(EMPTY_BRAND).wireFormat);
-    expect(result.streaming).toBe(defaultSettings(EMPTY_BRAND).streaming);
     expect(result.apiKey).toBe(defaultSettings(EMPTY_BRAND).apiKey);
     expect(result.theme).toBe(defaultSettings(EMPTY_BRAND).theme);
   });

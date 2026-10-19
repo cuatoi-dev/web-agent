@@ -99,9 +99,6 @@ test.describe("attach-folder live demo (Run A)", () => {
     await expect(panelPage.locator("#chat agent-chat-panel:not([hidden])")).toBeAttached();
     await chooseAgent(panelPage, "tesagent");
     await panelPage.waitForFunction(() => window.__WA_VFS_PROOF__?.tesagent !== undefined);
-    await panelPage.evaluate(() => {
-      window.__WA_VFS_PROOF__!.tesagent.panel.streaming = false;
-    });
 
     // 1. Seed OPFS reports folder
     await seed(panelPage, "reports", {

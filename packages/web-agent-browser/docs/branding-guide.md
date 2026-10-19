@@ -118,7 +118,6 @@ Each entry has these keys (`tool/compile-brand.cjs:236-288`):
 | `endpoint` | Yes | An absolute `http://` or `https://` URL. |
 | `wireFormat` | Yes | `anthropic`, `openai` or `gemini`. |
 | `model` | Yes | The model name sent to the endpoint. |
-| `streaming` | No | `true` or `false`. The default is `false`. |
 
 Each wire format adds its own path to the endpoint, so do not put that path in
 `endpoint`:
@@ -138,11 +137,18 @@ models:
     endpoint: "https://llm.acme.com/api/anthropic"
     wireFormat: anthropic
     model: claude-sonnet
-    streaming: true
 ```
 
 The default brand points to a development gateway. Replace those entries with
 your own endpoints.
+
+The default entries are:
+
+| ID | Label |
+|---|---|
+| `anthropic-sonnet` | Sonnet |
+| `openai-sonnet` | Sonnet OpenAI |
+| `gemini-flash` | Gemini Flash |
 
 The build gives the extension permission to reach the origin of every
 `endpoint`, on every port. For example, `https://llm.acme.com:8443/v1` becomes
@@ -177,7 +183,7 @@ skills: "*"
 | `displayName` | Yes | A non-empty string. Shown in the panel header before the first message. |
 | `description` | Yes | A non-empty string. |
 | `instructions` | Yes | A non-empty string. Becomes the agent's `# App instructions` section. |
-| `model` | No | An `id` from `model.yml`. Overrides the options page's endpoint, wire format, model and streaming for this agent. The API key still comes from the options page — there is one key per install. |
+| `model` | No | An `id` from `model.yml`. Overrides the options page's endpoint, wire format and model for this agent. The API key still comes from the options page — there is one key per install. |
 | `tools` | Yes | `"*"` for every side panel tool, or a list of tool names. |
 | `excludeTools` | No | A list of tool names to remove from an otherwise-allowed set. |
 | `skills` | Yes | `"*"` for every side panel skill, or a list of skill names. |
@@ -227,7 +233,7 @@ options:
 ```
 
 With `lockModel: true`, the options page makes the endpoint URL and model
-fields read-only, and the wire format and streaming controls unavailable. The
+fields read-only, and the wire format control unavailable. The
 user can still pick another entry from your `model.yml`, and can still change
 the theme, the API key and the token (`src/options.ts:65-80`). Only the value
 `true` locks the fields. Any other value, or no value, leaves them editable
@@ -579,7 +585,6 @@ Source: `tool/compile-brand.cjs:243-283`.
 | `model.yml has two models with id '<id>'` | Give each entry a unique `id`. |
 | `model.yml models[<i>].wireFormat '<w>' is unknown; expected anthropic, openai or gemini` | Use `anthropic`, `openai` or `gemini`. |
 | `model.yml models[<i>].endpoint must be an absolute http(s) URL` | Use a full URL that starts with `http://` or `https://`. |
-| `model.yml models[<i>].streaming must be true or false` | Use `true` or `false`, without quotes. |
 
 ### `brand/skills/*.md`
 

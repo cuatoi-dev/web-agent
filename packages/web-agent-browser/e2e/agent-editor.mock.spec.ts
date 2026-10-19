@@ -238,16 +238,16 @@ test.describe("Agent card editor", () => {
     await openAgents(page, extensionId);
     await edit(page, TESAGENT);
     await page.locator("#edit-tesagent-description").fill("Custom tesagent tester");
-    await page.selectOption("#edit-tesagent-model", "anthropic-sonnet-stream");
-    await expect(page.locator("#edit-tesagent-model option:checked")).toHaveText("Sonnet (stream)");
+    await page.selectOption("#edit-tesagent-model", "anthropic-sonnet");
+    await expect(page.locator("#edit-tesagent-model option:checked")).toHaveText("Sonnet");
     await page.locator(`${TESAGENT} .save-btn`).click();
 
     await expect(page.locator(`${TESAGENT} .edit-body`)).toHaveCount(0);
     await expect(page.locator(`${TESAGENT} .pill`)).toContainText(["From brand", "Edited"]);
     await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Custom tesagent tester");
-    await expect(page.locator(`${TESAGENT} .facts`)).toContainText("Model Sonnet (stream)");
+    await expect(page.locator(`${TESAGENT} .facts`)).toContainText("Model Sonnet");
     const s = await stored(page);
-    expect((s.agentEdits as Record<string, { model: unknown }>).tesagent.model).toBe("anthropic-sonnet-stream");
+    expect((s.agentEdits as Record<string, { model: unknown }>).tesagent.model).toBe("anthropic-sonnet");
     await expect(page.locator(`${CHROMAGENT} .card-edit-btn`)).toBeEnabled();
   });
 

@@ -54,11 +54,10 @@ test.describe("Options page", () => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
 
-    await page.selectOption("#preset", "gemini-flash-nonstream");
+    await page.selectOption("#preset", "gemini-flash");
     await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/gemini");
     await expect(page.locator("#wireFormat")).toHaveValue("gemini");
     await expect(page.locator("#model")).toHaveValue("gemini-flash-lite-latest");
-    await expect(page.locator("#streaming")).not.toBeChecked();
 
     // The user can still edit after picking.
     await page.fill("#model", "gemini-flash-latest");
@@ -72,7 +71,6 @@ test.describe("Options page", () => {
     await optionsReady(page);
     await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/gemini");
     await expect(page.locator("#model")).toHaveValue("gemini-flash-latest");
-    await expect(page.locator("#streaming")).not.toBeChecked();
   });
 
   test("dark colour scheme renders the page from the same tokens", async ({ context, extensionId }) => {
@@ -171,7 +169,6 @@ test.describe("Options page", () => {
     await options.fill("#endpoint", "http://localhost:10040/plain.html");
     await options.selectOption("#wireFormat", "anthropic");
     await options.fill("#model", "test-model-id");
-    await options.uncheck("#streaming");
     await options.click("#save");
     await expect(options.locator("#status")).toContainText("Saved.");
 
@@ -185,13 +182,12 @@ test.describe("Options page", () => {
 
     const applied = await page.evaluate(() => {
       const el = document.querySelector("web-agent-bubble");
-      return { path: el?.path, type: el?.type, model: el?.model, streaming: el?.streaming, dataTheme: el?.getAttribute("data-theme") };
+      return { path: el?.path, type: el?.type, model: el?.model, dataTheme: el?.getAttribute("data-theme") };
     });
     expect(applied).toEqual({
       path: "http://localhost:10040/plain.html",
       type: "anthropic",
       model: "test-model-id",
-      streaming: false,
       dataTheme: "wa2-light",
     });
   });
@@ -410,7 +406,7 @@ test.describe("Saved skills", () => {
           tesagent: {
             description: "Custom tesagent tester",
             instructions: "Custom tesagent instructions.",
-            model: "anthropic-sonnet-stream",
+            model: "anthropic-sonnet",
             tools: ["read_tabs", "page_eval"],
             excludeTools: [],
             skills: "*",
@@ -427,7 +423,7 @@ test.describe("Saved skills", () => {
     const tesagentCard = page.locator("#agent-cards .card").nth(1);
     await expect(tesagentCard.locator(".pill")).toContainText(["From brand", "Edited"]);
     await expect(tesagentCard.locator(".card-title .d")).toHaveText("Custom tesagent tester");
-    await expect(tesagentCard.locator(".facts")).toContainText("Model Sonnet (stream)");
+    await expect(tesagentCard.locator(".facts")).toContainText("Model Sonnet");
     await expect(tesagentCard.locator(".facts")).toContainText("Tools 2 selected");
   });
 
@@ -501,8 +497,8 @@ const TWO_MODELS = path.resolve(TEMP_DIR, "two-models");
 const LOCKED = path.resolve(TEMP_DIR, "lock-model");
 
 const TWO_ENTRIES = [
-  { id: "acme-sonnet", label: "Acme Assistant", endpoint: "http://localhost:10040/api/anthropic", wireFormat: "anthropic", model: "sonnet", streaming: true },
-  { id: "acme-fast", label: "Acme Fast", endpoint: "http://localhost:10040/api/openai/v1", wireFormat: "openai", model: "fast", streaming: false },
+  { id: "acme-sonnet", label: "Acme Assistant", endpoint: "http://localhost:10040/api/anthropic", wireFormat: "anthropic", model: "sonnet" },
+  { id: "acme-fast", label: "Acme Fast", endpoint: "http://localhost:10040/api/openai/v1", wireFormat: "openai", model: "fast" },
 ];
 
 /** Copies dist/ and rewrites brand.json, so a test can load a different brand
@@ -534,8 +530,11 @@ test.describe("Brand model list", () => {
     await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/anthropic");
     await expect(page.locator("#wireFormat")).toHaveValue("anthropic");
     await expect(page.locator("#model")).toHaveValue("sonnet");
-    await expect(page.locator("#streaming")).not.toBeChecked();
-    await expect(page.locator("#preset")).toHaveValue("anthropic-sonnet-nonstream");
+    await expect(page.locator("#preset")).toHaveValue("anthropic-sonnet");
+    await expect(page.locator("#preset option")).toHaveText(["Custom", "Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
+    await expect(page.locator('#tab-models input[type="checkbox"]')).toHaveCount(0);
+    await expect(page.locator("#tab-models label")).toHaveText(["Ready-made entry", "Endpoint URL", "Wire format", "Model", "Theme", "Token", "API key (optional)"]);
+
   });
 
   test("B1: two-entry brand shows exactly those two labels and nothing else", async () => {
@@ -550,8 +549,8 @@ test.describe("Brand model list", () => {
       const texts = await page.$$eval("#preset option", (opts) =>
         (opts as HTMLOptionElement[]).map((o) => o.textContent ?? ""));
       expect(texts).toEqual(["Custom", "Acme Assistant", "Acme Fast"]);
-      expect(texts).not.toContain("Sonnet (stream)");
-      expect(texts).not.toContain("Gemini Flash (stream)");
+      expect(texts).not.toContain("Sonnet");
+      expect(texts).not.toContain("Gemini Flash");
     } finally {
       await ctx.close();
     }
@@ -569,14 +568,13 @@ test.describe("Brand model list", () => {
       await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/api/anthropic");
       await expect(page.locator("#wireFormat")).toHaveValue("anthropic");
       await expect(page.locator("#model")).toHaveValue("sonnet");
-      await expect(page.locator("#streaming")).toBeChecked();
       await expect(page.locator("#preset")).toHaveValue("acme-sonnet");
     } finally {
       await ctx.close();
     }
   });
 
-  test("B3: choosing acme-fast fills the four fields with that entry's values", async () => {
+  test("B3: choosing acme-fast fills the three fields with that entry's values", async () => {
     const dir = await patchedBrand(TWO_MODELS, { models: TWO_ENTRIES });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -589,13 +587,12 @@ test.describe("Brand model list", () => {
       await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/api/openai/v1");
       await expect(page.locator("#wireFormat")).toHaveValue("openai");
       await expect(page.locator("#model")).toHaveValue("fast");
-      await expect(page.locator("#streaming")).not.toBeChecked();
     } finally {
       await ctx.close();
     }
   });
 
-  test("S1: stored settings for gemini-flash-nonstream preselect the matching picker entry", async ({ context, extensionId }) => {
+  test("S1: stored settings for gemini-flash preselect the matching picker entry", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
     await worker.evaluate(async () => {
@@ -604,7 +601,6 @@ test.describe("Brand model list", () => {
           endpoint: "http://localhost:28780/api/gemini",
           wireFormat: "gemini",
           model: "gemini-flash-lite-latest",
-          streaming: false,
           apiKey: "",
           theme: "auto",
         },
@@ -613,7 +609,7 @@ test.describe("Brand model list", () => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
     await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/gemini");
-    await expect(page.locator("#preset")).toHaveValue("gemini-flash-nonstream");
+    await expect(page.locator("#preset")).toHaveValue("gemini-flash");
   });
 
   test("S2: a partial stored object fills the model field; the other fields use the first brand entry", async ({ context, extensionId }) => {
@@ -638,7 +634,6 @@ test.describe("Brand model list", () => {
           endpoint: "http://localhost:10040/plain.html",
           wireFormat: "openai",
           model: "my-model",
-          streaming: false,
           apiKey: "",
           theme: "auto",
         },
@@ -650,7 +645,7 @@ test.describe("Brand model list", () => {
     await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/plain.html");
   });
 
-  test("L1: lockModel: true makes the four model fields non-editable with a hint", async () => {
+  test("L1: lockModel: true makes the three model fields non-editable with a hint", async () => {
     const dir = await patchedBrand(LOCKED, { options: { lockModel: true } });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -662,9 +657,8 @@ test.describe("Brand model list", () => {
       // Text inputs get readonly attribute
       await expect(page.locator("#endpoint")).toHaveAttribute("readonly");
       await expect(page.locator("#model")).toHaveAttribute("readonly");
-      // Select and checkbox get disabled
+      // Select gets disabled
       await expect(page.locator("#wireFormat")).toBeDisabled();
-      await expect(page.locator("#streaming")).toBeDisabled();
       // Hint is visible and contains the extension name
       await expect(page.locator("#model-hint")).toBeVisible();
       await expect(page.locator("#model-hint")).toContainText("Model settings are fixed by");
@@ -704,19 +698,17 @@ test.describe("Brand model list", () => {
       await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/api/openai/v1");
       await expect(page.locator("#wireFormat")).toHaveValue("openai");
       await expect(page.locator("#model")).toHaveValue("fast");
-      await expect(page.locator("#streaming")).not.toBeChecked();
     } finally {
       await ctx.close();
     }
   });
 
-  test("L4: lockModel absent or false leaves all four fields editable; hint is hidden", async ({ context, extensionId }) => {
+  test("L4: lockModel absent or false leaves all three fields editable; hint is hidden", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
     await expect(page.locator("#endpoint")).not.toHaveAttribute("readonly");
     await expect(page.locator("#model")).not.toHaveAttribute("readonly");
     await expect(page.locator("#wireFormat")).not.toBeDisabled();
-    await expect(page.locator("#streaming")).not.toBeDisabled();
     await expect(page.locator("#model-hint")).toBeHidden();
   });
 });

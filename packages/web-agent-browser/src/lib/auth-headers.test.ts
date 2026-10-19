@@ -5,7 +5,6 @@ import type { AgentSettings } from "./settings";
 const base = {
   endpoint: "https://example.com/v1",
   model: "test",
-  streaming: true,
   apiKey: "",
   theme: "auto" as const,
 };

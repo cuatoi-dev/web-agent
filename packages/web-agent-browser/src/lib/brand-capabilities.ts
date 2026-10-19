@@ -111,6 +111,5 @@ export function effectiveSettings(
     endpoint: entry.endpoint,
     wireFormat: entry.wireFormat,
     model: entry.model,
-    streaming: entry.streaming,
   };
 }

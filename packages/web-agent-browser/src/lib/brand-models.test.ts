@@ -12,7 +12,6 @@ const TWO: PresetEntry[] = [
     endpoint: "https://two-a.example/api/anthropic",
     wireFormat: "anthropic",
     model: "model-a",
-    streaming: true,
   },
   {
     id: "two-b",
@@ -20,7 +19,6 @@ const TWO: PresetEntry[] = [
     endpoint: "https://two-b.example/api/openai/v1",
     wireFormat: "openai",
     model: "model-b",
-    streaming: false,
   },
 ];
 
@@ -42,7 +40,6 @@ describe("brand-models", () => {
       endpoint: TWO[0].endpoint,
       wireFormat: TWO[0].wireFormat,
       model: TWO[0].model,
-      streaming: TWO[0].streaming,
       apiKey: "",
       theme: DEFAULT_THEME,
     });
@@ -58,6 +55,5 @@ describe("brand-models", () => {
     expect(s.endpoint).toBe(PRESET_ENTRIES[0].endpoint);
     expect(s.wireFormat).toBe(PRESET_ENTRIES[0].wireFormat);
     expect(s.model).toBe(PRESET_ENTRIES[0].model);
-    expect(s.streaming).toBe(PRESET_ENTRIES[0].streaming);
   });
 });

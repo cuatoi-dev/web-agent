@@ -22,7 +22,6 @@ const preset = document.getElementById("preset") as HTMLSelectElement;
 const endpoint = document.getElementById("endpoint") as HTMLInputElement;
 const wireFormat = document.getElementById("wireFormat") as HTMLSelectElement;
 const model = document.getElementById("model") as HTMLInputElement;
-const streaming = document.getElementById("streaming") as HTMLInputElement;
 const theme = document.getElementById("theme") as HTMLSelectElement;
 const token = document.getElementById("token") as HTMLInputElement;
 const apiKey = document.getElementById("apiKey") as HTMLInputElement;
@@ -41,7 +40,7 @@ function report(message: string, isError: boolean): void {
 // listener below can never see a value it cannot resolve.
 let modelEntries: PresetEntry[] = [];
 
-// Picking an entry fills the four fields; the user can edit them afterwards
+// Picking an entry fills the three fields; the user can edit them afterwards
 // unless the brand locked them. Registered at module load, so the listener is
 // attached before init() awaits anything.
 preset.addEventListener("change", () => {
@@ -50,7 +49,6 @@ preset.addEventListener("change", () => {
   endpoint.value = entry.endpoint;
   wireFormat.value = entry.wireFormat;
   model.value = entry.model;
-  streaming.checked = entry.streaming;
 });
 
 // Re-applies the chosen theme to the whole page. The select is populated in
@@ -115,13 +113,12 @@ async function init(): Promise<void> {
   }
 
   if (brand.options.lockModel === true) {
-    // readOnly on the text inputs, disabled on the select and the checkbox:
+    // readOnly on the text inputs, disabled on the select:
     // a read-only input still reports its value to the save handler, and
-    // <select> and <input type="checkbox"> have no readOnly behaviour at all.
+    // <select> has no readOnly behaviour at all.
     endpoint.readOnly = true;
     model.readOnly = true;
     wireFormat.disabled = true;
-    streaming.disabled = true;
     // The picker itself stays enabled: switching between the brand's OWN
     // entries is what the lock is for, and every option in it came from the
     // brand. getManifest().name is the extension's own display name, which
@@ -136,14 +133,13 @@ async function init(): Promise<void> {
   endpoint.value = s.endpoint;
   wireFormat.value = s.wireFormat;
   model.value = s.model;
-  streaming.checked = s.streaming;
   theme.value = s.theme;
   applyPageTheme(s.theme);
   apiKey.value = s.apiKey;
   token.value = t;
   preset.value = modelEntries.find(
     (e) => e.endpoint === s.endpoint && e.wireFormat === s.wireFormat
-      && e.model === s.model && e.streaming === s.streaming,
+      && e.model === s.model,
   )?.id ?? "";
 }
 
@@ -199,7 +195,6 @@ save.addEventListener("click", () => {
       endpoint: url,
       wireFormat: wireFormat.value as WireFormat,
       model: model.value.trim(),
-      streaming: streaming.checked,
       apiKey: apiKey.value.trim(),
       theme: theme.value,
     };

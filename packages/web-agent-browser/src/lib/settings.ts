@@ -32,7 +32,6 @@ export async function getSettings(): Promise<AgentSettings> {
       ? s.wireFormat
       : base.wireFormat,
     model: typeof s.model === "string" && s.model ? s.model : base.model,
-    streaming: typeof s.streaming === "boolean" ? s.streaming : base.streaming,
     apiKey: typeof s.apiKey === "string" ? s.apiKey : base.apiKey,
     theme: typeof s.theme === "string"
       && (s.theme === "auto"

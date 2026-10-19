@@ -1,5 +1,5 @@
 // 155400-001 — live proof: Chromagent, with the real model (brand/model.yml's
-// first entry, `anthropic-sonnet-nonstream`, streaming off), is offered and
+// first entry, `anthropic-sonnet`), is offered and
 // uses todo_write, set_schedule and page_snapshot.
 import { test, expect, ask, expectCall } from "./demo-helpers";
 import type { Page } from "@playwright/test";

@@ -53,7 +53,7 @@ export const test = base.extend<{ demoExtension: DemoExtensionFixture }>({
           let chosen = "sonnet";
           try {
             const resp = await fetch(chrome.runtime.getURL("brand.json"));
-            const brand = (await resp.json()) as { models?: Array<{ id: string; endpoint: string; wireFormat: string; model: string; streaming?: boolean }> };
+            const brand = (await resp.json()) as { models?: Array<{ id: string; endpoint: string; wireFormat: string; model: string }> };
             const models = brand.models ?? [];
             const entry = modelId ? models.find((m) => m.id === modelId || m.model === modelId) : models[0];
             if (entry) {
@@ -63,7 +63,6 @@ export const test = base.extend<{ demoExtension: DemoExtensionFixture }>({
                   endpoint: entry.endpoint,
                   wireFormat: entry.wireFormat,
                   model: entry.model,
-                  streaming: entry.streaming ?? false,
                   apiKey: "",
                   theme: "auto",
                 },

@@ -45,10 +45,10 @@ the brand, it opens on the default agent (`sidePanelAgent` in
 If the brand fails to load, or defines no agent, the panel shows an error
 instead of a chat, and no combo box.
 
-The side panel reads the endpoint, wire format, model, streaming mode and
+The side panel reads the endpoint, wire format, model and
 theme once, when it opens (`src/sidepanel.ts:main`). An agent that sets its
-own `model` in `brand/agents/<id>.yml` overrides the endpoint, wire format,
-model and streaming for that agent; the API key always comes from the options
+own `model` in `brand/agents/<id>.yml` overrides the endpoint, wire format
+and model for that agent; the API key always comes from the options
 page, because there is one key per install. After you save new settings, close
 the side panel and open it again.
 
@@ -139,9 +139,11 @@ it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
 1. Open the extension options page from `chrome://extensions` or from the
    extension menu. The **Models** tab opens by default.
 2. Select a **Ready-made entry**. It fills **Endpoint URL**, **Wire format**,
-   **Model** and **Streaming** in one step. The list comes from
+   and **Model** in one step. The list comes from
    `brand/model.yml` in the build you installed
-   (`src/options.ts:35-63`). You can edit any field afterward, unless the
+   (`src/options.ts:35-63`). The built-in entries use the local development
+   gateway (`http://localhost:28780`) for Sonnet, Sonnet OpenAI, and Gemini
+   Flash. You can edit any field afterward, unless the
    build locks them.
 3. Leave **API key (optional)** empty to send the shared token from the
    **Token** field. Fill it in to send your own key instead. The key is stored
@@ -174,9 +176,9 @@ If you save an empty **Token**, the extension uses the token it was built with
 ### When the brand locks the model
 
 If the build sets `options: { lockModel: true }` in `brand/plugin.yml`, the
-endpoint URL and model fields are read-only, and the wire format and streaming
-controls are unavailable. The page shows `Model settings are fixed by <extension
-name>.` under the streaming row (`src/options.ts:65-80`). You can still select
+endpoint URL and model fields are read-only, and the wire format
+control is unavailable. The page shows `Model settings are fixed by <extension
+name>.` under the model field (`src/options.ts:117-132`). You can still select
 a different **Ready-made entry**. The theme, the API key and the token stay
 editable.
 

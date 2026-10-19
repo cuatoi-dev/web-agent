@@ -14,7 +14,6 @@ async function writeSettings(worker: import("@playwright/test").Worker, theme: "
         endpoint: "http://localhost:10040/plain.html",
         wireFormat: "openai",
         model: "test-model-id",
-        streaming: false,
         apiKey: "",
         theme: t,
       },

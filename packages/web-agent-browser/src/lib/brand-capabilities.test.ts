@@ -163,7 +163,6 @@ describe("effectiveSettings", () => {
     endpoint: "https://options.test",
     wireFormat: "openai",
     model: "options-model",
-    streaming: true,
     apiKey: "k",
     theme: "auto",
   };
@@ -173,7 +172,6 @@ describe("effectiveSettings", () => {
     endpoint: "http://localhost:28780/api/anthropic",
     wireFormat: "anthropic",
     model: "text-only-model",
-    streaming: false,
   };
   const brand: AgentBrand = { ...EMPTY_BRAND, models: [textOnlyEntry] };
   const agentWithModel: BrandAgent = {
@@ -200,7 +198,6 @@ describe("effectiveSettings", () => {
       endpoint: "http://localhost:28780/api/anthropic",
       wireFormat: "anthropic",
       model: "text-only-model",
-      streaming: false,
     });
   });
 

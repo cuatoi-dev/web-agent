@@ -5,7 +5,7 @@ import type { Page } from "@playwright/test";
 import { test, expect, ask } from "./demo-helpers";
 
 // 128/002 — live proof. The real model, the real gateway route
-// (anthropic-sonnet-nonstream, streaming off), real OPFS folders and a real
+// (anthropic-sonnet), real OPFS folders and a real
 // click on the real Delete button. No model mock, no network stub, no
 // automatic approval.
 
@@ -72,9 +72,6 @@ test.describe("VFS folder mounts — live proof (128/002)", () => {
     await expect(panelPage.locator("#chat agent-chat-panel:not([hidden])")).toBeAttached();
     await chooseAgent(panelPage, "tesagent");
     await panelPage.waitForFunction(() => window.__WA_VFS_PROOF__?.tesagent !== undefined);
-    await panelPage.evaluate(() => {
-      window.__WA_VFS_PROOF__!.tesagent.panel.streaming = false;
-    });
 
     await seed(panelPage, "reports", {
       "q3-sales.csv": "quarter,sales\nQ3,120000\n",

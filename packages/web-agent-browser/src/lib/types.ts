@@ -69,7 +69,6 @@ export interface AgentSettings {
   endpoint: string;
   wireFormat: WireFormat;
   model: string;
-  streaming: boolean;
   /** Empty means "use the shared token". */
   apiKey: string;
   /** How the bubble looks on a site that supplies no --wa-* tokens. */
@@ -86,7 +85,7 @@ export type AgentPromptKey = "inPage";
 /** Settings a brand fixes for every install. Task 002 defines one flag; a
  *  later task may add more keys here. */
 export interface BrandOptions {
-  /** True makes the endpoint, wire format, model and streaming fields on the
+  /** True makes the endpoint, wire format and model fields on the
    *  options page read-only. Absent means false. */
   lockModel?: boolean;
 }
@@ -225,8 +224,8 @@ export interface RelayFetchContext {
 
 // --- presets.ts ------------------------------------------------------------
 
-/** One ready-made endpoint / model / mode combination. Picking one fills the
- *  four fields on the options page; the user can then edit any of them. */
+/** One ready-made endpoint / model combination. Picking one fills the
+ *  three fields on the options page; the user can then edit any of them. */
 export interface PresetEntry {
   /** Stable id, used as the <option> value and in tests. Never shown alone. */
   id: string;
@@ -235,7 +234,6 @@ export interface PresetEntry {
   endpoint: string;
   wireFormat: WireFormat;
   model: string;
-  streaming: boolean;
 }
 
 // --- panel-setup.ts --------------------------------------------------------
@@ -246,7 +244,6 @@ export interface PanelLike {
   path?: string;
   type?: string;
   model?: string;
-  streaming?: boolean;
   fetch?: typeof fetch;
   config?: { persist: boolean; sessionNamespace: string; maxIterations: number } & BrandCapabilityConfig;
   [key: string]: unknown;

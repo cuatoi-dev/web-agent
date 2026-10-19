@@ -11,21 +11,19 @@ const SETTINGS: AgentSettings = {
   endpoint: "https://example.test/api/openai/v1",
   wireFormat: "openai",
   model: "test-model",
-  streaming: true,
   apiKey: "",
   theme: "auto",
 };
 
 describe("panel-setup", () => {
   describe("applyPanelSettings", () => {
-    it("copies endpoint, wireFormat, model, streaming and config onto panel object", () => {
+    it("copies endpoint, wireFormat, model and config onto panel object", () => {
       const panel: PanelLike = {};
       const settings: AgentSettings = {
         endpoint: "https://custom.gateway/v1",
         wireFormat: "anthropic",
         model: "claude-3-5-sonnet",
         apiKey: "",
-        streaming: false,
         theme: "dark",
       };
       applyPanelSettings(panel, settings, "secret-token", EMPTY_BRAND);
@@ -33,7 +31,6 @@ describe("panel-setup", () => {
       expect(panel.path).toBe("https://custom.gateway/v1");
       expect(panel.type).toBe("anthropic");
       expect(panel.model).toBe("claude-3-5-sonnet");
-      expect(panel.streaming).toBe(false);
       expect(typeof panel.fetch).toBe("function");
       // `toMatchObject`, not `toEqual`: the panel's config carries host opt-in
       // flags too, and asserting those literals back would be a constant

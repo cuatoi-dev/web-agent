@@ -1,6 +1,6 @@
-// 131/001 — the live proof: the real router, model `sonnet`, streaming off
+// 131/001 — the live proof: the real router, model `sonnet`
 // (the extension's default profile, `brand/model.yml`'s first entry,
-// `anthropic-sonnet-nonstream`).
+// `anthropic-sonnet`).
 import { test, expect, ask, expectOrder } from "./demo-helpers";
 import type { Page } from "@playwright/test";
 

@@ -27,8 +27,7 @@ const BUILTIN_SIDE_PANEL_SKILLS = ["tab_management", "page_agent", "website_edit
  *  (src/lib/types.ts:20). A fourth value is a typo, not an extension point. */
 const WIRE_FORMATS = ["anthropic", "openai", "gemini"];
 
-/** Every field a model entry must carry as a non-empty string. `streaming` is
- *  optional and is filled in with false. */
+/** Every field a model entry must carry as a non-empty string. */
 const MODEL_FIELDS = ["id", "label", "endpoint", "wireFormat", "model"];
 
 /** The three tool groups `plugin.yml`'s `tools` block may switch. `scheduler`
@@ -344,7 +343,7 @@ function compileSkills(brandDir) {
  * a brand owner who wrote the file meant it to be used.
  *
  * @param {string} brandDir - the `brand/` folder
- * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string, streaming: boolean}[]}
+ * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string}[]}
  * @throws {Error} naming `model.yml`, the entry index and the offending field
  */
 function compileModels(brandDir) {
@@ -392,10 +391,6 @@ function compileModels(brandDir) {
     if (!url || (url.protocol !== "http:" && url.protocol !== "https:")) {
       throw new Error(`model.yml models[${i}].endpoint must be an absolute http(s) URL`);
     }
-    if (entry.streaming !== undefined && typeof entry.streaming !== "boolean") {
-      throw new Error(`model.yml models[${i}].streaming must be true or false`);
-    }
-    entry.streaming = entry.streaming ?? false;
   });
 
   return doc.models;

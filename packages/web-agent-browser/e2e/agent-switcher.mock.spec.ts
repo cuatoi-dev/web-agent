@@ -490,7 +490,7 @@ test.describe("Agent switcher mock e2e", () => {
           tesagent: {
             description: "Custom tesagent tester",
             instructions: "Custom tesagent instructions",
-            model: "anthropic-sonnet-stream",
+            model: "anthropic-sonnet",
             tools: ["read_tabs", "page_eval"],
             excludeTools: [],
             skills: "*",
@@ -534,7 +534,7 @@ test.describe("Agent switcher mock e2e", () => {
           tesagent: {
             description,
             instructions: "Custom tesagent instructions",
-            model: "anthropic-sonnet-stream",
+            model: "anthropic-sonnet",
             tools: "*",
             excludeTools: [],
             skills: "*",
@@ -552,7 +552,7 @@ test.describe("Agent switcher mock e2e", () => {
       const panel = document.querySelector<HTMLElementTagNameMap["agent-chat-panel"]>(selector);
       return { model: panel?.model, path: panel?.path };
     }, VISIBLE_PANEL);
-    // brand/model.yml's anthropic-sonnet-stream entry (External facts table,
+    // brand/model.yml's anthropic-sonnet entry (External facts table,
     // task 002): model "sonnet" at the shared gateway's anthropic path.
     expect(routed.model).toBe("sonnet");
     expect(routed.path).toBe("http://localhost:28780/api/anthropic");

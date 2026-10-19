@@ -745,25 +745,14 @@ describe("compileBrand", () => {
     );
   });
 
-  it("a non-boolean streaming fails", () => {
-    const tempDir = makeTempDir();
-    writeModel(
-      tempDir,
-      'models:\n  - id: a\n    label: A\n    endpoint: "https://a.test"\n    wireFormat: openai\n    model: m\n    streaming: "yes"\n',
-    );
-    expect(() => compileBrand(tempDir)).toThrow("model.yml models[0].streaming must be true or false");
-  });
-
-  it("streaming defaults to false", () => {
-    const tempDir = makeTempDir();
-    writeDefaultAgent(tempDir);
-    writePlugin(tempDir, "defaultAgent: chromagent\n");
-    writeModel(
-      tempDir,
-      'models:\n  - id: a\n    label: A\n    endpoint: "https://a.test"\n    wireFormat: openai\n    model: m\n',
-    );
-    const brand = compileBrand(tempDir);
-    expect((brand.models as { streaming: boolean }[])[0].streaming).toBe(false);
+  it("compiles the default model entries with only their supported fields", () => {
+    const brand = compileBrand(BRAND_DIR);
+    const models = brand.models as { id: string; label: string }[];
+    expect(models.map((entry) => entry.id)).toEqual(["anthropic-sonnet", "openai-sonnet", "gemini-flash"]);
+    expect(models.map((entry) => entry.label)).toEqual(["Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
+    for (const entry of models) {
+      expect(Object.keys(entry).sort()).toEqual(["endpoint", "id", "label", "model", "wireFormat"]);
+    }
   });
 
   it("broken YAML in model.yml names the file", () => {

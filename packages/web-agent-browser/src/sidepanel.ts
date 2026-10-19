@@ -263,7 +263,6 @@ function buildAgentPanel(
   if (mockScript) {
     setMockScript(mockScript);
     panel.type = "mock";
-    panel.streaming = false;
   }
 
   return panel;

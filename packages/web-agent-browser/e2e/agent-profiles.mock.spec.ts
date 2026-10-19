@@ -213,11 +213,11 @@ test.describe("Agent profiles mock e2e", () => {
     }
   });
 
-  test("model: anthropic-sonnet-nonstream routes request to anthropic endpoint with model sonnet and non-streaming using options auth key", async () => {
+  test("model: anthropic-sonnet routes request to anthropic endpoint with model sonnet using options auth key", async () => {
     const dir = path.resolve(TEMP_DIR, "agent-model");
     const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8"));
     brand.agents = brand.agents.map((a: any) =>
-      a.id === "chromagent" ? { ...a, model: "anthropic-sonnet-nonstream" } : a,
+      a.id === "chromagent" ? { ...a, model: "anthropic-sonnet" } : a,
     );
     await patchedBrand(dir, brand);
     const { ctx, worker, extensionId } = await launchPatchedContext(dir);
@@ -228,7 +228,6 @@ test.describe("Agent profiles mock e2e", () => {
             endpoint: "https://other.example.com/api/other",
             wireFormat: "openai",
             model: "other-model",
-            streaming: true,
             apiKey: "options-secret-key",
             theme: "auto",
           },
@@ -282,7 +281,6 @@ test.describe("Agent profiles mock e2e", () => {
       endpoint: "http://localhost:28780/api/anthropic",
       wireFormat: "anthropic",
       model: "text-only-model",
-      streaming: false,
     };
     brandNonVision.models = [...brandNonVision.models, textOnlyEntry];
     brandNonVision.agents = brandNonVision.agents.map((a: any) =>
@@ -311,7 +309,7 @@ test.describe("Agent profiles mock e2e", () => {
     const dirVision = path.resolve(TEMP_DIR, "vision");
     const brandVision = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8"));
     brandVision.agents = brandVision.agents.map((a: any) =>
-      a.id === "chromagent" ? { ...a, model: "anthropic-sonnet-stream" } : a,
+      a.id === "chromagent" ? { ...a, model: "anthropic-sonnet" } : a,
     );
     await patchedBrand(dirVision, brandVision);
     const { ctx: ctx2, extensionId: ext2 } = await launchPatchedContext(dirVision);

@@ -74,7 +74,7 @@ skills: "*"
 | `displayName` | Yes | A non-empty string. Shown in the panel header before the first message. |
 | `description` | Yes | A non-empty string. |
 | `instructions` | Yes | A non-empty string. Becomes the agent's `# App instructions` section. |
-| `model` | No | An `id` from `model.yml`. Overrides the endpoint, wire format, model and streaming for this agent; the options page's API key still applies. |
+| `model` | No | An `id` from `model.yml`. Overrides the endpoint, wire format and model for this agent; the options page's API key still applies. |
 | `tools` | Yes | `"*"`, or a list of side panel tool names (`read_tabs`, `page_eval`, and so on). |
 | `excludeTools` | No | A list of tool names removed from an otherwise-allowed set. |
 | `skills` | Yes | `"*"`, or a list of side panel skill names. |
@@ -118,7 +118,7 @@ starter file.
 `options` configures installation behavior:
 
 - `lockModel` (boolean, default `false`) — when set to `true`, the options page
-  makes the endpoint URL, wire format, model, and streaming checkbox read-only.
+  makes the endpoint URL, wire format, and model read-only.
   The preset picker, theme, API key, and shared token remain editable.
 
 ### Extra hosts
@@ -222,7 +222,13 @@ The file contains a `models` list. Each entry requires:
 - `wireFormat` — `anthropic`, `openai`, or `gemini`
 - `model` — model identifier sent to the endpoint
 
-`streaming` is optional and defaults to `false`.
+The default entries are:
+
+| ID | Label |
+|---|---|
+| `anthropic-sonnet` | Sonnet |
+| `openai-sonnet` | Sonnet OpenAI |
+| `gemini-flash` | Gemini Flash |
 
 The first entry in `models` is the default for a fresh profile with no saved settings.
 If `model.yml` is absent, the extension falls back to its built-in model list.
@@ -237,7 +243,6 @@ The build fails, and writes no `dist/`, when:
 - an entry has an unknown `wireFormat`
 - two entries share an `id`
 - an endpoint has no scheme or is not http(s)
-- `streaming` is not `true` or `false`
 
 ## icon.png
 

@@ -129,7 +129,7 @@ describe("agent-edit-rules", () => {
   it("R4 equalsBrand", () => {
     expect(equalsBrand(editFromDraft(validDraft()), TESAGENT)).toBe(true);
 
-    const withModel = { ...validDraft(), model: "anthropic-sonnet-stream" };
+    const withModel = { ...validDraft(), model: "anthropic-sonnet" };
     expect(equalsBrand(editFromDraft(withModel), TESAGENT)).toBe(false);
 
     const emptyTools = { ...validDraft(), tools: [] };

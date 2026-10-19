@@ -1,5 +1,5 @@
 // 131/003 — live proof. The built extension, real Chromium, real model
-// through the router (streaming off), driving tesagent against a checkout page
+// through the router, driving tesagent against a checkout page
 // whose payment field sits in a cross-site iframe.
 import { test, expect, ask, expectCall } from "./demo-helpers";
 import type { Page } from "@playwright/test";

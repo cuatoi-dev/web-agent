@@ -43,7 +43,6 @@ export function applyPanelSettings(
   panel.path = settings.endpoint;
   panel.type = settings.wireFormat;
   panel.model = settings.model;
-  panel.streaming = settings.streaming;
   panel.fetch = createDirectFetch(settings, sharedToken, fetchImpl);
   // 115/006 — todo tracking is opt-in per host
   // (packages/web-agent-core/src/controller.types.ts:119-121). Setting it here

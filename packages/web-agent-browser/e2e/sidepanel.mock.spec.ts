@@ -278,7 +278,6 @@ test.describe("Side panel mock e2e", () => {
     await optionsPage.fill("#endpoint", "http://localhost:28780/api/anthropic/v1");
     await optionsPage.selectOption("#wireFormat", "anthropic");
     await optionsPage.fill("#model", "claude-3-haiku-20240307");
-    await optionsPage.uncheck("#streaming");
     await optionsPage.selectOption("#theme", "wa2-dark");
     await optionsPage.click("#save");
     await expect(optionsPage.locator("#status")).toContainText("Saved.");
@@ -294,7 +293,6 @@ test.describe("Side panel mock e2e", () => {
         path: panel.path,
         type: panel.type,
         model: panel.model,
-        streaming: panel.streaming,
         dataTheme: document.documentElement.getAttribute("data-theme"),
       };
     });
@@ -302,7 +300,6 @@ test.describe("Side panel mock e2e", () => {
     expect(panelAttrs.path).toBe("http://localhost:28780/api/anthropic/v1");
     expect(panelAttrs.type).toBe("anthropic");
     expect(panelAttrs.model).toBe("claude-3-haiku-20240307");
-    expect(panelAttrs.streaming).toBe(false);
     expect(panelAttrs.dataTheme).toBe("wa2-dark");
   });
 

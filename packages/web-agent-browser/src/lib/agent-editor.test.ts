@@ -79,12 +79,11 @@ function brand(options: { lockModel?: boolean } = {}): AgentBrand {
     options,
     models: [
       {
-        id: "anthropic-sonnet-stream",
-        label: "Sonnet (stream)",
+        id: "anthropic-sonnet",
+        label: "Sonnet",
         endpoint: "https://x/api/anthropic",
         wireFormat: "anthropic",
         model: "sonnet",
-        streaming: true,
       },
     ],
     skillDefs: [],
@@ -236,7 +235,7 @@ describe("agent-editor", () => {
     descInput.dispatchEvent(new Event("input", { bubbles: true }));
 
     const modelSelect = byId("edit-tesagent-model") as HTMLSelectElement;
-    modelSelect.value = "anthropic-sonnet-stream";
+    modelSelect.value = "anthropic-sonnet";
     modelSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
     card("tesagent").querySelector<HTMLButtonElement>(".save-btn")!.click();
@@ -247,10 +246,10 @@ describe("agent-editor", () => {
     const pills = [...tesagentCard.querySelectorAll(".pill")].map((p) => p.textContent);
     expect(pills).toContain("Edited");
     expect(tesagentCard.querySelector(".d")!.textContent).toBe("Custom tesagent tester");
-    expect(tesagentCard.querySelector(".facts")!.textContent).toContain("Model Sonnet (stream)");
+    expect(tesagentCard.querySelector(".facts")!.textContent).toContain("Model Sonnet");
 
     const edits = store[AGENT_EDITS_KEY] as Record<string, { model: unknown }>;
-    expect(edits.tesagent.model).toBe("anthropic-sonnet-stream");
+    expect(edits.tesagent.model).toBe("anthropic-sonnet");
     expect(card("chromagent").querySelector<HTMLButtonElement>(".card-edit-btn")!.disabled).toBe(false);
   });
 

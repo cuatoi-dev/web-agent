@@ -52,7 +52,7 @@ function brand(): AgentBrand {
     skills: {},
     options: {},
     models: [
-      { id: "anthropic-sonnet-stream", label: "Sonnet (stream)", endpoint: "https://x/api/anthropic", wireFormat: "anthropic", model: "sonnet", streaming: true },
+      { id: "anthropic-sonnet", label: "Sonnet", endpoint: "https://x/api/anthropic", wireFormat: "anthropic", model: "sonnet" },
     ],
     skillDefs: [],
     hosts: [],
@@ -62,7 +62,7 @@ function brand(): AgentBrand {
 const TESAGENT_EDIT: AgentEdit = {
   description: "Custom tesagent tester",
   instructions: "Custom tesagent instructions.",
-  model: "anthropic-sonnet-stream",
+  model: "anthropic-sonnet",
   tools: ["read_tabs", "page_eval"],
   excludeTools: [],
   skills: "*",
@@ -133,7 +133,7 @@ describe("listAgents", () => {
     expect(d).toMatchObject({
       description: TESAGENT_EDIT.description,
       instructions: TESAGENT_EDIT.instructions,
-      model: "anthropic-sonnet-stream",
+      model: "anthropic-sonnet",
       tools: TESAGENT_EDIT.tools,
       excludeTools: TESAGENT_EDIT.excludeTools,
       skills: TESAGENT_EDIT.skills,

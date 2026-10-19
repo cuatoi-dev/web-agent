@@ -37,7 +37,7 @@ function brand(): AgentBrand {
     skills: {},
     options: {},
     models: [
-      { id: "anthropic-sonnet-stream", label: "Sonnet (stream)", endpoint: "https://x/api/anthropic", wireFormat: "anthropic", model: "sonnet", streaming: true },
+      { id: "anthropic-sonnet", label: "Sonnet", endpoint: "https://x/api/anthropic", wireFormat: "anthropic", model: "sonnet" },
     ],
     skillDefs: [],
     hosts: [],
@@ -111,7 +111,7 @@ describe("renderAgents", () => {
         tesagent: {
           description: "Custom tesagent tester",
           instructions: "Custom instructions.",
-          model: "anthropic-sonnet-stream",
+          model: "anthropic-sonnet",
           tools: ["read_tabs", "page_eval"],
           excludeTools: [],
           skills: "*",
@@ -125,7 +125,7 @@ describe("renderAgents", () => {
     expect(pills(chromagentCard)).not.toContain("Edited");
     expect(pills(tesagentCard)).toContain("Edited");
     expect(tesagentCard.querySelector(".d")?.textContent).toBe("Custom tesagent tester");
-    expect(tesagentCard.querySelector(".facts")?.textContent).toContain("Model Sonnet (stream)");
+    expect(tesagentCard.querySelector(".facts")?.textContent).toContain("Model Sonnet");
     expect(tesagentCard.querySelector(".facts")?.textContent).toContain("Tools 2 selected");
   });
 

@@ -17,7 +17,7 @@ export function resolveModels(brand: AgentBrand): PresetEntry[] {
 /** What a profile with nothing stored uses. The FIRST entry of the brand's
  *  model list, plus an empty key and the default theme.
  *
- *  `resolveModels` never returns an empty array — `PRESET_ENTRIES` has six
+ *  `resolveModels` never returns an empty array — `PRESET_ENTRIES` has three
  *  entries — so `[0]` is always defined. */
 export function defaultSettings(brand: AgentBrand): AgentSettings {
   const first = resolveModels(brand)[0];
@@ -25,7 +25,6 @@ export function defaultSettings(brand: AgentBrand): AgentSettings {
     endpoint: first.endpoint,
     wireFormat: first.wireFormat,
     model: first.model,
-    streaming: first.streaming,
     apiKey: "",
     theme: DEFAULT_THEME,
   };
