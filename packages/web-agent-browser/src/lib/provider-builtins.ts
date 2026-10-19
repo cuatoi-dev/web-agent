@@ -4,7 +4,7 @@ import type { ModelDef, WireFormat } from "./types";
 
 import type { BuiltIn } from "./provider-builtins.types";
 
-/** Built-in providers in the order shown by the provider grid. */
+/** Built-in providers in the order shown by the Provider select. */
 export const BUILT_IN: BuiltIn[] = [
   {
     id: "openrouter",
@@ -89,7 +89,7 @@ export const BUILT_IN: BuiltIn[] = [
   },
 ];
 
-/** The last grid tile, which opens the custom form. */
+/** The last entry of the Provider select, which is the custom form. */
 export const CUSTOM_TILE = { id: "custom", name: "Custom" } as const;
 
 /** The built-in provider with this id, or `undefined` for an unknown id. */

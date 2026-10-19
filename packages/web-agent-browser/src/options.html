@@ -342,21 +342,14 @@
   .provider-dialog label { margin: 10px 0 4px; }
   .confirm-dialog.provider-dialog .hint, .confirm-dialog.diff-dialog .hint { margin: 4px 0 12px; font-size: 12px; }
   .confirm-dialog.provider-dialog .field-error { margin: 4px 0 0; font-size: 12px; }
-  /* Built-in provider grid and format controls. Every colour is a
-     theme token. Meaning never rests on colour: a selected tile sets
-     aria-pressed, and Next only enables after a selection. */
+  /* Built-in provider select and format controls. Every colour is a theme
+     token. Meaning never rests on colour: the select shows the provider name
+     as text, and a locked select is the native disabled state. */
   .provider-dialog h2 svg.logo { width: 24px; height: 24px; margin-right: 8px; vertical-align: -5px; }
-  .provider-grid-dialog { max-width: min(560px, calc(100vw - 48px)); width: 100%; }
-  .provider-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-  .provider-tile {
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-    padding: 14px 6px; margin-top: 0; font-size: 13px; text-align: center;
-    background: var(--wa-input-background-color); color: var(--wa-text-color);
-    border: 1px solid var(--wa-border-color); border-radius: 6px; cursor: pointer;
-  }
-  .provider-tile svg.logo { width: 28px; height: 28px; flex: none; }
-  .provider-tile[aria-pressed="true"] { border: 2px solid var(--wa-action-color-info); padding: 13px 5px; }
-  .provider-tile:focus-visible { outline: 3px solid var(--wa-outline-color); outline-offset: 1px; }
+  .prov-select { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .prov-select .prov-select-logo { display: inline-flex; flex: none; }
+  .prov-select svg.logo { width: 24px; height: 24px; flex: none; }
+  .prov-select select { flex: 1; min-width: 0; }
   .format-switch { display: flex; gap: 4px; }
   .format-opt { margin-top: 0; flex: 1; }
   .format-opt[aria-pressed="true"] { border-color: var(--wa-action-color-info); box-shadow: inset 0 0 0 1px var(--wa-action-color-info); }

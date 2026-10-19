@@ -7,11 +7,11 @@ export interface BuiltInFormat {
   endpoint: string;
 }
 
-/** One provider of the "+ Add model" grid. */
+/** One entry of the Provider select in the "+ Add model" form. */
 export interface BuiltIn {
   /** Stable id, saved on the provider as `CustomProvider.builtIn`. */
   id: string;
-  /** Tile label and form title. */
+  /** Select label and form title. */
   name: string;
   /** At least one entry; the first is the default format. */
   formats: BuiltInFormat[];

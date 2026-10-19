@@ -11,7 +11,7 @@ const BRAND_EXT = path.resolve(TEMP_DIR, "extension");
 const ARTIFACTS = process.env.E2E_ARTIFACTS_DIR ?? path.resolve(HERE, "../temp/e2e-artifacts/built-in-providers");
 const SITE = "http://localhost:10040/plain.html";
 
-/** Copies the extension build with the provider grid enabled. */
+/** Copies the extension build with the built-in providers enabled. */
 async function patchedBrand(): Promise<string> {
   await fs.rm(BRAND_EXT, { recursive: true, force: true });
   await fs.cp(EXT, BRAND_EXT, { recursive: true });
@@ -34,30 +34,39 @@ async function launch(): Promise<{ ctx: BrowserContext; id: string; worker: Work
 test.beforeAll(async () => { await fs.mkdir(ARTIFACTS, { recursive: true }); await patchedBrand(); });
 test.afterAll(async () => { await fs.rm(TEMP_DIR, { recursive: true, force: true }); });
 
-test("B1: provider grid and Anthropic form in both themes", async () => {
+test("B1: one-form Add model starts on OpenRouter and applies Anthropic", async () => {
   const { ctx, id } = await launch();
   try {
     const page = await ctx.newPage();
     await openOptions(page, id);
     await page.locator("#tab-btn-models").click();
     await page.locator("#add-model-btn").click();
-    await expect(page.locator("dialog.provider-grid-dialog")).toBeVisible();
-    await expect(page.locator(".provider-tile .tile-label")).toHaveText([
+    const form = page.locator("dialog.provider-dialog");
+    const select = page.locator("#provider-select");
+    await expect(form).toBeVisible();
+    await expect(page.locator("dialog")).toHaveCount(1);
+    await expect(select.locator("option")).toHaveText([
       "OpenRouter", "Anthropic", "OpenAI", "xAI", "Google AI", "DeepSeek", "Moonshot (Kimi)", "Custom",
     ]);
-    await expect(page.locator(".provider-tile svg.logo path")).toHaveCount(8);
-    const fallback = await page.locator('.provider-tile[data-built-in="custom"] svg').evaluate((e) => e.innerHTML);
-    for (const logo of await page.locator('.provider-tile:not([data-built-in="custom"]) svg').all()) {
-      expect(await logo.evaluate((e) => e.innerHTML)).not.toBe(fallback);
+    await expect(select).toHaveValue("openrouter");
+    await expect(page.locator("dialog.provider-dialog h2")).toHaveText("Add model");
+    await expect(page.locator("dialog.provider-dialog h2 svg.logo path")).toHaveCount(1);
+    await expect(page.locator(".prov-select svg.logo path")).toHaveCount(1);
+    await expect(page.locator("#provider-name")).toHaveValue("OpenRouter");
+    await expect(page.locator("#provider-endpoint")).toHaveValue("https://openrouter.ai/api/v1");
+    await expect(page.locator('.format-opt[data-format="openai"]')).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".form-model-row")).toHaveCount(1);
+    await expect(page.locator(".refresh-models-btn")).toBeVisible();
+
+    await select.selectOption("custom");
+    const fallback = await page.locator(".prov-select svg.logo").evaluate((e) => e.innerHTML);
+    for (const provider of ["openrouter", "anthropic", "openai", "xai", "google", "deepseek", "moonshot"]) {
+      await select.selectOption(provider);
+      expect(await page.locator(".prov-select svg.logo").evaluate((e) => e.innerHTML)).not.toBe(fallback);
     }
-    await expect(page.locator(".next-btn")).toBeDisabled();
-    for (const colorScheme of ["light", "dark"] as const) {
-      await page.emulateMedia({ colorScheme });
-      await page.screenshot({ path: path.join(ARTIFACTS, `grid-${colorScheme}.png`) });
-    }
-    await page.locator('.provider-tile[data-built-in="anthropic"]').click();
-    await page.locator(".next-btn").click();
-    await expect(page.locator("dialog.provider-dialog h2")).toHaveText("Add Anthropic");
+
+    await select.selectOption("anthropic");
+    await expect(page.locator("#provider-name")).toHaveValue("Anthropic");
     await expect(page.locator("#provider-endpoint")).toHaveValue("https://api.anthropic.com");
     await expect(page.locator('.format-opt[data-format="anthropic"]')).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".form-model-row")).toHaveCount(4);
@@ -65,7 +74,7 @@ test("B1: provider grid and Anthropic form in both themes", async () => {
     await expect(page.locator(".refresh-models-btn")).toBeHidden();
     for (const colorScheme of ["light", "dark"] as const) {
       await page.emulateMedia({ colorScheme });
-      await page.screenshot({ path: path.join(ARTIFACTS, `anthropic-form-${colorScheme}.png`) });
+      await form.screenshot({ path: path.join(ARTIFACTS, `anthropic-form-${colorScheme}.png`) });
     }
     await page.locator(".cancel-btn").click();
   } finally { await ctx.close(); }
@@ -78,8 +87,8 @@ test("B2: Google switches endpoints and xAI has a fixed format", async () => {
     await openOptions(page, id);
     await page.locator("#tab-btn-models").click();
     await page.locator("#add-model-btn").click();
-    await page.locator('.provider-tile[data-built-in="google"]').click();
-    await page.locator(".next-btn").click();
+    const select = page.locator("#provider-select");
+    await select.selectOption("google");
     await expect(page.locator(".format-opt")).toHaveCount(2);
     await expect(page.locator('.format-opt[data-format="gemini"]')).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("#provider-endpoint")).toHaveValue("https://generativelanguage.googleapis.com");
@@ -90,8 +99,7 @@ test("B2: Google switches endpoints and xAI has a fixed format", async () => {
     await expect(page.locator(".refresh-models-btn")).toBeVisible();
     await page.locator(".cancel-btn").click();
     await page.locator("#add-model-btn").click();
-    await page.locator('.provider-tile[data-built-in="xai"]').click();
-    await page.locator(".next-btn").click();
+    await select.selectOption("xai");
     await expect(page.locator(".format-fixed")).toHaveText("openai");
     await expect(page.locator(".format-opt")).toHaveCount(0);
     await expect(page.locator(".form-model-row")).toHaveCount(1);
@@ -159,5 +167,112 @@ test("B4: the default brand opens the custom form directly", async ({ context, e
   await page.locator("#add-model-btn").click();
   await expect(page.locator("dialog.provider-dialog")).toBeVisible();
   await expect(page.locator("dialog.provider-dialog h2")).toHaveText("Add custom provider");
-  await expect(page.locator("dialog.provider-grid-dialog")).toHaveCount(0);
+  await expect(page.locator("#provider-select")).toHaveCount(0);
+});
+
+test("B5: switching provider keeps the key and headers and Custom clears the preset", async () => {
+  const { ctx, id } = await launch();
+  try {
+    const page = await ctx.newPage();
+    await openOptions(page, id);
+    await page.locator("#tab-btn-models").click();
+    await page.locator("#add-model-btn").click();
+    const select = page.locator("#provider-select");
+    await page.locator("#provider-api-key").fill("sk-keep-me");
+    await page.locator(".add-header-btn").click();
+    await page.locator(".header-name").fill("X-Team");
+    await page.locator(".header-value").fill("web");
+
+    await select.selectOption("anthropic");
+    await expect(page.locator("#provider-api-key")).toHaveValue("sk-keep-me");
+    await expect(page.locator(".header-name")).toHaveValue("X-Team");
+    await expect(page.locator(".header-value")).toHaveValue("web");
+    await page.screenshot({ path: path.join(ARTIFACTS, "switching-keeps-key-light.png") });
+
+    await select.selectOption("custom");
+    await expect(page.locator("#provider-name")).toHaveValue("");
+    await expect(page.locator("#provider-endpoint")).toHaveValue("");
+    await expect(page.locator(".form-model-id")).toHaveCount(1);
+    await expect(page.locator(".form-model-id")).toHaveValue("");
+    await expect(page.locator("#provider-format")).toHaveValue("openai");
+    await expect(page.locator("#provider-api-key")).toHaveValue("sk-keep-me");
+    await expect(page.locator(".header-name")).toHaveValue("X-Team");
+    const customLogo = await page.locator(".prov-select svg.logo").evaluate((e) => e.innerHTML);
+    await select.selectOption("openrouter");
+    expect(await page.locator(".prov-select svg.logo").evaluate((e) => e.innerHTML)).not.toBe(customLogo);
+    await page.locator(".cancel-btn").click();
+  } finally { await ctx.close(); }
+});
+
+test("B6: Edit shows the Provider select locked and keeps builtIn", async () => {
+  const { ctx, id, worker } = await launch();
+  try {
+    const page = await ctx.newPage();
+    await openOptions(page, id);
+    await page.locator("#tab-btn-models").click();
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({
+        enabledOrigins: ["http://localhost:10040"],
+        modelStore: {
+          providers: [
+            {
+              id: "p1",
+              name: "DeepSeek",
+              builtIn: "deepseek",
+              wireFormat: "openai",
+              endpoint: "http://localhost:10040/v1",
+              apiKey: "",
+              headers: [],
+              models: [{ model: "deepseek-flash", label: "DeepSeek V4.1 Flash", vision: true }],
+            },
+            {
+              id: "p2",
+              name: "Local",
+              wireFormat: "openai",
+              endpoint: "http://localhost:10040/v1",
+              apiKey: "",
+              headers: [],
+              models: [{ model: "m1", label: "M1", vision: false }],
+            },
+          ],
+          brandKeys: {},
+          disabled: [],
+          defaultModel: "p1/deepseek-flash",
+        },
+      });
+    });
+    await page.reload();
+    await optionsReady(page);
+    await page.locator("#tab-btn-models").click();
+
+    await page.locator('tr.prov[data-provider-id="p1"] .edit-btn').click();
+    const form = page.locator("dialog.provider-dialog");
+    const select = page.locator("#provider-select");
+    await expect(form).toBeVisible();
+    await expect(select).toHaveValue("deepseek");
+    await expect(select).toBeDisabled();
+    await expect(form.locator("h2")).toHaveText("Edit DeepSeek");
+    await expect(form.locator(".prov-select svg.logo path")).toHaveCount(1);
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      await form.screenshot({ path: path.join(ARTIFACTS, `edit-deepseek-${colorScheme}.png`) });
+    }
+    await page.emulateMedia({ colorScheme: "light" });
+    await form.locator("#provider-name").fill("DeepSeek kept");
+    await form.locator(".save-provider-btn").click();
+    await expect(form).toHaveCount(0);
+    const saved = await worker.evaluate(async () =>
+      (await chrome.storage.local.get("modelStore")).modelStore.providers.find(
+        (p: { id: string }) => p.id === "p1",
+      ),
+    );
+    expect(saved.name).toBe("DeepSeek kept");
+    expect(saved.builtIn).toBe("deepseek");
+
+    await page.locator('tr.prov[data-provider-id="p2"] .edit-btn').click();
+    await expect(page.locator("#provider-select")).toHaveValue("custom");
+    await expect(page.locator("#provider-select")).toBeDisabled();
+    await expect(page.locator("dialog.provider-dialog h2")).toHaveText("Edit provider — Local");
+    await page.locator(".cancel-btn").click();
+  } finally { await ctx.close(); }
 });

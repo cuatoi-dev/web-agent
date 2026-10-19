@@ -209,11 +209,17 @@ export interface ProviderDialogDeps {
   newId?: (this: void) => string;
 }
 
-/** Options for opening the custom provider dialog. */
+/** Options for opening the provider dialog. */
 export interface ProviderDialogOptions extends ProviderDialogDeps {
   /** Existing provider when editing; omitted when adding a new provider. */
   provider?: CustomProvider;
-  /** Id from `BUILT_IN` when adding a built-in provider. Ignored
-   *  when `provider` is set: an edited provider carries its own `builtIn`. */
+  /** Id from `BUILT_IN`: the starting value of the Provider select, or the
+   *  preset when no select is shown. Ignored when `provider` is set: an
+   *  edited provider carries its own `builtIn`. */
   builtIn?: string;
+  /** True shows the Provider select as the form's first field, starting on
+   *  `builtIn` or the first built-in provider, and locks it when editing.
+   *  Absent or false keeps the Custom form exactly as before. The brand's
+   *  `options.builtInProviders` drives it. */
+  showProviderSelect?: boolean;
 }

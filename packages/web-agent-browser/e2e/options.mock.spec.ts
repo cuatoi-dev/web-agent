@@ -1255,8 +1255,8 @@ test.describe("Options page 137/002: General tab and shared spacing", () => {
     await fs.writeFile(path.join(ARTIFACTS_137_002, "geometry-dialogs-part2.json"), JSON.stringify(measured, null, 2));
   });
 
-  test("D3: the built-in provider grid shares the action row", async () => {
-    const dir = await patchedBrand(path.join(TEMP_137_002, "grid"), { options: { builtInProviders: true } });
+  test("D3: the one-form Add model shares the action row", async () => {
+    const dir = await patchedBrand(path.join(TEMP_137_002, "add-model"), { options: { builtInProviders: true } });
     const ctx = await launchExtensionContext(dir);
     try {
       let [worker] = ctx.serviceWorkers();
@@ -1267,15 +1267,16 @@ test.describe("Options page 137/002: General tab and shared spacing", () => {
       await openOptions(page, id);
       await page.locator("#tab-btn-models").click();
       await page.locator("#add-model-btn").click();
-      const grid = page.locator("dialog.provider-grid-dialog");
-      await expect(grid).toBeVisible();
+      const form = page.locator("dialog.provider-dialog");
+      await expect(form).toBeVisible();
+      await expect(page.locator("#provider-select")).toHaveValue("openrouter");
       await page.emulateMedia({ colorScheme: "light" });
-      await expectSharedActionRow(grid);
-      await grid.screenshot({ path: path.join(ARTIFACTS_137_002, "grid-light.png") });
+      await expectSharedActionRow(form);
+      await form.screenshot({ path: path.join(ARTIFACTS_137_002, "add-model-light.png") });
       await page.emulateMedia({ colorScheme: "dark" });
-      await grid.screenshot({ path: path.join(ARTIFACTS_137_002, "grid-dark.png") });
-      await grid.locator(".cancel-btn").click();
-      await expect(grid).toHaveCount(0);
+      await form.screenshot({ path: path.join(ARTIFACTS_137_002, "add-model-dark.png") });
+      await form.locator(".cancel-btn").click();
+      await expect(form).toHaveCount(0);
     } finally {
       await ctx.close();
     }
