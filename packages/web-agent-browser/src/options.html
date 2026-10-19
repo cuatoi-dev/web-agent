@@ -283,8 +283,9 @@
   .confirm-dialog button { margin-top: 0; }
   .edit-body code { font-size: 12px; }
   /* Model table. Colours are tokens only.
-     Meaning never rests on colour: the switch knob moves, the Vision pill and
-     "Provided" pill carry words, and a disabled radio is a native state. */
+     Meaning never rests on colour: the switch knob moves, the capability icons
+     differ in shape and accessible name, the "Provided" pill carries words,
+     and a disabled radio is a native state. */
   #tab-models > .table-wrap { width: 100%; overflow-x: auto; margin: 8px 0 0; }
   .model-table {
     width: 100%; border-collapse: collapse;
@@ -298,10 +299,19 @@
   .prov-name { display: flex; align-items: center; gap: 8px; font-weight: 600; flex-wrap: wrap; }
   .prov-sub { font-size: 12px; opacity: 0.82; overflow-wrap: anywhere; }
   .model-table td.model { padding-left: 40px; }
-  .mid { font-family: ui-monospace, monospace; font-size: 12.5px; }
+  .mid {
+    display: inline-block; margin-left: 8px; padding: 1px 6px;
+    font: 12px ui-monospace, monospace; vertical-align: 1px;
+    border: 1px solid var(--wa-border-color); border-radius: 4px;
+    background: var(--wa-background-color); color: var(--wa-text-color);
+    opacity: 0.8;
+  }
+  .cap { display: inline-flex; align-items: center; color: var(--wa-text-color); }
+  .cap svg { width: 20px; height: 20px; flex: none; color: var(--wa-text-color); }
+  .cap.off { opacity: 0.55; }
   .model-table svg.logo { width: 20px; height: 20px; flex: none; }
   .pill.brand { border-color: var(--wa-action-color-info); }
-  .pill.vision, .pill.add { border-color: var(--wa-action-color-success); }
+  .pill.add { border-color: var(--wa-action-color-success); }
   .pill.remove { border-color: var(--wa-action-color-error); }
   .model-table tr.sel-row td { background: var(--wa-action-color-info-10opc); }
   .count { font-size: 12px; white-space: nowrap; }

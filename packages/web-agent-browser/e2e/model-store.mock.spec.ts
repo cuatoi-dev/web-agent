@@ -674,8 +674,9 @@ test.describe("Custom providers, multi-select delete and Refresh from /models (1
     await expect(prov.locator(".prov-sub")).toHaveText(`${ENDPOINT_006} · key ••••9876 · 1 custom header`);
     const rows = page.locator("#model-table tr.model-row").filter({ has: page.locator(".model-select") });
     await expect(rows).toHaveCount(2);
-    await expect(rows.nth(0).locator(".pill.vision")).toHaveText("Vision");
-    await expect(rows.nth(1).locator("td").nth(3)).toHaveText("—");
+    await expect(rows.nth(0).locator('td:nth-child(4) > span.cap:not(.off)[role="img"][aria-label="Vision"][title="Vision"] svg path')).toHaveCount(1);
+    await expect(rows.nth(1).locator('td:nth-child(4) > span.cap.off[role="img"][aria-label="No vision"][title="No vision"] svg path')).toHaveCount(1);
+    await expect(page.locator("#model-table .pill.vision")).toHaveCount(0);
     await expect(rows.nth(0).locator("input.model-enabled")).toBeChecked();
     await expect(rows.nth(1).locator("input.model-enabled")).toBeChecked();
     await page.screenshot({ path: path.join(ARTIFACTS_006, "table-with-custom.png") });

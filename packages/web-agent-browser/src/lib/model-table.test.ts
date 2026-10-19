@@ -52,6 +52,15 @@ describe("model-table", () => {
 
     const ths = table.querySelectorAll("thead th");
     expect(ths.length).toBe(7);
+    expect([...ths].map((th) => th.textContent)).toEqual([
+      "",
+      "Provider / model",
+      "Format",
+      "Capabilities",
+      "Enabled",
+      "Default",
+      "",
+    ]);
 
     const provRows = table.querySelectorAll("tr.prov");
     expect(provRows.length).toBe(2);
@@ -87,11 +96,38 @@ describe("model-table", () => {
     );
     expect(editBtns.length).toBe(0);
 
-    // Vision pills
+    // Model label and id badge, plus Capabilities icons
     const rowA = table.querySelector('tr.model-row[data-ref="brand:a"]') as HTMLTableRowElement;
     const rowB = table.querySelector('tr.model-row[data-ref="brand:b"]') as HTMLTableRowElement;
-    expect(rowA.querySelector(".pill.vision")?.textContent).toBe("Vision");
-    expect(rowB.textContent).toContain("—");
+    expect(rowA.querySelector("td.model")?.childNodes.length).toBe(2);
+    expect(rowA.querySelector(".model-label")?.textContent).toBe("Model A");
+    expect(rowA.querySelector(".mid")?.textContent).toBe("claude-a");
+    expect(rowB.querySelector(".model-label")?.textContent).toBe("Model B");
+    expect(rowB.querySelector(".mid")?.textContent).toBe("claude-b");
+
+    const capA = rowA.querySelector("td:nth-child(4) > span.cap") as HTMLElement;
+    const capB = rowB.querySelector("td:nth-child(4) > span.cap") as HTMLElement;
+    expect(capA).not.toBeNull();
+    expect(capA.classList.contains("off")).toBe(false);
+    expect(capA.getAttribute("role")).toBe("img");
+    expect(capA.getAttribute("aria-label")).toBe("Vision");
+    expect(capA.title).toBe("Vision");
+    expect(capA.querySelector("svg path")?.getAttribute("d") ?? "").not.toBe("");
+
+    expect(capB).not.toBeNull();
+    expect(capB.classList.contains("off")).toBe(true);
+    expect(capB.getAttribute("role")).toBe("img");
+    expect(capB.getAttribute("aria-label")).toBe("No vision");
+    expect(capB.title).toBe("No vision");
+    expect(capB.querySelector("svg path")?.getAttribute("d") ?? "").not.toBe("");
+    expect(capA.querySelector("svg")?.outerHTML).not.toBe(capB.querySelector("svg")?.outerHTML);
+
+    expect(table.querySelector(".pill.vision")).toBeNull();
+    expect(rowB.textContent).not.toContain("—");
+    for (const prov of provRows) {
+      expect(prov.querySelectorAll("td")[3].textContent).toBe("");
+      expect(prov.querySelectorAll("td")[3].children.length).toBe(0);
+    }
 
     // All SVGs aria-hidden
     const svgs = table.querySelectorAll("svg");
@@ -194,6 +230,14 @@ describe("model-table", () => {
     renderModelTable(table, entries, EMPTY_MODEL_STORE, handlers);
     const ths = table.querySelectorAll("thead th");
     expect(ths.length).toBe(6);
+    expect([...ths].map((th) => th.textContent)).toEqual([
+      "Provider / model",
+      "Format",
+      "Capabilities",
+      "Enabled",
+      "Default",
+      "",
+    ]);
 
     const checkboxes = table.querySelectorAll("input[type=checkbox]:not([role=switch])");
     expect(checkboxes.length).toBe(0);

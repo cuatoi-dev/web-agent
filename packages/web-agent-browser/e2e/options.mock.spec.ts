@@ -1411,3 +1411,236 @@ test.describe("Options page 137/002: General tab and shared spacing", () => {
     );
   });
 });
+
+const ARTIFACTS_137_003 =
+  process.env.E2E_ARTIFACTS_DIR ??
+  path.resolve(
+    HERE,
+    "../../../../tasks/artifacts/2026-10-20-004146-003-model-table-capabilities-and-id-badge",
+  );
+
+test.describe("Model table capabilities and ID badge (idea 137 task 003)", () => {
+  test.beforeAll(async () => {
+    await fs.mkdir(ARTIFACTS_137_003, { recursive: true });
+  });
+
+  test("C1: Capabilities header, eye and crossed-out eye icons, greyscale distinction, and 8px ID badge with >= 3:1 contrast in light and dark", async ({
+    context,
+    extensionId,
+  }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({
+        modelStore: {
+          providers: [
+            {
+              id: "p-deepseek",
+              name: "DeepSeek",
+              builtIn: "deepseek",
+              wireFormat: "anthropic",
+              endpoint: "https://api.deepseek.com/anthropic",
+              apiKey: "sk-test-f46e",
+              headers: [],
+              models: [
+                { model: "deepseek-flash", label: "DeepSeek V4.1 Flash", vision: true },
+                { model: "deepseek-v4-pro", label: "DeepSeek V4 Pro", vision: false },
+              ],
+            },
+          ],
+          brandKeys: {},
+          disabled: [],
+          defaultModel: null,
+        },
+      });
+    });
+
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+
+    const headers = await page.locator("#model-table thead th").allTextContents();
+    expect(headers).toEqual(["", "Provider / model", "Format", "Capabilities", "Enabled", "Default", ""]);
+    expect(headers).not.toContain("Vision");
+    await expect(page.locator("#model-table .pill.vision")).toHaveCount(0);
+
+    const visionCap = page.locator('tr.model-row[data-ref="p-deepseek/deepseek-flash"] td:nth-child(4) > span.cap:not(.off)');
+    const noVisionCap = page.locator('tr.model-row[data-ref="p-deepseek/deepseek-v4-pro"] td:nth-child(4) > span.cap.off');
+    await expect(visionCap).toHaveAttribute("role", "img");
+    await expect(visionCap).toHaveAttribute("aria-label", "Vision");
+    await expect(visionCap).toHaveAttribute("title", "Vision");
+    await expect(noVisionCap).toHaveAttribute("role", "img");
+    await expect(noVisionCap).toHaveAttribute("aria-label", "No vision");
+    await expect(noVisionCap).toHaveAttribute("title", "No vision");
+
+    const visionPath = await visionCap.locator("svg path").getAttribute("d");
+    const noVisionPath = await noVisionCap.locator("svg path").getAttribute("d");
+    expect(visionPath ?? "").not.toBe("");
+    expect(noVisionPath ?? "").not.toBe("");
+    expect(visionPath).not.toBe(noVisionPath);
+
+    const report: Record<string, unknown> = {};
+    const pngs: Record<"light" | "dark", Buffer> = {
+      light: Buffer.alloc(0),
+      dark: Buffer.alloc(0),
+    };
+
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await expect(page.locator("html")).toHaveAttribute("data-theme", `wa2-${scheme}`);
+
+      const metrics = await page.evaluate(() => {
+        const parseRgb = (s: string): [number, number, number] => {
+          const m = s.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (!m) throw new Error(`unexpected rgb: ${s}`);
+          return [Number(m[1]), Number(m[2]), Number(m[3])];
+        };
+        const blend = (fg: [number, number, number], bg: [number, number, number], a: number): [number, number, number] => [
+          fg[0] * a + bg[0] * (1 - a),
+          fg[1] * a + bg[1] * (1 - a),
+          fg[2] * a + bg[2] * (1 - a),
+        ];
+        const lum = ([r, g, b]: [number, number, number]): number => {
+          const f = (v: number) => {
+            const c = v / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          };
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+        const contrast = (a: [number, number, number], b: [number, number, number]): number => {
+          const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+          return Number(((hi + 0.05) / (lo + 0.05)).toFixed(2));
+        };
+
+        const rows = [...document.querySelectorAll<HTMLTableRowElement>("#model-table tr.model-row")];
+        const background = (node: Element): [number, number, number] => {
+          const color = getComputedStyle(node).backgroundColor;
+          const alpha = color.startsWith("rgba") ? Number(color.match(/,\s*([\d.]+)\)$/)?.[1] ?? 1) : 1;
+          if (alpha === 1) return parseRgb(color);
+          const underneath: [number, number, number] = node.parentElement ? background(node.parentElement) : [255, 255, 255];
+          return blend(parseRgb(color), underneath, alpha);
+        };
+        const badgeChecks = rows.map((row) => {
+          const label = row.querySelector<HTMLElement>(".model-label")!;
+          const mid = row.querySelector<HTMLElement>(".mid")!;
+          const td = row.querySelector<HTMLElement>("td.model")!;
+          const cs = getComputedStyle(mid);
+          const tdBg = background(td);
+          const midOpc = parseFloat(cs.opacity);
+          const midBg = blend(parseRgb(cs.backgroundColor), tdBg, midOpc);
+          const midFg = blend(parseRgb(cs.color), tdBg, midOpc);
+          const lRect = label.getBoundingClientRect();
+          const mRect = mid.getBoundingClientRect();
+          return {
+            ref: row.dataset.ref,
+            gapPx: Number((mRect.left - lRect.right).toFixed(2)),
+            display: cs.display,
+            marginLeft: cs.marginLeft,
+            fontSize: cs.fontSize,
+            padding: `${cs.paddingTop} ${cs.paddingRight} ${cs.paddingBottom} ${cs.paddingLeft}`,
+            borderRadius: cs.borderTopLeftRadius,
+            borderWidth: cs.borderTopWidth,
+            borderStyle: cs.borderTopStyle,
+            fontFamily: cs.fontFamily,
+            contrast: contrast(midFg, midBg),
+          };
+        });
+
+        const offRow = document.querySelector<HTMLTableRowElement>('tr.model-row[data-ref="p-deepseek/deepseek-v4-pro"]')!;
+        const offTd = offRow.querySelectorAll<HTMLElement>("td")[3];
+        const offCap = offTd.querySelector<HTMLElement>(".cap.off")!;
+        const offSvg = offCap.querySelector<SVGElement>("svg")!;
+        const onSvg = document.querySelector<SVGElement>('tr.model-row[data-ref="p-deepseek/deepseek-flash"] .cap svg')!;
+        const tdBg = background(offTd);
+        const capOpc = parseFloat(getComputedStyle(offCap).opacity);
+        const svgFg = blend(parseRgb(getComputedStyle(offSvg).color), tdBg, capOpc);
+        const onRect = onSvg.getBoundingClientRect();
+        const offRect = offSvg.getBoundingClientRect();
+
+        return {
+          badgeChecks,
+          offCapContrast: contrast(svgFg, tdBg),
+          onSvgSize: { width: onRect.width, height: onRect.height },
+          offSvgSize: { width: offRect.width, height: offRect.height },
+        };
+      });
+
+      report[scheme] = metrics;
+      expect(metrics.onSvgSize).toEqual({ width: 20, height: 20 });
+      expect(metrics.offSvgSize).toEqual({ width: 20, height: 20 });
+      expect(metrics.offCapContrast).toBeGreaterThanOrEqual(3);
+      for (const b of metrics.badgeChecks) {
+        expect(b.display).toBe("inline-block");
+        expect(b.marginLeft).toBe("8px");
+        expect(b.fontSize).toBe("12px");
+        expect(b.padding).toBe("1px 6px 1px 6px");
+        expect(b.borderRadius).toBe("4px");
+        expect(b.borderWidth).toBe("1px");
+        expect(b.borderStyle).toBe("solid");
+        expect(b.fontFamily).toContain("monospace");
+        expect(Math.abs(b.gapPx - 8)).toBeLessThanOrEqual(1.5);
+        expect(b.contrast).toBeGreaterThanOrEqual(3);
+      }
+
+      pngs[scheme] = await page.screenshot({
+        path: path.join(ARTIFACTS_137_003, `models-table-${scheme}.png`),
+        fullPage: true,
+      });
+    }
+
+    // Build greyscale stacked image of light and dark screenshots to verify non-colour distinction.
+    const greyB64 = await page.evaluate(
+      async ({ lightB64, darkB64 }) => {
+        const load = (src: string) =>
+          new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+          });
+        const [top, bottom] = await Promise.all([
+          load(`data:image/png;base64,${lightB64}`),
+          load(`data:image/png;base64,${darkB64}`),
+        ]);
+        const gap = 20;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(top.width, bottom.width);
+        canvas.height = top.height + gap + bottom.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(top, 0, 0);
+        ctx.drawImage(bottom, 0, top.height + gap);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const y = Math.round(0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]);
+          d[i] = y;
+          d[i + 1] = y;
+          d[i + 2] = y;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        return canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
+      },
+      { lightB64: pngs.light.toString("base64"), darkB64: pngs.dark.toString("base64") },
+    );
+    await fs.writeFile(path.join(ARTIFACTS_137_003, "models-table-greyscale.png"), Buffer.from(greyB64, "base64"));
+    await fs.writeFile(path.join(ARTIFACTS_137_003, "contrast-and-geometry.json"), JSON.stringify(report, null, 2));
+  });
+
+  test("C2: the provider form keeps its Vision column label and checkbox unchanged", async ({
+    context,
+    extensionId,
+  }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+    await page.locator("#add-model-btn").click();
+    const dialog = page.locator("dialog.provider-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator(".form-model-cols span")).toHaveText(["Model ID", "Display name", "Vision", ""]);
+    await expect(dialog.locator(".vision-check").first()).toHaveText("Vision");
+    await expect(dialog.locator("input.form-model-vision").first()).toHaveAttribute("aria-label", "Vision");
+    await dialog.locator(".cancel-btn").click();
+  });
+});

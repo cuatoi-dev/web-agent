@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { ICON_SVGS, iconNode } from "./icon-svgs.js";
 import { defineUiElements } from "./registry.js";
 import { WaButton, WaIconButton, WaIcon, WaCheckbox, WaProgress, WaWorkingDots } from "./wa-elements.js";
 import { WaMenu } from "./wa-menu.js";
@@ -230,5 +231,16 @@ describe("default UI elements", () => {
     el.label = "History";
     expect(span.getAttribute("role")).toBe("img"); expect(span.getAttribute("aria-label")).toBe("History");
     expect(span.hasAttribute("aria-hidden")).toBe(false);
+  });
+  it("ICON_SVGS includes inline visibility and visibility_off icons without URLs", () => {
+    for (const name of ["visibility", "visibility_off"] as const) {
+      expect(typeof ICON_SVGS[name]).toBe("string");
+      expect(ICON_SVGS[name]).not.toMatch(/https?:|url\(/i);
+      const node = iconNode(name);
+      expect(node.localName).toBe("svg");
+      expect(node.getAttribute("viewBox")).toBe("0 0 24 24");
+      expect(node.querySelector("path")?.getAttribute("d") ?? "").not.toBe("");
+    }
+    expect(iconNode("visibility").outerHTML).not.toBe(iconNode("visibility_off").outerHTML);
   });
 });

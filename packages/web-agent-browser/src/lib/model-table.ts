@@ -71,7 +71,7 @@ export function renderModelTable(
   const showCheck = !h.lockModel;
   const selected = new Set<ModelRef>(h.selected ?? []);
   const headRow = table.createTHead().insertRow();
-  const headings = [...(showCheck ? [""] : []), "Provider / model", "Format", "Vision", "Enabled", "Default", ""];
+  const headings = [...(showCheck ? [""] : []), "Provider / model", "Format", "Capabilities", "Enabled", "Default", ""];
   for (const text of headings) headRow.append(el("th", "", text));
 
   const body = table.createTBody();
@@ -160,11 +160,16 @@ export function renderModelTable(
       }
       const label = row.insertCell();
       label.className = "model";
-      label.append(el("span", "model-label", e.label), document.createTextNode(" "), el("span", "mid", e.model));
+      label.append(el("span", "model-label", e.label), el("span", "mid", e.model));
       row.insertCell();
-      const vision = row.insertCell();
-      if (e.vision) vision.append(el("span", "pill vision", "Vision"));
-      else vision.textContent = "—";
+      const capCell = row.insertCell();
+      const cap = el("span", e.vision ? "cap" : "cap off");
+      cap.setAttribute("role", "img");
+      const capLabel = e.vision ? "Vision" : "No vision";
+      cap.setAttribute("aria-label", capLabel);
+      cap.title = capLabel;
+      cap.append(icon(e.vision ? "visibility" : "visibility_off"));
+      capCell.append(cap);
 
       const sw = el("label", "sw");
       const toggle = el("input", "model-enabled");
