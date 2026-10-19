@@ -118,6 +118,8 @@ Each entry has these keys (`tool/compile-brand.cjs:236-288`):
 | `endpoint` | Yes | An absolute `http://` or `https://` URL. |
 | `wireFormat` | Yes | `anthropic`, `openai` or `gemini`. |
 | `model` | Yes | The model name sent to the endpoint. |
+| `provider` | No | Row name in the options table. Defaults to the endpoint's host and path. Entries with the same endpoint and wire format form one provider row. |
+| `vision` | No | `true` when the model accepts images. Defaults to `false` (text only). |
 
 Each wire format adds its own path to the endpoint, so do not put that path in
 `endpoint`:
@@ -137,6 +139,8 @@ models:
     endpoint: "https://llm.acme.com/api/anthropic"
     wireFormat: anthropic
     model: claude-sonnet
+    provider: Acme
+    vision: true
 ```
 
 The default brand points to a development gateway. Replace those entries with
@@ -183,7 +187,7 @@ skills: "*"
 | `displayName` | Yes | A non-empty string. Shown in the panel header before the first message. |
 | `description` | Yes | A non-empty string. |
 | `instructions` | Yes | A non-empty string. Becomes the agent's `# App instructions` section. |
-| `model` | No | An `id` from `model.yml`. Overrides the options page's endpoint, wire format and model for this agent. The API key still comes from the options page — there is one key per install. |
+| `model` | No | An `id` from `model.yml`. The agent opens on that model while it is enabled on the options page, and on the default model otherwise. The key is the one set for that model's provider. |
 | `tools` | Yes | `"*"` for every side panel tool, or a list of tool names. |
 | `excludeTools` | No | A list of tool names to remove from an otherwise-allowed set. |
 | `skills` | Yes | `"*"` for every side panel skill, or a list of skill names. |
@@ -232,11 +236,10 @@ options:
   lockModel: true
 ```
 
-With `lockModel: true`, the options page makes the endpoint URL and model
-fields read-only, and the wire format control unavailable. The
-user can still pick another entry from your `model.yml`, and can still change
-the theme, the API key and the token (`src/options.ts:65-80`). Only the value
-`true` locks the fields. Any other value, or no value, leaves them editable
+With `lockModel: true`, the options page table shows only brand models and no row
+checkboxes. **Enabled**, **Default**, **Key** and the chat switchers still work.
+The theme and the token stay editable. Only the value `true` locks the table.
+Any other value, or no value, leaves row checkboxes present
 (`tool/compile-brand.cjs:343-344`).
 
 ### Add hosts
@@ -384,8 +387,8 @@ Then check the extension in Chrome:
 
 1. On `chrome://extensions`, the extension card shows your `displayName`,
    `version`, `description` and icon.
-2. Open the options page of the extension. The **Ready-made entry** list shows
-   the `label` of each entry in your `model.yml`.
+2. Open the options page of the extension. The **Models** tab lists the
+   `label` of each entry in your `model.yml`, grouped by provider.
 3. On the options page, select the **Agents** tab. It shows one card for each
    file in your `agents/` folder, with its `displayName` and `description`.
    The card for your `defaultAgent` is first and shows `Default`.

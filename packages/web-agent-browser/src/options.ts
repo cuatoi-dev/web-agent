@@ -1,15 +1,15 @@
 import { brandForThisContext } from "./lib/brand-source";
-import { resolveModels } from "./lib/brand-models";
-import { originPattern } from "./lib/origin";
 import { renderSkills } from "./lib/saved-skills";
 import { mountTabs } from "./lib/options-tabs";
 import { chromeSkillStorage } from "./lib/skill-registry";
 import { readAgentStore, chromeAgentStorage, listAgents } from "./lib/agent-store";
 import { mountAgentEditor } from "./lib/agent-editor";
-import { getSettings, getToken, setSettings, setToken, type AgentSettings } from "./lib/settings";
+import { getSettings, getToken, setSettings, setToken } from "./lib/settings";
 import { registerBrandThemes, applyTheme, listThemes, type ThemeBinding } from "./lib/theme";
-import type { WireFormat } from "./lib/constants";
-import type { PresetEntry } from "./lib/types";
+import { listModels, readModelStore, setBrandKey, setDefault, setEnabled, writeModelStore } from "./lib/model-store";
+import { modelCountText, renderModelTable } from "./lib/model-table";
+import { openBrandKeyDialog } from "./lib/brand-key-dialog";
+import type { AgentBrand, ModelStore } from "./lib/types";
 
 const tabModels = document.getElementById("tab-btn-models") as HTMLButtonElement;
 const tabSkills = document.getElementById("tab-btn-skills") as HTMLButtonElement;
@@ -18,38 +18,20 @@ const panelModels = document.getElementById("tab-models") as HTMLElement;
 const panelSkills = document.getElementById("tab-skills") as HTMLElement;
 const panelAgents = document.getElementById("tab-agents") as HTMLElement;
 const agentCards = document.getElementById("agent-cards") as HTMLDivElement;
-const preset = document.getElementById("preset") as HTMLSelectElement;
-const endpoint = document.getElementById("endpoint") as HTMLInputElement;
-const wireFormat = document.getElementById("wireFormat") as HTMLSelectElement;
-const model = document.getElementById("model") as HTMLInputElement;
+const modelTable = document.getElementById("model-table") as HTMLTableElement;
+const modelCount = document.getElementById("model-count") as HTMLParagraphElement;
+const modelTableHint = document.getElementById("model-table-hint") as HTMLParagraphElement;
 const theme = document.getElementById("theme") as HTMLSelectElement;
 const token = document.getElementById("token") as HTMLInputElement;
-const apiKey = document.getElementById("apiKey") as HTMLInputElement;
 const save = document.getElementById("save") as HTMLButtonElement;
 const status = document.getElementById("status") as HTMLParagraphElement;
 const skillList = document.getElementById("skill-list") as HTMLDivElement;
 const addAgentBtn = document.getElementById("add-agent-btn") as HTMLButtonElement;
-const modelHint = document.getElementById("model-hint") as HTMLParagraphElement;
 
 function report(message: string, isError: boolean): void {
   status.textContent = message;
   status.classList.toggle("error", isError);
 }
-
-// Filled by init() before any option exists in the picker, so the change
-// listener below can never see a value it cannot resolve.
-let modelEntries: PresetEntry[] = [];
-
-// Picking an entry fills the three fields; the user can edit them afterwards
-// unless the brand locked them. Registered at module load, so the listener is
-// attached before init() awaits anything.
-preset.addEventListener("change", () => {
-  const entry = modelEntries.find((e) => e.id === preset.value);
-  if (!entry) return;
-  endpoint.value = entry.endpoint;
-  wireFormat.value = entry.wireFormat;
-  model.value = entry.model;
-});
 
 // Re-applies the chosen theme to the whole page. The select is populated in
 // init(); a user cannot change it before then.
@@ -76,27 +58,56 @@ function applyPageTheme(pref: string): void {
   themeBinding = applyTheme(document.documentElement, pref, pageThemeEnv());
 }
 
-/** Builds the picker from the brand, then restores the saved settings into the
- *  form.
+/** Paints the model table and the count line from `store`. Every switch,
+ *  radio and Key save writes the store at once and repaints (136/005). */
+function paintModels(brand: AgentBrand, store: ModelStore): void {
+  const entries = listModels(brand, store);
+  modelCount.textContent = modelCountText(entries);
+  renderModelTable(modelTable, entries, store, {
+    lockModel: brand.options.lockModel === true,
+    onToggle: (ref, on) => {
+      const result = setEnabled(entries, store, ref, on);
+      if (!result.ok) {
+        modelTableHint.textContent = result.hint;
+        modelTableHint.hidden = false;
+        paintModels(brand, store); // puts the switch back on
+        return;
+      }
+      modelTableHint.hidden = true;
+      void commitModels(brand, result.store);
+    },
+    onDefault: (ref) => {
+      modelTableHint.hidden = true;
+      void commitModels(brand, setDefault(entries, store, ref));
+    },
+    onKey: (provider) => {
+      void openBrandKeyDialog({
+        name: provider.name,
+        wireFormat: provider.wireFormat,
+        endpoint: provider.endpoint,
+        current: provider.apiKey,
+      }).then((value) => {
+        if (value === null) return;
+        void commitModels(brand, setBrandKey(store, provider.id, value));
+      });
+    },
+  });
+}
+
+async function commitModels(brand: AgentBrand, next: ModelStore): Promise<void> {
+  await writeModelStore(next);
+  paintModels(brand, next);
+}
+
+/** Fills the theme picker, the theme, the token and the model table.
  *
- *  ORDER MATTERS, and this is the whole risk of 116/002. The picker's options
- *  must exist BEFORE `preset.value` is assigned, or the assignment silently
- *  selects nothing. Everything from the settings read down to that assignment
- *  runs in one synchronous block with no `await` in it, so "the endpoint field
- *  is filled" and "the picker is preselected" become the same instant — which
- *  is what the e2e helper in change 15 waits for. Do not add an `await` inside
- *  that block. */
+ *  ORDER MATTERS for the e2e ready wait (e2e/extension.fixture.ts
+ *  optionsReady): `#model-count` is painted LAST, in the same synchronous
+ *  block as the theme and token values, so "the count line has text" means
+ *  the whole tab is ready. Do not add an `await` inside that block. */
 async function init(): Promise<void> {
   const brand = await brandForThisContext();
   registerBrandThemes(brand.themes, { linkCss: true });
-  modelEntries = resolveModels(brand);
-
-  for (const entry of modelEntries) {
-    const option = document.createElement("option");
-    option.value = entry.id;
-    option.textContent = entry.label;
-    preset.append(option);
-  }
 
   // The theme list is the built-ins plus the brand's own themes, in
   // registration order. Rebuilt here so a brand theme is offered by label.
@@ -112,35 +123,12 @@ async function init(): Promise<void> {
     theme.append(opt);
   }
 
-  if (brand.options.lockModel === true) {
-    // readOnly on the text inputs, disabled on the select:
-    // a read-only input still reports its value to the save handler, and
-    // <select> has no readOnly behaviour at all.
-    endpoint.readOnly = true;
-    model.readOnly = true;
-    wireFormat.disabled = true;
-    // The picker itself stays enabled: switching between the brand's OWN
-    // entries is what the lock is for, and every option in it came from the
-    // brand. getManifest().name is the extension's own display name, which
-    // task 004 makes the brand owner's name from their package.json.
-    modelHint.textContent =
-      `Model settings are fixed by ${chrome.runtime.getManifest().name}.`;
-    modelHint.hidden = false;
-  }
-
-  const [s, t] = await Promise.all([getSettings(), getToken()]);
-  // --- no await below this line until the picker is preselected ---
-  endpoint.value = s.endpoint;
-  wireFormat.value = s.wireFormat;
-  model.value = s.model;
+  const [s, t, store] = await Promise.all([getSettings(), getToken(), readModelStore()]);
+  // --- no await below this line ---
   theme.value = s.theme;
   applyPageTheme(s.theme);
-  apiKey.value = s.apiKey;
   token.value = t;
-  preset.value = modelEntries.find(
-    (e) => e.endpoint === s.endpoint && e.wireFormat === s.wireFormat
-      && e.model === s.model,
-  )?.id ?? "";
+  paintModels(brand, store);
 }
 
 void init();
@@ -151,9 +139,10 @@ void init();
 mountTabs([tabModels, tabSkills, tabAgents], [panelModels, panelSkills, panelAgents]);
 
 void (async () => {
-  const [brand, store] = await Promise.all([
+  const [brand, store, modelStore] = await Promise.all([
     brandForThisContext(),
     readAgentStore(chromeAgentStorage),
+    readModelStore(),
   ]);
   const mergedAgents = listAgents(brand, store.edits, store.users);
   await renderSkills(skillList, chromeSkillStorage, mergedAgents);
@@ -162,6 +151,7 @@ void (async () => {
     brand,
     storage: chromeAgentStorage,
     addButton: addAgentBtn,
+    modelStore,
     // Not awaited: an open side panel holds a connection, and the delete
     // stays pending until it closes (121/004 design).
     deleteDatabase: (name) => {
@@ -175,46 +165,12 @@ void (async () => {
   });
 })();
 
+// 136/005 — Save keeps Theme and Token only. The model table saves itself;
+// there is no endpoint here any more, so no host permission is asked for.
 save.addEventListener("click", () => {
-  const url = endpoint.value.trim();
-  const pattern = originPattern(url);
-  if (!pattern) {
-    report("Error: that is not a valid http or https endpoint URL.", true);
-    return;
-  }
-
-  const doSave = async () => {
-    try {
-      await fetch(url, { method: "GET" });
-    } catch (e) {
-      report(`Error: ${url} could not be reached (${(e as Error)?.message ?? String(e)}). Nothing was saved.`, true);
-      return;
-    }
-
-    const settings: AgentSettings = {
-      endpoint: url,
-      wireFormat: wireFormat.value as WireFormat,
-      model: model.value.trim(),
-      apiKey: apiKey.value.trim(),
-      theme: theme.value,
-    };
-    await setSettings(settings);
+  void (async () => {
+    await setSettings({ theme: theme.value });
     await setToken(token.value.trim());
     report("Saved. Reload a page to use the new settings.", false);
-  };
-
-  // chrome.permissions.request() must be called inside the user gesture, so
-  // nothing is awaited before it here — an await before it can end the gesture. An
-  // origin the extension already holds is granted silently, with no dialog.
-  if (!chrome.permissions?.request) {
-    void doSave();
-    return;
-  }
-  void chrome.permissions.request({ origins: [pattern] }).then(async (granted) => {
-    if (!granted) {
-      report(`Error: permission for ${pattern} was refused, so nothing was saved.`, true);
-      return;
-    }
-    await doSave();
-  });
+  })();
 });

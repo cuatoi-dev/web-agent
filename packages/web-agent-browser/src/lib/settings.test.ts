@@ -3,16 +3,8 @@ import { DEFAULT_TOKEN } from "./constants";
 import { getEnabledOrigins, getLastAgentId, getSettings, getToken, isOriginEnabled, setLastAgentId, setOriginEnabled, setSettings, setToken } from "./settings";
 import { resolveAgent } from "./brand-capabilities";
 import { EMPTY_BRAND } from "./brand";
-import { defaultSettings } from "./brand-models";
 import type { AgentBrand, BrandAgent } from "./types";
 
-const BRAND_MODELS: AgentBrand = {
-  ...EMPTY_BRAND,
-  models: [
-    { id: "brand-a", label: "Brand A", endpoint: "https://a.test/api/anthropic", wireFormat: "anthropic", model: "a-model" },
-    { id: "brand-b", label: "Brand B", endpoint: "https://b.test/api/openai/v1", wireFormat: "openai", model: "b-model" },
-  ],
-};
 
 describe("settings", () => {
   let store: Record<string, unknown> = {};
@@ -80,30 +72,24 @@ describe("settings", () => {
   });
 
   it("returns every default when nothing is stored", async () => {
-    expect(await getSettings()).toEqual(defaultSettings(EMPTY_BRAND));
+    expect(await getSettings()).toEqual({ theme: "auto" });
+  });
+
+  it("extracts only theme from a stored settings object", async () => {
+    const settings = { endpoint: "https://x/v1", wireFormat: "gemini", model: "m", apiKey: "k", theme: "wa2-light" };
+    await chrome.storage.local.set({ agentSettings: settings });
+    expect(await getSettings()).toEqual({ theme: "wa2-light" });
   });
 
   it("round-trips a saved settings object", async () => {
-    const settings = { endpoint: "https://x/v1", wireFormat: "gemini" as const, model: "m", apiKey: "k", theme: "auto" as const };
-    await setSettings(settings);
-    expect(await getSettings()).toEqual(settings);
+    await setSettings({ theme: "wa2-light" });
+    expect(await getSettings()).toEqual({ theme: "wa2-light" });
   });
 
-  it("falls back per field when the stored object is partial", async () => {
-    // Store directly via the mock to simulate a partial object
-    await chrome.storage.local.set({ agentSettings: { model: "only-model" } });
-    const result = await getSettings();
-    expect(result.model).toBe("only-model");
-    expect(result.endpoint).toBe(defaultSettings(EMPTY_BRAND).endpoint);
-    expect(result.wireFormat).toBe(defaultSettings(EMPTY_BRAND).wireFormat);
-    expect(result.apiKey).toBe(defaultSettings(EMPTY_BRAND).apiKey);
-    expect(result.theme).toBe(defaultSettings(EMPTY_BRAND).theme);
-  });
-
-  it("rejects an unknown theme", async () => {
+  it("rejects an unknown theme and defaults to auto", async () => {
     await chrome.storage.local.set({ agentSettings: { theme: "solarized" } });
     const result = await getSettings();
-    expect(result.theme).toBe(defaultSettings(EMPTY_BRAND).theme);
+    expect(result.theme).toBe("auto");
   });
 
   it("a stored preference dark or light loads as auto", async () => {
@@ -129,42 +115,13 @@ describe("settings", () => {
 
   it("ignores a non-object stored under the settings key", async () => {
     await chrome.storage.local.set({ agentSettings: "garbage" });
-    expect(await getSettings()).toEqual(defaultSettings(EMPTY_BRAND));
+    expect(await getSettings()).toEqual({ theme: "auto" });
   });
 
-  it("with nothing stored, the brand's first entry is used", async () => {
-    brand = BRAND_MODELS;
-    expect(await getSettings()).toEqual(defaultSettings(BRAND_MODELS));
-    expect((await getSettings()).endpoint).toBe(BRAND_MODELS.models[0].endpoint);
-  });
-
-  it("a stored field still wins over the brand", async () => {
-    brand = BRAND_MODELS;
-    await chrome.storage.local.set({ agentSettings: { model: "stored-model" } });
-    const result = await getSettings();
-    expect(result.model).toBe("stored-model");
-    expect(result.endpoint).toBe(BRAND_MODELS.models[0].endpoint);
-  });
-
-  it("a brand that fails to answer degrades to the compiled presets", async () => {
-    // `sendMessage` is typed `unknown` here rather than `ReturnType<typeof vi.fn>`:
-    // vitest's `Mock` is invariant in BOTH its parameters, so a rejecting stub
-    // (`Mock<[], Promise<never>>`) will not assign to `Mock<any[], unknown>`.
+  it("a brand that fails to answer degrades to default theme", async () => {
     (globalThis as unknown as { chrome: { runtime: { sendMessage: unknown }; storage: unknown } }).chrome.runtime.sendMessage = vi.fn(() => Promise.reject(new Error("refused")));
     const result = await getSettings();
-    expect(result).toEqual(defaultSettings(EMPTY_BRAND));
-  });
-
-  it("changing the brand changes the defaults", async () => {
-    // First call with EMPTY_BRAND (default)
-    const first = await getSettings();
-    // Now switch to BRAND_MODELS
-    brand = BRAND_MODELS;
-    const second = await getSettings();
-    // They must differ, and each must equal its own brand's defaults
-    expect(first.endpoint).toBe(defaultSettings(EMPTY_BRAND).endpoint);
-    expect(second.endpoint).toBe(defaultSettings(BRAND_MODELS).endpoint);
-    expect(first.endpoint).not.toBe(second.endpoint);
+    expect(result).toEqual({ theme: "auto" });
   });
 
   it("getLastAgentId is undefined when nothing, an empty string or a non-string is stored (120/002)", async () => {

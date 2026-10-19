@@ -1,6 +1,5 @@
-import { DEFAULT_THEME } from "./constants";
 import { PRESET_ENTRIES } from "./presets";
-import type { AgentBrand, AgentSettings, PresetEntry } from "./types";
+import type { AgentBrand, PresetEntry } from "./types";
 
 /** The model list this build offers.
  *
@@ -12,20 +11,4 @@ export function resolveModels(brand: AgentBrand): PresetEntry[] {
   return Array.isArray(brand.models) && brand.models.length > 0
     ? brand.models
     : PRESET_ENTRIES;
-}
-
-/** What a profile with nothing stored uses. The FIRST entry of the brand's
- *  model list, plus an empty key and the default theme.
- *
- *  `resolveModels` never returns an empty array — `PRESET_ENTRIES` has three
- *  entries — so `[0]` is always defined. */
-export function defaultSettings(brand: AgentBrand): AgentSettings {
-  const first = resolveModels(brand)[0];
-  return {
-    endpoint: first.endpoint,
-    wireFormat: first.wireFormat,
-    model: first.model,
-    apiKey: "",
-    theme: DEFAULT_THEME,
-  };
 }

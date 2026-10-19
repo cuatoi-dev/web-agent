@@ -7,6 +7,9 @@ import {
 } from "./lib/constants";
 import type { RelayToPage } from "./lib/relay-protocol";
 import { getSettings, isOriginEnabled, setOriginEnabled } from "./lib/settings";
+import { listModels, readModelStore, resolveDefault } from "./lib/model-store";
+import { toPublicModels } from "./lib/public-models";
+import type { BubblePayload } from "./lib/types";
 import { requestBrand } from "./lib/brand-request";
 import { readBridgeMessage } from "./lib/bridge-protocol";
 import { errorMessage } from "./lib/error-message";
@@ -41,14 +44,23 @@ const activePorts = new Map<string, chrome.runtime.Port>();
 // by the time either message goes out; the promise is reused, never re-sent.
 const brandPromise = requestBrand();
 
+/** What the bubble needs, read fresh for each message: the enabled models
+ *  (PublicModel — never a key or a header value), the default model, the
+ *  theme and the brand (136/005). */
+async function bubblePayload(): Promise<BubblePayload> {
+  const [settings, brand, store] = await Promise.all([getSettings(), brandPromise, readModelStore()]);
+  const entries = listModels(brand, store);
+  const current = (resolveDefault(entries, store) ?? entries[0]).ref;
+  return { models: toPublicModels(entries), current, theme: settings.theme, brand };
+}
+
 // 1. Initial state check
-// The MAIN world cannot read chrome.storage, so the settings travel with the
-// message. They are read fresh each time, so a save is picked up on the next
-// mount with no reinstall.
+// The MAIN world cannot read chrome.storage, so the model list travels with
+// the message. It is read fresh each time, so a change on the options page
+// is picked up on the next mount with no reinstall.
 void isOriginEnabled(ORIGIN).then(async (on) => {
   if (on) {
-    const [settings, brand] = await Promise.all([getSettings(), brandPromise]);
-    window.postMessage({ type: "wa-bridge-enable", settings, brand }, "*");
+    window.postMessage({ type: "wa-bridge-enable", ...(await bubblePayload()) }, "*");
   }
 });
 
@@ -121,8 +133,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (req.type === TOGGLE_MESSAGE) {
     void (async () => {
-      const [settings, brand] = await Promise.all([getSettings(), brandPromise]);
-      sendResponse(await askMainWorld({ type: "wa-bridge-toggle", settings, brand }, "wa-bridge-toggle-result", toToggleResult));
+      sendResponse(await askMainWorld({ type: "wa-bridge-toggle", ...(await bubblePayload()) }, "wa-bridge-toggle-result", toToggleResult));
     })();
     return true;
   }

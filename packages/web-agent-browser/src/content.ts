@@ -2,21 +2,23 @@
 // The elements load inside mount(), only once the bubble is wanted. The
 // embed's define is guarded, so a host that already defined the tag cannot throw.
 import { domTools, domSkills } from "@cuatoi/web-agent-dom";
-import { SPEED_PRESETS } from "@cuatoi/web-agent-core";
+import { SPEED_PRESETS, type ToolProvider } from "@cuatoi/web-agent-core";
 import { vfsTools } from "@cuatoi/web-agent-vfs";
 
 import {
+  DEFAULT_THEME,
   SETTLE_MS,
   LAUNCHER_ICON_SVG,
   CLOSE_ICON_SVG,
   IN_PAGE_SESSION_NAMESPACE,
   IN_PAGE_SYSTEM_PROMPT,
 } from "./lib/constants";
-import { type AgentSettings } from "./lib/settings";
 import { applyAgentBrand, EMPTY_BRAND } from "./lib/brand";
-import { defaultSettings } from "./lib/brand-models";
+import { EMPTY_MODEL_STORE, listModels } from "./lib/model-store";
+import { toPublicModels } from "./lib/public-models";
+import { createModelSwitch } from "./lib/model-switch";
 import { brandToolConfig, mergeBrandSkills } from "./lib/brand-capabilities";
-import type { AgentBrand } from "./lib/types";
+import type { BridgeMessage, BubblePayload } from "./lib/types";
 import { findForeignAgent } from "./lib/agent-detect";
 import { createRelayFetch } from "./lib/relay-fetch";
 import { applyTheme, registerBrandThemes, type ThemeBinding } from "./lib/theme";
@@ -44,7 +46,7 @@ let observer: MutationObserver | null = null;
 let settleTimer: number | undefined;
 let themeBinding: ThemeBinding | null = null;
 
-function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
+function mount(payload: BubblePayload): Promise<void> {
   if (bubble) return Promise.resolve();
   // Every caller shares the one in-flight mount, so a second message never
   // starts a second load and never reports "not mounted" while the first runs.
@@ -55,6 +57,7 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
   mountCancelled = false;
   mountPromise = (async () => {
     try {
+      const { brand } = payload;
       const [, lit, vfsLit] = await Promise.all([
         import("@cuatoi/web-agent-lit/embed/web-agent-embed"),
         import("@cuatoi/web-agent-lit"),
@@ -66,13 +69,8 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
       const { filesScreen } = vfsLit;
       const el = document.createElement("web-agent-bubble");
       el.setAttribute("data-agent-ui", "true");
-      // Set before the element is appended, so the first session uses them.
-      el.path = settings.endpoint;
-      el.type = settings.wireFormat;
-      el.model = settings.model;
       el.launcherIcon = LAUNCHER_ICON_SVG;
       el.closeIcon = CLOSE_ICON_SVG;
-      el.fetch = createRelayFetch();
 
       const mockScript = window.__WA_MOCK_SCRIPT__;
       if (mockScript) {
@@ -101,12 +99,15 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
       el.skillRegistry = forwardedSkillRegistry();
       el.cues = { enabled: true, speed: CUE_SPEED };
       const vfs = vfsTools();
-      el.toolProviders = [
+      // 136/005 — rebuilt by the model switch when the vision flag changes,
+      // so `see` is offered only to a vision model.
+      const toolProviders = (vision: boolean): ToolProvider[] => [
         ...domTools({
           actionCue: createActionCue({ getCursor: () => getAgentCursor(), speed: () => CUE_SPEED }),
           typingPaceMs: SPEED_PRESETS[CUE_SPEED].msPerWord,
           confirmInteraction: el.confirmInteraction.bind(el),
           agentUiSelector: "web-agent-bubble, [data-agent-ui]",
+          images: vision,
         }),
         ...pageFetchTools(),
         ...pageEvalTools(),
@@ -118,6 +119,19 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
         // chrome.storage mounts. NOT spread: vfsTools returns ONE ToolProvider.
         vfs,
       ];
+      // 136/005 — path, type, model, imageInput, the kebab list and the tool
+      // providers, set before the element is appended so the first session
+      // uses them. A pick in the kebab menu switches all of them.
+      const modelSwitch = createModelSwitch({
+        target: el,
+        models: payload.models,
+        initial: payload.current,
+        mock: mockScript !== undefined,
+        buildToolProviders: toolProviders,
+      });
+      // Every relayed request names the current model; the worker adds that
+      // model's provider key and headers (lib/relay-handler.ts).
+      el.fetch = createRelayFetch(window, () => modelSwitch.current());
       el.screens = [filesScreen(vfs.vfs)];
       el.appContext = {
         appName: document.title || "Visited page",
@@ -159,7 +173,7 @@ function mount(settings: AgentSettings, brand: AgentBrand): Promise<void> {
 
       // The do-not-theme rule lives in applyTheme: a site that already supplies the
       // --wa-* tokens gets no attribute, and the bubble inherits its theme.
-      themeBinding = applyTheme(el, settings.theme);
+      themeBinding = applyTheme(el, payload.theme);
 
       document.body.appendChild(el);
       bubble = el;
@@ -237,32 +251,32 @@ function reportState(type: string, extra: Record<string, unknown> = {}): void {
   );
 }
 
-// 116/002 — the defensive fallback for a message that carries no settings. The
-// MAIN world cannot call getSettings(), so it uses the compiled presets: the
-// same degrade path an unreadable brand.json takes.
-const FALLBACK_SETTINGS: AgentSettings = defaultSettings(EMPTY_BRAND);
+// 136/005 — the defensive fallback for a message that carries no model list.
+// The MAIN world cannot read the model store, so it uses the compiled
+// presets: the same degrade path an unreadable brand.json takes.
+// e2e/skills.mock.spec.ts:485 posts wa-bridge-enable with no payload, so
+// this path is exercised in a real browser.
+const FALLBACK_MODELS = toPublicModels(listModels(EMPTY_BRAND, EMPTY_MODEL_STORE));
+
+function payloadOf(msg: BridgeMessage): BubblePayload {
+  if (msg.type !== "wa-bridge-enable" && msg.type !== "wa-bridge-toggle") {
+    return { models: FALLBACK_MODELS, current: FALLBACK_MODELS[0].ref, theme: DEFAULT_THEME, brand: EMPTY_BRAND };
+  }
+  const models = Array.isArray(msg.models) && msg.models.length > 0 ? msg.models : FALLBACK_MODELS;
+  return {
+    models,
+    current: typeof msg.current === "string" ? msg.current : models[0].ref,
+    theme: typeof msg.theme === "string" ? msg.theme : DEFAULT_THEME,
+    brand: msg.brand ?? EMPTY_BRAND,
+  };
+}
 
 window.addEventListener("message", (event) => {
   const msg = readBridgeMessage(event);
   if (!msg) return;
 
-  // A message from the bridge always carries settings. The fallback keeps the
-  // page working if a stale bridge bundle ever sends the old, payload-free
-  // message.
-  const settings: AgentSettings =
-    (msg.type === "wa-bridge-enable" || msg.type === "wa-bridge-toggle")
-      ? (msg.settings ?? FALLBACK_SETTINGS)
-      : FALLBACK_SETTINGS;
-  // 116/001 — the brand rides the same two messages, with the same fallback.
-  // e2e/skills.mock.spec.ts:484 posts wa-bridge-enable with neither field, so
-  // this path is exercised in a real browser.
-  const brand: AgentBrand =
-    (msg.type === "wa-bridge-enable" || msg.type === "wa-bridge-toggle")
-      ? (msg.brand ?? EMPTY_BRAND)
-      : EMPTY_BRAND;
-
   if (msg.type === "wa-bridge-enable") {
-    void mount(settings, brand);
+    void mount(payloadOf(msg));
     return;
   }
 
@@ -277,7 +291,7 @@ window.addEventListener("message", (event) => {
       } else {
         const turningOn = !livingBubble();
         requested = turningOn ? "on" : "off";
-        if (turningOn) await mount(settings, brand); else unmount();
+        if (turningOn) await mount(payloadOf(msg)); else unmount();
       }
       // The outcome, not the request. On a page that already has its own agent
       // mount() declines, and writing `turningOn` would record a bubble that is

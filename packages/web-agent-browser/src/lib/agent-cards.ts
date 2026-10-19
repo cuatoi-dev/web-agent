@@ -1,8 +1,9 @@
-import type { AgentBrand } from "./types";
+import type { AgentBrand, ModelContext } from "./types";
 import type { AgentStore, ListedAgent } from "./agent-store.types";
 import { mergedBrand } from "./agent-store";
 import { orderAgents } from "./agent-switcher";
 import type { CardView } from "./agent-editor.types";
+import { EMPTY_MODEL_STORE, listModels, modelForAgent } from "./model-store";
 
 export const BRAND_LOCKED_NOTE = "Display name and id come from the brand and cannot be changed.";
 /** 121/004 — `editingId` while the new card is open. Never a valid agent id:
@@ -11,6 +12,9 @@ export const BRAND_LOCKED_NOTE = "Display name and id come from the brand and ca
 export const NEW_AGENT_ID = "_new";
 export const NEW_AGENT_TITLE = "New agent";
 export const NEW_AGENT_NOTE = "Fill in the fields, then save.";
+
+/** 136/005 — the card's Model fact when the agent's model is off or gone. */
+export const MODEL_FELL_BACK_LABEL = "Options page model (its model is off or deleted)";
 
 /** "All", "All except N" or "N selected" — the same rule for tools and
  *  skills. `exclude` matters only when `list` is `"*"`. */
@@ -35,7 +39,12 @@ function newAgentPlaceholder(): ListedAgent {
   };
 }
 
-function buildCard(a: ListedAgent, brand: AgentBrand, view: CardView | undefined): HTMLDivElement {
+function buildCard(
+  a: ListedAgent,
+  brand: AgentBrand,
+  view: CardView | undefined,
+  models: ModelContext,
+): HTMLDivElement {
     const card = document.createElement("div");
     card.className = "card";
     card.setAttribute("data-agent-id", a.id);
@@ -94,8 +103,10 @@ function buildCard(a: ListedAgent, brand: AgentBrand, view: CardView | undefined
     const modelFact = document.createElement("span");
     modelFact.textContent = "Model ";
     const modelB = document.createElement("b");
-    const modelEntry = a.model ? brand.models.find((m) => m.id === a.model) : undefined;
-    modelB.textContent = modelEntry?.label ?? "Options page model";
+    const choice = modelForAgent(models.entries, models.store, a.model);
+    modelB.textContent = !a.model
+      ? "Options page model"
+      : choice.fellBack ? MODEL_FELL_BACK_LABEL : choice.entry.label;
     modelFact.append(modelB);
 
     const toolsFact = document.createElement("span");
@@ -132,12 +143,13 @@ export function renderAgents(
   brand: AgentBrand,
   store: AgentStore,
   view?: CardView,
+  models: ModelContext = { entries: listModels(brand, EMPTY_MODEL_STORE), store: EMPTY_MODEL_STORE },
 ): void {
   container.textContent = "";
   const merged = mergedBrand(brand, store);
   const agents = orderAgents(merged) as ListedAgent[];
   if (view !== undefined && view.editingId === NEW_AGENT_ID) {
-    container.append(buildCard(newAgentPlaceholder(), brand, view));
+    container.append(buildCard(newAgentPlaceholder(), brand, view, models));
   }
-  for (const a of agents) container.append(buildCard(a, brand, view));
+  for (const a of agents) container.append(buildCard(a, brand, view, models));
 }

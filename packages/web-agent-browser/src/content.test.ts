@@ -19,10 +19,10 @@ Object.defineProperty(window, "matchMedia", {
  *  `readBridgeMessage` rejects a null source (src/lib/bridge-protocol.ts:19).
  *  A constructed MessageEvent with `source: window` is what the browser's own
  *  `window.postMessage` produces, so this is the faithful jsdom form. */
-function postFromWindow(type: string): void {
+function postFromWindow(type: string, extra?: Record<string, unknown>): void {
   window.dispatchEvent(
     new MessageEvent("message", {
-      data: { type },
+      data: { type, ...extra },
       source: window,
       origin: window.location.origin,
     }),
@@ -144,5 +144,39 @@ describe("content script lazy registration", () => {
     } finally {
       stop();
     }
+  });
+
+  it("mounts the bubble configured with PublicModels and initialRef", async () => {
+    await import("./content");
+    const mAnthropic = {
+      ref: "brand:a",
+      label: "Model A",
+      model: "claude-a",
+      endpoint: "https://a.test/api/anthropic",
+      wireFormat: "anthropic" as const,
+      vision: true,
+      icon: "<svg></svg>",
+    };
+    const mOpenai = {
+      ref: "brand:b",
+      label: "Model B",
+      model: "gpt-b",
+      endpoint: "https://b.test/api/openai/v1",
+      wireFormat: "openai" as const,
+      vision: false,
+      icon: "<svg></svg>",
+    };
+    postFromWindow("wa-bridge-enable", {
+      models: [mAnthropic, mOpenai],
+      current: "brand:b",
+    });
+    await until(() => document.querySelector("web-agent-bubble") !== null);
+    const bubble = document.querySelector("web-agent-bubble") as any;
+    expect(bubble.path).toBe("https://b.test/api/openai/v1");
+    expect(bubble.type).toBe("openai");
+    expect(bubble.model).toBe("gpt-b");
+    expect(bubble.selectedModel).toBe("brand:b");
+    expect(bubble.imageInput).toBe(false);
+    expect(bubble.models.map((m: any) => m.id)).toEqual(["brand:a", "brand:b"]);
   });
 });

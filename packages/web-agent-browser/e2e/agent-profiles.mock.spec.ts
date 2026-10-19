@@ -213,7 +213,7 @@ test.describe("Agent profiles mock e2e", () => {
     }
   });
 
-  test("model: anthropic-sonnet routes request to anthropic endpoint with model sonnet using options auth key", async () => {
+  test("model: anthropic-sonnet routes to the anthropic endpoint with that provider's brand key", async () => {
     const dir = path.resolve(TEMP_DIR, "agent-model");
     const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8"));
     brand.agents = brand.agents.map((a: any) =>
@@ -224,12 +224,11 @@ test.describe("Agent profiles mock e2e", () => {
     try {
       await worker.evaluate(async () => {
         await chrome.storage.local.set({
-          agentSettings: {
-            endpoint: "https://other.example.com/api/other",
-            wireFormat: "openai",
-            model: "other-model",
-            apiKey: "options-secret-key",
-            theme: "auto",
+          modelStore: {
+            providers: [],
+            brandKeys: { "brand:anthropic:http://localhost:28780/api/anthropic": "options-secret-key" },
+            disabled: [],
+            defaultModel: "brand:gemini-flash",
           },
         });
       });
@@ -266,6 +265,9 @@ test.describe("Agent profiles mock e2e", () => {
       expect(interceptedReq.postData.model).toBe("sonnet");
       expect(interceptedReq.postData.stream).toBe(false);
       expect(interceptedReq.headers["x-api-key"]).toBe("options-secret-key");
+      expect(interceptedReq.headers["x-web-agent-token"]).toBeUndefined();
+      expect(interceptedReq.headers["anthropic-version"]).toBe("2023-06-01");
+      expect(interceptedReq.headers["anthropic-dangerous-direct-browser-access"]).toBe("true");
     } finally {
       await ctx.close();
     }

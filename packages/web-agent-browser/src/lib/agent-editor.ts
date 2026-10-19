@@ -15,20 +15,26 @@ import {
 } from "./agent-edit-rules";
 import { deleteAgent, deleteMessage, ownedSkillCount } from "./agent-delete";
 import { openDeleteDialog } from "./agent-delete-dialog";
-import { skillNames, toolGroups } from "./agent-options";
+import type { ModelContext } from "./types";
+import { EMPTY_MODEL_STORE, listModels } from "./model-store";
+import { modelOptions, skillNames, toolGroups } from "./agent-options";
 
 /** The Agents tab state machine: one card open at a time, the new card
  *  included. Resolves after the first paint. */
 export async function mountAgentEditor(deps: AgentEditorDeps): Promise<void> {
   const { container, brand, storage, addButton, deleteDatabase, onAgentDeleted } = deps;
-  const lists = { tools: toolGroups(brand), skills: skillNames(brand) };
+  // 136/005 — the model list as the options page has it now. A model turned
+  // on or off on the Models tab shows here after the page is reopened.
+  const modelStore = deps.modelStore ?? EMPTY_MODEL_STORE;
+  const models: ModelContext = { entries: listModels(brand, modelStore), store: modelStore };
+  const lists = { tools: toolGroups(brand), skills: skillNames(brand), models: modelOptions(models.entries) };
   let store = await readAgentStore(storage);
   let editingId: string | null = null;
   let draft: AgentDraft | null = null;
   let form: EditForm | null = null;
 
   const paint = (): void => {
-    renderAgents(container, brand, store, { editingId, onEdit, editBody });
+    renderAgents(container, brand, store, { editingId, onEdit, editBody }, models);
     // Add agent is disabled while a card is open (task 003).
     addButton.disabled = editingId !== null;
   };

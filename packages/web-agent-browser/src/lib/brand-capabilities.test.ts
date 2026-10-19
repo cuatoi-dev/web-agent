@@ -3,12 +3,11 @@ import type { SkillDef, ToolContext } from "@cuatoi/web-agent-core";
 import {
   agentAllows,
   brandToolConfig,
-  effectiveSettings,
   mergeBrandSkills,
   resolveAgent,
 } from "./brand-capabilities";
 import { EMPTY_BRAND } from "./brand";
-import type { AgentBrand, AgentSettings, BrandAgent, PresetEntry } from "./types";
+import type { AgentBrand, BrandAgent } from "./types";
 
 const a: SkillDef = { name: "a", description: "A", definition: "body a" };
 const b: SkillDef = { name: "b", description: "B", definition: "body b" };
@@ -158,55 +157,4 @@ describe("resolveAgent", () => {
   });
 });
 
-describe("effectiveSettings", () => {
-  const settings: AgentSettings = {
-    endpoint: "https://options.test",
-    wireFormat: "openai",
-    model: "options-model",
-    apiKey: "k",
-    theme: "auto",
-  };
-  const textOnlyEntry: PresetEntry = {
-    id: "test-text-only",
-    label: "Text-only",
-    endpoint: "http://localhost:28780/api/anthropic",
-    wireFormat: "anthropic",
-    model: "text-only-model",
-  };
-  const brand: AgentBrand = { ...EMPTY_BRAND, models: [textOnlyEntry] };
-  const agentWithModel: BrandAgent = {
-    id: "chromagent",
-    displayName: "Chromagent",
-    description: "D",
-    instructions: "I",
-    tools: "*",
-    skills: "*",
-    model: "test-text-only",
-  };
-  const agentNoModel: BrandAgent = {
-    id: "chromagent",
-    displayName: "Chromagent",
-    description: "D",
-    instructions: "I",
-    tools: "*",
-    skills: "*",
-  };
 
-  it("overrides model and endpoint when agent.model is set", () => {
-    expect(effectiveSettings(settings, brand, agentWithModel)).toEqual({
-      ...settings,
-      endpoint: "http://localhost:28780/api/anthropic",
-      wireFormat: "anthropic",
-      model: "text-only-model",
-    });
-  });
-
-  it("returns unmodified settings when agent.model is unset", () => {
-    expect(effectiveSettings(settings, brand, agentNoModel)).toBe(settings);
-  });
-
-  it("returns unmodified settings when agent.model names no entry in brand.models", () => {
-    const agent: BrandAgent = { ...agentNoModel, model: "not-a-real-id" };
-    expect(effectiveSettings(settings, brand, agent)).toBe(settings);
-  });
-});

@@ -1,43 +1,97 @@
 import { describe, it, expect } from "vitest";
-import { buildAuthHeaders } from "./auth-headers";
-import type { AgentSettings } from "./settings";
+import { authHeaders } from "./auth-headers";
+import type { ModelProvider } from "./model-store.types";
 
-const base = {
-  endpoint: "https://example.com/v1",
-  model: "test",
-  apiKey: "",
-  theme: "auto" as const,
-};
+function prov(over: Partial<ModelProvider> = {}): ModelProvider {
+  return {
+    id: "p",
+    kind: "brand",
+    name: "n",
+    endpoint: "https://e",
+    wireFormat: "openai",
+    apiKey: "",
+    headers: [],
+    ...over,
+  };
+}
 
-describe("buildAuthHeaders", () => {
-  it("sends the shared token when the key is empty", () => {
-    const settings: AgentSettings = { ...base, wireFormat: "openai", apiKey: "" };
-    expect(buildAuthHeaders(settings, "shared-tok")).toEqual({ "X-Web-Agent-Token": "shared-tok" });
+describe("authHeaders", () => {
+  it("brand, no key, openai returns exactly X-Web-Agent-Token", () => {
+    expect(authHeaders(prov({ wireFormat: "openai", apiKey: "" }), "tok")).toEqual({
+      "X-Web-Agent-Token": "tok",
+    });
   });
 
-  it("treats a whitespace-only key as empty", () => {
-    const settings: AgentSettings = { ...base, wireFormat: "openai", apiKey: "   " };
-    expect(buildAuthHeaders(settings, "shared-tok")).toEqual({ "X-Web-Agent-Token": "shared-tok" });
+  it("brand, key with whitespace only returns same as no key", () => {
+    expect(authHeaders(prov({ wireFormat: "openai", apiKey: "   " }), "tok")).toEqual({
+      "X-Web-Agent-Token": "tok",
+    });
   });
 
-  it("sends an openai key as a bearer token and drops the shared token", () => {
-    const settings: AgentSettings = { ...base, wireFormat: "openai", apiKey: "sk-1" };
-    const result = buildAuthHeaders(settings, "shared-tok");
-    expect(result).toEqual({ Authorization: "Bearer sk-1" });
-    expect(result).not.toHaveProperty("X-Web-Agent-Token");
+  it("openai key returns exactly Authorization: Bearer", () => {
+    expect(authHeaders(prov({ wireFormat: "openai", apiKey: "sk" }), "tok")).toEqual({
+      Authorization: "Bearer sk",
+    });
   });
 
-  it("sends an anthropic key in X-Api-Key", () => {
-    const settings: AgentSettings = { ...base, wireFormat: "anthropic", apiKey: "ant-1" };
-    const result = buildAuthHeaders(settings, "shared-tok");
-    expect(result).toEqual({ "X-Api-Key": "ant-1" });
-    expect(result).not.toHaveProperty("Authorization");
+  it("anthropic key returns x-api-key and the two browser direct headers", () => {
+    expect(authHeaders(prov({ wireFormat: "anthropic", apiKey: "ak" }), "tok")).toEqual({
+      "x-api-key": "ak",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    });
   });
 
-  it("sends a gemini key in x-goog-api-key", () => {
-    const settings: AgentSettings = { ...base, wireFormat: "gemini", apiKey: "g-1" };
-    const result = buildAuthHeaders(settings, "shared-tok");
-    expect(result).toEqual({ "x-goog-api-key": "g-1" });
-    expect(result).not.toHaveProperty("Authorization");
+  it("anthropic brand, no key returns token plus the two anthropic headers", () => {
+    expect(authHeaders(prov({ wireFormat: "anthropic", apiKey: "" }), "tok")).toEqual({
+      "X-Web-Agent-Token": "tok",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    });
+  });
+
+  it("gemini key returns exactly x-goog-api-key", () => {
+    expect(authHeaders(prov({ wireFormat: "gemini", apiKey: "gk" }), "tok")).toEqual({
+      "x-goog-api-key": "gk",
+    });
+  });
+
+  it("custom, no key, openai returns empty headers object", () => {
+    expect(authHeaders(prov({ kind: "custom", wireFormat: "openai", apiKey: "" }), "tok")).toEqual({});
+  });
+
+  it("custom openai key sk with custom Authorization header overrides case-insensitively", () => {
+    const p1 = prov({
+      kind: "custom",
+      wireFormat: "openai",
+      apiKey: "sk",
+      headers: [{ name: "Authorization", value: "Bearer other" }],
+    });
+    const r1 = authHeaders(p1, "tok");
+    expect(r1).toEqual({ Authorization: "Bearer other" });
+    expect(Object.keys(r1)).toHaveLength(1);
+
+    const p2 = prov({
+      kind: "custom",
+      wireFormat: "openai",
+      apiKey: "sk",
+      headers: [{ name: "authorization", value: "Bearer other" }],
+    });
+    const r2 = authHeaders(p2, "tok");
+    expect(r2).toEqual({ authorization: "Bearer other" });
+    expect(Object.keys(r2)).toHaveLength(1);
+  });
+
+  it("header X-Team: web is added beside the auth header", () => {
+    const p = prov({
+      kind: "custom",
+      wireFormat: "openai",
+      apiKey: "sk",
+      headers: [{ name: "X-Team", value: "web" }],
+    });
+    expect(authHeaders(p, "tok")).toEqual({
+      Authorization: "Bearer sk",
+      "X-Team": "web",
+    });
   });
 });

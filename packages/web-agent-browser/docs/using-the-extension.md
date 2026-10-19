@@ -45,12 +45,11 @@ the brand, it opens on the default agent (`sidePanelAgent` in
 If the brand fails to load, or defines no agent, the panel shows an error
 instead of a chat, and no combo box.
 
-The side panel reads the endpoint, wire format, model and
-theme once, when it opens (`src/sidepanel.ts:main`). An agent that sets its
-own `model` in `brand/agents/<id>.yml` overrides the endpoint, wire format
-and model for that agent; the API key always comes from the options
-page, because there is one key per install. After you save new settings, close
-the side panel and open it again.
+The side panel reads the model table and the theme once, when it opens
+(`src/sidepanel.ts:main`). It opens on the agent's own model when that model
+is on, and on the default model otherwise. Each provider's key and headers go
+with its own models. After you change the Models tab, close the side panel
+and open it again.
 
 ## Turn the in-page agent on for a site
 
@@ -134,41 +133,27 @@ A saved skill with the same name as a brand skill or a built-in skill replaces
 it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
 [Custom skills](./custom-skills.md).
 
-## Choose the endpoint, the model, the key and the theme
+## Choose the models, the theme and the token
 
-1. Open the extension options page from `chrome://extensions` or from the
-   extension menu. The **Models** tab opens by default.
-2. Select a **Ready-made entry**. It fills **Endpoint URL**, **Wire format**,
-   and **Model** in one step. The list comes from
-   `brand/model.yml` in the build you installed
-   (`src/options.ts:35-63`). The built-in entries use the local development
-   gateway (`http://localhost:28780`) for Sonnet, Sonnet OpenAI, and Gemini
-   Flash. You can edit any field afterward, unless the
-   build locks them.
-3. Leave **API key (optional)** empty to send the shared token from the
-   **Token** field. Fill it in to send your own key instead. The key is stored
-   unencrypted in browser storage, so anyone with access to this browser profile
-   can read it.
-4. Select a **Theme**. **Auto** follows your operating system, **Dark** always
-   uses the `wa2-dark` tokens, and **Light** always uses the `wa2-light`
-   tokens. A new install starts on **Auto** (`src/lib/constants.ts:100-101`).
-5. Select **Save**, then reload the page and reopen the side panel.
-
-When you select **Save**, the page does three things in order
-(`src/options.ts:104-147`):
-
-1. It asks Chrome for permission to reach the endpoint's origin, on any port.
-   Chrome shows a prompt only for an origin the extension does not already
-   have.
-2. It sends a `GET` request to the endpoint URL. Any HTTP response counts as
-   reachable.
-3. It saves the settings and shows `Saved. Reload a page to use the new settings.`
-
-If a step fails, nothing is saved, and the page shows one of these messages:
-
-- `Error: that is not a valid http or https endpoint URL.`
-- `Error: permission for <pattern> was refused, so nothing was saved.`
-- `Error: <url> could not be reached (<reason>). Nothing was saved.`
+1. The **Models** tab shows one row per provider and its models under it.
+   Models that share an endpoint and a wire format in `brand/model.yml` form
+   one provider row with the **From brand** tag. The count line reads
+   "N of M models enabled".
+2. The **Enabled** switch turns a model on or off. Only enabled models
+   appear in the side panel and bubble kebab menus and in the agent editor.
+   The last enabled model cannot be turned off; the page shows
+   `At least one model must stay on.`
+3. The **Default** radio picks the model the bubble uses and that an agent
+   set to **Use the options page model** uses. A model that is off cannot be
+   the default. Turning off the default moves it to the first other enabled
+   model.
+4. **Key** on a brand provider row opens a dialog with one field,
+   **API key (optional)**. Empty: the provider sends the shared token.
+   Filled: the key is sent in place of the token, to that endpoint only. The
+   key is stored unencrypted in browser storage.
+5. Switches, radios and keys save at once. **Theme** and **Token** keep
+   their own **Save** button, which shows
+   `Saved. Reload a page to use the new settings.`
 
 If you save an empty **Token**, the extension uses the token it was built with
 (`src/lib/settings.ts:62-66`).
@@ -176,10 +161,8 @@ If you save an empty **Token**, the extension uses the token it was built with
 ### When the brand locks the model
 
 If the build sets `options: { lockModel: true }` in `brand/plugin.yml`, the
-endpoint URL and model fields are read-only, and the wire format
-control is unavailable. The page shows `Model settings are fixed by <extension
-name>.` under the model field (`src/options.ts:117-132`). You can still select
-a different **Ready-made entry**. The theme, the API key and the token stay
+table shows only brand models and no row checkboxes. **Enabled**, **Default**,
+**Key** and the chat switchers still work. The theme and the token stay
 editable.
 
 ### What the theme changes
@@ -190,6 +173,13 @@ supplies the `--wa-*` design tokens, the extension applies no theme to the
 bubble, and the bubble follows the website's theme
 (`src/lib/theme.ts:34-66`). With **Auto**, an operating system change
 updates the bubble without a reload.
+
+## Switch the model while chatting
+
+The side panel and the bubble list the enabled models in the kebab menu
+(shown with two or more enabled models). Picking one sends the next message to
+that model, on its own endpoint and wire format, and keeps the conversation.
+The default on the Models tab does not change.
 
 ## See and remove saved skills
 
@@ -217,7 +207,7 @@ The list shows the default agent first, then the other agents by display name.
 - Each card shows the agent's display name, description, and status tags: `Default`
   for the brand's default agent, `From brand` or `Added by you`, and `Edited`
   when a brand agent has stored changes.
-- The summary line lists the assigned model (or `Options page model`), tools,
+- The summary line lists the assigned model (or `Options page model`, or `Options page model (its model is off or deleted)` when the agent's model is off or gone), tools,
   and skills.
 - The toolbar indicates the agents appear in the side panel's agent list in
   this order.
@@ -231,8 +221,10 @@ the other cards are dimmed until you close it. You can edit one card at a time
 You can change these fields:
 
 - **Description** and **System instructions**. Both are required.
-- **Model**. **Use the options page model** follows the **Models** tab. If the
-  brand locks the model settings, this field is read-only.
+- **Model**. **Use the options page model** follows the Default on the
+  **Models** tab. The other options are the enabled models, shown as
+  `label — provider`. If the brand locks the model settings, this field is
+  read-only.
 - **Skills** and **Tools**. Select **All skills (*)** or **All tools (*)**, or
   select single names. **All** also includes names that are added later. The
   **Tools** list has a filter box.
@@ -304,24 +296,29 @@ rules apply to it. Its requests therefore go through the service worker
 
 1. The bubble posts the request to the extension's isolated content script.
 2. The content script opens a port to the service worker.
-3. The service worker reads the saved settings and adds the authentication
-   header.
+3. The service worker looks up the request's model, checks that the request URL is
+   that model's provider endpoint or a path under it, and adds that provider's
+   headers. A request for another URL gets
+   `The request URL does not match the model's provider.` and no header is
+   added.
 4. The service worker sends the request to the endpoint and streams each chunk
    back over the port.
 5. The content script passes the chunks to the bubble.
 
-The authentication header depends on the **API key** field
-(`src/lib/auth-headers.ts:9-17`, `src/lib/constants.ts:109-114`):
+The authentication header depends on the provider key
+(`src/lib/auth-headers.ts`, `src/lib/relay-handler.ts`):
 
-| API key | Header sent |
+| Provider key | Header sent |
 |---|---|
-| Empty | `X-Web-Agent-Token: <token>` |
+| Empty, brand provider | `X-Web-Agent-Token: <token>` |
 | Filled, wire format `openai` | `Authorization: Bearer <key>` |
-| Filled, wire format `anthropic` | `X-Api-Key: <key>` |
+| Filled, wire format `anthropic` | `x-api-key: <key>` |
 | Filled, wire format `gemini` | `x-goog-api-key: <key>` |
 
-A filled key replaces the token. The token is not sent with it. The web page and
-its scripts never receive the key or the token.
+Every anthropic-format request also sends `anthropic-version: 2023-06-01` and
+`anthropic-dangerous-direct-browser-access: true`. A filled key replaces the
+token. The token is not sent with it. The web page and its scripts never receive
+the key or the token.
 
 The side panel does not use the relay. It is an extension page, so it calls the
 endpoint directly and adds the same header itself

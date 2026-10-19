@@ -747,12 +747,67 @@ describe("compileBrand", () => {
 
   it("compiles the default model entries with only their supported fields", () => {
     const brand = compileBrand(BRAND_DIR);
-    const models = brand.models as { id: string; label: string }[];
+    const models = brand.models as { id: string; label: string; provider?: string; vision?: boolean }[];
     expect(models.map((entry) => entry.id)).toEqual(["anthropic-sonnet", "openai-sonnet", "gemini-flash"]);
     expect(models.map((entry) => entry.label)).toEqual(["Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
     for (const entry of models) {
-      expect(Object.keys(entry).sort()).toEqual(["endpoint", "id", "label", "model", "wireFormat"]);
+      expect(Object.keys(entry).sort()).toEqual(["endpoint", "id", "label", "model", "provider", "vision", "wireFormat"]);
     }
+    expect(models.map((e) => [e.provider, e.vision])).toEqual([["Gateway", true], ["Gateway", true], ["Gateway", true]]);
+  });
+
+  it("compiles optional vision and provider fields", () => {
+    const tempDir = makeTempDir();
+    writeModel(
+      tempDir,
+      `models:
+  - id: v1
+    label: V1
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m1
+    vision: true
+  - id: v2
+    label: V2
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m2
+  - id: v3
+    label: V3
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m3
+    vision: "yes"
+  - id: p1
+    label: P1
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m4
+    provider: Acme
+  - id: p2
+    label: P2
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m5
+    provider: ""
+  - id: p3
+    label: P3
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m6
+    provider: 5
+`,
+    );
+    writePlugin(tempDir, "defaultAgent: chromagent\n");
+    writeDefaultAgent(tempDir);
+    const brand = compileBrand(tempDir);
+    const models = brand.models as { id: string; vision?: boolean; provider?: string }[];
+    expect(models[0].vision).toBe(true);
+    expect(models[1].vision).toBe(false);
+    expect(models[2].vision).toBe(false);
+    expect(models[3].provider).toBe("Acme");
+    expect("provider" in models[4]).toBe(false);
+    expect("provider" in models[5]).toBe(false);
   });
 
   it("broken YAML in model.yml names the file", () => {

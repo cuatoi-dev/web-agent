@@ -59,13 +59,7 @@ export const test = base.extend<{ demoExtension: DemoExtensionFixture }>({
             if (entry) {
               chosen = entry.model;
               await chrome.storage.local.set({
-                agentSettings: {
-                  endpoint: entry.endpoint,
-                  wireFormat: entry.wireFormat,
-                  model: entry.model,
-                  apiKey: "",
-                  theme: "auto",
-                },
+                modelStore: { providers: [], brandKeys: {}, disabled: [], defaultModel: `brand:${entry.id}` },
               });
             }
           } catch {

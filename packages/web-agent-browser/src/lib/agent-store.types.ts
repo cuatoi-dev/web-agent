@@ -13,7 +13,7 @@ export type { AgentBrand };
 export interface AgentEdit {
   description: string;
   instructions: string;
-  /** A model.yml id; null = "Use the options page model". */
+  /** A ModelRef ("brand:<id>" or "<provider id>/<model>"); null = "Use the options page model". */
   model: string | null;
   tools: "*" | string[];
   /** Meaningful only when tools == "*". */
@@ -30,6 +30,7 @@ export interface UserAgent {
   displayName: string;
   description: string;
   instructions: string;
+  /** A ModelRef ("brand:<id>" or "<provider id>/<model>"); null = "Use the options page model". */
   model: string | null;
   tools: "*" | string[];
   excludeTools: string[];

@@ -36,10 +36,12 @@ import { testReportSkill } from "./lib/test-report-skill";
 import { exploreAppSkill } from "./lib/explore-app-skill";
 import {
   agentAllows,
-  effectiveSettings,
   mergeBrandSkills,
   resolveAgent,
 } from "./lib/brand-capabilities";
+import { listModels, modelForAgent, readModelStore, resolveRef } from "./lib/model-store";
+import { toPublicModels } from "./lib/public-models";
+import { createModelSwitch } from "./lib/model-switch";
 import { sidePanelTools } from "./lib/sidepanel-tool-filter";
 import { pageAgentTools } from "./lib/page-agent-tools";
 import { panelPageTools } from "./lib/panel-page-tools";
@@ -55,7 +57,7 @@ import { extensionSkillRegistry } from "./lib/skill-registry";
 import { createAgentSwitcher, orderAgents } from "./lib/agent-switcher";
 import { mountAgentCombo } from "./lib/agent-combo";
 import { mountPageAgentIcon, paintPageAgentIcon } from "./lib/page-agent-icon";
-import type { AgentBrand, AgentSettings, BrandAgent } from "./lib/types";
+import type { AgentBrand, BrandAgent, ModelContext, ModelSwitch, ResolvedProvider } from "./lib/types";
 
 const toggleBtn = document.getElementById("page-agent-toggle") as HTMLButtonElement;
 const chat = document.getElementById("chat") as HTMLDivElement;
@@ -95,7 +97,7 @@ const recorder = createDebuggerRecorder(debuggerSession, helper);
 function buildAgentPanel(
   agent: BrandAgent,
   brand: AgentBrand,
-  settings: AgentSettings,
+  models: ModelContext,
   token: string,
   refreshTabState: () => Promise<void>,
 ): AgentChatPanel {
@@ -121,12 +123,20 @@ function buildAgentPanel(
   // (brand/agents/chromagent.yml:1).
   panel.agentShortName = agent.displayName;
 
-  const eff = effectiveSettings(settings, brand, agent);
+  // 136/005 — the agent's own model when it is on, else the options page
+  // default (modelForAgent).
+  const { entry } = modelForAgent(models.entries, models.store, agent.model);
+  // The switch is built below, once the tool providers it rebuilds exist.
+  // Each request asks for the CURRENT model's provider, so a pick in the
+  // kebab menu changes the next request's headers.
+  let modelSwitch: ModelSwitch | null = null;
+  const currentProvider = (): ResolvedProvider =>
+    (resolveRef(models.entries, modelSwitch?.current() ?? entry.ref) ?? entry).provider;
   // PanelLike carries only the fields applyPanelSettings writes, via an index
   // signature (panel-setup.ts) — a class instance is not assignable to an
   // index-signature type, so the element is passed through its structural
   // shape rather than by re-adding a cast to `any`.
-  applyPanelSettings(panel as unknown as PanelLike, eff, token, brand);
+  applyPanelSettings(panel as unknown as PanelLike, currentProvider, token, brand);
 
   panel.config = {
     ...(panel.config ?? { persist: true }),
@@ -178,7 +188,9 @@ function buildAgentPanel(
   // <agents-md> block (packages/web-agent-vfs/src/index.ts:144-171).
   const seedHome = seedHomeAgentsMd(vfs.vfs, agent.homeAgentsMd);
 
-  panel.toolProviders = [
+  const mockScript = window.__WA_MOCK_SCRIPT__;
+  // 136/005 — rebuilt by the model switch whenever the vision flag changes.
+  const buildProviders = (vision: boolean): ToolProvider[] => [
     ...tabTools({
       confirmInteraction: panel.confirmInteraction.bind(panel),
     }),
@@ -186,13 +198,11 @@ function buildAgentPanel(
       onToggle: refreshTabState,
     }),
     // 118/001 — the page tools, pointed at any activated tab.
-    // 118/004 — the wire format and model decide whether page_screenshot is
-    // offered at all, so they come from the agent's EFFECTIVE model, not the
-    // options page settings.
+    // 118/004, 136/005 — page_screenshot is offered only when the CURRENT
+    // model has `vision: true`; the explicit flag wins over the name guess.
     ...panelPageTools({
       vfs: vfs.vfs,
-      endpointType: eff.wireFormat,
-      model: eff.model,
+      imageInput: vision,
       confirmInteraction: panel.confirmInteraction.bind(panel),
       debuggerSession,
       helper,
@@ -209,6 +219,17 @@ function buildAgentPanel(
     // first. A failed seed resolves, so the session still starts.
     { ...vfs, load: async () => { await seedHome; return vfs.load(); } },
   ].map(filterProvider);
+  // 136/005 — path, type, model, imageInput, the kebab list (enabled models)
+  // and the tool providers, before the element is connected. A pick in the
+  // kebab menu switches all of them for the next request and keeps the chat;
+  // the options page default does not change.
+  modelSwitch = createModelSwitch({
+    target: panel,
+    models: toPublicModels(models.entries),
+    initial: entry.ref,
+    mock: mockScript !== undefined,
+    buildToolProviders: buildProviders,
+  });
 
   panel.screens = [filesScreen(vfs.vfs)];
 
@@ -257,9 +278,9 @@ function buildAgentPanel(
   // agent's `skills` / `excludeSkills` (idea 120).
   panel.skillRegistry = extensionSkillRegistry({ agentId: agent.id, displayName: agent.displayName });
 
-  // Same escape hatch content.ts:75-84 uses, so the mock e2e tier never calls a
-  // real model. Absent in normal use.
-  const mockScript = window.__WA_MOCK_SCRIPT__;
+  // Same escape hatch content.ts uses, so the mock e2e tier never calls a
+  // real model. Absent in normal use. The model switch leaves `type` alone
+  // under the mock (mock: true above).
   if (mockScript) {
     setMockScript(mockScript);
     panel.type = "mock";
@@ -269,16 +290,18 @@ function buildAgentPanel(
 }
 
 async function main(): Promise<void> {
-  const [settings, sharedToken, brand, store] = await Promise.all([
+  const [settings, sharedToken, brand, store, modelStore] = await Promise.all([
     getSettings(),
     getToken(),
     requestBrand(),
     readAgentStore(chromeAgentStorage),
+    readModelStore(),
   ]);
   // 121/002 — a stored edit or user agent reaches the panel through the
   // merged brand, read once here; a change saved while the panel is open
-  // shows the next time it opens.
+  // shows the next time it opens. 136/005 — the model list too.
   const merged = mergedBrand(brand, store);
+  const models: ModelContext = { entries: listModels(brand, modelStore), store: modelStore };
   registerBrandThemes(brand.themes, { linkCss: true });
 
   // The whole page, not just the chat: an extension page has no site theme of
@@ -327,7 +350,7 @@ async function main(): Promise<void> {
     const switcher = createAgentSwitcher({
       brand: merged,
       container: chat,
-      buildPanel: (a) => buildAgentPanel(a, merged, settings, sharedToken, refreshTabState),
+      buildPanel: (a) => buildAgentPanel(a, merged, models, sharedToken, refreshTabState),
       confirm: (panel, detail) => createConfirmScrim(panel)(detail),
       onShow: (a) => combo.paint(a),
       saveLastId: (id) => {

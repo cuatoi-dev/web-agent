@@ -341,9 +341,11 @@ function compileSkills(brandDir) {
  * An absent file returns an empty list, which the runtime reads as "fall back
  * to the compiled presets". A file that is present but wrong fails the build:
  * a brand owner who wrote the file meant it to be used.
+ * `vision` is `true` only for the YAML boolean `true`; anything else, or no key, compiles to `false`.
+ * `provider` is kept when it is a non-empty string and dropped otherwise.
  *
  * @param {string} brandDir - the `brand/` folder
- * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string}[]}
+ * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string, vision: boolean, provider?: string}[]}
  * @throws {Error} naming `model.yml`, the entry index and the offending field
  */
 function compileModels(brandDir) {
@@ -393,7 +395,16 @@ function compileModels(brandDir) {
     }
   });
 
-  return doc.models;
+  // 136/005 — `vision` is always a boolean in brand.json, so no reader has to
+  // test for a missing key. A blank or non-string `provider` is dropped, and
+  // the runtime then names the row after the endpoint.
+  return doc.models.map((entry) => {
+    const out = { ...entry, vision: entry.vision === true };
+    if (typeof entry.provider !== "string" || entry.provider.trim() === "") {
+      delete out.provider;
+    }
+    return out;
+  });
 }
 
 /**

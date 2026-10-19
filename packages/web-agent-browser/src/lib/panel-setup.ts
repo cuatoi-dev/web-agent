@@ -1,7 +1,7 @@
 import { PANEL_SESSION_NAMESPACE } from "./constants";
-import { buildAuthHeaders } from "./auth-headers";
+import { authHeaders } from "./auth-headers";
 import { brandToolConfig } from "./brand-capabilities";
-import type { AgentBrand, AgentSettings, PanelLike } from "./types";
+import type { AgentBrand, PanelLike, ResolvedProvider } from "./types";
 
 export type { PanelLike } from "./types";
 
@@ -14,36 +14,37 @@ export type { PanelLike } from "./types";
  * (generated into dist/manifest.json from brand/model.yml and brand/plugin.yml
  * `hosts`), so the relay in background.ts:24-69 solves a problem
  * this page does not have. No RELAY_PORT connection is opened from here.
+ *
+ * 136/005 — `getProvider` is read on every request, so a model switch in the kebab
+ * menu sends the next request with the new provider's headers.
  */
 export function createDirectFetch(
-  settings: AgentSettings,
+  getProvider: () => ResolvedProvider,
   sharedToken: string,
   impl: typeof fetch = fetch,
 ): typeof fetch {
   return (input: RequestInfo | URL, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
-    for (const [name, value] of Object.entries(buildAuthHeaders(settings, sharedToken))) {
+    for (const [name, value] of Object.entries(authHeaders(getProvider(), sharedToken))) {
       headers.set(name, value);
     }
     return impl(input, { ...init, headers });
   };
 }
 
-/** Copies the saved settings onto the panel. Call BEFORE the element is
- *  connected: <agent-chat-panel> builds its session in connectedCallback and
- *  throws when `model` is unset (packages/web-agent-core/src/controller-config.ts:90-96,
- *  as apps/cat-store/src/web/agent-panel-config.ts:136-138 records). */
+/** Writes the panel's fetch and session config. 136/005 — path, type and
+ *  model come from createModelSwitch (model-switch.ts). Both must run BEFORE
+ *  the element is connected: <agent-chat-panel> builds its session in
+ *  connectedCallback and throws when `model` is unset
+ *  (packages/web-agent-core/src/controller-config.ts:90-96). */
 export function applyPanelSettings(
   panel: PanelLike,
-  settings: AgentSettings,
+  getProvider: () => ResolvedProvider,
   sharedToken: string,
   brand: AgentBrand,
   fetchImpl: typeof fetch = fetch,
 ): void {
-  panel.path = settings.endpoint;
-  panel.type = settings.wireFormat;
-  panel.model = settings.model;
-  panel.fetch = createDirectFetch(settings, sharedToken, fetchImpl);
+  panel.fetch = createDirectFetch(getProvider, sharedToken, fetchImpl);
   // 115/006 — todo tracking is opt-in per host
   // (packages/web-agent-core/src/controller.types.ts:119-121). Setting it here
   // is what makes the controller set the `_todos` seam

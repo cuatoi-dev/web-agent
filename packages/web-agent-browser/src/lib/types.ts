@@ -9,12 +9,12 @@ import type { RecordingController } from "./recorder.types";
 import type { DebuggerToolsOptions } from "./debugger-tools.types";
 import type { DebuggerRecorder } from "./debugger-recorder.types";
 import type { HelperWorlds } from "./debugger-helper-world.types";
+import type { ModelRef, ModelEntry, PublicModel, WireFormat } from "./model-store.types";
 
 // --- constants.ts ----------------------------------------------------------
 
-/** The three wire formats `bubble.type` accepts
- *  (web-agent-lit/src/embed/web-agent-embed.ts:94). */
-export type WireFormat = "openai" | "anthropic" | "gemini";
+// 136/005 — `WireFormat` moved to model-store.types.ts, re-exported below.
+export type * from "./model-store.types";
 
 /** A registered theme identifier or "auto" to follow system preferences.
  *  `string & {}` keeps the literal `"auto"` for autocomplete while still
@@ -45,6 +45,9 @@ export interface RelayRequest {
   method: string;
   headers: Record<string, string>;
   body: string | null;
+  /** 136/005 — the model the request is for. The worker adds that model's
+   *  provider key only when `url` is under that provider's endpoint. */
+  modelRef: ModelRef;
 }
 export interface RelayAbort { type: "abort" }
 export interface RelayHead {
@@ -62,17 +65,31 @@ export interface RelayError { type: "error"; message: string }
 export type RelayToWorker = RelayRequest | RelayAbort;
 export type RelayToPage = RelayHead | RelayChunk | RelayEnd | RelayError;
 
+/** What `handleRelayRequest` (relay-handler.ts) needs from the worker. */
+export interface RelayHandlerDeps {
+  readModels: (this: void) => Promise<{ entries: ModelEntry[]; token: string }>;
+  fetchImpl: (input: string, init: RequestInit) => Promise<Response>;
+  post: (this: void, msg: RelayToPage) => void;
+  signal: AbortSignal;
+}
+
 // --- settings.ts -----------------------------------------------------------
 
-/** What the options page writes and the content script reads. */
+/** What the options page writes under "agentSettings". 136/005 — the model
+ *  fields moved to the model store (model-store.types.ts); a stored old
+ *  object's endpoint, wireFormat, model and apiKey are ignored. */
 export interface AgentSettings {
-  endpoint: string;
-  wireFormat: WireFormat;
-  model: string;
-  /** Empty means "use the shared token". */
-  apiKey: string;
   /** How the bubble looks on a site that supplies no --wa-* tokens. */
   theme: ThemePreference;
+}
+
+/** What the bridge posts to the MAIN world with wa-bridge-enable and
+ *  wa-bridge-toggle. No key and no header value. */
+export interface BubblePayload {
+  models: PublicModel[];
+  current: ModelRef;
+  theme: ThemePreference;
+  brand: AgentBrand;
 }
 
 // --- brand.ts ----------------------------------------------------------
@@ -85,8 +102,9 @@ export type AgentPromptKey = "inPage";
 /** Settings a brand fixes for every install. Task 002 defines one flag; a
  *  later task may add more keys here. */
 export interface BrandOptions {
-  /** True makes the endpoint, wire format and model fields on the
-   *  options page read-only. Absent means false. */
+  /** True shows only brand models in the options page table and hides the
+   *  row checkboxes (136/005). Enable, Default and Key still work. Absent
+   *  means false. */
   lockModel?: boolean;
 }
 
@@ -131,7 +149,8 @@ export interface BrandAgent {
    *  into this agent's `/home/agent/AGENTS.md` once, when that file does not
    *  exist (127/004). Absent means the agent has no starter file. */
   homeAgentsMd?: string;
-  /** An id from `model.yml`. Absent means the options page settings decide. */
+  /** An id from `model.yml` in brand.json. `listAgents` turns it into the
+   *  ModelRef `"brand:" + id` (136/005). Absent means the default model. */
   model?: string;
   tools: "*" | string[];
   excludeTools?: string[];
@@ -194,8 +213,8 @@ export interface BrandableElement {
  *  (content.ts) and the ISOLATED world (bridge.ts). The same shapes both files
  *  already send; this file only gives them a name. */
 export type BridgeMessage =
-  | { type: "wa-bridge-enable"; settings?: AgentSettings; brand?: AgentBrand }
-  | { type: "wa-bridge-toggle"; settings?: AgentSettings; brand?: AgentBrand }
+  | { type: "wa-bridge-enable"; models?: PublicModel[]; current?: ModelRef; theme?: ThemePreference; brand?: AgentBrand }
+  | { type: "wa-bridge-toggle"; models?: PublicModel[]; current?: ModelRef; theme?: ThemePreference; brand?: AgentBrand }
   | { type: "wa-bridge-send"; text: string }
   | { type: "wa-bridge-read" }
   | { type: "wa-bridge-state-request" }
@@ -224,16 +243,22 @@ export interface RelayFetchContext {
 
 // --- presets.ts ------------------------------------------------------------
 
-/** One ready-made endpoint / model combination. Picking one fills the
- *  three fields on the options page; the user can then edit any of them. */
+/** One brand model from model.yml (or the compiled presets). The options
+ *  page groups entries with the same endpoint and wire format into one
+ *  provider row (136/005). */
 export interface PresetEntry {
-  /** Stable id, used as the <option> value and in tests. Never shown alone. */
+  /** Stable id. Its ModelRef is "brand:" + id. Never shown alone. */
   id: string;
-  /** Shown in the picker. ASCII only — a missing glyph renders as a tofu box. */
+  /** Shown in the table and the switchers. ASCII only — a missing glyph
+   *  renders as a tofu box. */
   label: string;
   endpoint: string;
   wireFormat: WireFormat;
   model: string;
+  /** True when the model accepts images. */
+  vision: boolean;
+  /** The provider row's display name. Absent: the endpoint's host and path. */
+  provider?: string;
 }
 
 // --- panel-setup.ts --------------------------------------------------------

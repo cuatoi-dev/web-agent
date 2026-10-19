@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { summary, renderAgents, BRAND_LOCKED_NOTE, NEW_AGENT_ID, NEW_AGENT_TITLE, NEW_AGENT_NOTE } from "./agent-cards";
+import { listModels } from "./model-store";
 import type { AgentStore } from "./agent-store.types";
 import type { AgentBrand } from "./types";
 
@@ -111,7 +112,7 @@ describe("renderAgents", () => {
         tesagent: {
           description: "Custom tesagent tester",
           instructions: "Custom instructions.",
-          model: "anthropic-sonnet",
+          model: "brand:anthropic-sonnet",
           tools: ["read_tabs", "page_eval"],
           excludeTools: [],
           skills: "*",
@@ -154,7 +155,40 @@ describe("renderAgents", () => {
     };
     renderAgents(el2, brand(), unknownModelStore);
     const [, tesagentCard] = cards(el2);
-    expect(tesagentCard.querySelector(".facts")?.textContent).toContain("Model Options page model");
+    expect(tesagentCard.querySelector(".facts")?.textContent).toContain(
+      "Model Options page model (its model is off or deleted)",
+    );
+  });
+
+  it("C8b: falls back when the agent model is disabled in modelStore", () => {
+    const el = container();
+    const storeWithEdit: AgentStore = {
+      edits: {
+        tesagent: {
+          description: "d",
+          instructions: "i",
+          model: "brand:anthropic-sonnet",
+          tools: "*",
+          excludeTools: [],
+          skills: "*",
+          excludeSkills: [],
+        },
+      },
+      users: [],
+    };
+    const b = brand();
+    const modelStore = {
+      providers: [],
+      brandKeys: {},
+      disabled: ["brand:anthropic-sonnet"],
+      defaultModel: "brand:openai-sonnet",
+    };
+    const entries = listModels(b, modelStore);
+    renderAgents(el, b, storeWithEdit, undefined, { entries, store: modelStore });
+    const [, tesagentCard] = cards(el);
+    expect(tesagentCard.querySelector(".facts")?.textContent).toContain(
+      "Model Options page model (its model is off or deleted)",
+    );
   });
 
   it("C9: Add agent and every card's Edit button are disabled", () => {

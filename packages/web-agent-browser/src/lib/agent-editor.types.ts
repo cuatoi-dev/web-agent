@@ -1,7 +1,7 @@
 // The shapes for the agent card editor (agent-edit-rules.ts,
 // agent-edit-form.ts, agent-editor.ts, and the view hook in agent-cards.ts).
 
-import type { AgentBrand } from "./types";
+import type { AgentBrand, ModelStore } from "./types";
 import type { AgentStorage, ListedAgent } from "./agent-store.types";
 import type { MultiSelectGroup, MultiSelectValue } from "./multi-select.types";
 
@@ -9,7 +9,7 @@ export interface AgentDraft {
   displayName: string;
   description: string;
   instructions: string;
-  /** A model.yml id; null = "Use the options page model". */
+  /** A ModelRef; null = "Use the options page model". */
   model: string | null;
   tools: MultiSelectValue;
   excludeTools: string[];
@@ -22,9 +22,17 @@ export type AgentDraftField = "displayName" | "description" | "instructions" | "
 
 export type AgentDraftErrors = Partial<Record<AgentDraftField, string>>;
 
+/** One option of the agent editor's Model select (136/005). */
+export interface AgentModelOption {
+  value: string;
+  text: string;
+}
+
 export interface AgentEditLists {
   tools: MultiSelectGroup[];
   skills: MultiSelectGroup[];
+  /** The enabled models, as "label — provider". */
+  models: AgentModelOption[];
 }
 
 export interface EditFormHandlers {
@@ -63,6 +71,9 @@ export interface AgentEditorDeps {
   /** Called after a delete has been written and the cards repainted, so the
    *  options page can repaint the Skills tab list. */
   onAgentDeleted: () => Promise<void>;
+  /** 136/005 — the stored model store, read by the options page. Absent in
+   *  unit tests that do not care; the empty store is used then. */
+  modelStore?: ModelStore;
 }
 
 /** The open Delete agent dialog, as `openDeleteDialog` resolves it. */

@@ -5,7 +5,7 @@ import {
   type SkillDef,
   type ToolContext,
 } from "@cuatoi/web-agent-core";
-import type { AgentBrand, AgentSettings, BrandAgent, BrandCapabilityConfig, BrandSkillGroup } from "./types";
+import type { AgentBrand, BrandAgent, BrandCapabilityConfig, BrandSkillGroup } from "./types";
 
 /**
  * The skills one agent gets: its own built-in groups, minus the ones the brand
@@ -94,22 +94,3 @@ export function resolveAgent(
   return brand.agents.find((a) => a.id === brand.defaultAgent);
 }
 
-/**
- * Derives the effective settings for an agent, overriding model and endpoint
- * if specified in the agent's definition.
- */
-export function effectiveSettings(
-  settings: AgentSettings,
-  brand: AgentBrand,
-  agent: BrandAgent,
-): AgentSettings {
-  if (!agent.model) return settings;
-  const entry = brand.models.find((m) => m.id === agent.model);
-  if (!entry) return settings;
-  return {
-    ...settings,
-    endpoint: entry.endpoint,
-    wireFormat: entry.wireFormat,
-    model: entry.model,
-  };
-}

@@ -11,16 +11,16 @@ export interface CaptureApi {
   isOriginEnabled: (origin: string) => Promise<boolean>;
 }
 
-/** What `createPageScreenshotTool` and the vision gate read. `imageInput` is
- *  the host's own flag and is normally undefined in the side panel, which never
- *  sets it; `endpointType` and `model` come from the saved settings. */
+/** What `createPageScreenshotTool` and the vision gate read. 136/005 — the
+ *  side panel sets `imageInput` from the current model's `vision` flag, which
+ *  wins over the name guess from `endpointType` and `model`. */
 export interface PageScreenshotToolOptions {
   /** Overridable for tests only. Defaults to the real chrome calls. */
   captureApi?: CaptureApi;
   imageInput?: boolean;
-  /** `AgentSettings.wireFormat` — "anthropic", "openai" or "gemini". */
+  /** A wire format — "anthropic", "openai" or "gemini". */
   endpointType?: string;
-  /** `AgentSettings.model`. */
+  /** The API model id. */
   model?: string;
 }
 

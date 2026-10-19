@@ -50,127 +50,22 @@ test.describe("Options page", () => {
     expect(storedToken).toBe("changed-token");
   });
 
-  test("preset fills every field and the choice survives a reload", async ({ context, extensionId }) => {
-    const page = await context.newPage();
-    await openOptions(page, extensionId);
-
-    await page.selectOption("#preset", "gemini-flash");
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/gemini");
-    await expect(page.locator("#wireFormat")).toHaveValue("gemini");
-    await expect(page.locator("#model")).toHaveValue("gemini-flash-lite-latest");
-
-    // The user can still edit after picking.
-    await page.fill("#model", "gemini-flash-latest");
-    await page.click("#save");
-    await expect(page.locator("#status")).toContainText("Saved.");
-
-    await fs.mkdir(ARTIFACTS_004, { recursive: true });
-    await page.screenshot({ path: path.join(ARTIFACTS_004, "01-options-page-light.png"), fullPage: true });
-
-    await page.reload();
-    await optionsReady(page);
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/gemini");
-    await expect(page.locator("#model")).toHaveValue("gemini-flash-latest");
-  });
-
   test("dark colour scheme renders the page from the same tokens", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await page.emulateMedia({ colorScheme: "dark" });
     await openOptions(page, extensionId);
-    await expect(page.locator("#endpoint")).toBeVisible();
+    await expect(page.locator("#model-table")).toBeVisible();
     await fs.mkdir(ARTIFACTS_004, { recursive: true });
     await page.screenshot({ path: path.join(ARTIFACTS_004, "02-options-page-dark.png"), fullPage: true });
   });
 
-  test("dark colour scheme shows the error state with correct contrast", async ({ context, extensionId }) => {
-    const page = await context.newPage();
-    await page.addInitScript(() => {
-      // Chrome's headless mode cannot interact with the native permission
-      // grant dialog, so override chrome.permissions.request to
-      // auto-approve. `chrome.permissions` is declared read-only by
-      // @types/chrome; the cast through `unknown` replaces it for this test
-      // only, without an `any` type anywhere.
-      (chrome as unknown as { permissions: unknown }).permissions = {
-        ...chrome.permissions,
-        request: () => Promise.resolve(true),
-      };
-    });
-    await page.emulateMedia({ colorScheme: "dark" });
-    await openOptions(page, extensionId);
-    await page.fill("#endpoint", "https://no-such-host.invalid/v1");
-    await page.click("#save");
-    await expect(page.locator("#status")).toContainText("could not be reached");
-    await expect(page.locator("#status")).toHaveClass(/error/);
-    await fs.mkdir(ARTIFACTS_004, { recursive: true });
-    await page.screenshot({ path: path.join(ARTIFACTS_004, "02b-options-page-dark-error.png"), fullPage: true });
-  });
-
-  test("an unreachable endpoint reports the failure and saves nothing", async ({ context, extensionId }) => {
-    // Chrome's headless mode cannot interact with the native permission grant
-    // dialog, so override chrome.permissions.request to auto-approve.
-    const page = await context.newPage();
-    await page.addInitScript(() => {
-      // Chrome's headless mode cannot interact with the native permission
-      // grant dialog, so override chrome.permissions.request to
-      // auto-approve. `chrome.permissions` is declared read-only by
-      // @types/chrome; the cast through `unknown` replaces it for this test
-      // only, without an `any` type anywhere.
-      (chrome as unknown as { permissions: unknown }).permissions = {
-        ...chrome.permissions,
-        request: () => Promise.resolve(true),
-      };
-    });
-    await openOptions(page, extensionId);
-
-    await page.fill("#endpoint", "http://localhost:10040/plain.html");
-    await page.click("#save");
-    await expect(page.locator("#status")).toContainText("Saved.");
-
-    await page.fill("#endpoint", "https://no-such-host.invalid/v1");
-    await page.click("#save");
-    await expect(page.locator("#status")).toContainText("could not be reached");
-    await expect(page.locator("#status")).toHaveClass(/error/);
-
-    await fs.mkdir(ARTIFACTS_004, { recursive: true });
-    await page.screenshot({ path: path.join(ARTIFACTS_004, "03-options-page-error.png"), fullPage: true });
-
-    await page.reload();
-    await optionsReady(page);
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/plain.html");
-  });
-
-  test("a malformed URL reports the failure and saves nothing", async ({ context, extensionId }) => {
-    const page = await context.newPage();
-    await openOptions(page, extensionId);
-    await page.fill("#endpoint", "not a url");
-    await page.click("#save");
-    await expect(page.locator("#status")).toContainText("not a valid http or https endpoint URL");
-  });
-
-  test("saved settings reach the bubble on a page", async ({ context, extensionId }) => {
+  test("the default model reaches the bubble on a page", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
 
-    // Chrome's headless mode cannot interact with the native permission grant
-    // dialog, so override chrome.permissions.request to auto-approve.
     const options = await context.newPage();
-    await options.addInitScript(() => {
-      // Chrome's headless mode cannot interact with the native permission
-      // grant dialog, so override chrome.permissions.request to
-      // auto-approve. `chrome.permissions` is declared read-only by
-      // @types/chrome; the cast through `unknown` replaces it for this test
-      // only, without an `any` type anywhere.
-      (chrome as unknown as { permissions: unknown }).permissions = {
-        ...chrome.permissions,
-        request: () => Promise.resolve(true),
-      };
-    });
     await openOptions(options, extensionId);
-    await options.fill("#endpoint", "http://localhost:10040/plain.html");
-    await options.selectOption("#wireFormat", "anthropic");
-    await options.fill("#model", "test-model-id");
-    await options.click("#save");
-    await expect(options.locator("#status")).toContainText("Saved.");
+    await options.click('#model-table tr.model-row[data-ref="brand:gemini-flash"] input.model-default');
 
     await worker.evaluate(async () => {
       await chrome.storage.local.set({ enabledOrigins: ["http://localhost:10040"] });
@@ -181,13 +76,20 @@ test.describe("Options page", () => {
     await expect(page.locator("web-agent-bubble #launcher")).toBeVisible();
 
     const applied = await page.evaluate(() => {
-      const el = document.querySelector("web-agent-bubble");
-      return { path: el?.path, type: el?.type, model: el?.model, dataTheme: el?.getAttribute("data-theme") };
+      const el = document.querySelector("web-agent-bubble") as any;
+      return {
+        path: el?.path,
+        type: el?.type,
+        model: el?.model,
+        selectedModel: el?.selectedModel,
+        dataTheme: el?.getAttribute("data-theme"),
+      };
     });
     expect(applied).toEqual({
-      path: "http://localhost:10040/plain.html",
-      type: "anthropic",
-      model: "test-model-id",
+      path: "http://localhost:28780/api/gemini",
+      type: "gemini",
+      model: "gemini-flash-lite-latest",
+      selectedModel: "brand:gemini-flash",
       dataTheme: "wa2-light",
     });
   });
@@ -305,26 +207,15 @@ test.describe("Saved skills", () => {
 
   test("E8: the settings path is untouched by the new section", async ({ context, extensionId }) => {
     const page = await context.newPage();
-    await page.addInitScript(() => {
-      // Chrome's headless mode cannot interact with the native permission
-      // grant dialog, so override chrome.permissions.request to
-      // auto-approve. `chrome.permissions` is declared read-only by
-      // @types/chrome; the cast through `unknown` replaces it for this test
-      // only, without an `any` type anywhere.
-      (chrome as unknown as { permissions: unknown }).permissions = {
-        ...chrome.permissions,
-        request: () => Promise.resolve(true),
-      };
-    });
     await openOptions(page, extensionId);
 
-    await page.fill("#endpoint", "http://localhost:10040/plain.html");
+    await page.selectOption("#theme", "wa2-dark");
     await page.click("#save");
     await expect(page.locator("#status")).toContainText("Saved.");
 
     await page.reload();
     await optionsReady(page);
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/plain.html");
+    await expect(page.locator("#theme")).toHaveValue("wa2-dark");
   });
 
   test("T1: tab bar displays Models, Skills, Agents; keyboard ArrowRight/ArrowLeft cycle all three", async ({ context, extensionId }) => {
@@ -406,7 +297,7 @@ test.describe("Saved skills", () => {
           tesagent: {
             description: "Custom tesagent tester",
             instructions: "Custom tesagent instructions.",
-            model: "anthropic-sonnet",
+            model: "brand:anthropic-sonnet",
             tools: ["read_tabs", "page_eval"],
             excludeTools: [],
             skills: "*",
@@ -451,7 +342,7 @@ test.describe("Saved skills", () => {
     await page.locator("#tab-btn-agents").click();
 
     const tesagentCard = page.locator("#agent-cards .card").nth(1);
-    await expect(tesagentCard.locator(".facts")).toContainText("Model Options page model");
+    await expect(tesagentCard.locator(".facts")).toContainText("Model Options page model (its model is off or deleted)");
   });
 
   test("A4: a stored user agent shows Added by you and no Default tag", async ({ context, extensionId }) => {
@@ -497,8 +388,8 @@ const TWO_MODELS = path.resolve(TEMP_DIR, "two-models");
 const LOCKED = path.resolve(TEMP_DIR, "lock-model");
 
 const TWO_ENTRIES = [
-  { id: "acme-sonnet", label: "Acme Assistant", endpoint: "http://localhost:10040/api/anthropic", wireFormat: "anthropic", model: "sonnet" },
-  { id: "acme-fast", label: "Acme Fast", endpoint: "http://localhost:10040/api/openai/v1", wireFormat: "openai", model: "fast" },
+  { id: "acme-sonnet", label: "Acme Assistant", endpoint: "http://localhost:10040/api/anthropic", wireFormat: "anthropic", model: "sonnet", vision: false },
+  { id: "acme-fast", label: "Acme Fast", endpoint: "http://localhost:10040/api/openai/v1", wireFormat: "openai", model: "fast", vision: false },
 ];
 
 /** Copies dist/ and rewrites brand.json, so a test can load a different brand
@@ -524,20 +415,21 @@ test.describe("Brand model list", () => {
     await fs.rm(TEMP_DIR, { recursive: true, force: true });
   });
 
-  test("G2: fresh profile uses the first model.yml entry and preselects it", async ({ context, extensionId }) => {
+  test("G2: fresh profile shows the three brand rows and defaults to the first", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/anthropic");
-    await expect(page.locator("#wireFormat")).toHaveValue("anthropic");
-    await expect(page.locator("#model")).toHaveValue("sonnet");
-    await expect(page.locator("#preset")).toHaveValue("anthropic-sonnet");
-    await expect(page.locator("#preset option")).toHaveText(["Custom", "Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
-    await expect(page.locator('#tab-models input[type="checkbox"]')).toHaveCount(0);
-    await expect(page.locator("#tab-models label")).toHaveText(["Ready-made entry", "Endpoint URL", "Wire format", "Model", "Theme", "Token", "API key (optional)"]);
-
+    await expect(page.locator("#model-table tr.model-row .model-label")).toHaveText(["Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
+    await expect(page.locator('#model-table tr.model-row[data-ref="brand:anthropic-sonnet"] input.model-default')).toBeChecked();
+    await expect(page.locator("#model-count")).toHaveText("3 of 3 models enabled");
+    await expect(page.locator("#tab-models > label")).toHaveText(["Theme", "Token"]);
+    await expect(page.locator("#preset")).toHaveCount(0);
+    await expect(page.locator("#endpoint")).toHaveCount(0);
+    await expect(page.locator("#wireFormat")).toHaveCount(0);
+    await expect(page.locator("#model")).toHaveCount(0);
+    await expect(page.locator("#apiKey")).toHaveCount(0);
   });
 
-  test("B1: two-entry brand shows exactly those two labels and nothing else", async () => {
+  test("B1: two-entry brand shows exactly those two model rows", async () => {
     const dir = await patchedBrand(TWO_MODELS, { models: TWO_ENTRIES });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -546,17 +438,13 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
-      const texts = await page.$$eval("#preset option", (opts) =>
-        (opts as HTMLOptionElement[]).map((o) => o.textContent ?? ""));
-      expect(texts).toEqual(["Custom", "Acme Assistant", "Acme Fast"]);
-      expect(texts).not.toContain("Sonnet");
-      expect(texts).not.toContain("Gemini Flash");
+      await expect(page.locator("#model-table tr.model-row .model-label")).toHaveText(["Acme Assistant", "Acme Fast"]);
     } finally {
       await ctx.close();
     }
   });
 
-  test("B2: two-entry brand fresh profile uses the first entry", async () => {
+  test("B2: a model.yml entry without provider names its row by host and path", async () => {
     const dir = await patchedBrand(TWO_MODELS, { models: TWO_ENTRIES });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -565,87 +453,22 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
-      await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/api/anthropic");
-      await expect(page.locator("#wireFormat")).toHaveValue("anthropic");
-      await expect(page.locator("#model")).toHaveValue("sonnet");
-      await expect(page.locator("#preset")).toHaveValue("acme-sonnet");
+      await expect(page.locator("#model-table tr.prov .prov-label")).toHaveText([
+        "localhost:10040/api/anthropic",
+        "localhost:10040/api/openai/v1",
+      ]);
     } finally {
       await ctx.close();
     }
   });
 
-  test("B3: choosing acme-fast fills the three fields with that entry's values", async () => {
-    const dir = await patchedBrand(TWO_MODELS, { models: TWO_ENTRIES });
-    const ctx = await launchExtensionContext(dir);
-    try {
-      let [worker] = ctx.serviceWorkers();
-      if (!worker) worker = await ctx.waitForEvent("serviceworker");
-      const id = worker.url().split("/")[2];
-      const page = await ctx.newPage();
-      await openOptions(page, id);
-      await page.selectOption("#preset", "acme-fast");
-      await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/api/openai/v1");
-      await expect(page.locator("#wireFormat")).toHaveValue("openai");
-      await expect(page.locator("#model")).toHaveValue("fast");
-    } finally {
-      await ctx.close();
-    }
-  });
-
-  test("S1: stored settings for gemini-flash preselect the matching picker entry", async ({ context, extensionId }) => {
-    let [worker] = context.serviceWorkers();
-    if (!worker) worker = await context.waitForEvent("serviceworker");
-    await worker.evaluate(async () => {
-      await chrome.storage.local.set({
-        agentSettings: {
-          endpoint: "http://localhost:28780/api/gemini",
-          wireFormat: "gemini",
-          model: "gemini-flash-lite-latest",
-          apiKey: "",
-          theme: "auto",
-        },
-      });
-    });
+  test("B3: the repo brand's provider rows read Gateway", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/gemini");
-    await expect(page.locator("#preset")).toHaveValue("gemini-flash");
+    await expect(page.locator("#model-table tr.prov .prov-label")).toHaveText(["Gateway", "Gateway", "Gateway"]);
   });
 
-  test("S2: a partial stored object fills the model field; the other fields use the first brand entry", async ({ context, extensionId }) => {
-    let [worker] = context.serviceWorkers();
-    if (!worker) worker = await context.waitForEvent("serviceworker");
-    await worker.evaluate(async () => {
-      await chrome.storage.local.set({ agentSettings: { model: "only-model" } });
-    });
-    const page = await context.newPage();
-    await openOptions(page, extensionId);
-    await expect(page.locator("#model")).toHaveValue("only-model");
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:28780/api/anthropic");
-    await expect(page.locator("#preset")).toHaveValue("");
-  });
-
-  test("S3: a stored endpoint that matches no entry leaves the picker blank", async ({ context, extensionId }) => {
-    let [worker] = context.serviceWorkers();
-    if (!worker) worker = await context.waitForEvent("serviceworker");
-    await worker.evaluate(async () => {
-      await chrome.storage.local.set({
-        agentSettings: {
-          endpoint: "http://localhost:10040/plain.html",
-          wireFormat: "openai",
-          model: "my-model",
-          apiKey: "",
-          theme: "auto",
-        },
-      });
-    });
-    const page = await context.newPage();
-    await openOptions(page, extensionId);
-    await expect(page.locator("#preset")).toHaveValue("");
-    await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/plain.html");
-  });
-
-  test("L1: lockModel: true makes the three model fields non-editable with a hint", async () => {
+  test("L1: lockModel hides the checkbox column; switches, radios and Key work", async () => {
     const dir = await patchedBrand(LOCKED, { options: { lockModel: true } });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -654,20 +477,24 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
-      // Text inputs get readonly attribute
-      await expect(page.locator("#endpoint")).toHaveAttribute("readonly");
-      await expect(page.locator("#model")).toHaveAttribute("readonly");
-      // Select gets disabled
-      await expect(page.locator("#wireFormat")).toBeDisabled();
-      // Hint is visible and contains the extension name
-      await expect(page.locator("#model-hint")).toBeVisible();
-      await expect(page.locator("#model-hint")).toContainText("Model settings are fixed by");
+      await expect(page.locator('#model-table input[type="checkbox"]:not([role="switch"])')).toHaveCount(0);
+      await expect(page.locator("#model-table th")).toHaveCount(6);
+      await expect(page.locator("#model-table .key-btn")).toHaveCount(3);
+      for (let i = 0; i < 3; i++) {
+        await expect(page.locator("#model-table .key-btn").nth(i)).toBeEnabled();
+      }
+      await expect(page.locator("#model-table input.model-enabled")).toHaveCount(3);
+      for (let i = 0; i < 3; i++) {
+        await expect(page.locator("#model-table input.model-enabled").nth(i)).toBeEnabled();
+      }
+      await page.click('#model-table tr.model-row[data-ref="brand:openai-sonnet"] input.model-enabled');
+      await expect(page.locator("#model-count")).toHaveText("2 of 3 models enabled");
     } finally {
       await ctx.close();
     }
   });
 
-  test("L2: lockModel does not disable theme, apiKey, token or the preset picker", async () => {
+  test("L2: lockModel does not disable theme or token", async () => {
     const dir = await patchedBrand(LOCKED, { options: { lockModel: true } });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -677,39 +504,22 @@ test.describe("Brand model list", () => {
       const page = await ctx.newPage();
       await openOptions(page, id);
       await expect(page.locator("#theme")).not.toBeDisabled();
-      await expect(page.locator("#apiKey")).not.toBeDisabled();
       await expect(page.locator("#token")).not.toBeDisabled();
-      await expect(page.locator("#preset")).not.toBeDisabled();
     } finally {
       await ctx.close();
     }
   });
 
-  test("L3: switching the preset updates the locked fields to the chosen entry's values", async () => {
-    const dir = await patchedBrand(LOCKED, { models: TWO_ENTRIES, options: { lockModel: true } });
-    const ctx = await launchExtensionContext(dir);
-    try {
-      let [worker] = ctx.serviceWorkers();
-      if (!worker) worker = await ctx.waitForEvent("serviceworker");
-      const id = worker.url().split("/")[2];
-      const page = await ctx.newPage();
-      await openOptions(page, id);
-      await page.selectOption("#preset", "acme-fast");
-      await expect(page.locator("#endpoint")).toHaveValue("http://localhost:10040/api/openai/v1");
-      await expect(page.locator("#wireFormat")).toHaveValue("openai");
-      await expect(page.locator("#model")).toHaveValue("fast");
-    } finally {
-      await ctx.close();
-    }
-  });
-
-  test("L4: lockModel absent or false leaves all three fields editable; hint is hidden", async ({ context, extensionId }) => {
+  test("L4: lockModel absent shows one disabled checkbox per brand provider row", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
-    await expect(page.locator("#endpoint")).not.toHaveAttribute("readonly");
-    await expect(page.locator("#model")).not.toHaveAttribute("readonly");
-    await expect(page.locator("#wireFormat")).not.toBeDisabled();
-    await expect(page.locator("#model-hint")).toBeHidden();
+    const cbs = page.locator('#model-table tr.prov input[type="checkbox"]');
+    await expect(cbs).toHaveCount(3);
+    for (let i = 0; i < 3; i++) {
+      await expect(cbs.nth(i)).toBeDisabled();
+      await expect(cbs.nth(i)).toHaveAttribute("title", "Brand models cannot be deleted");
+    }
+    await expect(page.locator('#model-table button:has-text("Edit")')).toHaveCount(0);
   });
 });
 
@@ -765,7 +575,7 @@ test.describe("Options page full-width flex layout", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
 
-    const fieldIds = ["#endpoint", "#model", "#token", "#apiKey", "#preset", "#wireFormat", "#theme"];
+    const fieldIds = ["#token", "#theme"];
     for (const id of fieldIds) {
       const box = await page.locator(id).evaluate((el) => el.getBoundingClientRect());
       expect(box.width).toBe(560);
@@ -776,9 +586,8 @@ test.describe("Options page full-width flex layout", () => {
     expect(themeHintBox.width).toBeLessThanOrEqual(560);
     expect(themeHintBox.left).toBe(24);
 
-    const keyWarningBox = await page.locator("#key-warning").evaluate((el) => el.getBoundingClientRect());
-    expect(keyWarningBox.width).toBeLessThanOrEqual(560);
-    expect(keyWarningBox.left).toBe(24);
+    const tableBox = await page.locator("#tab-models > .table-wrap").evaluate((el) => el.getBoundingClientRect());
+    expect(tableBox.left).toBe(24);
 
     const saveBox = await page.locator("#save").evaluate((el) => el.getBoundingClientRect());
     expect(saveBox.left).toBe(24);

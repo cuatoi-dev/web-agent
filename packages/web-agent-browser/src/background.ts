@@ -1,8 +1,9 @@
 import { BRAND_MESSAGE, RELAY_PORT } from "./lib/constants";
-import { bytesToBase64, type RelayToWorker } from "./lib/relay-protocol";
-import { getSettings, getToken } from "./lib/settings";
-import { buildAuthHeaders } from "./lib/auth-headers";
+import type { RelayToWorker } from "./lib/relay-protocol";
+import { getToken } from "./lib/settings";
 import { readPackagedBrand } from "./lib/brand-source";
+import { listModels, readModelStore } from "./lib/model-store";
+import { handleRelayRequest } from "./lib/relay-handler";
 
 // 118/004 — The toolbar icon click both opens the side panel and grants the
 // `activeTab` permission for the clicked tab. We disable Chrome's automatic
@@ -21,6 +22,13 @@ chrome.action.onClicked.addListener((tab) => {
   }
 });
 
+/** The model list and the shared token, read fresh for every request, so a
+ *  change on the options page reaches the next bubble request. */
+async function readRelayModels() {
+  const [brand, store, token] = await Promise.all([readPackagedBrand(), readModelStore(), getToken()]);
+  return { entries: listModels(brand, store), token };
+}
+
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== RELAY_PORT) return;
   const controller = new AbortController();
@@ -29,41 +37,16 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((msg: RelayToWorker) => {
     if (msg.type === "abort") { controller.abort(); return; }
     if (msg.type !== "request") return;
-    void (async () => {
-      try {
-        // The token is added HERE, in the worker, so the page never holds it
-        // and the header cannot be stripped by page code.
-        const [settings, sharedToken] = await Promise.all([getSettings(), getToken()]);
-        const headers = { ...msg.headers, ...buildAuthHeaders(settings, sharedToken) };
-        const res = await fetch(msg.url, {
-          method: msg.method,
-          headers,
-          body: msg.body ?? undefined,
-          signal: controller.signal,
-        });
-        port.postMessage({
-          type: "head",
-          status: res.status,
-          statusText: res.statusText,
-          contentType: res.headers.get("content-type"),
-        });
-        if (res.body) {
-          const reader = res.body.getReader();
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            // Each chunk message resets the worker's 30-second idle timer
-            // while response bytes arrive.
-            port.postMessage({ type: "chunk", b64: bytesToBase64(value) });
-          }
-        }
-        port.postMessage({ type: "end" });
-      } catch (e) {
-        port.postMessage({ type: "error", message: (e as Error)?.message ?? String(e) });
-      } finally {
-        port.disconnect();
-      }
-    })();
+    // 136/005 — handleRelayRequest checks the URL against the model's
+    // provider before it adds that provider's key (lib/relay-handler.ts).
+    void handleRelayRequest(msg, {
+      readModels: readRelayModels,
+      // A wrapper, not `fetch` itself: calling `fetch` as a method of
+      // another object throws "Illegal invocation".
+      fetchImpl: (input, init) => fetch(input, init),
+      post: (m) => port.postMessage(m),
+      signal: controller.signal,
+    }).finally(() => port.disconnect());
   });
 });
 

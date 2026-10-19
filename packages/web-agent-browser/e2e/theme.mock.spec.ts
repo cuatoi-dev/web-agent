@@ -11,10 +11,6 @@ async function writeSettings(worker: import("@playwright/test").Worker, theme: "
     await chrome.storage.local.set({
       enabledOrigins: ["http://localhost:10040"],
       agentSettings: {
-        endpoint: "http://localhost:10040/plain.html",
-        wireFormat: "openai",
-        model: "test-model-id",
-        apiKey: "",
         theme: t,
       },
     });
@@ -146,19 +142,7 @@ test.describe("Theme picker and injection", () => {
 
   test("the options page saves the theme and shows it again after a reload", async ({ context, extensionId }) => {
     const page = await context.newPage();
-    await page.addInitScript(() => {
-      // Chrome's headless mode cannot interact with the native permission
-      // grant dialog, so override chrome.permissions.request to
-      // auto-approve. `chrome.permissions` is declared read-only by
-      // @types/chrome; the cast through `unknown` replaces it for this test
-      // only, without an `any` type anywhere.
-      (chrome as unknown as { permissions: unknown }).permissions = {
-        ...chrome.permissions,
-        request: () => Promise.resolve(true),
-      };
-    });
     await openOptions(page, extensionId);
-    await page.fill("#endpoint", "http://localhost:10040/plain.html");
     await page.selectOption("#theme", "wa2-light");
     await page.click("#save");
     await expect(page.locator("#status")).toContainText("Saved.");

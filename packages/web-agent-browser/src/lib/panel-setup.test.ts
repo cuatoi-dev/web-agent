@@ -1,42 +1,34 @@
 import { describe, it, expect, vi } from "vitest";
 import { applyPanelSettings, createDirectFetch, type PanelLike } from "./panel-setup";
-import type { AgentSettings } from "./settings";
+import type { ModelProvider } from "./model-store.types";
 import { createAgentSession, setMockScript } from "@cuatoi/web-agent-core";
 import { PANEL_SESSION_NAMESPACE } from "./constants";
 import { EMPTY_BRAND } from "./brand";
 
-/** A filled AgentSettings. This test is about applyPanelSettings copying
- *  fields, so the values only need to be present and distinguishable. */
-const SETTINGS: AgentSettings = {
-  endpoint: "https://example.test/api/openai/v1",
-  wireFormat: "openai",
-  model: "test-model",
-  apiKey: "",
-  theme: "auto",
-};
+function makeProv(over: Partial<ModelProvider> = {}): ModelProvider {
+  return {
+    id: "p1",
+    kind: "brand",
+    name: "Gateway",
+    endpoint: "https://example.test/api/openai/v1",
+    wireFormat: "openai",
+    apiKey: "",
+    headers: [],
+    ...over,
+  };
+}
 
 describe("panel-setup", () => {
   describe("applyPanelSettings", () => {
-    it("copies endpoint, wireFormat, model and config onto panel object", () => {
+    it("writes fetch and config and leaves path, type, and model undefined", () => {
       const panel: PanelLike = {};
-      const settings: AgentSettings = {
-        endpoint: "https://custom.gateway/v1",
-        wireFormat: "anthropic",
-        model: "claude-3-5-sonnet",
-        apiKey: "",
-        theme: "dark",
-      };
-      applyPanelSettings(panel, settings, "secret-token", EMPTY_BRAND);
+      const prov = makeProv();
+      applyPanelSettings(panel, () => prov, "secret-token", EMPTY_BRAND);
 
-      expect(panel.path).toBe("https://custom.gateway/v1");
-      expect(panel.type).toBe("anthropic");
-      expect(panel.model).toBe("claude-3-5-sonnet");
+      expect(panel.path).toBeUndefined();
+      expect(panel.type).toBeUndefined();
+      expect(panel.model).toBeUndefined();
       expect(typeof panel.fetch).toBe("function");
-      // `toMatchObject`, not `toEqual`: the panel's config carries host opt-in
-      // flags too, and asserting those literals back would be a constant
-      // equalling itself. What this case checks is that the endpoint settings
-      // and the session namespace are written — the todo flag is proven by the
-      // tool list the agent actually receives, in todo-tools.mock.spec.ts.
       expect(panel.config).toMatchObject({
         persist: true,
         sessionNamespace: "web-agent-extension-panel",
@@ -50,11 +42,9 @@ describe("panel-setup", () => {
 
     it("the config it writes turns todo and scheduler tools on in a real core session", async () => {
       const panel: PanelLike = {};
-      applyPanelSettings(panel, SETTINGS, "token", EMPTY_BRAND);
+      const prov = makeProv();
+      applyPanelSettings(panel, () => prov, "token", EMPTY_BRAND);
 
-      // The session is built from the SAME config object the side panel gets,
-      // so this proves the wiring, not a literal. `availableTools()` is empty
-      // until a turn has run (controller-turn.ts:71), hence the send().
       setMockScript({ text: "ok" });
       const session = createAgentSession({
         ...panel.config,
@@ -88,10 +78,10 @@ describe("panel-setup", () => {
       session.dispose();
     });
 
-    // W2 — criterion 6, side panel half.
     it("tools: { todo: { enabled: false } } removes todo_write and todo_read from a real session", async () => {
       const panel: PanelLike = {};
-      applyPanelSettings(panel, SETTINGS, "token", {
+      const prov = makeProv();
+      applyPanelSettings(panel, () => prov, "token", {
         ...EMPTY_BRAND,
         tools: { todo: { enabled: false } },
       });
@@ -113,7 +103,8 @@ describe("panel-setup", () => {
 
     it("tools: { scheduler: { enabled: false } } removes scheduler tools from a real session", async () => {
       const panel: PanelLike = {};
-      applyPanelSettings(panel, SETTINGS, "token", {
+      const prov = makeProv();
+      applyPanelSettings(panel, () => prov, "token", {
         ...EMPTY_BRAND,
         tools: { scheduler: { enabled: false } },
       });
@@ -135,9 +126,10 @@ describe("panel-setup", () => {
 
     it("writes maxIterations 1000, with and without a brand tools block", () => {
       const plain: PanelLike = {};
-      applyPanelSettings(plain, SETTINGS, "token", EMPTY_BRAND);
+      const prov = makeProv();
+      applyPanelSettings(plain, () => prov, "token", EMPTY_BRAND);
       const branded: PanelLike = {};
-      applyPanelSettings(branded, SETTINGS, "token", {
+      applyPanelSettings(branded, () => prov, "token", {
         ...EMPTY_BRAND,
         tools: { scheduler: { enabled: false }, todo: { enabled: false } },
       });
@@ -145,10 +137,10 @@ describe("panel-setup", () => {
       expect(branded.config?.maxIterations).toBe(plain.config?.maxIterations);
     });
 
-    // W4.
     it("tools: { data: { enabled: false } } removes the data tools but keeps get_time", async () => {
       const panel: PanelLike = {};
-      applyPanelSettings(panel, SETTINGS, "token", {
+      const prov = makeProv();
+      applyPanelSettings(panel, () => prov, "token", {
         ...EMPTY_BRAND,
         tools: { data: { enabled: false } },
       });
@@ -173,10 +165,10 @@ describe("panel-setup", () => {
   });
 
   describe("createDirectFetch", () => {
-    it("adds X-Web-Agent-Token when apiKey is empty", async () => {
+    it("adds X-Web-Agent-Token when brand has no key", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const settings: AgentSettings = { ...SETTINGS, apiKey: "" };
-      const customFetch = createDirectFetch(settings, "my-shared-token", spy);
+      const prov = makeProv({ apiKey: "" });
+      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
 
       await customFetch("https://api.example.com/chat", { method: "POST" });
 
@@ -189,12 +181,11 @@ describe("panel-setup", () => {
 
     it("adds Authorization: Bearer <key> for openai with filled apiKey and no X-Web-Agent-Token", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const settings: AgentSettings = {
-        ...SETTINGS,
+      const prov = makeProv({
         wireFormat: "openai",
         apiKey: "sk-openai-key",
-      };
-      const customFetch = createDirectFetch(settings, "my-shared-token", spy);
+      });
+      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
 
       await customFetch("https://api.openai.com/v1/chat", { method: "POST" });
 
@@ -205,30 +196,30 @@ describe("panel-setup", () => {
       expect(headers.get("X-Web-Agent-Token")).toBeNull();
     });
 
-    it("adds X-Api-Key for anthropic wireFormat with filled apiKey", async () => {
+    it("adds x-api-key and anthropic headers for anthropic wireFormat with filled apiKey", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const settings: AgentSettings = {
-        ...SETTINGS,
+      const prov = makeProv({
         wireFormat: "anthropic",
         apiKey: "sk-ant-key",
-      };
-      const customFetch = createDirectFetch(settings, "my-shared-token", spy);
+      });
+      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
 
       await customFetch("https://api.anthropic.com/v1/messages", { method: "POST" });
 
       const [, init] = spy.mock.calls[0];
       const headers = new Headers(init?.headers);
-      expect(headers.get("X-Api-Key")).toBe("sk-ant-key");
+      expect(headers.get("x-api-key")).toBe("sk-ant-key");
+      expect(headers.get("anthropic-version")).toBe("2023-06-01");
+      expect(headers.get("anthropic-dangerous-direct-browser-access")).toBe("true");
     });
 
     it("adds x-goog-api-key for gemini wireFormat with filled apiKey", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const settings: AgentSettings = {
-        ...SETTINGS,
+      const prov = makeProv({
         wireFormat: "gemini",
         apiKey: "gemini-key-123",
-      };
-      const customFetch = createDirectFetch(settings, "my-shared-token", spy);
+      });
+      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
 
       await customFetch("https://generativelanguage.googleapis.com/v1", { method: "POST" });
 
@@ -239,8 +230,8 @@ describe("panel-setup", () => {
 
     it("preserves URL, method, body, and caller headers", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
-      const settings: AgentSettings = { ...SETTINGS, apiKey: "" };
-      const customFetch = createDirectFetch(settings, "token-1", spy);
+      const prov = makeProv({ apiKey: "" });
+      const customFetch = createDirectFetch(() => prov, "token-1", spy);
 
       const payload = JSON.stringify({ prompt: "hello" });
       await customFetch("https://gateway.example.com/v1/query", {
@@ -261,6 +252,23 @@ describe("panel-setup", () => {
       expect(headers.get("Content-Type")).toBe("application/json");
       expect(headers.get("X-Custom-Header")).toBe("foo");
       expect(headers.get("X-Web-Agent-Token")).toBe("token-1");
+    });
+
+    it("per-request getter call reads provider A then provider B", async () => {
+      const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
+      const provA = makeProv({ wireFormat: "openai", apiKey: "key-a" });
+      const provB = makeProv({ wireFormat: "anthropic", apiKey: "key-b" });
+      let current = provA;
+      const customFetch = createDirectFetch(() => current, "tok", spy);
+
+      await customFetch("https://test.com/a");
+      const headersA = new Headers(spy.mock.calls[0][1]?.headers);
+      expect(headersA.get("Authorization")).toBe("Bearer key-a");
+
+      current = provB;
+      await customFetch("https://test.com/b");
+      const headersB = new Headers(spy.mock.calls[1][1]?.headers);
+      expect(headersB.get("x-api-key")).toBe("key-b");
     });
   });
 });

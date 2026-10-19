@@ -94,6 +94,7 @@ function brand(options: { lockModel?: boolean } = {}): AgentBrand {
 async function setupEditor(overrides?: {
   initialStore?: Record<string, unknown>;
   brandOptions?: { lockModel?: boolean };
+  modelStore?: any;
 }) {
   const el = document.createElement("div");
   const addButton = document.createElement("button");
@@ -104,7 +105,15 @@ async function setupEditor(overrides?: {
   const b = brand(overrides?.brandOptions);
   const deleteDatabase = vi.fn();
   const onAgentDeleted = vi.fn(() => Promise.resolve());
-  await mountAgentEditor({ container: el, brand: b, storage, addButton, deleteDatabase, onAgentDeleted });
+  await mountAgentEditor({
+    container: el,
+    brand: b,
+    storage,
+    addButton,
+    deleteDatabase,
+    onAgentDeleted,
+    modelStore: overrides?.modelStore,
+  });
   const card = (id: string) => el.querySelector<HTMLElement>(`[data-agent-id="${id}"]`)!;
   const byId = (id: string) => document.getElementById(id);
   const chips = (id: string) =>
@@ -138,7 +147,10 @@ describe("agent-editor", () => {
 
     const modelSelect = byId("edit-tesagent-model") as HTMLSelectElement;
     expect(modelSelect.value).toBe("");
-    expect(modelSelect.options[0].textContent).toBe("Use the options page model");
+    expect(Array.from(modelSelect.options).map((o) => o.textContent)).toEqual([
+      "Use the options page model",
+      "Sonnet — x/api/anthropic",
+    ]);
 
     expect(chips("edit-tesagent-skills")).toEqual(["*"]);
     expect(chips("edit-tesagent-tools")).toEqual(["*"]);
@@ -235,7 +247,7 @@ describe("agent-editor", () => {
     descInput.dispatchEvent(new Event("input", { bubbles: true }));
 
     const modelSelect = byId("edit-tesagent-model") as HTMLSelectElement;
-    modelSelect.value = "anthropic-sonnet";
+    modelSelect.value = "brand:anthropic-sonnet";
     modelSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
     card("tesagent").querySelector<HTMLButtonElement>(".save-btn")!.click();
@@ -249,8 +261,19 @@ describe("agent-editor", () => {
     expect(tesagentCard.querySelector(".facts")!.textContent).toContain("Model Sonnet");
 
     const edits = store[AGENT_EDITS_KEY] as Record<string, { model: unknown }>;
-    expect(edits.tesagent.model).toBe("anthropic-sonnet");
+    expect(edits.tesagent.model).toBe("brand:anthropic-sonnet");
     expect(card("chromagent").querySelector<HTMLButtonElement>(".card-edit-btn")!.disabled).toBe(false);
+  });
+
+  it("with modelStore disabling brand:anthropic-sonnet, the select has only the first option", async () => {
+    const { card, byId } = await setupEditor({
+      modelStore: { providers: [], brandKeys: {}, disabled: ["brand:anthropic-sonnet"], defaultModel: null },
+    });
+    card("tesagent").querySelector<HTMLButtonElement>(".card-edit-btn")!.click();
+    const modelSelect = byId("edit-tesagent-model") as HTMLSelectElement;
+    expect(Array.from(modelSelect.options).map((o) => o.textContent)).toEqual([
+      "Use the options page model",
+    ]);
   });
 
   it("E8 Cancel", async () => {

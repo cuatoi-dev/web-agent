@@ -3,6 +3,7 @@ import type { AgentEdit, AgentStorage, AgentStore, ListedAgent, UserAgent } from
 import type { AgentDraft, AgentDraftErrors } from "./agent-editor.types";
 import type { MultiSelectValue } from "./multi-select.types";
 import { AGENT_EDITS_KEY, USER_AGENTS_KEY, isRecord, readAgentStore } from "./agent-store";
+import { brandRef } from "./model-store";
 
 export const ERR_DISPLAY_NAME = "Enter a display name.";
 export const ERR_DESCRIPTION = "Enter a description.";
@@ -54,7 +55,7 @@ export function equalsBrand(edit: AgentEdit, b: BrandAgent): boolean {
     // tesagent instructions both end with "\n").
     edit.description === b.description.trim() &&
     edit.instructions === b.instructions.trim() &&
-    edit.model === (b.model ?? null) &&
+    edit.model === (b.model ? brandRef(b.model) : null) &&
     sameList(edit.tools, b.tools) &&
     sameSet(edit.excludeTools, b.excludeTools ?? []) &&
     sameList(edit.skills, b.skills) &&

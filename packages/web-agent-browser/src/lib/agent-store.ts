@@ -6,6 +6,7 @@ import type {
   AgentStore,
   AgentStorage,
 } from "./agent-store.types";
+import { brandRef } from "./model-store";
 
 export const AGENT_EDITS_KEY = "agentEdits";
 export const USER_AGENTS_KEY = "userAgents";
@@ -83,6 +84,9 @@ export function listAgents(
     } else {
       out.push({
         ...a,
+        // 136/005 — brand.json names a model.yml id; every reader of the
+        // merged list works in ModelRefs.
+        ...(a.model ? { model: brandRef(a.model) } : {}),
         origin: "brand",
         edited: false,
       });

@@ -6,6 +6,9 @@ import path from "node:path";
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 const PORT = Number(process.env.FIXTURES_PORT ?? 10040);
 
+/** 136/005 — requests the stub LLM received, per run id. */
+const LLM_LOG = new Map();
+
 /** Extra response headers for individual fixture pages.
  *
  *  `page-eval-csp.html` proves the page_eval CSP refusal path. The policy
@@ -90,6 +93,46 @@ createServer(async (req, res) => {
       res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ status: "ok", data: "A".repeat(10_000) }));
       return;
+    }
+    // 136/005 — a stub LLM for the bubble relay e2e. A brand.json patched by
+    // the test points its endpoints at /api/llm/<run>/anthropic and
+    // /api/llm/<run>/openai/v1; GET /api/llm/<run>/requests returns what
+    // arrived, headers included.
+    const llm = pathname.match(/^\/api\/llm\/([A-Za-z0-9-]+)\/(.+)$/);
+    if (llm) {
+      const [, run, rest] = llm;
+      if (!LLM_LOG.has(run)) LLM_LOG.set(run, []);
+      const log = LLM_LOG.get(run);
+      if (rest === "requests" && req.method === "GET") {
+        res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(log));
+        return;
+      }
+      if (req.method === "POST" && (rest === "anthropic/v1/messages" || rest === "openai/v1/chat/completions")) {
+        let body = "";
+        req.on("data", (chunk) => { body += chunk; });
+        req.on("end", () => {
+          let parsed = null;
+          try { parsed = JSON.parse(body); } catch { parsed = null; }
+          log.push({ path: rest, headers: req.headers, body: parsed });
+          const model = parsed && typeof parsed.model === "string" ? parsed.model : "stub";
+          const reply = rest.startsWith("anthropic/")
+            ? {
+                id: "msg_stub", type: "message", role: "assistant", model,
+                content: [{ type: "text", text: "Stub reply from anthropic." }],
+                stop_reason: "end_turn", stop_sequence: null,
+                usage: { input_tokens: 1, output_tokens: 1 },
+              }
+            : {
+                id: "chatcmpl-stub", object: "chat.completion", created: 0, model,
+                choices: [{ index: 0, message: { role: "assistant", content: "Stub reply from openai." }, finish_reason: "stop" }],
+                usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+              };
+          res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
+          res.end(JSON.stringify(reply));
+        });
+        return;
+      }
     }
     res.writeHead(404, { "content-type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));

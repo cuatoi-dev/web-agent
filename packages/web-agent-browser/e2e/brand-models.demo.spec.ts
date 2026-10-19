@@ -5,8 +5,8 @@ import { patchedExtension, removePatchedExtension } from "./fixtures/patched-ext
 const PATCH_DIR_NAME = "brand-models-demo";
 
 const PROOF_MODELS = [
-  { id: "proof-anthropic", label: "Proof Anthropic", endpoint: "http://localhost:28780/api/anthropic", wireFormat: "anthropic", model: "sonnet" },
-  { id: "proof-openai", label: "Proof OpenAI", endpoint: "http://localhost:28780/api/openai/v1", wireFormat: "openai", model: "sonnet" },
+  { id: "proof-anthropic", label: "Proof Anthropic", endpoint: "http://localhost:28780/api/anthropic", wireFormat: "anthropic", model: "sonnet", vision: true },
+  { id: "proof-openai", label: "Proof OpenAI", endpoint: "http://localhost:28780/api/openai/v1", wireFormat: "openai", model: "sonnet", vision: true },
 ];
 
 const PROMPT_TEXT = "Answer with exactly one word: BRAND002.";
@@ -31,7 +31,7 @@ test.describe("Brand models — live proof", () => {
 
     const setModel = (m: (typeof PROOF_MODELS)[number]) =>
       worker.evaluate((entry) => chrome.storage.local.set({
-        agentSettings: { endpoint: entry.endpoint, wireFormat: entry.wireFormat, model: entry.model, apiKey: "", theme: "auto" },
+        modelStore: { providers: [], brandKeys: {}, disabled: [], defaultModel: `brand:${entry.id}` },
       }), m);
 
     const panel = await context.newPage();

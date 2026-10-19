@@ -21,7 +21,7 @@ links above do not work. Read the pages in the web-agent repository at
 |---|---|
 | `plugin.yml` | The in-page bubble's prompt under `prompts`, the side panel's default agent under `defaultAgent`, installation options under `options`, extra hosts under `hosts`, and tool and skill group switches under `tools` and `skills`. The file is optional, but `defaultAgent` is required whenever it is loaded. |
 | `agents/` | One YAML file per side panel agent. At least one is required. See [agents/](#agents). |
-| `model.yml` | The list of models the options page offers. |
+| `model.yml` | The models the options page table and the chat switchers offer. |
 | `skills/` | One markdown file per skill the brand ships. See `skills/README.md`. |
 | `icon.png` | One square PNG, at least 128x128. The build downscales it to 16, 32, 48 and 128. |
 
@@ -74,7 +74,7 @@ skills: "*"
 | `displayName` | Yes | A non-empty string. Shown in the panel header before the first message. |
 | `description` | Yes | A non-empty string. |
 | `instructions` | Yes | A non-empty string. Becomes the agent's `# App instructions` section. |
-| `model` | No | An `id` from `model.yml`. Overrides the endpoint, wire format and model for this agent; the options page's API key still applies. |
+| `model` | No | An `id` from `model.yml`. The agent opens on that model while it is enabled on the options page, and on the default model otherwise. The key is the one set for that model's provider. |
 | `tools` | Yes | `"*"`, or a list of side panel tool names (`read_tabs`, `page_eval`, and so on). |
 | `excludeTools` | No | A list of tool names removed from an otherwise-allowed set. |
 | `skills` | Yes | `"*"`, or a list of side panel skill names. |
@@ -118,8 +118,8 @@ starter file.
 `options` configures installation behavior:
 
 - `lockModel` (boolean, default `false`) — when set to `true`, the options page
-  makes the endpoint URL, wire format, and model read-only.
-  The preset picker, theme, API key, and shared token remain editable.
+  table shows only brand models and no row checkboxes. **Enabled**, **Default**,
+  **Key** and the chat switchers still work. The theme and the token stay editable.
 
 ### Extra hosts
 
@@ -212,23 +212,28 @@ failures it can cause.
 
 ## model.yml
 
-`model.yml` defines the models available in the options-page picker.
+`model.yml` defines the models the options page table offers.
 
 The file contains a `models` list. Each entry requires:
 
 - `id` — unique identifier for the entry
-- `label` — display name shown in the picker
+- `label` — display name shown in the options table
 - `endpoint` — absolute http or https URL
 - `wireFormat` — `anthropic`, `openai`, or `gemini`
 - `model` — model identifier sent to the endpoint
 
+Optional keys:
+
+- `provider` — row name in the options table (defaults to the endpoint's host and path). Entries with the same endpoint and wire format form one provider row.
+- `vision` — boolean (`true` when the model accepts images, default `false`).
+
 The default entries are:
 
-| ID | Label |
-|---|---|
-| `anthropic-sonnet` | Sonnet |
-| `openai-sonnet` | Sonnet OpenAI |
-| `gemini-flash` | Gemini Flash |
+| ID | Label | Provider | Vision |
+|---|---|---|---|
+| `anthropic-sonnet` | Sonnet | Gateway | true |
+| `openai-sonnet` | Sonnet OpenAI | Gateway | true |
+| `gemini-flash` | Gemini Flash | Gateway | true |
 
 The first entry in `models` is the default for a fresh profile with no saved settings.
 If `model.yml` is absent, the extension falls back to its built-in model list.

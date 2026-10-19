@@ -122,10 +122,11 @@ export function buildEditForm(
   first.value = "";
   first.textContent = MODEL_DEFAULT_LABEL;
   select.append(first);
-  for (const m of brand.models) {
+  // 136/005 — the enabled models, as "label — provider"; values are ModelRefs.
+  for (const m of lists.models) {
     const option = document.createElement("option");
-    option.value = m.id;
-    option.textContent = m.label;
+    option.value = m.value;
+    option.textContent = m.text;
     select.append(option);
   }
   select.value = draft.model ?? "";

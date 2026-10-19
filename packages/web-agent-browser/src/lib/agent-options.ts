@@ -7,7 +7,8 @@ import {
   type ToolContext,
 } from "@cuatoi/web-agent-core";
 import type { VfsHandle } from "@cuatoi/web-agent-vfs";
-import type { AgentBrand } from "./types";
+import type { AgentBrand, ModelEntry } from "./types";
+import type { AgentModelOption } from "./agent-editor.types";
 import type { MultiSelectGroup } from "./multi-select.types";
 import { createTabTools } from "./tab-tools";
 import { createPanelPageTools } from "./panel-page-tools";
@@ -100,3 +101,12 @@ export function skillNames(brand: AgentBrand): MultiSelectGroup[] {
   );
   return uniqueGroups([{ heading: null, names: skills.map((s) => s.name) }]);
 }
+
+/** The agent editor's Model options after "Use the options page model":
+ *  the enabled models, as "label — provider" (136/005). */
+export function modelOptions(entries: ModelEntry[]): AgentModelOption[] {
+  return entries
+    .filter((e) => e.enabled)
+    .map((e) => ({ value: e.ref, text: `${e.label} — ${e.provider.name}` }));
+}
+

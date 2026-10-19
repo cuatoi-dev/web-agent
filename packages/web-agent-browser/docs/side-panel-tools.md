@@ -221,18 +221,6 @@ reports, and call `start_debugging` on that tab first.
 
 ### Which models get `page_screenshot`
 
-The side panel decides from the wire format and the model name on the options
-page (`src/lib/page-screenshot-tool.ts:49-54`, `modelSupportsVision` in
-`packages/web-agent-core/src/transport/vision.ts`):
-
-| Wire format | The model name must contain |
-|---|---|
-| `anthropic` or `openai` | one of `claude-3`, `gemma-4`, `gemma4`, `gpt-4o`, `gpt-4-turbo`, `vision`, `sonnet` |
-| `gemini` | `gemini` |
-
-The match ignores letter case. Every default entry gets the tool, because each
-model name is `sonnet` or contains `gemini`.
-
-The side panel reads the wire format and the model once, when it opens
-(`src/sidepanel.ts:effectiveSettings`). After you change the model on the options page,
-close the side panel and open it again.
+The side panel offers `page_screenshot` only when the current model has
+`vision: true` in the model table (`vision` in `brand/model.yml`). Switching the
+model in the kebab menu updates the tool list for the next message.

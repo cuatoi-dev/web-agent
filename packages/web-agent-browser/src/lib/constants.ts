@@ -1,6 +1,6 @@
 import type { ThemePreference, TokenSet, WireFormat } from "./types";
 
-export type { ThemePreference, TokenSet, WireFormat } from "./types";
+export type { ThemePreference, TokenSet, WireFormat };
 
 export const DEFAULT_TOKEN = process.env.WEB_AGENT_TOKEN ?? "wa-demo-token";
 export const TOKEN_HEADER = "X-Web-Agent-Token";
@@ -105,15 +105,6 @@ export const DEFAULT_THEME: ThemePreference = "auto";
  *  line and is not offered. */
 export const DARK_TOKEN_SET = "wa2-dark" as const satisfies TokenSet;
 export const LIGHT_TOKEN_SET = "wa2-light" as const satisfies TokenSet;
-
-/** Where a user-supplied key goes, per wire format. Same three headers the
- *  reverse proxy sets on each LLM route (see web-agent-core
- *  docs/providers.md, "Reverse proxy routes"). */
-export const KEY_HEADER: Record<WireFormat, string> = {
-  openai: "Authorization",
-  anthropic: "X-Api-Key",
-  gemini: "x-goog-api-key",
-};
 
 export const LAUNCHER_ICON_SVG = `<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" style="display:block;margin:auto;"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>`;
 export const CLOSE_ICON_SVG = `<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor" style="display:block;margin:auto;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;

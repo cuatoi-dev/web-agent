@@ -12,7 +12,7 @@ export type { PresetEntry } from "./types";
  *    - gemini:    ".../api/gemini"     -> provider appends
  *      "/v1beta/models/{model}:generateContent", so NO "/v1" suffix. */
 export const PRESET_ENTRIES: PresetEntry[] = [
-  { id: "anthropic-sonnet", label: "Sonnet", endpoint: `${GATEWAY_BASE}/api/anthropic`, wireFormat: "anthropic", model: "sonnet" },
-  { id: "openai-sonnet", label: "Sonnet OpenAI", endpoint: `${GATEWAY_BASE}/api/openai/v1`, wireFormat: "openai", model: "sonnet" },
-  { id: "gemini-flash", label: "Gemini Flash", endpoint: `${GATEWAY_BASE}/api/gemini`, wireFormat: "gemini", model: "gemini-flash-lite-latest" },
+  { id: "anthropic-sonnet", label: "Sonnet", endpoint: `${GATEWAY_BASE}/api/anthropic`, wireFormat: "anthropic", model: "sonnet", vision: true, provider: "Gateway" },
+  { id: "openai-sonnet", label: "Sonnet OpenAI", endpoint: `${GATEWAY_BASE}/api/openai/v1`, wireFormat: "openai", model: "sonnet", vision: true, provider: "Gateway" },
+  { id: "gemini-flash", label: "Gemini Flash", endpoint: `${GATEWAY_BASE}/api/gemini`, wireFormat: "gemini", model: "gemini-flash-lite-latest", vision: true, provider: "Gateway" },
 ];

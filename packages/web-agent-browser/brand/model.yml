@@ -5,6 +5,12 @@
 # Every entry needs id, label, endpoint, wireFormat and model. `wireFormat` is
 # anthropic, openai or gemini.
 #
+# Two keys are optional:
+#   - provider: the name the options page shows on the provider row. Entries
+#     that share an endpoint and wire format form one row. Without it, the row
+#     shows the endpoint's host and path.
+#   - vision: true when the model accepts images. Missing means text only.
+#
 # The path each wire format needs is fixed by the core providers:
 #   - openai:    ".../api/openai/v1"  -> provider appends "/chat/completions"
 #   - anthropic: ".../api/anthropic"  -> provider appends "/v1/messages"
@@ -16,13 +22,19 @@ models:
     endpoint: "http://localhost:28780/api/anthropic"
     wireFormat: anthropic
     model: sonnet
+    provider: Gateway
+    vision: true
   - id: openai-sonnet
     label: "Sonnet OpenAI"
     endpoint: "http://localhost:28780/api/openai/v1"
     wireFormat: openai
     model: sonnet
+    provider: Gateway
+    vision: true
   - id: gemini-flash
     label: "Gemini Flash"
     endpoint: "http://localhost:28780/api/gemini"
     wireFormat: gemini
     model: gemini-flash-lite-latest
+    provider: Gateway
+    vision: true

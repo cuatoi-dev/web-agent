@@ -25,8 +25,8 @@ describe("readBridgeMessage", () => {
 
   it("returns each of the 13 known message types unchanged, with a payload field surviving", () => {
     const cases: { data: Record<string, unknown>; payloadKey: string; payloadValue: unknown }[] = [
-      { data: { type: "wa-bridge-enable", settings: { model: "m" } }, payloadKey: "settings", payloadValue: { model: "m" } },
-      { data: { type: "wa-bridge-toggle", settings: { model: "m" } }, payloadKey: "settings", payloadValue: { model: "m" } },
+      { data: { type: "wa-bridge-enable", current: "brand:x" }, payloadKey: "current", payloadValue: "brand:x" },
+      { data: { type: "wa-bridge-toggle", current: "brand:x" }, payloadKey: "current", payloadValue: "brand:x" },
       { data: { type: "wa-bridge-send", text: "hello" }, payloadKey: "text", payloadValue: "hello" },
       { data: { type: "wa-bridge-read" }, payloadKey: "type", payloadValue: "wa-bridge-read" },
       { data: { type: "wa-bridge-state-request" }, payloadKey: "type", payloadValue: "wa-bridge-state-request" },
@@ -51,7 +51,7 @@ describe("readBridgeMessage", () => {
   it("116/001 — brand survives the guard on wa-bridge-enable", () => {
     const event = fireEvent({
       source: window,
-      data: { type: "wa-bridge-enable", settings: { model: "m" }, brand: { prompts: { inPage: "P" } } },
+      data: { type: "wa-bridge-enable", current: "brand:x", brand: { prompts: { inPage: "P" } } },
     });
     const msg = readBridgeMessage(event);
     expect(msg).not.toBeNull();

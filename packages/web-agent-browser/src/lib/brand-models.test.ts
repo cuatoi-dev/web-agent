@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_BRAND } from "./brand";
-import { defaultSettings, resolveModels } from "./brand-models";
-import { DEFAULT_THEME } from "./constants";
+import { resolveModels } from "./brand-models";
 import { PRESET_ENTRIES } from "./presets";
 import type { PresetEntry } from "./types";
 
@@ -35,25 +34,5 @@ describe("brand-models", () => {
     expect(resolveModels({ ...EMPTY_BRAND, models: "x" as never })).toEqual(PRESET_ENTRIES);
   });
 
-  it("the defaults are the FIRST entry", () => {
-    expect(defaultSettings({ ...EMPTY_BRAND, models: TWO })).toEqual({
-      endpoint: TWO[0].endpoint,
-      wireFormat: TWO[0].wireFormat,
-      model: TWO[0].model,
-      apiKey: "",
-      theme: DEFAULT_THEME,
-    });
-  });
 
-  it("the defaults never carry a key", () => {
-    expect(defaultSettings({ ...EMPTY_BRAND, models: TWO }).apiKey).toBe("");
-    expect(defaultSettings(EMPTY_BRAND).apiKey).toBe("");
-  });
-
-  it("an empty brand defaults to the first compiled preset", () => {
-    const s = defaultSettings(EMPTY_BRAND);
-    expect(s.endpoint).toBe(PRESET_ENTRIES[0].endpoint);
-    expect(s.wireFormat).toBe(PRESET_ENTRIES[0].wireFormat);
-    expect(s.model).toBe(PRESET_ENTRIES[0].model);
-  });
 });

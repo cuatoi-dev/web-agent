@@ -137,6 +137,12 @@ describe("agent-edit-rules", () => {
 
     const spacesDesc = { ...validDraft(), description: `  ${TESAGENT.description}  ` };
     expect(equalsBrand(editFromDraft(spacesDesc), TESAGENT)).toBe(true);
+
+    const tesWithModel: BrandAgent = { ...TESAGENT, model: "anthropic-sonnet" };
+    const draftBrandModel = { ...validDraft(), model: "brand:anthropic-sonnet" };
+    expect(equalsBrand(editFromDraft(draftBrandModel), tesWithModel)).toBe(true);
+    const draftRawModel = { ...validDraft(), model: "anthropic-sonnet" };
+    expect(equalsBrand(editFromDraft(draftRawModel), tesWithModel)).toBe(false);
   });
 
   it("Correction 2: brand agent whose instructions end in a newline, saved unchanged, stores no edit", async () => {

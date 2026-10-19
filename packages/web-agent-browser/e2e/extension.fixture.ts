@@ -19,11 +19,9 @@ export async function getTabId(worker: Worker, url: string): Promise<number> {
 
 /** Opens the options page and waits until its async init has finished.
  *
- *  116/002 made the page build its picker and fill its fields behind two
- *  awaits, one of them a round trip to the service worker. `#endpoint` is
- *  always filled with a non-empty string by the last synchronous block of
- *  `init()`, and `preset.value` is assigned in that same block, so a non-empty
- *  `#endpoint` means the whole form is ready. Without this wait a `fill()` or a
+ *  136/005 — `init()` paints `#model-count` last, in the same synchronous block
+ *  that fills the theme and token values, so awaiting `/models enabled/`
+ *  guarantees the whole tab is populated. Without this wait a `fill()` or a
  *  value read that follows `goto()` races the init and is overwritten by it. */
 export async function openOptions(page: Page, extensionId: string): Promise<void> {
   await page.goto(`chrome-extension://${extensionId}/options.html`);
@@ -32,7 +30,7 @@ export async function openOptions(page: Page, extensionId: string): Promise<void
 
 /** The same wait, for a `page.reload()` that re-runs the init. */
 export async function optionsReady(page: Page): Promise<void> {
-  await baseExpect(page.locator("#endpoint")).not.toHaveValue("", { timeout: 15_000 });
+  await baseExpect(page.locator("#model-count")).toHaveText(/models enabled/, { timeout: 15_000 });
 }
 
 export const test = base.extend<{ context: BrowserContext; extensionId: string }>({

@@ -8,7 +8,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-export function createRelayFetch(ctx: RelayFetchContext = window): typeof fetch {
+/** 136/005 — `getModelRef` is read per request, so the worker knows which
+ *  provider's key to add. An empty ref is refused by the worker. */
+export function createRelayFetch(
+  ctx: RelayFetchContext = window,
+  getModelRef: () => string = () => "",
+): typeof fetch {
   return (input: RequestInfo | URL, init?: RequestInit) =>
     new Promise<Response>((resolve, reject) => {
       const reqId = "wa-req-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -70,6 +75,7 @@ export function createRelayFetch(ctx: RelayFetchContext = window): typeof fetch 
           method: init?.method ?? "POST",
           headers: Object.fromEntries(headers.entries()),
           body: typeof init?.body === "string" ? init.body : null,
+          modelRef: getModelRef(),
         },
       }, "*");
     });

@@ -59,6 +59,7 @@ describe("createRelayFetch", () => {
         "x-custom": "123",
       },
       body: '{"query":"hi"}',
+      modelRef: "",
     });
 
     fake.emit(req.reqId, { type: "head", status: 200, statusText: "OK", contentType: "application/json" });
@@ -160,5 +161,17 @@ describe("createRelayFetch", () => {
     const res = await fetchPromise;
     expect(res.status).toBe(204);
     expect(res.body).toBeNull();
+  });
+
+  it("includes modelRef from getter, or empty string when no getter provided", () => {
+    const fake1 = createFakeContext();
+    const relayFetchWithGetter = createRelayFetch(fake1.ctx, () => "brand:x");
+    void relayFetchWithGetter("https://example.com/api");
+    expect(fake1.postedMessages[0].request?.modelRef).toBe("brand:x");
+
+    const fake2 = createFakeContext();
+    const relayFetchNoGetter = createRelayFetch(fake2.ctx);
+    void relayFetchNoGetter("https://example.com/api");
+    expect(fake2.postedMessages[0].request?.modelRef).toBe("");
   });
 });

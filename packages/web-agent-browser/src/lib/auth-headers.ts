@@ -1,17 +1,39 @@
-import { KEY_HEADER, TOKEN_HEADER } from "./constants";
-import type { AgentSettings } from "./settings";
+import { TOKEN_HEADER } from "./constants";
+import type { ResolvedProvider } from "./types";
 
-/** Which auth header leaves the browser.
- *  Empty key  -> the shared team token, as before this task.
- *  Filled key -> the user's key, in the header the chosen wire format uses,
- *  and the shared token is NOT sent (idea 093: the key is sent "instead"), so
- *  the team token never reaches a stranger's endpoint. */
-export function buildAuthHeaders(
-  settings: AgentSettings,
-  sharedToken: string,
-): Record<string, string> {
-  const key = settings.apiKey.trim();
-  if (!key) return { [TOKEN_HEADER]: sharedToken };
-  const header = KEY_HEADER[settings.wireFormat];
-  return { [header]: settings.wireFormat === "openai" ? `Bearer ${key}` : key };
+/** The Anthropic API version every anthropic-format request names. */
+export const ANTHROPIC_VERSION = "2023-06-01";
+
+/** The headers one request to `provider` carries (136/005).
+ *
+ *  - A key: the header the wire format uses, and NO shared token, so the team
+ *    token never reaches a stranger's endpoint (idea 093).
+ *  - No key, brand provider: the shared token, as before.
+ *  - No key, custom provider: no auth header.
+ *  - anthropic format: `anthropic-version` and
+ *    `anthropic-dangerous-direct-browser-access`, which a direct browser call
+ *    to Anthropic needs.
+ *  - Custom headers last; one wins over an auth header of the same name in
+ *    any letter case (user decision 2026-10-19). */
+export function authHeaders(provider: ResolvedProvider, token: string): Record<string, string> {
+  const h: Record<string, string> = {};
+  const key = provider.apiKey.trim();
+  if (key) {
+    if (provider.wireFormat === "openai") h["Authorization"] = `Bearer ${key}`;
+    else if (provider.wireFormat === "anthropic") h["x-api-key"] = key;
+    else h["x-goog-api-key"] = key;
+  } else if (provider.kind === "brand") {
+    h[TOKEN_HEADER] = token;
+  }
+  if (provider.wireFormat === "anthropic") {
+    h["anthropic-version"] = ANTHROPIC_VERSION;
+    h["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  for (const { name, value } of provider.headers) {
+    for (const existing of Object.keys(h)) {
+      if (existing.toLowerCase() === name.toLowerCase()) delete h[existing];
+    }
+    h[name] = value;
+  }
+  return h;
 }

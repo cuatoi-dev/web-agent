@@ -122,6 +122,21 @@ describe("listAgents", () => {
     expect(out[1]).toMatchObject({ id: "tesagent", origin: "brand", edited: false });
   });
 
+  it("U4b: a brand agent with model lists with brand: prefix, and without model has no model key", () => {
+    const b = brand();
+    const withModel = {
+      ...b,
+      agents: [
+        { ...b.agents[0], model: "anthropic-sonnet" },
+        { ...b.agents[1] },
+      ],
+    };
+    delete (withModel.agents[1] as any).model;
+    const out = listAgents(withModel, {}, []);
+    expect(out[0].model).toBe("brand:anthropic-sonnet");
+    expect("model" in out[1]).toBe(false);
+  });
+
   it("U5: keeps chromagent excludeSkills intact", () => {
     const out = listAgents(brand(), {}, []);
     expect(out[0].excludeSkills).toEqual(["test_plan"]);

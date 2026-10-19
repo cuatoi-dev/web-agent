@@ -269,15 +269,13 @@ test.describe("Side panel mock e2e", () => {
     await panelPage.screenshot({ path: path.join(SYNC_ARTIFACTS_DIR, "host-to-plain-on.png") });
   });
 
-  test("saved options settings reach the panel element", async ({ context, extensionId }) => {
+  test("the options page default model and theme reach the panel element", async ({ context, extensionId }) => {
     if (context.serviceWorkers().length === 0) await context.waitForEvent("serviceworker");
 
     // Configure options via options.html
     const optionsPage = await context.newPage();
     await openOptions(optionsPage, extensionId);
-    await optionsPage.fill("#endpoint", "http://localhost:28780/api/anthropic/v1");
-    await optionsPage.selectOption("#wireFormat", "anthropic");
-    await optionsPage.fill("#model", "claude-3-haiku-20240307");
+    await optionsPage.click('#model-table tr.model-row[data-ref="brand:openai-sonnet"] input.model-default');
     await optionsPage.selectOption("#theme", "wa2-dark");
     await optionsPage.click("#save");
     await expect(optionsPage.locator("#status")).toContainText("Saved.");
@@ -287,19 +285,21 @@ test.describe("Side panel mock e2e", () => {
     await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
 
     const panelAttrs = await panelPage.evaluate(() => {
-      const panel = document.querySelector("agent-chat-panel");
+      const panel = document.querySelector("agent-chat-panel") as any;
       if (!panel) throw new Error("expected agent-chat-panel to be attached");
       return {
         path: panel.path,
         type: panel.type,
         model: panel.model,
+        selectedModel: panel.selectedModel,
         dataTheme: document.documentElement.getAttribute("data-theme"),
       };
     });
 
-    expect(panelAttrs.path).toBe("http://localhost:28780/api/anthropic/v1");
-    expect(panelAttrs.type).toBe("anthropic");
-    expect(panelAttrs.model).toBe("claude-3-haiku-20240307");
+    expect(panelAttrs.path).toBe("http://localhost:28780/api/openai/v1");
+    expect(panelAttrs.type).toBe("openai");
+    expect(panelAttrs.model).toBe("sonnet");
+    expect(panelAttrs.selectedModel).toBe("brand:openai-sonnet");
     expect(panelAttrs.dataTheme).toBe("wa2-dark");
   });
 
