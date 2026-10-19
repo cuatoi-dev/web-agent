@@ -7,7 +7,7 @@
  * - Tab buttons update aria-selected, tabIndex (0 on active, -1 on inactive).
  * - Corresponding panels toggle their `hidden` property.
  *
- * Initial call selects tab 0 (Models tab) so the page always opens on Models.
+ * Initial call selects the first tab.
  */
 export function mountTabs(
   tabs: HTMLButtonElement[],

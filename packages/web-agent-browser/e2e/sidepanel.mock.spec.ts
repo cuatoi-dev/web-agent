@@ -275,7 +275,9 @@ test.describe("Side panel mock e2e", () => {
     // Configure options via options.html
     const optionsPage = await context.newPage();
     await openOptions(optionsPage, extensionId);
+    await optionsPage.click("#tab-btn-models");
     await optionsPage.click('#model-table tr.model-row[data-ref="brand:openai-sonnet"] input.model-default');
+    await optionsPage.click("#tab-btn-general");
     await optionsPage.selectOption("#theme", "wa2-dark");
     await optionsPage.click("#save");
     await expect(optionsPage.locator("#status")).toContainText("Saved.");

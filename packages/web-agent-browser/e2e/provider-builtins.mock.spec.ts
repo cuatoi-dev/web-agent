@@ -39,6 +39,7 @@ test("B1: provider grid and Anthropic form in both themes", async () => {
   try {
     const page = await ctx.newPage();
     await openOptions(page, id);
+    await page.locator("#tab-btn-models").click();
     await page.locator("#add-model-btn").click();
     await expect(page.locator("dialog.provider-grid-dialog")).toBeVisible();
     await expect(page.locator(".provider-tile .tile-label")).toHaveText([
@@ -75,6 +76,7 @@ test("B2: Google switches endpoints and xAI has a fixed format", async () => {
   try {
     const page = await ctx.newPage();
     await openOptions(page, id);
+    await page.locator("#tab-btn-models").click();
     await page.locator("#add-model-btn").click();
     await page.locator('.provider-tile[data-built-in="google"]').click();
     await page.locator(".next-btn").click();
@@ -104,6 +106,7 @@ test("B3: saved built-in logos reach the table and both switchers", async () => 
   try {
     const page = await ctx.newPage();
     await openOptions(page, id);
+    await page.locator("#tab-btn-models").click();
     await worker.evaluate(async () => {
       await chrome.storage.local.set({
         enabledOrigins: ["http://localhost:10040"],
@@ -128,6 +131,7 @@ test("B3: saved built-in logos reach the table and both switchers", async () => 
     });
     await page.reload();
     await optionsReady(page);
+    await page.locator("#tab-btn-models").click();
     const builtin = page.locator('tr.prov[data-provider-id="p1"] .prov-name svg.logo');
     await expect(builtin.locator("path")).toHaveCount(1);
     const generic = page.locator('tr.prov').first().locator(".prov-name svg.logo");
@@ -151,6 +155,7 @@ test("B3: saved built-in logos reach the table and both switchers", async () => 
 test("B4: the default brand opens the custom form directly", async ({ context, extensionId }) => {
   const page = await context.newPage();
   await openOptions(page, extensionId);
+  await page.locator("#tab-btn-models").click();
   await page.locator("#add-model-btn").click();
   await expect(page.locator("dialog.provider-dialog")).toBeVisible();
   await expect(page.locator("dialog.provider-dialog h2")).toHaveText("Add custom provider");

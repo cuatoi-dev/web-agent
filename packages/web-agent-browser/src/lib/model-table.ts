@@ -8,10 +8,10 @@ export const BRAND_CHECKBOX_TITLE = "Brand models cannot be deleted";
 export const PROVIDED_KEY_TEXT = "provided key";
 export const NO_KEY_TEXT = "no key";
 
-/** "N of M models enabled". */
+/** "Enabled N/M". */
 export function modelCountText(entries: ModelEntry[]): string {
   const on = entries.filter((e) => e.enabled).length;
-  return `${on} of ${entries.length} models enabled`;
+  return `Enabled ${on}/${entries.length}`;
 }
 
 /** "Delete selected" when N == 0, else "Delete selected (N)". */

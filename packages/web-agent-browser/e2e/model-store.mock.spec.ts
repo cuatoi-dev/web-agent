@@ -90,6 +90,7 @@ test.describe("Model store, relay and switchers", () => {
 
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
 
     const provRow = page.locator('#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:28780/api/anthropic"]');
     await expect(provRow.locator(".prov-sub")).toContainText("provided key");
@@ -260,10 +261,11 @@ test.describe("Model store, relay and switchers", () => {
 
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
 
     // Switch off Gemini Flash
     await page.locator('#model-table tr.model-row[data-ref="brand:gemini-flash"] input.model-enabled').click();
-    await expect(page.locator("#model-count")).toHaveText("2 of 3 models enabled");
+    await expect(page.locator("#model-count")).toHaveText("Enabled 2/3");
 
     // Side panel switcher
     const panelPage = await context.newPage();
@@ -321,6 +323,7 @@ test.describe("Model store, relay and switchers", () => {
 
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
 
     // Switch off Gemini Flash
     await page.locator('#model-table tr.model-row[data-ref="brand:gemini-flash"] input.model-enabled').click();
@@ -409,6 +412,7 @@ test.describe("Model store, relay and switchers", () => {
       // Visual check and assertions for brand with/without apiKey
       const optionsPage = await ctx.newPage();
       await openOptions(optionsPage, extensionId);
+      await optionsPage.locator("#tab-btn-models").click();
       const rowOpenai = optionsPage.locator('#model-table tr.prov').filter({ hasText: "/openai/v1" });
       const rowAnthropic = optionsPage.locator('#model-table tr.prov').filter({ hasText: "/anthropic" });
       await expect(rowOpenai.locator(".prov-sub")).toContainText("· no key");
@@ -611,6 +615,7 @@ async function seedProvider(page: Page, worker: import("@playwright/test").Worke
   );
   await page.reload();
   await optionsReady(page);
+  await page.locator("#tab-btn-models").click();
 }
 
 test.describe("Custom providers, multi-select delete and Refresh from /models (136/006)", () => {
@@ -622,6 +627,7 @@ test.describe("Custom providers, multi-select delete and Refresh from /models (1
     const page = await context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     const dialog = await openAddDialog(page);
     await expect(dialog.locator(".form-model-row")).toHaveCount(1);
     await expect(dialog.locator(".header-row")).toHaveCount(0);
@@ -719,6 +725,7 @@ test.describe("Custom providers, multi-select delete and Refresh from /models (1
     const page = await context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     let mode: "ok" | "401" | "empty" = "ok";
     await page.route(`${ENDPOINT_006}/models`, async (route) => {
       if (mode === "401") {
@@ -790,6 +797,7 @@ test.describe("Custom providers, multi-select delete and Refresh from /models (1
     const page = await context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     await seedProvider(page, worker, ["m1", "m2", "m3"]);
 
     const del = page.locator("#delete-models-btn");
@@ -821,6 +829,7 @@ test.describe("Custom providers, multi-select delete and Refresh from /models (1
     if (!worker) worker = await context.waitForEvent("serviceworker");
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     await seedProvider(page, worker, ["m1", "m2"], { defaultModel: "p1/m1" });
     await expect(page.locator('tr.model-row[data-ref="p1/m1"] input.model-default')).toBeChecked();
 

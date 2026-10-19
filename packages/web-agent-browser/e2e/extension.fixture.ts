@@ -19,10 +19,11 @@ export async function getTabId(worker: Worker, url: string): Promise<number> {
 
 /** Opens the options page and waits until its async init has finished.
  *
- *  136/005 — `init()` paints `#model-count` last, in the same synchronous block
- *  that fills the theme value, so awaiting `/models enabled/`
- *  guarantees the whole tab is populated. Without this wait a `fill()` or a
- *  value read that follows `goto()` races the init and is overwritten by it. */
+ *  137/002 — `init()` paints `#model-count` last, in the same synchronous
+ *  block that fills the theme value. It runs even though the Models panel
+ *  starts hidden, so "the count line has text" guarantees the whole page is
+ *  populated. Without this wait a `fill()` or a value read that follows
+ *  `goto()` races the init and is overwritten by it. */
 export async function openOptions(page: Page, extensionId: string): Promise<void> {
   await page.goto(`chrome-extension://${extensionId}/options.html`);
   await optionsReady(page);
@@ -30,7 +31,7 @@ export async function openOptions(page: Page, extensionId: string): Promise<void
 
 /** The same wait, for a `page.reload()` that re-runs the init. */
 export async function optionsReady(page: Page): Promise<void> {
-  await baseExpect(page.locator("#model-count")).toHaveText(/models enabled/, { timeout: 15_000 });
+  await baseExpect(page.locator("#model-count")).toHaveText(/^Enabled \d+\/\d+$/, { timeout: 15_000 });
 }
 
 export const test = base.extend<{ context: BrowserContext; extensionId: string }>({

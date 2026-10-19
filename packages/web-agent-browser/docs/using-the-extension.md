@@ -135,10 +135,13 @@ it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
 
 ## Choose the models and the theme
 
+The options page opens on **General**. Choose **Theme** there and select
+**Save**. The other tabs are **Models**, **Skills**, and **Agents**.
+
 1. The **Models** tab shows one row per provider and its models under it.
    Models that share an endpoint and a wire format in `brand/model.yml` form
    one provider row with the **Provided** tag. The count line reads
-   "N of M models enabled".
+   "Enabled N/M".
 2. The **Enabled** switch turns a model on or off. Only enabled models
    appear in the side panel and bubble kebab menus and in the agent editor.
    The last enabled model cannot be turned off; the page shows
@@ -153,8 +156,8 @@ it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
    Filled: your key is sent in place of the provided key, to that endpoint
    only. The key is stored unencrypted in browser storage.
 5. Switches, radios and keys save at once.
-   **Theme** keeps its own **Save** button, which shows
-   `Saved. Reload a page to use the new settings.`
+   **Theme** is on the **General** tab and keeps its own **Save** button, which
+   shows `Saved. Reload a page to use the new settings.`
 
 The provider row shows `key ••••xxxx` for your own key, `provided key`
 for the brand's key, and `no key` when there is neither.

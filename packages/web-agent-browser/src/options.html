@@ -27,23 +27,22 @@
   section[role="tabpanel"][hidden] {
     display: none;
   }
-  #tab-models {
+  #tab-general, #tab-models {
     align-items: flex-start;
   }
-  #tab-models > label,
-  #tab-models > input,
-  #tab-models > select,
-  #tab-models > .row,
-  #tab-models > .hint,
-  #tab-models > .field-error,
-  #tab-models > #save,
-  #tab-models > #status {
+  #tab-general > label,
+  #tab-general > select,
+  #tab-general > .hint,
+  #tab-general > #save,
+  #tab-general > #status,
+  #tab-models > .field-error {
     width: 100%;
     max-width: 560px;
     box-sizing: border-box;
   }
-  #tab-models > #save {
+  #tab-general > #save {
     width: auto;
+    margin-top: 20px;
   }
   #tab-skills, #tab-agents {
     align-items: stretch;
@@ -69,7 +68,7 @@
   .row input[type="checkbox"] { width: auto; }
   .hint { margin: 4px 0 0; font-size: 12px; }
   button {
-    margin-top: 20px; padding: 8px 16px; font-size: 14px;
+    padding: 8px 16px; font-size: 14px;
     background: var(--wa-button-background-color);
     color: var(--wa-text-color);
     border: 1px solid var(--wa-border-color);
@@ -276,7 +275,11 @@
   }
   .confirm-dialog::backdrop { background: var(--wa-text-color); opacity: 0.4; }
   .confirm-dialog p { margin: 0 0 16px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
-  .confirm-dialog .dialog-actions { justify-content: flex-end; flex-wrap: wrap; }
+  .confirm-dialog .dialog-actions {
+    display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px;
+    margin-top: 24px; padding-top: 16px;
+    border-top: 1px solid var(--wa-border-color);
+  }
   .confirm-dialog button { margin-top: 0; }
   .edit-body code { font-size: 12px; }
   /* Model table. Colours are tokens only.
@@ -321,14 +324,14 @@
   .key-dialog h2, .provider-dialog h2, .diff-dialog h2, .model-delete-dialog h2, .refresh-error-dialog h2 { font-size: 15px; margin: 0 0 8px; }
   .key-dialog label { margin: 12px 0 4px; }
   .key-dialog .hint { margin: 4px 0 12px; }
-  .model-toolbar { margin: 4px 0 8px; }
+  .model-toolbar { width: 100%; margin: 4px 0 8px; }
+  .model-toolbar #model-count { margin-left: auto; white-space: nowrap; }
   .model-toolbar .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .model-toolbar .row[hidden], .refresh-models-btn[hidden] { display: none; }
   .provider-dialog { max-width: min(640px, calc(100vw - 48px)); width: 100%; }
   .provider-dialog label { margin: 10px 0 4px; }
   .confirm-dialog.provider-dialog .hint, .confirm-dialog.diff-dialog .hint { margin: 4px 0 12px; font-size: 12px; }
   .confirm-dialog.provider-dialog .field-error { margin: 4px 0 0; font-size: 12px; }
-  .provider-dialog .dialog-actions, .diff-dialog .dialog-actions { margin-top: 16px; }
   /* Built-in provider grid and format controls. Every colour is a
      theme token. Meaning never rests on colour: a selected tile sets
      aria-pressed, and Next only enables after a selection. */
@@ -352,9 +355,13 @@
   .section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .section-head label { margin: 0; }
   .section-head .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .header-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; margin-top: 6px; }
-  .form-model-cols { display: grid; grid-template-columns: 1fr 1fr 76px 32px; gap: 8px; font-size: 12px; opacity: 0.82; margin-top: 6px; }
-  .form-model-row { display: grid; grid-template-columns: 1fr 1fr 76px 32px; gap: 8px; align-items: center; margin-top: 6px; }
+  .header-row { display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px; align-items: center; margin-top: 6px; }
+  .form-model-cols { display: grid; grid-template-columns: 1fr 1fr 76px 36px; gap: 8px; font-size: 12px; opacity: 0.82; margin-top: 6px; }
+  .form-model-row { display: grid; grid-template-columns: 1fr 1fr 76px 36px; gap: 8px; align-items: center; margin-top: 6px; }
+  .remove-model-btn, .remove-header-btn {
+    width: 36px; height: 36px; box-sizing: border-box; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
   .vision-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; font-size: 13px; cursor: pointer; }
   .vision-check input { width: auto; padding: 0; margin: 0; }
   .diff-dialog { max-width: min(520px, calc(100vw - 48px)); width: 100%; }
@@ -368,33 +375,35 @@
   <h1>Web Agent options</h1>
 
   <div class="tabs" role="tablist">
-    <button type="button" class="tab" role="tab" id="tab-btn-models" aria-controls="tab-models" aria-selected="true" tabindex="0">Models</button>
+    <button type="button" class="tab" role="tab" id="tab-btn-general" aria-controls="tab-general" aria-selected="true" tabindex="0">General</button>
+    <button type="button" class="tab" role="tab" id="tab-btn-models" aria-controls="tab-models" aria-selected="false" tabindex="-1">Models</button>
     <button type="button" class="tab" role="tab" id="tab-btn-skills" aria-controls="tab-skills" aria-selected="false" tabindex="-1">Skills</button>
     <button type="button" class="tab" role="tab" id="tab-btn-agents" aria-controls="tab-agents" aria-selected="false" tabindex="-1">Agents</button>
   </div>
 
-  <section role="tabpanel" id="tab-models" aria-labelledby="tab-btn-models">
-  <div class="toolbar model-toolbar" id="model-toolbar">
-    <p class="hint" id="model-count"></p>
-    <div class="row" id="model-toolbar-actions">
-      <button type="button" id="add-model-btn" class="btn primary">+ Add model</button>
-      <button type="button" id="delete-models-btn" class="btn danger" disabled>Delete selected</button>
-    </div>
-  </div>
-  <div class="table-wrap"><table id="model-table" class="model-table"></table></div>
-  <p class="field-error" id="model-table-hint" role="alert" hidden></p>
-
+  <section role="tabpanel" id="tab-general" aria-labelledby="tab-btn-general">
   <label for="theme">Theme</label>
   <select id="theme">
     <option value="auto">Auto (follow system)</option>
   </select>
   <p class="hint" id="theme-hint">
-    This changes the agent bubble only, never the website. A website that already
-    supplies its own theme keeps it, and the bubble follows that website.
+    Applies to the agent bubble, not the website. If a website sets its own theme, the bubble uses it.
   </p>
 
   <button id="save">Save</button>
   <p id="status" role="status"></p>
+  </section>
+
+  <section role="tabpanel" id="tab-models" aria-labelledby="tab-btn-models" hidden>
+  <div class="toolbar model-toolbar" id="model-toolbar">
+    <div class="row" id="model-toolbar-actions">
+      <button type="button" id="add-model-btn" class="btn primary">+ Add model</button>
+      <button type="button" id="delete-models-btn" class="btn danger" disabled>Delete selected</button>
+    </div>
+    <p class="hint" id="model-count"></p>
+  </div>
+  <div class="table-wrap"><table id="model-table" class="model-table"></table></div>
+  <p class="field-error" id="model-table-hint" role="alert" hidden></p>
   </section>
 
   <section role="tabpanel" id="tab-skills" aria-labelledby="tab-btn-skills" hidden>

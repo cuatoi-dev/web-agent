@@ -1,5 +1,5 @@
 import { test, expect, openOptions, optionsReady } from "./extension.fixture";
-import { chromium } from "@playwright/test";
+import { chromium, type Locator, type Page, type Worker } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
@@ -50,6 +50,7 @@ test.describe("Options page", () => {
     const page = await context.newPage();
     await page.emulateMedia({ colorScheme: "dark" });
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     await expect(page.locator("#model-table")).toBeVisible();
     await fs.mkdir(ARTIFACTS_004, { recursive: true });
     await page.screenshot({ path: path.join(ARTIFACTS_004, "02-options-page-dark.png"), fullPage: true });
@@ -61,6 +62,7 @@ test.describe("Options page", () => {
 
     const options = await context.newPage();
     await openOptions(options, extensionId);
+    await options.click("#tab-btn-models");
     await options.click('#model-table tr.model-row[data-ref="brand:gemini-flash"] input.model-default');
 
     await worker.evaluate(async () => {
@@ -122,6 +124,7 @@ test.describe("Saved skills", () => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.reload();
     await optionsReady(page);
+    await page.locator("#tab-btn-skills").click();
     await expect(page.locator("#skill-list .skill-row")).toHaveCount(2);
     await page.screenshot({ path: path.join(ARTIFACTS_005, "02-list-dark.png"), fullPage: true });
     await page.emulateMedia({ colorScheme: "light" });
@@ -214,43 +217,55 @@ test.describe("Saved skills", () => {
     await expect(page.locator("#theme")).toHaveValue("wa2-dark");
   });
 
-  test("T1: tab bar displays Models, Skills, Agents; keyboard ArrowRight/ArrowLeft cycle all three", async ({ context, extensionId }) => {
+  test("T1: tab bar displays General, Models, Skills, Agents; keyboard cycles all four and reload returns to General", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
 
-    await expect(page.locator("#tab-btn-models")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator(".tab")).toHaveText(["General", "Models", "Skills", "Agents"]);
+    await expect(page.locator("#tab-btn-general")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-btn-models")).toHaveAttribute("aria-selected", "false");
     await expect(page.locator("#tab-btn-skills")).toHaveAttribute("aria-selected", "false");
     await expect(page.locator("#tab-btn-agents")).toHaveAttribute("aria-selected", "false");
-    await expect(page.locator("#tab-models")).toBeVisible();
+    await expect(page.locator('.tab[aria-selected="true"]')).toHaveCount(1);
+    await expect(page.locator('.tab[aria-selected="true"]')).toHaveAttribute("tabindex", "0");
+    await expect(page.locator("#tab-general")).toBeVisible();
+    await expect(page.locator("#tab-models")).toBeHidden();
     await expect(page.locator("#tab-skills")).toBeHidden();
     await expect(page.locator("#tab-agents")).toBeHidden();
 
-    await page.locator("#tab-btn-skills").click();
-    await expect(page.locator("#tab-btn-skills")).toHaveAttribute("aria-selected", "true");
-    await expect(page.locator("#tab-skills")).toBeVisible();
+    await page.locator("#tab-btn-models").click();
+    await expect(page.locator("#tab-btn-models")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-models")).toBeVisible();
+    await expect(page.locator("#tab-general")).toBeHidden();
 
-    await page.locator("#tab-btn-skills").focus();
+    await page.locator("#tab-btn-models").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator("#tab-btn-skills")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-btn-skills")).toBeFocused();
+    await expect(page.locator("#tab-skills")).toBeVisible();
+    await expect(page.locator("#tab-models")).toBeHidden();
+
     await page.keyboard.press("ArrowRight");
     await expect(page.locator("#tab-btn-agents")).toHaveAttribute("aria-selected", "true");
-    await expect(page.locator("#tab-btn-agents")).toBeFocused();
     await expect(page.locator("#tab-agents")).toBeVisible();
-    await expect(page.locator("#tab-skills")).toBeHidden();
 
     await page.keyboard.press("ArrowRight");
-    await expect(page.locator("#tab-btn-models")).toHaveAttribute("aria-selected", "true");
-    await expect(page.locator("#tab-btn-models")).toBeFocused();
+    await expect(page.locator("#tab-btn-general")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-general")).toBeVisible();
 
     await page.keyboard.press("ArrowLeft");
     await expect(page.locator("#tab-btn-agents")).toHaveAttribute("aria-selected", "true");
     await page.keyboard.press("Home");
-    await expect(page.locator("#tab-btn-models")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-btn-general")).toHaveAttribute("aria-selected", "true");
     await page.keyboard.press("End");
     await expect(page.locator("#tab-btn-agents")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-general")).toBeHidden();
 
     await page.reload();
     await optionsReady(page);
-    await expect(page.locator("#tab-btn-models")).toHaveAttribute("aria-selected", "true");
-    await expect(page.locator("#tab-models")).toBeVisible();
+    await expect(page.locator("#tab-btn-general")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-general")).toBeVisible();
+    await expect(page.locator("#tab-models")).toBeHidden();
   });
 
   test("A1: Agents tab renders default brand cards, tags, facts; Add agent enabled, Edit enabled", async ({ context, extensionId }) => {
@@ -414,10 +429,15 @@ test.describe("Brand model list", () => {
   test("G2: fresh profile shows the three brand rows and defaults to the first", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     await expect(page.locator("#model-table tr.model-row .model-label")).toHaveText(["Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
     await expect(page.locator('#model-table tr.model-row[data-ref="brand:anthropic-sonnet"] input.model-default')).toBeChecked();
-    await expect(page.locator("#model-count")).toHaveText("3 of 3 models enabled");
-    await expect(page.locator("#tab-models > label")).toHaveText(["Theme"]);
+    await expect(page.locator("#model-count")).toHaveText("Enabled 3/3");
+    await expect(page.locator("#tab-models #theme")).toHaveCount(0);
+    await expect(page.locator("#tab-models #theme-hint")).toHaveCount(0);
+    await expect(page.locator("#tab-models #save")).toHaveCount(0);
+    await expect(page.locator("#tab-models #status")).toHaveCount(0);
+    await expect(page.locator("#tab-general > label")).toHaveText(["Theme"]);
     await expect(page.locator("#token")).toHaveCount(0);
     await expect(page.locator("#preset")).toHaveCount(0);
     await expect(page.locator("#endpoint")).toHaveCount(0);
@@ -435,6 +455,7 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
+      await page.locator("#tab-btn-models").click();
       await expect(page.locator("#model-table tr.model-row .model-label")).toHaveText(["Acme Assistant", "Acme Fast"]);
     } finally {
       await ctx.close();
@@ -450,6 +471,7 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
+      await page.locator("#tab-btn-models").click();
       await expect(page.locator("#model-table tr.prov .prov-label")).toHaveText([
         "localhost:10040/api/anthropic",
         "localhost:10040/api/openai/v1",
@@ -462,6 +484,7 @@ test.describe("Brand model list", () => {
   test("B3: the repo brand's provider rows read Gateway", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     await expect(page.locator("#model-table tr.prov .prov-label")).toHaveText(["Gateway", "Gateway", "Gateway"]);
   });
 
@@ -474,6 +497,7 @@ test.describe("Brand model list", () => {
       const id = worker.url().split("/")[2];
       const page = await ctx.newPage();
       await openOptions(page, id);
+      await page.locator("#tab-btn-models").click();
       await expect(page.locator("#add-model-btn")).toBeHidden();
       await expect(page.locator("#delete-models-btn")).toBeHidden();
       await expect(page.locator('#model-table input[type="checkbox"]:not([role="switch"])')).toHaveCount(0);
@@ -487,7 +511,7 @@ test.describe("Brand model list", () => {
         await expect(page.locator("#model-table input.model-enabled").nth(i)).toBeEnabled();
       }
       await page.click('#model-table tr.model-row[data-ref="brand:openai-sonnet"] input.model-enabled');
-      await expect(page.locator("#model-count")).toHaveText("2 of 3 models enabled");
+      await expect(page.locator("#model-count")).toHaveText("Enabled 2/3");
     } finally {
       await ctx.close();
     }
@@ -511,6 +535,7 @@ test.describe("Brand model list", () => {
   test("L4: lockModel absent shows one disabled checkbox per brand provider row", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
     const cbs = page.locator('#model-table tr.prov input[type="checkbox"]');
     await expect(cbs).toHaveCount(3);
     for (let i = 0; i < 3; i++) {
@@ -525,6 +550,15 @@ const ARTIFACTS_005_LAYOUT = path.resolve(
   HERE,
   "../../../temp/artifacts/2026-09-16-195740-005-options-page-full-width-flex",
 );
+
+/** The ids of the tab panels that are currently laid out (display is not none). */
+function visiblePanels(page: Page): Promise<string[]> {
+  return page
+    .locator('section[role="tabpanel"]')
+    .evaluateAll((els) =>
+      els.filter((el) => getComputedStyle(el).display !== "none").map((el) => el.id),
+    );
+}
 
 test.describe("Options page full-width flex layout", () => {
   test.beforeAll(async () => {
@@ -568,7 +602,7 @@ test.describe("Options page full-width flex layout", () => {
     expect(hasHScroll1024).toBe(false);
   });
 
-  test("models tab fields, hints, save button and status align left at 560px maximum width", async ({ context, extensionId }) => {
+  test("General tab fields, hint, save button and status align left at 560px maximum width", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
@@ -584,9 +618,6 @@ test.describe("Options page full-width flex layout", () => {
     expect(themeHintBox.width).toBeLessThanOrEqual(560);
     expect(themeHintBox.left).toBe(24);
 
-    const tableBox = await page.locator("#tab-models > .table-wrap").evaluate((el) => el.getBoundingClientRect());
-    expect(tableBox.left).toBe(24);
-
     const saveBox = await page.locator("#save").evaluate((el) => el.getBoundingClientRect());
     expect(saveBox.left).toBe(24);
     expect(saveBox.width).toBeLessThanOrEqual(560);
@@ -595,6 +626,13 @@ test.describe("Options page full-width flex layout", () => {
     expect(statusBox.left).toBe(24);
     expect(statusBox.width).toBeLessThanOrEqual(560);
 
+    // The table is on the Models tab, which fills the width and scrolls
+    // inside its wrapper.
+    await page.locator("#tab-btn-models").click();
+    const tableBox = await page.locator("#tab-models > .table-wrap").evaluate((el) => el.getBoundingClientRect());
+    expect(tableBox.left).toBe(24);
+
+    await page.locator("#tab-btn-general").click();
     await page.click("#save");
     await expect(page.locator("#status")).toContainText("Saved.");
   });
@@ -680,16 +718,25 @@ test.describe("Options page full-width flex layout", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
 
-    // Initial state: Models active
-    expect(await page.locator("#tab-models").evaluate((el) => getComputedStyle(el).display)).toBe("flex");
+    // Initial state: General active, the other three hidden.
+    expect(await page.locator("#tab-general").evaluate((el) => getComputedStyle(el).display)).toBe("flex");
+    expect(await page.locator("#tab-models").evaluate((el) => getComputedStyle(el).display)).toBe("none");
     expect(await page.locator("#tab-skills").evaluate((el) => getComputedStyle(el).display)).toBe("none");
     expect(await page.locator("#tab-agents").evaluate((el) => getComputedStyle(el).display)).toBe("none");
+    expect(await visiblePanels(page)).toEqual(["tab-general"]);
+
+    // Switch to Models
+    await page.locator("#tab-btn-models").click();
+    expect(await page.locator("#tab-general").evaluate((el) => getComputedStyle(el).display)).toBe("none");
+    expect(await page.locator("#tab-models").evaluate((el) => getComputedStyle(el).display)).toBe("flex");
+    expect(await visiblePanels(page)).toEqual(["tab-models"]);
 
     // Switch to Skills
     await page.locator("#tab-btn-skills").click();
     expect(await page.locator("#tab-models").evaluate((el) => getComputedStyle(el).display)).toBe("none");
     expect(await page.locator("#tab-skills").evaluate((el) => getComputedStyle(el).display)).toBe("flex");
     expect(await page.locator("#tab-agents").evaluate((el) => getComputedStyle(el).display)).toBe("none");
+    expect(await visiblePanels(page)).toEqual(["tab-skills"]);
 
     // Switch to Agents via keyboard
     await page.locator("#tab-btn-skills").focus();
@@ -697,9 +744,10 @@ test.describe("Options page full-width flex layout", () => {
     expect(await page.locator("#tab-models").evaluate((el) => getComputedStyle(el).display)).toBe("none");
     expect(await page.locator("#tab-skills").evaluate((el) => getComputedStyle(el).display)).toBe("none");
     expect(await page.locator("#tab-agents").evaluate((el) => getComputedStyle(el).display)).toBe("flex");
+    expect(await visiblePanels(page)).toEqual(["tab-agents"]);
   });
 
-  test("full-window screenshots of all three tabs at 1280 and 1024 in light and dark", async ({ context, extensionId }) => {
+  test("full-window screenshots of all four tabs at 1280 and 1024 in light and dark", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
     await worker.evaluate(async (skills) => {
@@ -715,7 +763,14 @@ test.describe("Options page full-width flex layout", () => {
         await page.emulateMedia({ colorScheme: scheme });
         await openOptions(page, extensionId);
 
+        // General tab screenshot (the tab the page opens on)
+        await page.screenshot({
+          path: path.join(ARTIFACTS_005_LAYOUT, `general-${scheme}-${vp.name}.png`),
+          fullPage: true,
+        });
+
         // Models tab screenshot
+        await page.locator("#tab-btn-models").click();
         await page.screenshot({
           path: path.join(ARTIFACTS_005_LAYOUT, `models-${scheme}-${vp.name}.png`),
           fullPage: true,
@@ -746,5 +801,613 @@ test.describe("Options page full-width flex layout", () => {
         }
       }
     }
+  });
+});
+
+// --- 137/002: General tab, toolbar count and shared dialog spacing ----------
+
+const ARTIFACTS_137_002 =
+  process.env.E2E_ARTIFACTS_DIR ?? path.resolve(HERE, "../../../temp/e2e-artifacts/options-general-tab");
+const TEMP_137_002 = path.resolve(HERE, "../temp/e2e-extensions/options-137-002");
+
+const THEME_HINT_TEXT =
+  "Applies to the agent bubble, not the website. If a website sets its own theme, the bubble uses it.";
+
+const ENDPOINT_137_002 = "http://localhost:10040/v1";
+
+/** Nine custom models in the real modelStore shape, all enabled. Nine plus the
+ *  three brand models is the twelve-entry count case. The endpoint is the local
+ *  fixture; these rows are never sent. */
+const NINE_MODELS = Array.from({ length: 9 }, (_, i) => ({
+  model: `custom-${i + 1}`,
+  label: `Custom ${i + 1}`,
+  vision: false,
+}));
+
+async function seedNineCustom(page: Page, worker: Worker): Promise<void> {
+  await worker.evaluate(async (models) => {
+    await chrome.storage.local.set({
+      modelStore: {
+        providers: [
+          {
+            id: "p9",
+            name: "Fixture",
+            wireFormat: "openai",
+            endpoint: "http://localhost:10040/v1",
+            apiKey: "",
+            headers: [],
+            models,
+          },
+        ],
+        disabled: [],
+        brandKeys: {},
+        defaultModel: null,
+      },
+    });
+  }, NINE_MODELS);
+  await page.reload();
+  await optionsReady(page);
+}
+
+async function storedTheme(worker: Worker): Promise<string | undefined> {
+  return worker.evaluate(async () => {
+    const got = await chrome.storage.local.get("agentSettings");
+    const settings = got.agentSettings as { theme?: string } | undefined;
+    return settings?.theme;
+  });
+}
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+async function rectOf(locator: Locator): Promise<Rect> {
+  return locator.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.x, y: r.y, width: r.width, height: r.height };
+  });
+}
+
+const centreY = (r: Rect): number => r.y + r.height / 2;
+
+/** Overlapping area of two rectangles; zero means they do not touch. */
+function overlapArea(a: Rect, b: Rect): number {
+  const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+  return Math.max(0, w) * Math.max(0, h);
+}
+
+/** Every measured property of the shared `.dialog-actions` row. */
+async function actionRowMetrics(dialog: Locator) {
+  return dialog.evaluate((el) => {
+    const actions = el.querySelector(".dialog-actions") as HTMLElement;
+    const style = getComputedStyle(actions);
+    const probe = document.createElement("div");
+    probe.style.borderTop = "1px solid var(--wa-border-color)";
+    document.body.append(probe);
+    const tokenBorder = getComputedStyle(probe).borderTopColor;
+    probe.remove();
+    const previous = actions.previousElementSibling as HTMLElement | null;
+    const buttons = Array.from(actions.querySelectorAll("button"));
+    const actionsRect = actions.getBoundingClientRect();
+    const dialogRect = el.getBoundingClientRect();
+    return {
+      display: style.display,
+      justifyContent: style.justifyContent,
+      columnGap: style.columnGap,
+      marginTop: style.marginTop,
+      paddingTop: style.paddingTop,
+      borderTopWidth: style.borderTopWidth,
+      borderTopStyle: style.borderTopStyle,
+      borderTopColor: style.borderTopColor,
+      tokenBorder,
+      previousBottom: previous ? previous.getBoundingClientRect().bottom : null,
+      actionsTop: actionsRect.top,
+      lastButtonRight: buttons.length > 0 ? buttons[buttons.length - 1].getBoundingClientRect().right : null,
+      actionsRight: actionsRect.right,
+      dialogRight: dialogRect.right,
+      buttons: buttons.map((b) => {
+        const r = b.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, width: r.width, height: r.height };
+      }),
+    };
+  });
+}
+
+/** The spacing every dialog shares (137/002 C4). Returns the metrics so a
+ *  caller can assert the per-dialog details. */
+async function expectSharedActionRow(dialog: Locator) {
+  const m = await actionRowMetrics(dialog);
+  expect(m.display).toBe("flex");
+  expect(m.justifyContent).toBe("flex-end");
+  expect(m.columnGap).toBe("8px");
+  expect(m.marginTop).toBe("24px");
+  expect(m.paddingTop).toBe("16px");
+  expect(m.borderTopWidth).toBe("1px");
+  expect(m.borderTopStyle).toBe("solid");
+  expect(m.borderTopColor).toBe(m.tokenBorder);
+  if (m.previousBottom !== null) {
+    expect(m.actionsTop - m.previousBottom).toBeGreaterThanOrEqual(24);
+  }
+  if (m.lastButtonRight !== null) {
+    expect(Math.abs(m.actionsRight - m.lastButtonRight)).toBeLessThanOrEqual(2);
+  }
+  if (m.buttons.length === 2) {
+    expect(Math.abs(m.buttons[1].left - m.buttons[0].right - 8)).toBeLessThanOrEqual(1);
+    expect(Math.abs(m.buttons[0].top - m.buttons[1].top)).toBeLessThanOrEqual(2);
+  }
+  return m;
+}
+
+test.describe("Options page 137/002: General tab and shared spacing", () => {
+  test.beforeAll(async () => {
+    await fs.mkdir(ARTIFACTS_137_002, { recursive: true });
+  });
+
+  test.afterAll(async () => {
+    await fs.rm(TEMP_137_002, { recursive: true, force: true });
+  });
+
+  test("G1: General holds Theme, the exact hint, Save and status; Models holds none of them", async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+
+    await expect(page.locator("#tab-btn-general")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#tab-general > label")).toHaveText(["Theme"]);
+    await expect(page.locator("#tab-general #theme")).toHaveCount(1);
+    await expect(page.locator("#theme-hint")).toHaveText(THEME_HINT_TEXT);
+    await expect(page.locator("#tab-general #save")).toHaveCount(1);
+    await expect(page.locator("#tab-general #status")).toHaveCount(1);
+
+    for (const inner of ["#theme", "#theme-hint", "#save", "#status"]) {
+      await expect(page.locator(`#tab-models ${inner}`)).toHaveCount(0);
+    }
+
+    // Save keeps its 20px gap above it now that the global margin is gone.
+    const hint = await rectOf(page.locator("#theme-hint"));
+    const save = await rectOf(page.locator("#save"));
+    expect(save.y - (hint.y + hint.height)).toBeGreaterThanOrEqual(20);
+
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.screenshot({
+        path: path.join(ARTIFACTS_137_002, `general-${scheme}.png`),
+        fullPage: true,
+      });
+    }
+  });
+
+  test("G2: an unsaved theme change does not reach a new side panel; Save stores it", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({ agentSettings: { theme: "wa2-light" } });
+    });
+
+    const page = await context.newPage();
+    await openOptions(page, extensionId);
+    await expect(page.locator("#theme")).toHaveValue("wa2-light");
+
+    const panelTheme = async (name: string): Promise<string | null> => {
+      const panel = await context.newPage();
+      await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+      await expect(panel.locator("agent-chat-panel")).toBeAttached();
+      await panel.screenshot({ path: path.join(ARTIFACTS_137_002, name) });
+      const value = await panel.evaluate(() => document.documentElement.getAttribute("data-theme"));
+      await panel.close();
+      return value;
+    };
+
+    // Selected but not saved: the options page previews it, the store does not.
+    await page.selectOption("#theme", "wa2-dark");
+    expect(await storedTheme(worker)).toBe("wa2-light");
+    expect(await panelTheme("panel-before-save.png")).toBe("wa2-light");
+
+    await page.click("#save");
+    await expect(page.locator("#status")).toContainText("Saved.");
+    expect(await storedTheme(worker)).toBe("wa2-dark");
+    expect(await panelTheme("panel-after-save.png")).toBe("wa2-dark");
+
+    await page.reload();
+    await optionsReady(page);
+    await expect(page.locator("#tab-btn-general")).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("#theme")).toHaveValue("wa2-dark");
+  });
+
+  test("M1: twelve models read Enabled 12/12, one switch off reads Enabled 11/12 after reload", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await seedNineCustom(page, worker);
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.locator("#tab-btn-models").click();
+
+    await expect(page.locator("#model-table tr.model-row")).toHaveCount(12);
+    await expect(page.locator("#model-count")).toHaveText("Enabled 12/12");
+    await page.screenshot({ path: path.join(ARTIFACTS_137_002, "models-twelve-light.png"), fullPage: true });
+
+    // Turn one non-default custom row off through its real switch.
+    await page.locator('tr.model-row[data-ref="p9/custom-9"] input.model-enabled').click();
+    await expect(page.locator("#model-count")).toHaveText("Enabled 11/12");
+
+    await page.reload();
+    await optionsReady(page);
+    await page.locator("#tab-btn-models").click();
+    await expect(page.locator("#model-count")).toHaveText("Enabled 11/12");
+    await page.screenshot({ path: path.join(ARTIFACTS_137_002, "models-disabled-light.png"), fullPage: true });
+  });
+
+  test("M2: the toolbar buttons share a top edge and the count sits right-aligned in both themes", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    const page = await context.newPage();
+    await openOptions(page, extensionId);
+    await seedNineCustom(page, worker);
+
+    const measured: Record<string, unknown> = {};
+    for (const vp of [{ width: 1280, height: 800, name: "1280" }, { width: 1024, height: 768, name: "1024" }]) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      for (const scheme of ["light", "dark"] as const) {
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.reload();
+        await optionsReady(page);
+        await page.locator("#tab-btn-models").click();
+
+        const add = await rectOf(page.locator("#add-model-btn"));
+        const del = await rectOf(page.locator("#delete-models-btn"));
+        const count = await rectOf(page.locator("#model-count"));
+        const toolbar = await rectOf(page.locator("#model-toolbar"));
+        measured[`${scheme}-${vp.name}`] = { add, del, count, toolbar };
+
+        expect(Math.abs(add.y - del.y)).toBeLessThanOrEqual(2);
+        expect(Math.abs(centreY(count) - centreY(add))).toBeLessThanOrEqual(2);
+        expect(Math.abs(centreY(count) - centreY(del))).toBeLessThanOrEqual(2);
+        expect(Math.abs(count.x + count.width - (toolbar.x + toolbar.width))).toBeLessThanOrEqual(2);
+        expect(add.x).toBeLessThanOrEqual(count.x);
+
+        await page.screenshot({
+          path: path.join(ARTIFACTS_137_002, `models-${scheme}-${vp.name}.png`),
+          fullPage: true,
+        });
+      }
+    }
+
+    // Narrow viewport: nothing overlaps when the toolbar wraps.
+    await page.setViewportSize({ width: 400, height: 800 });
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.reload();
+    await optionsReady(page);
+    await page.locator("#tab-btn-models").click();
+    const add = await rectOf(page.locator("#add-model-btn"));
+    const del = await rectOf(page.locator("#delete-models-btn"));
+    const count = await rectOf(page.locator("#model-count"));
+    measured["narrow-400"] = { add, del, count };
+    expect(overlapArea(add, del)).toBe(0);
+    expect(overlapArea(add, count)).toBe(0);
+    expect(overlapArea(del, count)).toBe(0);
+    await page.screenshot({ path: path.join(ARTIFACTS_137_002, "models-narrow-400.png"), fullPage: true });
+
+    await fs.writeFile(path.join(ARTIFACTS_137_002, "geometry-toolbar.json"), JSON.stringify(measured, null, 2));
+  });
+
+  test("M3: a locked brand hides the actions and still right-aligns the count", async () => {
+    const dir = await patchedBrand(path.join(TEMP_137_002, "lock-model"), { options: { lockModel: true } });
+    const ctx = await launchExtensionContext(dir);
+    try {
+      let [worker] = ctx.serviceWorkers();
+      if (!worker) worker = await ctx.waitForEvent("serviceworker");
+      const id = worker.url().split("/")[2];
+      const page = await ctx.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await openOptions(page, id);
+      await page.locator("#tab-btn-models").click();
+      await expect(page.locator("#model-toolbar-actions")).toBeHidden();
+      await expect(page.locator("#model-count")).toHaveText("Enabled 3/3");
+      const count = await rectOf(page.locator("#model-count"));
+      const toolbar = await rectOf(page.locator("#model-toolbar"));
+      expect(Math.abs(count.x + count.width - (toolbar.x + toolbar.width))).toBeLessThanOrEqual(2);
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  test("P1: each provider remove button is 36px square and centred on its row", async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+    await page.locator("#add-model-btn").click();
+    const dialog = page.locator("dialog.provider-dialog");
+    await expect(dialog).toBeVisible();
+
+    await dialog.locator(".add-header-btn").click();
+    await dialog.locator(".add-header-btn").click();
+    await dialog.locator(".add-model-row-btn").click();
+    await expect(dialog.locator(".header-row")).toHaveCount(2);
+    await expect(dialog.locator(".form-model-row")).toHaveCount(2);
+
+    const measured: Record<string, unknown> = {};
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await dialog.locator(".form-model-id").first().fill("row-1");
+      const rows: [string, string][] = [
+        [".header-row", ".remove-header-btn"],
+        [".form-model-row", ".remove-model-btn"],
+      ];
+      for (const [rowSel, btnSel] of rows) {
+        for (let i = 0; i < 2; i++) {
+          const row = dialog.locator(rowSel).nth(i);
+          const button = await rectOf(row.locator(btnSel));
+          const input = await rectOf(row.locator("input").first());
+          measured[`${scheme}-${rowSel}-${i}`] = { button, input };
+          expect(button.width).toBe(36);
+          expect(button.height).toBe(36);
+          expect(Math.abs(centreY(button) - centreY(input))).toBeLessThanOrEqual(2);
+        }
+      }
+      await dialog.screenshot({ path: path.join(ARTIFACTS_137_002, `provider-${scheme}.png`) });
+    }
+
+    // Removing one row of each kind leaves the others.
+    await dialog.locator(".header-row .remove-header-btn").nth(0).click();
+    await expect(dialog.locator(".header-row")).toHaveCount(1);
+    await expect(dialog.locator(".form-model-row")).toHaveCount(2);
+    await dialog.locator(".form-model-row .remove-model-btn").nth(1).click();
+    await expect(dialog.locator(".form-model-row")).toHaveCount(1);
+    await expect(dialog.locator(".form-model-row .remove-model-btn")).toHaveCount(1);
+
+    await fs.writeFile(path.join(ARTIFACTS_137_002, "geometry-provider.json"), JSON.stringify(measured, null, 2));
+    await dialog.locator(".cancel-btn").click();
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test("D1: the provider form and the Key dialog share the action row; Cancel changes nothing", async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+
+    const measured: Record<string, unknown> = {};
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.locator("#add-model-btn").click();
+      const form = page.locator("dialog.provider-dialog");
+      await expect(form).toBeVisible();
+      measured[`provider-${scheme}`] = await expectSharedActionRow(form);
+      await form.screenshot({ path: path.join(ARTIFACTS_137_002, `provider-dialog-${scheme}.png`) });
+      await form.locator(".cancel-btn").click();
+      await expect(form).toHaveCount(0);
+
+      await page.locator("#model-table .key-btn").first().click();
+      const key = page.locator("#brand-key-dialog");
+      await expect(key).toBeVisible();
+      measured[`key-${scheme}`] = await expectSharedActionRow(key);
+      await key.screenshot({ path: path.join(ARTIFACTS_137_002, `key-dialog-${scheme}.png`) });
+      await key.locator(".dialog-cancel-btn").click();
+      await expect(key).toHaveCount(0);
+    }
+
+    // Cancel kept the store untouched.
+    const [worker] = context.serviceWorkers();
+    const stored = await worker.evaluate(async () => (await chrome.storage.local.get("modelStore")).modelStore);
+    expect(stored).toBeUndefined();
+    await fs.writeFile(path.join(ARTIFACTS_137_002, "geometry-dialogs-part1.json"), JSON.stringify(measured, null, 2));
+  });
+
+  test("D2: the model delete and agent delete confirms share the action row", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    await worker.evaluate(async () => {
+      await chrome.storage.local.set({
+        userAgents: [
+          {
+            id: "analyst",
+            displayName: "Data Analyst",
+            description: "Analyzes table data",
+            instructions: "You analyze tables.",
+            model: null,
+            tools: "*",
+            excludeTools: [],
+            skills: "*",
+            excludeSkills: [],
+          },
+        ],
+      });
+    });
+
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await seedNineCustom(page, worker);
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.locator("#tab-btn-models").click();
+
+    await page.locator('tr.model-row[data-ref="p9/custom-1"] .model-select').check();
+    await page.locator("#delete-models-btn").click();
+    const confirm = page.locator("dialog.model-delete-dialog");
+    await expect(confirm).toBeVisible();
+    const measured: Record<string, unknown> = { modelDelete: await expectSharedActionRow(confirm) };
+    await confirm.screenshot({ path: path.join(ARTIFACTS_137_002, "confirm-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await confirm.screenshot({ path: path.join(ARTIFACTS_137_002, "confirm-dark.png") });
+    await confirm.locator(".cancel-btn").click();
+    await expect(confirm).toHaveCount(0);
+    await expect(page.locator('tr.model-row[data-ref="p9/custom-1"]')).toHaveCount(1);
+
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.locator("#tab-btn-agents").click();
+    const userCard = page.locator("#agent-cards .card").filter({ hasText: "Data Analyst" });
+    await userCard.locator(".card-edit-btn").click();
+    await userCard.locator(".delete-btn").click();
+    const agentConfirm = page.locator("dialog:has(.dialog-delete-btn)");
+    await expect(agentConfirm).toBeVisible();
+    measured.agentDelete = await expectSharedActionRow(agentConfirm);
+    await agentConfirm.screenshot({ path: path.join(ARTIFACTS_137_002, "agent-confirm-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await agentConfirm.screenshot({ path: path.join(ARTIFACTS_137_002, "agent-confirm-dark.png") });
+    await agentConfirm.locator(".dialog-cancel-btn").click();
+    await expect(agentConfirm).toHaveCount(0);
+
+    const stored = await worker.evaluate(async () => (await chrome.storage.local.get("userAgents")).userAgents);
+    expect(Array.isArray(stored)).toBe(true);
+    expect((stored as { id: string }[]).map((a) => a.id)).toEqual(["analyst"]);
+    await fs.writeFile(path.join(ARTIFACTS_137_002, "geometry-dialogs-part2.json"), JSON.stringify(measured, null, 2));
+  });
+
+  test("D3: the built-in provider grid shares the action row", async () => {
+    const dir = await patchedBrand(path.join(TEMP_137_002, "grid"), { options: { builtInProviders: true } });
+    const ctx = await launchExtensionContext(dir);
+    try {
+      let [worker] = ctx.serviceWorkers();
+      if (!worker) worker = await ctx.waitForEvent("serviceworker");
+      const id = worker.url().split("/")[2];
+      const page = await ctx.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await openOptions(page, id);
+      await page.locator("#tab-btn-models").click();
+      await page.locator("#add-model-btn").click();
+      const grid = page.locator("dialog.provider-grid-dialog");
+      await expect(grid).toBeVisible();
+      await page.emulateMedia({ colorScheme: "light" });
+      await expectSharedActionRow(grid);
+      await grid.screenshot({ path: path.join(ARTIFACTS_137_002, "grid-light.png") });
+      await page.emulateMedia({ colorScheme: "dark" });
+      await grid.screenshot({ path: path.join(ARTIFACTS_137_002, "grid-dark.png") });
+      await grid.locator(".cancel-btn").click();
+      await expect(grid).toHaveCount(0);
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  test("D4: the refresh diff and refresh error dialogs share the action row", async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+
+    let mode: "ok" | "401" = "401";
+    await page.route(`${ENDPOINT_137_002}/models`, async (route) => {
+      if (mode === "401") {
+        await route.fulfill({ status: 401, body: "{}" });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ data: [{ id: "row-1" }, { id: "added" }] }),
+        });
+      }
+    });
+
+    await page.locator("#add-model-btn").click();
+    const form = page.locator("dialog.provider-dialog");
+    await expect(form).toBeVisible();
+    await form.locator("#provider-endpoint").fill(ENDPOINT_137_002);
+    await form.locator(".form-model-id").first().fill("row-1");
+
+    await page.emulateMedia({ colorScheme: "light" });
+    await form.locator(".refresh-models-btn").click();
+    const error = page.locator("dialog.refresh-error-dialog");
+    await expect(error).toBeVisible();
+    await expectSharedActionRow(error);
+    await error.screenshot({ path: path.join(ARTIFACTS_137_002, "refresh-error-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await error.screenshot({ path: path.join(ARTIFACTS_137_002, "refresh-error-dark.png") });
+    await error.locator(".close-btn").click();
+    await expect(error).toHaveCount(0);
+
+    mode = "ok";
+    await page.emulateMedia({ colorScheme: "light" });
+    await form.locator(".refresh-models-btn").click();
+    const diff = page.locator("dialog.diff-dialog");
+    await expect(diff).toBeVisible();
+    await expectSharedActionRow(diff);
+    await diff.screenshot({ path: path.join(ARTIFACTS_137_002, "diff-light.png") });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await diff.screenshot({ path: path.join(ARTIFACTS_137_002, "diff-dark.png") });
+    await diff.locator(".cancel-btn").click();
+    await expect(diff).toHaveCount(0);
+    await form.locator(".cancel-btn").click();
+    await expect(form).toHaveCount(0);
+  });
+
+  test("R1: no Skills or Agents button moves against the removed page-wide margin", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+    await worker.evaluate(async (skills) => {
+      await chrome.storage.local.set({ savedSkills: skills });
+    }, SEED_SKILLS);
+
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.emulateMedia({ colorScheme: "light" });
+
+    const snapshot = (tab: "skills" | "agents") =>
+      page.locator(`#tab-${tab} button`).evaluateAll((els) =>
+        els
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            return r.width > 0 && r.height > 0;
+          })
+          .map((el) => {
+            const r = el.getBoundingClientRect();
+            return {
+              key: `${el.id || el.className}|${el.textContent}`,
+              x: r.x, y: r.y, width: r.width, height: r.height,
+            };
+          }),
+      );
+
+    const readBoth = async () => {
+      await page.locator("#tab-btn-skills").click();
+      const skills = await snapshot("skills");
+      await page.locator("#tab-btn-agents").click();
+      const agents = await snapshot("agents");
+      await page.locator("#tab-agents .card").nth(0).locator(".card-edit-btn").click();
+      const expanded = await snapshot("agents");
+      await page.locator("#tab-agents .card").nth(0).locator(".cancel-btn").click();
+      return { skills, agents, expanded };
+    };
+
+    const now = await readBoth();
+    // The removed rule was one line: `button { margin-top: 20px }`. Re-adding
+    // it here reproduces the pre-change page for these two tabs exactly.
+    await page.addStyleTag({ content: "button { margin-top: 20px; }" });
+    const before = await readBoth();
+
+    const compare = (after: typeof now.skills, earlier: typeof now.skills, label: string) => {
+      expect(after.length).toBeGreaterThan(0);
+      expect(earlier.map((e) => e.key)).toEqual(after.map((e) => e.key));
+      after.forEach((a, i) => {
+        const b = earlier[i];
+        for (const k of ["x", "y", "width", "height"] as const) {
+          expect(
+            Math.abs(a[k] - b[k]),
+            `${label} button ${a.key} ${k}: ${b[k]} -> ${a[k]}`,
+          ).toBeLessThanOrEqual(2);
+        }
+      });
+      return after.length;
+    };
+
+    const counts = {
+      skills: compare(now.skills, before.skills, "skills"),
+      agents: compare(now.agents, before.agents, "agents"),
+      expanded: compare(now.expanded, before.expanded, "agents expanded"),
+    };
+
+    await page.locator("#tab-btn-skills").click();
+    await page.screenshot({ path: path.join(ARTIFACTS_137_002, "skills-after-light.png"), fullPage: true });
+    await page.locator("#tab-btn-agents").click();
+    await page.screenshot({ path: path.join(ARTIFACTS_137_002, "agents-after-light.png"), fullPage: true });
+    await page.locator("#tab-agents .card").nth(0).locator(".card-edit-btn").click();
+    await page.screenshot({ path: path.join(ARTIFACTS_137_002, "agents-edit-after-light.png"), fullPage: true });
+
+    await fs.writeFile(
+      path.join(ARTIFACTS_137_002, "geometry-regression.json"),
+      JSON.stringify({ counts, before, now }, null, 2),
+    );
   });
 });

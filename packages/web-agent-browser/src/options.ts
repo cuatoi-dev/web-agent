@@ -27,9 +27,11 @@ import { openModelDeleteDialog } from "./lib/model-delete-dialog";
 import { deleteDialogMessage, deleteDialogTitle } from "./lib/provider-form-rules";
 import type { AgentBrand, CustomProvider, ModelRef, ModelStore } from "./lib/types";
 
+const tabGeneral = document.getElementById("tab-btn-general") as HTMLButtonElement;
 const tabModels = document.getElementById("tab-btn-models") as HTMLButtonElement;
 const tabSkills = document.getElementById("tab-btn-skills") as HTMLButtonElement;
 const tabAgents = document.getElementById("tab-btn-agents") as HTMLButtonElement;
+const panelGeneral = document.getElementById("tab-general") as HTMLElement;
 const panelModels = document.getElementById("tab-models") as HTMLElement;
 const panelSkills = document.getElementById("tab-skills") as HTMLElement;
 const panelAgents = document.getElementById("tab-agents") as HTMLElement;
@@ -232,7 +234,7 @@ void init();
 // The skills list paints from its own storage read, independently of the
 // settings above: a slow or failing settings read must not leave the section
 // blank, and neither read depends on the other.
-mountTabs([tabModels, tabSkills, tabAgents], [panelModels, panelSkills, panelAgents]);
+mountTabs([tabGeneral, tabModels, tabSkills, tabAgents], [panelGeneral, panelModels, panelSkills, panelAgents]);
 
 void (async () => {
   const [brand, store, modelStore] = await Promise.all([

@@ -205,7 +205,29 @@ describe("model-table", () => {
       disabled: ["brand:b"],
     };
     const entries = listModels(FIXTURE_BRAND, store);
-    expect(modelCountText(entries)).toBe("2 of 3 models enabled");
+    expect(modelCountText(entries)).toBe("Enabled 2/3");
+  });
+
+  it("reports the enabled numerator over the entry count", () => {
+    const all = listModels(FIXTURE_BRAND, EMPTY_MODEL_STORE);
+    expect(modelCountText(all)).toBe("Enabled 3/3");
+    expect(modelCountText([])).toBe("Enabled 0/0");
+
+    const none: ModelStore = {
+      ...EMPTY_MODEL_STORE,
+      disabled: ["brand:a", "brand:b", "brand:c"],
+    };
+    expect(modelCountText(listModels(FIXTURE_BRAND, none))).toBe("Enabled 0/3");
+  });
+
+  it("moves only the numerator when one copied entry is turned off", () => {
+    const entries = listModels(FIXTURE_BRAND, EMPTY_MODEL_STORE);
+    const copy = entries.map((e) => ({ ...e }));
+    const index = copy.findIndex((e) => e.ref === "brand:b");
+    copy[index].enabled = false;
+
+    expect(modelCountText(copy)).toBe("Enabled 2/3");
+    expect(modelCountText(entries)).toBe("Enabled 3/3");
   });
 });
 
