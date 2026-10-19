@@ -38,7 +38,7 @@ The kebab menu holds these entries (`src/chat-ui/chat-panel.ts:166-199`):
 
 | Entry | When it shows | What it does |
 |---|---|---|
-| Choose model | `models` has two or more entries | Lists each model. Picking one calls the session's `setModel()`, so the conversation stays. The active model has a check mark. |
+| Choose model | `models` has two or more entries | Lists each model and its optional icon. Picking one fires `agent-model-select`. Unless you cancel it, the panel calls the session's `setModel()` and keeps the conversation. `selectedModel` overrides which option has a check mark. |
 | Configuration | Always | Opens the Settings screen. |
 | Debug | `debug` is `true` | Opens the Debug screen. |
 

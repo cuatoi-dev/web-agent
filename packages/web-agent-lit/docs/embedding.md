@@ -410,7 +410,7 @@ A host with no v1 pin needs nothing here.
 | UI registry | Default Beer CSS | Any (via Webpack alias) |
 
 The bubble is a thin wrapper — it forwards `store`, `path`, `model`,
-`models`, `type`, `imageInput`, `renderers`, `cues`,
+`models`, `selectedModel`, `type`, `imageInput`, `renderers`, `cues`,
 `onCuesChange`, `tools`, `skills`, `skillRegistry`, `agentName`,
 `agentShortName`, `userAvatar`, `agentAvatar`, `debug`, `sources`,
 `toolProviders`, `fetch`, `notify`, `hooks` and `config` to the panel it
@@ -438,3 +438,78 @@ new webpack.NormalModuleReplacementPlugin(
   path.resolve(__dirname, "src/acme-registry.ts")
 ),
 ```
+## Choose a model from the host
+
+A host can take over the model switch in the kebab menu. Set `models` to two or
+more options. Each option has an `id`, an optional `label` and an optional
+`icon`. The `icon` value is SVG markup that carries your own artwork. The
+default menu draws it before the label in the text colour (`currentColor`).
+
+When the user picks a model, the panel fires a cancelable `agent-model-select`
+event. The event bubbles and crosses shadow roots, so a listener on the panel or
+on `<web-agent-bubble>` receives it. The details:
+
+- `detail.id` is the option id, not the API model name. Two options can share
+  one API model name on different routes.
+- The event dispatches synchronously. If your listener calls `preventDefault()`,
+  the panel does not change the session model.
+- Without cancellation, the panel calls `setModel(optionId)` and keeps the
+  conversation. That switch changes only the model id. It does not change the
+  endpoint, the format or the authentication.
+- `selectedModel` sets which option shows the check mark. It changes no session
+  state. Set it to the option id after a canceled switch so the check mark
+  follows your route. An id that matches no option checks nothing. Set it to
+  `undefined` to check the session model again.
+
+```ts
+import type { AgentChatPanel } from "@cuatoi/web-agent-lit";
+
+type Route = {
+  id: string;
+  apiModel: string;
+  path: string;
+  type: "anthropic" | "openai";
+  icon: string;
+};
+
+const routes: Route[] = [
+  {
+    id: "fast",
+    apiModel: "small-model",
+    path: "/api/provider-fast",
+    type: "anthropic",
+    icon: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>',
+  },
+  {
+    id: "deep",
+    apiModel: "large-model",
+    path: "/api/provider-deep",
+    type: "anthropic",
+    icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l10 20H2z"/></svg>',
+  },
+];
+
+const panel = document.querySelector<AgentChatPanel>("agent-chat-panel")!;
+panel.models = routes.map((r) => ({ id: r.id, label: r.id, icon: r.icon }));
+
+panel.addEventListener("agent-model-select", (event) => {
+  const { id } = (event as CustomEvent<{ id: string }>).detail;
+  const route = routes.find((r) => r.id === id);
+  if (!route) return;
+  event.preventDefault();
+  panel.path = route.path;
+  panel.type = route.type;
+  panel.model = route.apiModel;
+  panel.fetch = (input, init) =>
+    fetch(input, { ...init, headers: { ...init?.headers, "X-Host-Auth": "…" } });
+  panel.selectedModel = route.id;
+});
+```
+
+The same listener works on `<web-agent-bubble>`, which forwards `selectedModel`
+to its panel. Your host supplies the authentication. The example `fetch`
+wrapper adds a header and passes every other argument through.
+
+`path`, `type`, `model` and `fetch` go through `updateConfig`, which keeps the
+conversation. A model switch that only uses the default behaviour keeps the
+endpoint and the history as well.

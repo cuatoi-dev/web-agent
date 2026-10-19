@@ -27,6 +27,7 @@ export class WebAgentBubble extends HTMLElement {
   private _imageInput?: boolean;
   private _model?: string;
   private _models?: import("@cuatoi/web-agent-core").ModelOption[];
+  private _selectedModel?: string;
   private _path?: string;
   private _type?: "openai" | "anthropic" | "gemini";
   private _fetch?: typeof fetch;
@@ -73,6 +74,12 @@ export class WebAgentBubble extends HTMLElement {
   set models(val: import("@cuatoi/web-agent-core").ModelOption[] | undefined) {
     this._models = val;
     if (this.panelEl) { this.panelEl.models = val; }
+  }
+
+  get selectedModel() { return this._selectedModel; }
+  set selectedModel(val: string | undefined) {
+    this._selectedModel = val;
+    if (this.panelEl) this.panelEl.selectedModel = val;
   }
 
   get path() {
@@ -368,6 +375,7 @@ export class WebAgentBubble extends HTMLElement {
         this.panelEl.path = this._path ?? BACKEND.path;
         this.panelEl.model = this._model;
         if (this._models) this.panelEl.models = this._models;
+        this.panelEl.selectedModel = this._selectedModel;
         this.panelEl.type = this._type ?? BACKEND.type;
         this.panelEl.imageInput = this._imageInput;
         this.panelEl.renderers = this._renderers ?? defaultRenderers;

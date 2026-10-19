@@ -126,18 +126,16 @@ export class AgentChatPanel extends ChatPanelWindow {
     const defs: PanelMenuItemDef[] = [];
     const models = this._models ?? [];
     if (models.length >= 2) {
-      const activeId = this._state?.model;
-      defs.push({ id: "choose-model", label: "Choose model", disabled: true, run: () => {} });
+      const activeId = this.selectedModel ?? this._state?.model;
+      defs.push({ id: "model-header", label: "Choose model", disabled: true, run: () => {} });
       for (const m of models) {
         const label = resolveModelLabel(models, m.id);
         defs.push({
           id: `model:${m.id}`,
           label: m.id === activeId ? `✓ ${label}` : label,
-          run: () => {
-            this._menuOpen = false;
-            this._session?.setModel(m.id);
-            this.requestUpdate();
-          },
+          icon: m.icon,
+          checked: m.id === activeId,
+          run: () => this._onModelPick(m),
         });
       }
     }
@@ -185,13 +183,26 @@ export class AgentChatPanel extends ChatPanelWindow {
     return defs;
   }
 
+  private _onModelPick(m: import("@cuatoi/web-agent-core").ModelOption): void {
+    this._menuOpen = false;
+    const ev = new CustomEvent<{ id: string }>("agent-model-select", {
+      detail: { id: m.id }, bubbles: true, composed: true, cancelable: true,
+    });
+    this.dispatchEvent(ev);
+    if (!ev.defaultPrevented) {
+      this._session?.setModel(m.id);
+      this._model = m.id;
+    }
+    this.requestUpdate();
+  }
+
   private _menuItems() {
     const defs = this._menuItemDefs();
     this._menuDefs = defs;
-    const key = JSON.stringify(defs.map((d) => [d.id, d.label, !!d.disabled]));
+    const key = JSON.stringify(defs.map((d) => [d.id, d.label, !!d.disabled, d.icon, !!d.checked]));
     if (key !== this._menuItemsKey) {
       this._menuItemsKey = key;
-      this._menuItemsCache = defs.map(({ id, label, disabled }) => ({ id, label, disabled }));
+      this._menuItemsCache = defs.map(({ id, label, disabled, icon, checked }) => ({ id, label, disabled, icon, checked }));
     }
     return this._menuItemsCache;
   }

@@ -158,11 +158,15 @@ label text also toggles the box.
 | Property | Type | Meaning |
 |---|---|---|
 | `open` | `boolean` | Whether the menu is shown |
-| `items` | `WaMenuItem[]` (`{ id, label, disabled? }`) | Menu items, in order |
+| `items` | `WaMenuItem[]` (`{ id, label, disabled?, icon?, checked? }`) | Menu items, in order |
 | `anchor-id` (attribute) | `string` | `id` of the element the menu anchors to |
 
 Fires `select` with `detail.id` when an item is picked, and `request-close`
-when the menu asks to close (Escape, outside click). The sample hand-rolls
+when the menu asks to close (Escape, outside click). `icon` is optional SVG
+markup that the default renderer draws before the label. `checked` is optional
+state that a host renderer can show. The default renderer keeps the check mark
+in the label text, so an item can carry both fields. A custom menu can keep
+rendering labels only. The sample hand-rolls
 positioning: fixed placement with viewport-edge flipping (leftward when
 overflowing right, upward when overflowing bottom), outside-click and Escape
 listeners attached while open, and listener teardown on close

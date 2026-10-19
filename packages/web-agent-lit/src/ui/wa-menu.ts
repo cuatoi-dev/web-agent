@@ -58,7 +58,19 @@ export class WaMenu extends WaElement {
       btn.type = "button";
       btn.setAttribute("role", "menuitem");
       btn.className = "flat wa-menu-item";
-      btn.textContent = item.label;
+      if (item.icon) {
+        const template = document.createElement("template");
+        template.innerHTML = item.icon;
+        const svg = template.content.querySelector("svg");
+        if (svg) {
+          const icon = document.createElement("span");
+          icon.className = "wa-icon wa-menu-icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.append(svg);
+          btn.append(icon);
+        }
+      }
+      btn.append(document.createTextNode(item.label));
       btn.disabled = !!item.disabled;
       btn.style.display = "block";
       btn.style.width = "100%";

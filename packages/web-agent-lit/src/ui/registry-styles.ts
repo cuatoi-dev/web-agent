@@ -92,6 +92,10 @@ export const REGISTRY_STYLES = `
   height: 1em;
   fill: currentColor;
 }
+.wa-menu-icon {
+  font-size: var(--wa-icon-size-m);
+  margin-inline-end: var(--wa-padding-m);
+}
 .wa-icon-btn svg {
   display: block;
 }

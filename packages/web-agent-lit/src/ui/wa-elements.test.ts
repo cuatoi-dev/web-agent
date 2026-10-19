@@ -77,6 +77,66 @@ describe("default UI elements", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
     expect((onSelect.mock.calls[0][0] as CustomEvent).detail.id).toBe("a");
   });
+  it("wa-menu draws each item icon before its label text", () => {
+    const iconA = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>';
+    const iconB = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16"/></svg>';
+    const el = document.createElement("wa-menu") as WaMenu;
+    el.items = [
+      { id: "a", label: "Alpha", icon: iconA },
+      { id: "b", label: "Beta", icon: iconB },
+      { id: "c", label: "Gamma" },
+    ];
+    document.body.append(el);
+    const buttons = el.querySelectorAll<HTMLButtonElement>("[role=menuitem]");
+    expect(buttons).toHaveLength(3);
+    for (const [i, expected] of [[0, "Alpha"], [1, "Beta"]] as const) {
+      const btn = buttons[i];
+      expect(btn.firstElementChild?.className).toContain("wa-menu-icon");
+      expect(btn.firstElementChild?.getAttribute("aria-hidden")).toBe("true");
+      expect(btn.firstElementChild?.querySelector("svg")).not.toBeNull();
+      expect(btn.lastChild?.nodeType).toBe(Node.TEXT_NODE);
+      expect(btn.lastChild?.textContent).toBe(expected);
+    }
+    expect(buttons[2].querySelector(".wa-menu-icon")).toBeNull();
+    expect(buttons[2].textContent).toBe("Gamma");
+  });
+  it("wa-menu renders label only for icon strings that hold no SVG", () => {
+    const el = document.createElement("wa-menu") as WaMenu;
+    el.items = [
+      { id: "a", label: "Empty", icon: "" },
+      { id: "b", label: "Text", icon: "not markup" },
+      { id: "c", label: "<b>label</b>", icon: '<div><svg viewBox="0 0 24 24"></svg><svg viewBox="0 0 24 24"></svg></div>' },
+    ];
+    document.body.append(el);
+    const buttons = el.querySelectorAll<HTMLButtonElement>("[role=menuitem]");
+    expect(buttons[0].querySelector(".wa-menu-icon")).toBeNull();
+    expect(buttons[0].textContent).toBe("Empty");
+    expect(buttons[1].querySelector(".wa-menu-icon")).toBeNull();
+    expect(buttons[1].textContent).toBe("Text");
+    expect(buttons[2].querySelectorAll(".wa-menu-icon svg").length).toBe(1);
+    expect(buttons[2].querySelector("b")).toBeNull();
+    expect(buttons[2].textContent).toBe("<b>label</b>");
+  });
+  it("wa-menu redraws a changed icon and keeps select on enabled items", () => {
+    const el = document.createElement("wa-menu") as WaMenu;
+    el.items = [{ id: "a", label: "Alpha", icon: '<svg viewBox="0 0 24 24"><circle r="6"/></svg>' }];
+    document.body.append(el);
+    const oldSvg = el.querySelector(".wa-menu-icon svg");
+    el.items = [{ id: "a", label: "Alpha", icon: '<svg viewBox="0 0 24 24"><rect width="8" height="8"/></svg>' }];
+    const newSvg = el.querySelector(".wa-menu-icon svg");
+    expect(newSvg).not.toBe(oldSvg);
+    expect(newSvg?.querySelector("rect")).not.toBeNull();
+    expect(newSvg?.querySelector("circle")).toBeNull();
+
+    el.items = [
+      { id: "a", label: "Alpha", checked: true },
+      { id: "b", label: "Beta", disabled: true },
+    ];
+    const onSelect = vi.fn(); el.addEventListener("select", onSelect);
+    el.querySelectorAll<HTMLButtonElement>("[role=menuitem]").forEach((b) => b.click());
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    expect((onSelect.mock.calls[0][0] as CustomEvent).detail.id).toBe("a");
+  });
   it("wa-menu keeps its item buttons when the same array is set again", () => {
     const el = mount<WaMenu>("wa-menu");
     const items = [{ id: "a", label: "A" }]; el.items = items;

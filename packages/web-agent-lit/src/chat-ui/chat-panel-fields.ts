@@ -62,6 +62,7 @@ export abstract class ChatPanelFields extends Component {
   protected _imageInput?: boolean;
   protected _hideHeader: boolean = false;
   protected _models?: import("@cuatoi/web-agent-core").ModelOption[];
+  protected _selectedModel?: string;
   protected _config?: Partial<SessionConfig>;
   protected _renderers: BlockRenderer[] = [generativeUiRenderer];
   protected _sources?: SourceEntry[];

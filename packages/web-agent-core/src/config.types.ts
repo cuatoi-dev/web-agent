@@ -58,6 +58,8 @@ export interface ModelOption {
   id: string;
   /** Friendly display label (e.g. "Leo"). Falls back to `id` when omitted. */
   label?: string;
+  /** SVG markup displayed by the model menu. */
+  icon?: string;
 }
 
 export interface AgentConfig {

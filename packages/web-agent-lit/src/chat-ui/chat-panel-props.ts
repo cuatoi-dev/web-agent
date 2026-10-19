@@ -198,6 +198,13 @@ export abstract class ChatPanelProps extends ChatPanelFields {
     this.requestUpdate();
   }
 
+  get selectedModel() { return this._selectedModel; }
+  set selectedModel(val: string | undefined) {
+    if (sameValue(val, this._selectedModel)) return;
+    this._selectedModel = val;
+    this.requestUpdate();
+  }
+
   get models() { return this._models; }
   set models(val: import("@cuatoi/web-agent-core").ModelOption[] | undefined) {
     if (sameValue(val, this._models)) return;

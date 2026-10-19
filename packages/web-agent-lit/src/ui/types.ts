@@ -6,6 +6,8 @@ export interface WaMenuItem {
   id: string;
   label: string;
   disabled?: boolean;
+  icon?: string;
+  checked?: boolean;
 }
 
 /** `detail` of `<wa-menu>`'s `select` event. */
