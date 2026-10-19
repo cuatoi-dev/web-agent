@@ -4,7 +4,7 @@ import { listModels, EMPTY_MODEL_STORE } from "./model-store";
 import { bytesToBase64 } from "./relay-protocol";
 import type { AgentBrand, RelayRequest, RelayHandlerDeps } from "./types";
 
-function brandWith(endpoint: string): AgentBrand {
+function brandWith(endpoint: string, apiKey?: string): AgentBrand {
   return {
     agents: [],
     defaultAgent: "a",
@@ -20,6 +20,7 @@ function brandWith(endpoint: string): AgentBrand {
         wireFormat: "anthropic",
         model: "claude-a",
         vision: true,
+        ...(apiKey !== undefined ? { apiKey } : {}),
       },
     ],
   };
@@ -29,7 +30,7 @@ describe("relay-handler", () => {
   it("rejects request URL that does not match the model provider endpoint", async () => {
     const brand = brandWith("http://gw.test/api/anthropic");
     const entries = listModels(brand, EMPTY_MODEL_STORE);
-    const readModels = vi.fn().mockResolvedValue({ entries, token: "tok" });
+    const readModels = vi.fn().mockResolvedValue({ entries });
     const fetchImpl = vi.fn();
     const post = vi.fn();
     const deps: RelayHandlerDeps = {
@@ -60,7 +61,7 @@ describe("relay-handler", () => {
   it("rejects prefix attacks (anthropicevil) and directory traversal", async () => {
     const brand = brandWith("http://gw.test/api/anthropic");
     const entries = listModels(brand, EMPTY_MODEL_STORE);
-    const readModels = vi.fn().mockResolvedValue({ entries, token: "tok" });
+    const readModels = vi.fn().mockResolvedValue({ entries });
     const fetchImpl = vi.fn();
     const post = vi.fn();
     const deps: RelayHandlerDeps = {
@@ -111,7 +112,7 @@ describe("relay-handler", () => {
   it("rejects unknown or empty modelRef", async () => {
     const brand = brandWith("http://gw.test/api/anthropic");
     const entries = listModels(brand, EMPTY_MODEL_STORE);
-    const readModels = vi.fn().mockResolvedValue({ entries, token: "tok" });
+    const readModels = vi.fn().mockResolvedValue({ entries });
     const fetchImpl = vi.fn();
     const post = vi.fn();
     const deps: RelayHandlerDeps = {
@@ -152,9 +153,9 @@ describe("relay-handler", () => {
   });
 
   it("attaches auth headers and streams head, chunks, and end in order", async () => {
-    const brand = brandWith("http://gw.test/api/anthropic");
+    const brand = brandWith("http://gw.test/api/anthropic", "bk");
     const entries = listModels(brand, EMPTY_MODEL_STORE);
-    const readModels = vi.fn().mockResolvedValue({ entries, token: "tok" });
+    const readModels = vi.fn().mockResolvedValue({ entries });
 
     const encoder = new TextEncoder();
     const chunkBytes = encoder.encode("hello");
@@ -183,7 +184,7 @@ describe("relay-handler", () => {
       type: "request",
       url: "http://gw.test/api/anthropic/v1/messages",
       method: "POST",
-      headers: { "content-type": "application/json", "x-web-agent-token": "fake" },
+      headers: { "content-type": "application/json", "x-api-key": "page-fake" },
       body: null,
       modelRef: "brand:a",
     };
@@ -194,7 +195,8 @@ describe("relay-handler", () => {
     const [callUrl, callInit] = fetchImpl.mock.calls[0];
     expect(callUrl).toBe("http://gw.test/api/anthropic/v1/messages");
     const headers = new Headers(callInit.headers);
-    expect(headers.get("x-web-agent-token")).toBe("tok");
+    expect(headers.get("x-api-key")).toBe("bk");
+    expect(headers.get("x-web-agent-token")).toBeNull();
     expect(headers.get("content-type")).toBe("application/json");
     expect(headers.get("anthropic-version")).toBe("2023-06-01");
 
@@ -208,7 +210,7 @@ describe("relay-handler", () => {
   it("posts error message if fetchImpl rejects", async () => {
     const brand = brandWith("http://gw.test/api/anthropic");
     const entries = listModels(brand, EMPTY_MODEL_STORE);
-    const readModels = vi.fn().mockResolvedValue({ entries, token: "tok" });
+    const readModels = vi.fn().mockResolvedValue({ entries });
     const fetchImpl = vi.fn().mockRejectedValue(new Error("boom"));
     const post = vi.fn();
     const deps: RelayHandlerDeps = {

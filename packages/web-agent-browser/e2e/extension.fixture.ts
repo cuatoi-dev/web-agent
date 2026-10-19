@@ -20,7 +20,7 @@ export async function getTabId(worker: Worker, url: string): Promise<number> {
 /** Opens the options page and waits until its async init has finished.
  *
  *  136/005 — `init()` paints `#model-count` last, in the same synchronous block
- *  that fills the theme and token values, so awaiting `/models enabled/`
+ *  that fills the theme value, so awaiting `/models enabled/`
  *  guarantees the whole tab is populated. Without this wait a `fill()` or a
  *  value read that follows `goto()` races the init and is overwritten by it. */
 export async function openOptions(page: Page, extensionId: string): Promise<void> {

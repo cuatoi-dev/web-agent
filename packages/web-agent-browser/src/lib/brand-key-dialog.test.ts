@@ -3,8 +3,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 import {
   openBrandKeyDialog,
   KEY_DIALOG_ID,
-  KEY_PLACEHOLDER,
-  KEY_HINT,
+  KEY_PLACEHOLDER_PROVIDED,
+  KEY_PLACEHOLDER_NONE,
+  KEY_HINT_PROVIDED,
+  KEY_HINT_NONE,
 } from "./brand-key-dialog";
 
 beforeAll(() => {
@@ -24,6 +26,7 @@ describe("brand-key-dialog", () => {
       wireFormat: "anthropic",
       endpoint: "https://gw.test/api/anthropic",
       current: "initial-key",
+      hasBrandKey: true,
     });
 
     const dialog = document.getElementById(KEY_DIALOG_ID) as HTMLDialogElement;
@@ -41,14 +44,31 @@ describe("brand-key-dialog", () => {
     const input = inputs[0];
     expect(input.type).toBe("password");
     expect(input.value).toBe("initial-key");
-    expect(input.placeholder).toBe(KEY_PLACEHOLDER);
+    expect(input.placeholder).toBe(KEY_PLACEHOLDER_PROVIDED);
 
-    expect(dialog.textContent).toContain(KEY_HINT);
+    expect(dialog.textContent).toContain(KEY_HINT_PROVIDED);
 
     const buttons = Array.from(dialog.querySelectorAll("button")).map((b) => b.textContent);
     expect(buttons).toEqual(["Cancel", "Save"]);
 
     expect(document.activeElement).toBe(input);
+  });
+
+  it("KD-new without a brand key shows the no-key placeholder and hint", () => {
+    document.body.textContent = "";
+    void openBrandKeyDialog({
+      name: "Gateway",
+      wireFormat: "anthropic",
+      endpoint: "https://gw.test/api/anthropic",
+      current: "",
+      hasBrandKey: false,
+    });
+
+    const dialog = document.getElementById(KEY_DIALOG_ID) as HTMLDialogElement;
+    const input = dialog.querySelector("input") as HTMLInputElement;
+    expect(input.placeholder).toBe(KEY_PLACEHOLDER_NONE);
+    expect(dialog.textContent).toContain(KEY_HINT_NONE);
+    expect(dialog.textContent).not.toContain(KEY_HINT_PROVIDED);
   });
 
   it("KD2 Save resolves the field value and removes the dialog", async () => {
@@ -58,6 +78,7 @@ describe("brand-key-dialog", () => {
       wireFormat: "anthropic",
       endpoint: "https://gw.test/api/anthropic",
       current: "sk-1234",
+      hasBrandKey: true,
     });
 
     const dialog = document.getElementById(KEY_DIALOG_ID) as HTMLDialogElement;
@@ -77,6 +98,7 @@ describe("brand-key-dialog", () => {
       wireFormat: "anthropic",
       endpoint: "https://gw.test/api/anthropic",
       current: "sk-1234",
+      hasBrandKey: true,
     });
 
     const dialog = document.getElementById(KEY_DIALOG_ID) as HTMLDialogElement;
@@ -94,6 +116,7 @@ describe("brand-key-dialog", () => {
       wireFormat: "anthropic",
       endpoint: "https://gw.test/api/anthropic",
       current: "sk-1234",
+      hasBrandKey: true,
     });
 
     const dialog = document.getElementById(KEY_DIALOG_ID) as HTMLDialogElement;
@@ -113,6 +136,7 @@ describe("brand-key-dialog", () => {
       wireFormat: "anthropic",
       endpoint: "https://gw.test/api/anthropic",
       current: "",
+      hasBrandKey: true,
     });
 
     const dialog = document.getElementById(KEY_DIALOG_ID) as HTMLDialogElement;

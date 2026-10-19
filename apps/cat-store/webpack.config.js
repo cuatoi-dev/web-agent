@@ -3,6 +3,10 @@ const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
+// 137/001 — the gateway key: the env value, else the dev default. Used by
+// the build define and by the dev-server proxy below.
+const GATEWAY_KEY = process.env.WEB_AGENT_TOKEN || "wa-demo-token";
+
 module.exports = {
   cache: {
     type: "filesystem",
@@ -67,11 +71,11 @@ module.exports = {
     ],
   },
   plugins: [
-    // Token gate (task 001): bakes the real WEB_AGENT_TOKEN into the bundle at
-    // build time so agent-panel-config.ts sends it as X-Web-Agent-Token
-    // without hardcoding a literal. Same fallback as the devServer proxy below.
+    // Key gate (137/001): bakes the gateway key into the bundle at build time
+    // so gateway-auth.ts sends it in each LLM route's own auth header,
+    // without hardcoding a literal in the source.
     new webpack.DefinePlugin({
-      "process.env.WEB_AGENT_TOKEN": JSON.stringify(process.env.WEB_AGENT_TOKEN || "wa-demo-token"),
+      "process.env.WEB_AGENT_TOKEN": JSON.stringify(GATEWAY_KEY),
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -121,13 +125,25 @@ module.exports = {
         target: "http://localhost:20030",
         changeOrigin: true,
       },
+      // 137/001 — one entry per LLM route, each sending that route's own
+      // auth header.
       {
-        context: ["/api/openai", "/api/anthropic", "/api/gemini"],
+        context: ["/api/openai"],
         target: "http://localhost:28780",
         changeOrigin: true,
-        headers: {
-          "X-Web-Agent-Token": process.env.WEB_AGENT_TOKEN || "wa-demo-token",
-        },
+        headers: { Authorization: `Bearer ${GATEWAY_KEY}` },
+      },
+      {
+        context: ["/api/anthropic"],
+        target: "http://localhost:28780",
+        changeOrigin: true,
+        headers: { "x-api-key": GATEWAY_KEY },
+      },
+      {
+        context: ["/api/gemini"],
+        target: "http://localhost:28780",
+        changeOrigin: true,
+        headers: { "x-goog-api-key": GATEWAY_KEY },
       },
     ],
   },

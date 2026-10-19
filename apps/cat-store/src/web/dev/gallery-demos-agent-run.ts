@@ -11,6 +11,7 @@ import {
 } from "@cuatoi/web-agent-lit";
 import { domTools, domSkills } from "@cuatoi/web-agent-dom";
 import { store } from "../store";
+import { withGatewayAuth } from "../gateway-auth";
 
 // ============================================================================
 // 3f. AGENT RUN DEMO
@@ -184,14 +185,7 @@ export async function mountAgentRunDemo(host: HTMLElement): Promise<void> {
   const [domProvider] = domTools({ getState: () => store.getState() });
   const loadedDomTools = await domProvider.load();
 
-  const defaultFetch = window.fetch.bind(window);
-  const authFetch = (input: RequestInfo | URL, init?: RequestInit) => {
-    const headers = new Headers(init?.headers);
-    if (!headers.has("X-Web-Agent-Token")) {
-      headers.set("X-Web-Agent-Token", process.env.WEB_AGENT_TOKEN as string);
-    }
-    return defaultFetch(input, { ...init, headers });
-  };
+  const authFetch = withGatewayAuth(window.fetch.bind(window), process.env.WEB_AGENT_TOKEN as string);
 
   const cfg = {
     ...DEFAULT_CONFIG,

@@ -49,11 +49,6 @@ module.exports = {
   },
   plugins: [
     new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
-    // Same pattern as apps/cat-store/webpack.config.js:73-75 — the token is a
-    // build-time constant from the environment, never a source literal.
-    new webpack.DefinePlugin({
-      "process.env.WEB_AGENT_TOKEN": JSON.stringify(process.env.WEB_AGENT_TOKEN || "wa-demo-token"),
-    }),
     new CopyWebpackPlugin({
       patterns: [
         { from: path.resolve(__dirname, "docs/third-party-notices.md"), to: "third-party-notices.md" },

@@ -747,13 +747,17 @@ describe("compileBrand", () => {
 
   it("compiles the default model entries with only their supported fields", () => {
     const brand = compileBrand(BRAND_DIR);
-    const models = brand.models as { id: string; label: string; provider?: string; vision?: boolean }[];
+    const models = brand.models as { id: string; label: string; provider?: string; vision?: boolean; apiKey?: string }[];
     expect(models.map((entry) => entry.id)).toEqual(["anthropic-sonnet", "openai-sonnet", "gemini-flash"]);
     expect(models.map((entry) => entry.label)).toEqual(["Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
     for (const entry of models) {
-      expect(Object.keys(entry).sort()).toEqual(["endpoint", "id", "label", "model", "provider", "vision", "wireFormat"]);
+      expect(Object.keys(entry).sort()).toEqual(["apiKey", "endpoint", "id", "label", "model", "provider", "vision", "wireFormat"]);
     }
     expect(models.map((e) => [e.provider, e.vision])).toEqual([["Gateway", true], ["Gateway", true], ["Gateway", true]]);
+    // The three Gateway entries share one non-empty key. The literal is not
+    // repeated here: the acceptance grep allows it only in model.yml.
+    expect(new Set(models.map((e) => e.apiKey)).size).toBe(1);
+    expect((models[0].apiKey ?? "").length).toBeGreaterThan(0);
   });
 
   it("compiles optional vision and provider fields", () => {
@@ -808,6 +812,53 @@ describe("compileBrand", () => {
     expect(models[3].provider).toBe("Acme");
     expect("provider" in models[4]).toBe(false);
     expect("provider" in models[5]).toBe(false);
+  });
+
+  it("compiles an optional apiKey: trimmed when non-blank, dropped otherwise", () => {
+    const tempDir = makeTempDir();
+    writeModel(
+      tempDir,
+      `models:
+  - id: k1
+    label: K1
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m1
+    apiKey: "  k1  "
+  - id: k2
+    label: K2
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m2
+    apiKey: ""
+  - id: k3
+    label: K3
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m3
+    apiKey: "   "
+  - id: k4
+    label: K4
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m4
+    apiKey: 5
+  - id: k5
+    label: K5
+    endpoint: "https://a.test/v1"
+    wireFormat: openai
+    model: m5
+`,
+    );
+    writePlugin(tempDir, "defaultAgent: chromagent\n");
+    writeDefaultAgent(tempDir);
+    const brand = compileBrand(tempDir);
+    const models = brand.models as { id: string; apiKey?: string }[];
+    expect(models[0].apiKey).toBe("k1");
+    expect("apiKey" in models[1]).toBe(false);
+    expect("apiKey" in models[2]).toBe(false);
+    expect("apiKey" in models[3]).toBe(false);
+    expect("apiKey" in models[4]).toBe(false);
   });
 
   it("broken YAML in model.yml names the file", () => {

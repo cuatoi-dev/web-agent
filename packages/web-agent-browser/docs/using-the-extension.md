@@ -133,7 +133,7 @@ A saved skill with the same name as a brand skill or a built-in skill replaces
 it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
 [Custom skills](./custom-skills.md).
 
-## Choose the models, the theme and the token
+## Choose the models and the theme
 
 1. The **Models** tab shows one row per provider and its models under it.
    Models that share an endpoint and a wire format in `brand/model.yml` form
@@ -148,22 +148,22 @@ it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
    the default. Turning off the default moves it to the first other enabled
    model.
 4. **Key** on a brand provider row opens a dialog with one field,
-   **API key (optional)**. Empty: the provider sends the shared token.
-   Filled: the key is sent in place of the token, to that endpoint only. The
-   key is stored unencrypted in browser storage.
-5. Switches, radios and keys save at once. **Theme** and **Token** keep
-   their own **Save** button, which shows
+   **API key (optional)**. Empty: the provider sends the key the brand
+   provides in `brand/model.yml`, or no key when the brand gives none.
+   Filled: your key is sent in place of the provided key, to that endpoint
+   only. The key is stored unencrypted in browser storage.
+5. Switches, radios and keys save at once.
+   **Theme** keeps its own **Save** button, which shows
    `Saved. Reload a page to use the new settings.`
 
-If you save an empty **Token**, the extension uses the token it was built with
-(`src/lib/settings.ts:62-66`).
+The provider row shows `key ••••xxxx` for your own key, `provided key`
+for the brand's key, and `no key` when there is neither.
 
 ### When the brand locks the model
 
 If the build sets `options: { lockModel: true }` in `brand/plugin.yml`, the
 table shows only brand models and no row checkboxes. **Enabled**, **Default**,
-**Key** and the chat switchers still work. The theme and the token stay
-editable.
+**Key** and the chat switchers still work. The theme stays editable.
 
 ### What the theme changes
 
@@ -309,15 +309,17 @@ The authentication header depends on the provider key
 
 | Provider key | Header sent |
 |---|---|
-| Empty, brand provider | `X-Web-Agent-Token: <token>` |
-| Filled, wire format `openai` | `Authorization: Bearer <key>` |
-| Filled, wire format `anthropic` | `x-api-key: <key>` |
-| Filled, wire format `gemini` | `x-goog-api-key: <key>` |
+| None (no Key-button key, no brand key) | No auth header |
+| Wire format `openai` | `Authorization: Bearer <key>` |
+| Wire format `anthropic` | `x-api-key: <key>` |
+| Wire format `gemini` | `x-goog-api-key: <key>` |
 
-Every anthropic-format request also sends `anthropic-version: 2023-06-01` and
-`anthropic-dangerous-direct-browser-access: true`. A filled key replaces the
-token. The token is not sent with it. The web page and its scripts never receive
-the key or the token.
+For a brand provider the key is your Key-button key, else the brand's
+`apiKey` from `brand/model.yml`. Every anthropic-format request also sends
+`anthropic-version: 2023-06-01` and
+`anthropic-dangerous-direct-browser-access: true`. The web page and its
+scripts never receive a key: the brand object posted to the page has no
+`apiKey`.
 
 The side panel does not use the relay. It is an extension page, so it calls the
 endpoint directly and adds the same header itself

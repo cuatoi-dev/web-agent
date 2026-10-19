@@ -1,4 +1,4 @@
-import { DEFAULT_THEME, DEFAULT_TOKEN } from "./constants";
+import { DEFAULT_THEME } from "./constants";
 import { brandForThisContext } from "./brand-source";
 import { getTheme } from "./theme";
 import { LAST_AGENT_KEY } from "./agent-store";
@@ -7,7 +7,6 @@ import type { AgentSettings } from "./types";
 export type { AgentSettings } from "./types";
 
 const ENABLED_KEY = "enabledOrigins";
-const TOKEN_KEY = "token";
 const SETTINGS_KEY = "agentSettings";
 
 /** The stored theme when it names a known theme, else the default.
@@ -47,18 +46,6 @@ export async function setOriginEnabled(origin: string, on: boolean): Promise<voi
   const current = new Set(await getEnabledOrigins());
   if (on) current.add(origin); else current.delete(origin);
   await chrome.storage.local.set({ [ENABLED_KEY]: [...current] });
-}
-
-/** The stored token wins; the build-time default is the fallback, so the
- *  extension works on install with no manual step. */
-export async function getToken(): Promise<string> {
-  const got = await chrome.storage.local.get(TOKEN_KEY);
-  const stored: unknown = got[TOKEN_KEY];
-  return typeof stored === "string" && stored.length > 0 ? stored : DEFAULT_TOKEN;
-}
-
-export async function setToken(token: string): Promise<void> {
-  await chrome.storage.local.set({ [TOKEN_KEY]: token });
 }
 
 /** 120/002 — the id of the side panel agent shown last. Anything that is not a

@@ -3,6 +3,10 @@ const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 
+// 137/001 — the gateway key: the env value, else the dev default. Used by
+// the build define and by the dev-server proxy below.
+const GATEWAY_KEY = process.env.WEB_AGENT_TOKEN || "wa-demo-token";
+
 const litSrc   = path.resolve(__dirname, "../../packages/web-agent-lit/src");
 const coreSrc  = path.resolve(__dirname, "../../packages/web-agent-core/src");
 const litNM    = path.resolve(__dirname, "../../packages/web-agent-lit/node_modules");
@@ -66,11 +70,11 @@ module.exports = {
     ],
   },
   plugins: [
-    // Token gate (task 001): bakes the real WEB_AGENT_TOKEN into the bundle at
-    // build time so docs-embed.ts sends it as X-Web-Agent-Token without
-    // hardcoding a literal. Same fallback as the devServer proxy below.
+    // Key gate (137/001): bakes the gateway key into the bundle at build time
+    // so docs-embed.ts sends it in each LLM route's own auth header, without
+    // hardcoding a literal in the source.
     new webpack.DefinePlugin({
-      "process.env.WEB_AGENT_TOKEN": JSON.stringify(process.env.WEB_AGENT_TOKEN || "wa-demo-token"),
+      "process.env.WEB_AGENT_TOKEN": JSON.stringify(GATEWAY_KEY),
     }),
     new HtmlWebpackPlugin({ template: "./src/engine/index.html", filename: "index.html",
       inject: "body", chunks: ["app"] }),
@@ -84,13 +88,16 @@ module.exports = {
     devMiddleware: { publicPath: "/public/web-agent-docs/" },
     historyApiFallback: { index: "/public/web-agent-docs/index.html" },
     // Same method as cat-store: /api/* → the reverse proxy on :28780 (per-provider LLM routes).
-    proxy: [{
-      context: ["/api"],
-      target: "http://localhost:28780",
-      changeOrigin: true,
-      headers: {
-        "X-Web-Agent-Token": process.env.WEB_AGENT_TOKEN || "wa-demo-token",
-      },
-    }],
+    // 137/001 — each LLM route gets its own auth header; any other /api
+    // path is proxied with no header, as before.
+    proxy: [
+      { context: ["/api/openai"], target: "http://localhost:28780", changeOrigin: true,
+        headers: { Authorization: `Bearer ${GATEWAY_KEY}` } },
+      { context: ["/api/anthropic"], target: "http://localhost:28780", changeOrigin: true,
+        headers: { "x-api-key": GATEWAY_KEY } },
+      { context: ["/api/gemini"], target: "http://localhost:28780", changeOrigin: true,
+        headers: { "x-goog-api-key": GATEWAY_KEY } },
+      { context: ["/api"], target: "http://localhost:28780", changeOrigin: true },
+    ],
   },
 };

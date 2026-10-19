@@ -5,11 +5,13 @@
 # Every entry needs id, label, endpoint, wireFormat and model. `wireFormat` is
 # anthropic, openai or gemini.
 #
-# Two keys are optional:
+# Three keys are optional:
 #   - provider: the name the options page shows on the provider row. Entries
 #     that share an endpoint and wire format form one row. Without it, the row
 #     shows the endpoint's host and path.
 #   - vision: true when the model accepts images. Missing means text only.
+#   - apiKey: the brand's default key for this provider. It is sent in the
+#     format's auth header. The Key button on the options page replaces it.
 #
 # The path each wire format needs is fixed by the core providers:
 #   - openai:    ".../api/openai/v1"  -> provider appends "/chat/completions"
@@ -23,6 +25,7 @@ models:
     wireFormat: anthropic
     model: sonnet
     provider: Gateway
+    apiKey: wa-demo-token
     vision: true
   - id: openai-sonnet
     label: "Sonnet OpenAI"
@@ -30,6 +33,7 @@ models:
     wireFormat: openai
     model: sonnet
     provider: Gateway
+    apiKey: wa-demo-token
     vision: true
   - id: gemini-flash
     label: "Gemini Flash"
@@ -37,4 +41,5 @@ models:
     wireFormat: gemini
     model: gemini-flash-lite-latest
     provider: Gateway
+    apiKey: wa-demo-token
     vision: true

@@ -154,16 +154,17 @@ For each route, the proxy must:
 2. Remove the `Origin` header and any auth header the client sent, then set the
    provider's auth header from a server-side secret. Keep the keys in the
    proxy's environment or secret store, never in the proxy config file.
-3. Reject the request with `401 Unauthorized` unless its `X-Web-Agent-Token`
-   header matches a shared token, `WEB_AGENT_TOKEN`. Reject every request when
-   that token is not set, so the proxy fails closed.
+3. Reject the request with `401 Unauthorized` unless the route's own auth
+   header carries the gateway key, `WEB_AGENT_TOKEN`:
+   `Authorization: Bearer <key>` (openai), `x-api-key: <key>` (anthropic),
+   `x-goog-api-key: <key>` (gemini). Reject every request when that key is
+   not set, so the proxy fails closed.
 
-cat-store and docs-site add the `X-Web-Agent-Token` header in their `fetch`
-wrapper
-(`apps/cat-store/src/web/agent-panel-config.ts:149-150`,
-`apps/docs-site/src/docs-embed.ts:45-51`). The extension sends the shared token
-when no API key is saved, and sends the user's key in its place otherwise
-(`packages/web-agent-browser/src/lib/auth-headers.ts:9-17`).
+cat-store and docs-site add that header in their `fetch` wrapper
+(`apps/cat-store/src/web/gateway-auth.ts`,
+`apps/docs-site/src/gateway-auth.ts`). The extension sends the brand's
+default key from `brand/model.yml`, or the user's key in its place
+(`packages/web-agent-browser/src/lib/auth-headers.ts`).
 
 ## Custom providers
 

@@ -16,7 +16,7 @@ import {
 import { createRecordingController, hostOf } from "./lib/recording-controller";
 import { createWatchMeProvider } from "./lib/watch-me-provider";
 
-import { getLastAgentId, getSettings, getToken, setLastAgentId } from "./lib/settings";
+import { getLastAgentId, getSettings, setLastAgentId } from "./lib/settings";
 import { requestBrand } from "./lib/brand-request";
 import { readAgentStore, chromeAgentStorage, mergedBrand } from "./lib/agent-store";
 import { applyTheme, registerBrandThemes } from "./lib/theme";
@@ -98,7 +98,6 @@ function buildAgentPanel(
   agent: BrandAgent,
   brand: AgentBrand,
   models: ModelContext,
-  token: string,
   refreshTabState: () => Promise<void>,
 ): AgentChatPanel {
   const panel = document.createElement("agent-chat-panel");
@@ -136,7 +135,7 @@ function buildAgentPanel(
   // signature (panel-setup.ts) — a class instance is not assignable to an
   // index-signature type, so the element is passed through its structural
   // shape rather than by re-adding a cast to `any`.
-  applyPanelSettings(panel as unknown as PanelLike, currentProvider, token, brand);
+  applyPanelSettings(panel as unknown as PanelLike, currentProvider, brand);
 
   panel.config = {
     ...(panel.config ?? { persist: true }),
@@ -290,9 +289,8 @@ function buildAgentPanel(
 }
 
 async function main(): Promise<void> {
-  const [settings, sharedToken, brand, store, modelStore] = await Promise.all([
+  const [settings, brand, store, modelStore] = await Promise.all([
     getSettings(),
-    getToken(),
     requestBrand(),
     readAgentStore(chromeAgentStorage),
     readModelStore(),
@@ -350,7 +348,7 @@ async function main(): Promise<void> {
     const switcher = createAgentSwitcher({
       brand: merged,
       container: chat,
-      buildPanel: (a) => buildAgentPanel(a, merged, models, sharedToken, refreshTabState),
+      buildPanel: (a) => buildAgentPanel(a, merged, models, refreshTabState),
       confirm: (panel, detail) => createConfirmScrim(panel)(detail),
       onShow: (a) => combo.paint(a),
       saveLastId: (id) => {

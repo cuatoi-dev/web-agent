@@ -76,11 +76,23 @@ test.describe("Model store, relay and switchers", () => {
     await fs.rm(TEMP_DIR, { recursive: true, force: true });
   });
 
-  test("K1: Key dialog, then the side panel request carries the key; clearing it brings the token back", async ({ context, extensionId }) => {
+  test("K1: Key dialog, then the side panel request carries the key; clearing it brings the provided key back", async ({ context, extensionId }) => {
+    let [worker] = context.serviceWorkers();
+    if (!worker) worker = await context.waitForEvent("serviceworker");
+
+    const brandKey = await worker.evaluate(
+      async () =>
+        (await (await fetch(chrome.runtime.getURL("brand.json"))).json()).models.find(
+          (m: { id: string }) => m.id === "anthropic-sonnet",
+        ).apiKey as string,
+    );
+    expect(brandKey.length).toBeGreaterThan(0);
+
     const page = await context.newPage();
     await openOptions(page, extensionId);
 
     const provRow = page.locator('#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:28780/api/anthropic"]');
+    await expect(provRow.locator(".prov-sub")).toContainText("provided key");
     await provRow.locator(".key-btn").click();
 
     const dialog = page.locator("#brand-key-dialog");
@@ -88,14 +100,19 @@ test.describe("Model store, relay and switchers", () => {
     await expect(dialog.locator("h2")).toHaveText("Key for Gateway (anthropic)");
     const keyInput = dialog.locator('input[type="password"]');
     await expect(keyInput).toHaveCount(1);
-    await expect(keyInput).toHaveAttribute("placeholder", "Leave empty to use the shared Token");
+    await expect(keyInput).toHaveAttribute("placeholder", "Leave empty to use the provided key");
+    await expect(dialog).toContainText("This key replaces the provided key for this endpoint only.");
+    await expect(keyInput).toHaveValue("");
 
+    await fs.mkdir(ARTIFACTS, { recursive: true });
+    await dialog.screenshot({ path: path.join(ARTIFACTS, "key-dialog-provided.png") });
     await dialog.screenshot({ path: path.join(ARTIFACTS, "key-dialog-light.png") });
 
     await keyInput.fill("k-test-1234");
     await dialog.locator(".dialog-save-btn").click();
     await expect(dialog).toBeHidden();
     await expect(provRow.locator(".prov-sub")).toContainText("key ••••1234");
+    await page.screenshot({ path: path.join(ARTIFACTS, "row-user-key.png") });
 
     const panelPage = await context.newPage();
     let interceptedReq: any = null;
@@ -132,9 +149,9 @@ test.describe("Model store, relay and switchers", () => {
     await keyInput.fill("");
     await dialog.locator(".dialog-save-btn").click();
     await expect(dialog).toBeHidden();
-    await expect(provRow.locator(".prov-sub")).toContainText("shared Token");
+    await expect(provRow.locator(".prov-sub")).toContainText("provided key");
 
-    // Reload side panel and send again: token returns, key absent.
+    // Reload side panel and send again: key cleared: the provided key returns.
     interceptedReq = null;
     await panelPage.reload();
     await panelPage.waitForSelector("agent-chat-panel");
@@ -144,8 +161,8 @@ test.describe("Model store, relay and switchers", () => {
     });
 
     await expect.poll(() => interceptedReq).not.toBeNull();
-    expect(interceptedReq.headers["x-web-agent-token"]).toBeDefined();
-    expect(interceptedReq.headers["x-api-key"]).toBeUndefined();
+    expect(interceptedReq.headers["x-api-key"]).toBe(brandKey);
+    expect(interceptedReq.headers["x-web-agent-token"]).toBeUndefined();
   });
 
   test("S1: Side panel switcher: 3 items with icons; a switch mid-chat goes to the new endpoint and keeps history", async ({ context, extensionId }) => {
@@ -378,20 +395,54 @@ test.describe("Model store, relay and switchers", () => {
     const dir = path.resolve(TEMP_DIR, `relay-${RUN}`);
     const brandRelay = {
       models: [
-        { id: "stub-anthropic", label: "Stub Anthropic", endpoint: `http://localhost:10040/api/llm/${RUN}/anthropic`, wireFormat: "anthropic", model: "stub-a", vision: true, provider: "Stub" },
+        { id: "stub-anthropic", label: "Stub Anthropic", endpoint: `http://localhost:10040/api/llm/${RUN}/anthropic`, wireFormat: "anthropic", model: "stub-a", vision: true, provider: "Stub", apiKey: "stub-brand-key" },
         { id: "stub-openai", label: "Stub OpenAI", endpoint: `http://localhost:10040/api/llm/${RUN}/openai/v1`, wireFormat: "openai", model: "stub-o", vision: false, provider: "Stub" },
       ],
     };
     await patchedBrand(dir, brandRelay);
-    const { ctx, worker } = await launchPatchedContext(dir);
+    const { ctx, worker, extensionId } = await launchPatchedContext(dir);
     try {
       await worker.evaluate(async () => {
         await chrome.storage.local.set({ enabledOrigins: ["http://localhost:10040"] });
       });
 
+      // Visual check and assertions for brand with/without apiKey
+      const optionsPage = await ctx.newPage();
+      await openOptions(optionsPage, extensionId);
+      const rowOpenai = optionsPage.locator('#model-table tr.prov').filter({ hasText: "/openai/v1" });
+      const rowAnthropic = optionsPage.locator('#model-table tr.prov').filter({ hasText: "/anthropic" });
+      await expect(rowOpenai.locator(".prov-sub")).toContainText("· no key");
+      await expect(rowAnthropic.locator(".prov-sub")).toContainText("· provided key");
+      await rowOpenai.locator(".key-btn").click();
+      const dlg = optionsPage.locator("#brand-key-dialog");
+      await expect(dlg).toBeVisible();
+      const dlgInput = dlg.locator('input[type="password"]');
+      await expect(dlgInput).toHaveAttribute("placeholder", "Leave empty to send no key");
+      await expect(dlg).toContainText("This key is sent to this endpoint only.");
+      await fs.mkdir(ARTIFACTS, { recursive: true });
+      await optionsPage.screenshot({ path: path.join(ARTIFACTS, "row-no-key.png") });
+      await dlg.screenshot({ path: path.join(ARTIFACTS, "key-dialog-none.png") });
+      await dlg.locator(".dialog-cancel-btn").click();
+      await optionsPage.close();
+
       const bubblePage = await ctx.newPage();
+      await bubblePage.addInitScript(() => {
+        window.addEventListener("message", (e) => {
+          const d = e.data as { brand?: unknown } | null;
+          if (d && typeof d === "object" && "brand" in d) {
+            (window as unknown as { __WA_POSTED_BRAND__: string }).__WA_POSTED_BRAND__ = JSON.stringify(d.brand);
+          }
+        });
+      });
+
       await bubblePage.goto("http://localhost:10040/plain.html");
       await expect(bubblePage.locator("web-agent-bubble #launcher")).toBeVisible();
+
+      const posted = await bubblePage.evaluate(() => (window as unknown as { __WA_POSTED_BRAND__?: string }).__WA_POSTED_BRAND__ ?? "");
+      expect(posted).toContain("stub-anthropic"); // the brand did arrive
+      expect(posted).not.toContain("apiKey");
+      expect(posted).not.toContain("stub-brand-key");
+
       await bubblePage.locator("web-agent-bubble #launcher").click();
 
       const bubbleLoc = bubblePage.locator("web-agent-bubble agent-chat-panel");
@@ -434,8 +485,12 @@ test.describe("Model store, relay and switchers", () => {
       const res = await bubblePage.request.get(`http://localhost:10040/api/llm/${RUN}/requests`);
       const logs = await res.json();
       const a = logs.find((l: any) => l.path === "anthropic/v1/messages");
-      expect(a.headers["x-web-agent-token"]).toBeDefined();
+      expect(a.headers["x-api-key"]).toBe("stub-brand-key");
+      expect(a.headers["x-web-agent-token"]).toBeUndefined();
       expect(a.headers["anthropic-version"]).toBe("2023-06-01");
+
+      const o = logs.find((l: any) => l.path === "openai/v1/chat/completions");
+      expect(o.headers["authorization"]).toBeUndefined();
     } finally {
       await ctx.close();
     }

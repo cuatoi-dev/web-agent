@@ -20,12 +20,11 @@ export type { PanelLike } from "./types";
  */
 export function createDirectFetch(
   getProvider: () => ResolvedProvider,
-  sharedToken: string,
   impl: typeof fetch = fetch,
 ): typeof fetch {
   return (input: RequestInfo | URL, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
-    for (const [name, value] of Object.entries(authHeaders(getProvider(), sharedToken))) {
+    for (const [name, value] of Object.entries(authHeaders(getProvider()))) {
       headers.set(name, value);
     }
     return impl(input, { ...init, headers });
@@ -40,11 +39,10 @@ export function createDirectFetch(
 export function applyPanelSettings(
   panel: PanelLike,
   getProvider: () => ResolvedProvider,
-  sharedToken: string,
   brand: AgentBrand,
   fetchImpl: typeof fetch = fetch,
 ): void {
-  panel.fetch = createDirectFetch(getProvider, sharedToken, fetchImpl);
+  panel.fetch = createDirectFetch(getProvider, fetchImpl);
   // 115/006 — todo tracking is opt-in per host
   // (packages/web-agent-core/src/controller.types.ts:119-121). Setting it here
   // is what makes the controller set the `_todos` seam

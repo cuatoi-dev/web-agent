@@ -10,44 +10,40 @@ const ARTIFACTS_004 = path.resolve(HERE, "../../../temp/artifacts/2026-08-16-124
 const ARTIFACTS_005 = path.resolve(HERE, "../../../temp/artifacts/2026-09-08-204122-005-saved-skills-list-on-options-page");
 
 test.describe("Options page", () => {
-  test("loads, displays default token, and saves new token", async ({ context, extensionId }) => {
+  test("has no Token field; Save stores the theme", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
 
     const page = await context.newPage();
 
-    // 12. Page opens
     await openOptions(page, extensionId);
-    const input = page.locator("#token");
+    await expect(page.locator("#token")).toHaveCount(0);
+    await expect(page.getByText("Token", { exact: true })).toHaveCount(0);
+    await expect(page.locator("#theme")).toBeVisible();
+    await expect(page.locator("#save")).toBeVisible();
+
+    await page.locator("#theme").selectOption({ index: 1 });
+    const picked = await page.locator("#theme").inputValue();
+
     const saveBtn = page.locator("#save");
     const status = page.locator("#status");
-
-    await expect(input).toBeVisible();
-
-    // 13. Pre-filled with default token
-    const val = await input.inputValue();
-    expect(val.length).toBeGreaterThan(0);
-
-    // 14. Saving persists
-    await input.fill("changed-token");
     await saveBtn.click();
     await expect(status).toContainText("Saved.");
 
-    // Screenshot artifact (15)
+    // Screenshot artifact
     await fs.mkdir(ARTIFACTS_DIR, { recursive: true });
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, "02-options-page.png") });
 
     // Reopen page and check value
     await page.reload();
     await optionsReady(page);
-    await expect(input).toHaveValue("changed-token");
+    await expect(page.locator("#theme")).toHaveValue(picked);
 
-    const storedToken = await worker.evaluate(async () => {
-      const got: unknown = await chrome.storage.local.get("token");
-      const token = typeof got === "object" && got !== null ? (got as { token?: unknown }).token : undefined;
-      return typeof token === "string" ? token : undefined;
+    const storedSettings = await worker.evaluate(async () => {
+      const got = await chrome.storage.local.get("agentSettings");
+      return got.agentSettings as { theme?: string } | undefined;
     });
-    expect(storedToken).toBe("changed-token");
+    expect(storedSettings?.theme).toBe(picked);
   });
 
   test("dark colour scheme renders the page from the same tokens", async ({ context, extensionId }) => {
@@ -421,7 +417,8 @@ test.describe("Brand model list", () => {
     await expect(page.locator("#model-table tr.model-row .model-label")).toHaveText(["Sonnet", "Sonnet OpenAI", "Gemini Flash"]);
     await expect(page.locator('#model-table tr.model-row[data-ref="brand:anthropic-sonnet"] input.model-default')).toBeChecked();
     await expect(page.locator("#model-count")).toHaveText("3 of 3 models enabled");
-    await expect(page.locator("#tab-models > label")).toHaveText(["Theme", "Token"]);
+    await expect(page.locator("#tab-models > label")).toHaveText(["Theme"]);
+    await expect(page.locator("#token")).toHaveCount(0);
     await expect(page.locator("#preset")).toHaveCount(0);
     await expect(page.locator("#endpoint")).toHaveCount(0);
     await expect(page.locator("#wireFormat")).toHaveCount(0);
@@ -496,7 +493,7 @@ test.describe("Brand model list", () => {
     }
   });
 
-  test("L2: lockModel does not disable theme or token", async () => {
+  test("L2: lockModel does not disable theme", async () => {
     const dir = await patchedBrand(LOCKED, { options: { lockModel: true } });
     const ctx = await launchExtensionContext(dir);
     try {
@@ -506,7 +503,6 @@ test.describe("Brand model list", () => {
       const page = await ctx.newPage();
       await openOptions(page, id);
       await expect(page.locator("#theme")).not.toBeDisabled();
-      await expect(page.locator("#token")).not.toBeDisabled();
     } finally {
       await ctx.close();
     }
@@ -577,7 +573,7 @@ test.describe("Options page full-width flex layout", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await openOptions(page, extensionId);
 
-    const fieldIds = ["#token", "#theme"];
+    const fieldIds = ["#theme"];
     for (const id of fieldIds) {
       const box = await page.locator(id).evaluate((el) => el.getBoundingClientRect());
       expect(box.width).toBe(560);

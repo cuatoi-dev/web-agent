@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { DEFAULT_TOKEN } from "./constants";
-import { getEnabledOrigins, getLastAgentId, getSettings, getToken, isOriginEnabled, setLastAgentId, setOriginEnabled, setSettings, setToken } from "./settings";
+import { getEnabledOrigins, getLastAgentId, getSettings, isOriginEnabled, setLastAgentId, setOriginEnabled, setSettings } from "./settings";
 import { resolveAgent } from "./brand-capabilities";
 import { EMPTY_BRAND } from "./brand";
 import type { AgentBrand, BrandAgent } from "./types";
@@ -58,17 +57,6 @@ describe("settings", () => {
     expect(await isOriginEnabled("https://a.com")).toBe(false);
     expect(await isOriginEnabled("https://b.com")).toBe(true);
     expect(await getEnabledOrigins()).toEqual(["https://b.com"]);
-  });
-
-  it("returns default token when stored token is missing or empty", async () => {
-    expect(await getToken()).toBe(DEFAULT_TOKEN);
-    store["token"] = "";
-    expect(await getToken()).toBe(DEFAULT_TOKEN);
-  });
-
-  it("saves and retrieves a custom token", async () => {
-    await setToken("custom-secret-token");
-    expect(await getToken()).toBe("custom-secret-token");
   });
 
   it("returns every default when nothing is stored", async () => {

@@ -208,7 +208,6 @@ export async function runRefreshFromModels(
       apiKey: input.apiKey.trim(),
       headers: cleanHeaders,
     },
-    "",
   );
 
   const fetchFn = deps.fetchImpl ?? fetch;

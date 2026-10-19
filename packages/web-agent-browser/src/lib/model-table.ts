@@ -5,7 +5,8 @@ import type { ModelEntry, ModelRef, ModelStore, ModelTableHandlers, ResolvedProv
 
 export const PROVIDED_LABEL = "Provided";
 export const BRAND_CHECKBOX_TITLE = "Brand models cannot be deleted";
-export const SHARED_TOKEN_TEXT = "shared Token";
+export const PROVIDED_KEY_TEXT = "provided key";
+export const NO_KEY_TEXT = "no key";
 
 /** "N of M models enabled". */
 export function modelCountText(entries: ModelEntry[]): string {
@@ -18,18 +19,20 @@ export function deleteButtonText(count: number): string {
   return count > 0 ? `Delete selected (${count})` : "Delete selected";
 }
 
-/** "key ••••3f9a" when a key is stored, else "shared Token". */
-export function keyHint(apiKey: string): string {
-  const key = apiKey.trim();
-  return key ? `key ••••${key.slice(-4)}` : SHARED_TOKEN_TEXT;
+/** A brand row's key text (137/001): the Key-button key's last four
+ *  characters, "provided key" for the brand's default key, else "no key". */
+function brandKeyText(p: ResolvedProvider): string {
+  if (p.keySource === "user") return `key ••••${p.apiKey.trim().slice(-4)}`;
+  return p.keySource === "brand" ? PROVIDED_KEY_TEXT : NO_KEY_TEXT;
 }
 
 /** Subtitle under a provider row:
- *  - Brand:  `<endpoint> · key ••••xxxx` or `<endpoint> · shared Token`
+ *  - Brand:  `<endpoint> · key ••••xxxx`, `<endpoint> · provided key` or
+ *            `<endpoint> · no key`
  *  - Custom: `<endpoint>[ · key ••••xxxx][ · N custom header(s)]` */
 export function providerSubText(p: ResolvedProvider): string {
   if (p.kind === "brand") {
-    return `${p.endpoint} · ${keyHint(p.apiKey)}`;
+    return `${p.endpoint} · ${brandKeyText(p)}`;
   }
   const parts = [p.endpoint];
   const key = p.apiKey.trim();

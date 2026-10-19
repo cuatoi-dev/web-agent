@@ -1,6 +1,5 @@
 import { BRAND_MESSAGE, RELAY_PORT } from "./lib/constants";
 import type { RelayToWorker } from "./lib/relay-protocol";
-import { getToken } from "./lib/settings";
 import { readPackagedBrand } from "./lib/brand-source";
 import { listModels, readModelStore } from "./lib/model-store";
 import { handleRelayRequest } from "./lib/relay-handler";
@@ -22,11 +21,11 @@ chrome.action.onClicked.addListener((tab) => {
   }
 });
 
-/** The model list and the shared token, read fresh for every request, so a
- *  change on the options page reaches the next bubble request. */
+/** The model list, read fresh for every request, so a change on the options
+ *  page reaches the next bubble request. */
 async function readRelayModels() {
-  const [brand, store, token] = await Promise.all([readPackagedBrand(), readModelStore(), getToken()]);
-  return { entries: listModels(brand, store), token };
+  const [brand, store] = await Promise.all([readPackagedBrand(), readModelStore()]);
+  return { entries: listModels(brand, store) };
 }
 
 chrome.runtime.onConnect.addListener((port) => {

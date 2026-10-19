@@ -9,6 +9,7 @@ import {
 } from "@cuatoi/web-agent-lit";
 import { SPEED_PRESETS, calcTool } from "@cuatoi/web-agent-core";
 import { ANY_MODEL_ENDPOINT_TYPE } from "./any-model-chain";
+import { withGatewayAuth } from "./gateway-auth";
 import { domTools, domSkills } from "@cuatoi/web-agent-dom";
 import { chartingTools, chartingSkills } from "@cuatoi/web-agent-charting";
 import { chartingRenderers } from "@cuatoi/web-agent-charting/lit";
@@ -150,20 +151,12 @@ function buildPanelProps(
 ): PanelProps {
   const panel = {} as AgentChatPanel;
   if (target?.config) panel.config = target.config;
-  // Token gate (task 001): every /api/openai, /api/anthropic and /api/gemini
-  // call from the browser must carry X-Web-Agent-Token, or the reverse proxy
-  // rejects it with 401. `process.env.WEB_AGENT_TOKEN` is a build-time constant, injected
-  // by webpack.config.js's DefinePlugin from the WEB_AGENT_TOKEN env var (same
-  // fallback the devServer proxy uses) — not a source literal, so rotating the
-  // token is a redeploy with a new env value, not a code change.
-  const defaultFetch = window.fetch.bind(window);
-  panel.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-    const headers = new Headers(init?.headers);
-    if (!headers.has("X-Web-Agent-Token")) {
-      headers.set("X-Web-Agent-Token", process.env.WEB_AGENT_TOKEN as string);
-    }
-    return defaultFetch(input, { ...init, headers });
-  };
+  // Key gate (137/001): every /api/openai, /api/anthropic and /api/gemini call
+  // carries the gateway key in that route's own auth header, or the reverse
+  // proxy rejects it with 401. `process.env.WEB_AGENT_TOKEN` is a build-time
+  // constant, injected by webpack.config.js's DefinePlugin — not a source
+  // literal, so rotating the key is a redeploy with a new env value.
+  panel.fetch = withGatewayAuth(window.fetch.bind(window), process.env.WEB_AGENT_TOKEN as string);
   // AgentChatPanel's `store` setter takes `HostStore`, a type web-agent-lit
   // does not export from its entry point. HostStore's index signature exists
   // so hosts can pass a real state container (Redux, here) whose members the

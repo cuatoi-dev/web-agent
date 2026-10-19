@@ -45,7 +45,7 @@ export interface CustomProvider {
 /** `chrome.storage.local` key "modelStore". */
 export interface ModelStore {
   providers: CustomProvider[];
-  /** API key per brand provider id. Missing or empty = the shared Token. */
+  /** API key per brand provider id. Missing or empty = the brand's default key. */
   brandKeys: Record<string, string>;
   /** Models switched off. Every other model is on. */
   disabled: ModelRef[];
@@ -64,6 +64,9 @@ export interface ResolvedProvider {
   wireFormat: WireFormat;
   apiKey: string;
   headers: HeaderPair[];
+  /** Brand providers only (137/001): where `apiKey` came from. "user" = the
+   *  Key button, "brand" = model.yml `apiKey`, "none" = no key. */
+  keySource?: "user" | "brand" | "none";
 }
 
 /** One row of the model table, in table order. */
@@ -162,6 +165,8 @@ export interface BrandKeyDialogOptions {
   endpoint: string;
   /** The stored key, shown in the password field. "" when none. */
   current: string;
+  /** True when model.yml gives this provider a default key (137/001). */
+  hasBrandKey: boolean;
 }
 
 /** One model row inside the provider form before trimming/validation. */

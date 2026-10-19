@@ -2,8 +2,10 @@ import type { BrandKeyDialogOptions } from "./types";
 
 export const KEY_DIALOG_ID = "brand-key-dialog";
 export const KEY_FIELD_LABEL = "API key (optional)";
-export const KEY_PLACEHOLDER = "Leave empty to use the shared Token";
-export const KEY_HINT = "If you enter a key, it is sent in place of the shared Token to this endpoint only.";
+export const KEY_PLACEHOLDER_PROVIDED = "Leave empty to use the provided key";
+export const KEY_PLACEHOLDER_NONE = "Leave empty to send no key";
+export const KEY_HINT_PROVIDED = "This key replaces the provided key for this endpoint only.";
+export const KEY_HINT_NONE = "This key is sent to this endpoint only.";
 
 export function keyDialogTitle(name: string, wireFormat: string): string {
   return `Key for ${name} (${wireFormat})`;
@@ -33,11 +35,11 @@ export function openBrandKeyDialog(opts: BrandKeyDialogOptions): Promise<string 
     input.type = "password";
     input.autocomplete = "off";
     input.spellcheck = false;
-    input.placeholder = KEY_PLACEHOLDER;
+    input.placeholder = opts.hasBrandKey ? KEY_PLACEHOLDER_PROVIDED : KEY_PLACEHOLDER_NONE;
     input.value = opts.current;
     const hint = document.createElement("p");
     hint.className = "hint";
-    hint.textContent = KEY_HINT;
+    hint.textContent = opts.hasBrandKey ? KEY_HINT_PROVIDED : KEY_HINT_NONE;
 
     const row = document.createElement("div");
     row.className = "row dialog-actions";

@@ -45,6 +45,14 @@ export function brandProviderName(group: PresetEntry[]): string {
   return (url.host + url.pathname).replace(/\/+$/, "");
 }
 
+/** The group's default key: the first entry, in model.yml order, with a
+ *  non-blank `apiKey`; else "". Two entries with different keys: the first
+ *  wins (137/001). */
+export function brandDefaultKey(group: PresetEntry[]): string {
+  const withKey = group.find((e) => typeof e.apiKey === "string" && e.apiKey.trim() !== "");
+  return withKey?.apiKey?.trim() ?? "";
+}
+
 /** Every model in table order: brand groups in model.yml order, then
  *  custom providers in stored order. */
 export function listModels(brand: AgentBrand, store: ModelStore): ModelEntry[] {
@@ -57,13 +65,17 @@ export function listModels(brand: AgentBrand, store: ModelStore): ModelEntry[] {
     else groups.set(id, [e]);
   }
   for (const [id, group] of groups) {
+    // 137/001 — a Key-button key wins; otherwise the brand's default key.
+    const userKey = (store.brandKeys[id] ?? "").trim();
+    const defaultKey = brandDefaultKey(group);
     const provider: ResolvedProvider = {
       id,
       kind: "brand",
       name: brandProviderName(group),
       endpoint: group[0].endpoint,
       wireFormat: group[0].wireFormat,
-      apiKey: store.brandKeys[id] ?? "",
+      apiKey: userKey || defaultKey,
+      keySource: userKey ? "user" : defaultKey ? "brand" : "none",
       headers: [],
     };
     for (const e of group) {

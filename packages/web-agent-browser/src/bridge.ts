@@ -8,7 +8,7 @@ import {
 import type { RelayToPage } from "./lib/relay-protocol";
 import { getSettings, isOriginEnabled, setOriginEnabled } from "./lib/settings";
 import { listModels, readModelStore, resolveDefault } from "./lib/model-store";
-import { toPublicModels } from "./lib/public-models";
+import { pageBrand, toPublicModels } from "./lib/public-models";
 import type { BubblePayload } from "./lib/types";
 import { requestBrand } from "./lib/brand-request";
 import { readBridgeMessage } from "./lib/bridge-protocol";
@@ -46,12 +46,12 @@ const brandPromise = requestBrand();
 
 /** What the bubble needs, read fresh for each message: the enabled models
  *  (PublicModel — never a key or a header value), the default model, the
- *  theme and the brand (136/005). */
+ *  theme and the brand without any `apiKey` (136/005, 137/001). */
 async function bubblePayload(): Promise<BubblePayload> {
   const [settings, brand, store] = await Promise.all([getSettings(), brandPromise, readModelStore()]);
   const entries = listModels(brand, store);
   const current = (resolveDefault(entries, store) ?? entries[0]).ref;
-  return { models: toPublicModels(entries), current, theme: settings.theme, brand };
+  return { models: toPublicModels(entries), current, theme: settings.theme, brand: pageBrand(brand) };
 }
 
 // 1. Initial state check

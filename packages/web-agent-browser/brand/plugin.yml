@@ -16,8 +16,8 @@ prompts:
 # options: settings the brand fixes for every install.
 # lockModel: true makes the endpoint, wire format and model fields on
 # the options page read-only, so a white-label install cannot be pointed
-# somewhere else. The theme, the API key and the shared token stay editable —
-# they are the user's, not the brand's. Defaults to false.
+# somewhere else. The theme and the API key stay editable — they are the
+# user's, not the brand's. Defaults to false.
 options:
   lockModel: false
 

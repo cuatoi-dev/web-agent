@@ -120,6 +120,7 @@ Each entry has these keys (`tool/compile-brand.cjs:236-288`):
 | `model` | Yes | The model name sent to the endpoint. |
 | `provider` | No | Row name in the options table. Defaults to the endpoint's host and path. Entries with the same endpoint and wire format form one provider row. |
 | `vision` | No | `true` when the model accepts images. Defaults to `false` (text only). |
+| `apiKey` | No | The brand's default key for this provider, sent in the wire format's auth header. The **Key** button on the options page replaces it. A blank value is dropped. |
 
 Each wire format adds its own path to the endpoint, so do not put that path in
 `endpoint`:
@@ -238,7 +239,7 @@ options:
 
 With `lockModel: true`, the options page table shows only brand models and no row
 checkboxes. **Enabled**, **Default**, **Key** and the chat switchers still work.
-The theme and the token stay editable. Only the value `true` locks the table.
+The theme stays editable. Only the value `true` locks the table.
 Any other value, or no value, leaves row checkboxes present
 (`tool/compile-brand.cjs:635-639`).
 

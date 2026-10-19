@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { applyPanelSettings, createDirectFetch, type PanelLike } from "./panel-setup";
-import type { ModelProvider } from "./model-store.types";
+import type { ResolvedProvider } from "./types";
 import { createAgentSession, setMockScript } from "@cuatoi/web-agent-core";
 import { PANEL_SESSION_NAMESPACE } from "./constants";
 import { EMPTY_BRAND } from "./brand";
 
-function makeProv(over: Partial<ModelProvider> = {}): ModelProvider {
+function makeProv(over: Partial<ResolvedProvider> = {}): ResolvedProvider {
   return {
     id: "p1",
     kind: "brand",
@@ -23,7 +23,7 @@ describe("panel-setup", () => {
     it("writes fetch and config and leaves path, type, and model undefined", () => {
       const panel: PanelLike = {};
       const prov = makeProv();
-      applyPanelSettings(panel, () => prov, "secret-token", EMPTY_BRAND);
+      applyPanelSettings(panel, () => prov, EMPTY_BRAND);
 
       expect(panel.path).toBeUndefined();
       expect(panel.type).toBeUndefined();
@@ -43,7 +43,7 @@ describe("panel-setup", () => {
     it("the config it writes turns todo and scheduler tools on in a real core session", async () => {
       const panel: PanelLike = {};
       const prov = makeProv();
-      applyPanelSettings(panel, () => prov, "token", EMPTY_BRAND);
+      applyPanelSettings(panel, () => prov, EMPTY_BRAND);
 
       setMockScript({ text: "ok" });
       const session = createAgentSession({
@@ -81,7 +81,7 @@ describe("panel-setup", () => {
     it("tools: { todo: { enabled: false } } removes todo_write and todo_read from a real session", async () => {
       const panel: PanelLike = {};
       const prov = makeProv();
-      applyPanelSettings(panel, () => prov, "token", {
+      applyPanelSettings(panel, () => prov, {
         ...EMPTY_BRAND,
         tools: { todo: { enabled: false } },
       });
@@ -104,7 +104,7 @@ describe("panel-setup", () => {
     it("tools: { scheduler: { enabled: false } } removes scheduler tools from a real session", async () => {
       const panel: PanelLike = {};
       const prov = makeProv();
-      applyPanelSettings(panel, () => prov, "token", {
+      applyPanelSettings(panel, () => prov, {
         ...EMPTY_BRAND,
         tools: { scheduler: { enabled: false } },
       });
@@ -127,9 +127,9 @@ describe("panel-setup", () => {
     it("writes maxIterations 1000, with and without a brand tools block", () => {
       const plain: PanelLike = {};
       const prov = makeProv();
-      applyPanelSettings(plain, () => prov, "token", EMPTY_BRAND);
+      applyPanelSettings(plain, () => prov, EMPTY_BRAND);
       const branded: PanelLike = {};
-      applyPanelSettings(branded, () => prov, "token", {
+      applyPanelSettings(branded, () => prov, {
         ...EMPTY_BRAND,
         tools: { scheduler: { enabled: false }, todo: { enabled: false } },
       });
@@ -140,7 +140,7 @@ describe("panel-setup", () => {
     it("tools: { data: { enabled: false } } removes the data tools but keeps get_time", async () => {
       const panel: PanelLike = {};
       const prov = makeProv();
-      applyPanelSettings(panel, () => prov, "token", {
+      applyPanelSettings(panel, () => prov, {
         ...EMPTY_BRAND,
         tools: { data: { enabled: false } },
       });
@@ -165,18 +165,18 @@ describe("panel-setup", () => {
   });
 
   describe("createDirectFetch", () => {
-    it("adds X-Web-Agent-Token when brand has no key", async () => {
+    it("adds no auth header when the provider has no key", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
       const prov = makeProv({ apiKey: "" });
-      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
+      const customFetch = createDirectFetch(() => prov, spy);
 
       await customFetch("https://api.example.com/chat", { method: "POST" });
 
       expect(spy).toHaveBeenCalledOnce();
       const [, init] = spy.mock.calls[0];
       const headers = new Headers(init?.headers);
-      expect(headers.get("X-Web-Agent-Token")).toBe("my-shared-token");
       expect(headers.get("Authorization")).toBeNull();
+      expect(headers.get("x-web-agent-token")).toBeNull();
     });
 
     it("adds Authorization: Bearer <key> for openai with filled apiKey and no X-Web-Agent-Token", async () => {
@@ -185,7 +185,7 @@ describe("panel-setup", () => {
         wireFormat: "openai",
         apiKey: "sk-openai-key",
       });
-      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
+      const customFetch = createDirectFetch(() => prov, spy);
 
       await customFetch("https://api.openai.com/v1/chat", { method: "POST" });
 
@@ -193,7 +193,7 @@ describe("panel-setup", () => {
       const [, init] = spy.mock.calls[0];
       const headers = new Headers(init?.headers);
       expect(headers.get("Authorization")).toBe("Bearer sk-openai-key");
-      expect(headers.get("X-Web-Agent-Token")).toBeNull();
+      expect(headers.get("x-web-agent-token")).toBeNull();
     });
 
     it("adds x-api-key and anthropic headers for anthropic wireFormat with filled apiKey", async () => {
@@ -202,7 +202,7 @@ describe("panel-setup", () => {
         wireFormat: "anthropic",
         apiKey: "sk-ant-key",
       });
-      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
+      const customFetch = createDirectFetch(() => prov, spy);
 
       await customFetch("https://api.anthropic.com/v1/messages", { method: "POST" });
 
@@ -219,7 +219,7 @@ describe("panel-setup", () => {
         wireFormat: "gemini",
         apiKey: "gemini-key-123",
       });
-      const customFetch = createDirectFetch(() => prov, "my-shared-token", spy);
+      const customFetch = createDirectFetch(() => prov, spy);
 
       await customFetch("https://generativelanguage.googleapis.com/v1", { method: "POST" });
 
@@ -231,7 +231,7 @@ describe("panel-setup", () => {
     it("preserves URL, method, body, and caller headers", async () => {
       const spy = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockResolvedValue(new Response("ok"));
       const prov = makeProv({ apiKey: "" });
-      const customFetch = createDirectFetch(() => prov, "token-1", spy);
+      const customFetch = createDirectFetch(() => prov, spy);
 
       const payload = JSON.stringify({ prompt: "hello" });
       await customFetch("https://gateway.example.com/v1/query", {
@@ -251,7 +251,7 @@ describe("panel-setup", () => {
       const headers = new Headers(init?.headers);
       expect(headers.get("Content-Type")).toBe("application/json");
       expect(headers.get("X-Custom-Header")).toBe("foo");
-      expect(headers.get("X-Web-Agent-Token")).toBe("token-1");
+      expect(headers.get("Authorization")).toBeNull();
     });
 
     it("per-request getter call reads provider A then provider B", async () => {
@@ -259,7 +259,7 @@ describe("panel-setup", () => {
       const provA = makeProv({ wireFormat: "openai", apiKey: "key-a" });
       const provB = makeProv({ wireFormat: "anthropic", apiKey: "key-b" });
       let current = provA;
-      const customFetch = createDirectFetch(() => current, "tok", spy);
+      const customFetch = createDirectFetch(() => current, spy);
 
       await customFetch("https://test.com/a");
       const headersA = new Headers(spy.mock.calls[0][1]?.headers);

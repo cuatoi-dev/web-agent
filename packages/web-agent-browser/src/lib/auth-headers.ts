@@ -1,4 +1,3 @@
-import { TOKEN_HEADER } from "./constants";
 import type { ResolvedProvider } from "./types";
 
 /** The Anthropic API version every anthropic-format request names. */
@@ -6,24 +5,21 @@ export const ANTHROPIC_VERSION = "2023-06-01";
 
 /** The headers one request to `provider` carries (136/005).
  *
- *  - A key: the header the wire format uses, and NO shared token, so the team
- *    token never reaches a stranger's endpoint (idea 093).
- *  - No key, brand provider: the shared token, as before.
- *  - No key, custom provider: no auth header.
+ *  - A key: the header the wire format uses. For a brand provider the key is
+ *    the Key-button key or the brand's default key (137/001).
+ *  - No key: no auth header, for brand and custom providers alike.
  *  - anthropic format: `anthropic-version` and
  *    `anthropic-dangerous-direct-browser-access`, which a direct browser call
  *    to Anthropic needs.
  *  - Custom headers last; one wins over an auth header of the same name in
  *    any letter case (user decision 2026-10-19). */
-export function authHeaders(provider: ResolvedProvider, token: string): Record<string, string> {
+export function authHeaders(provider: ResolvedProvider): Record<string, string> {
   const h: Record<string, string> = {};
   const key = provider.apiKey.trim();
   if (key) {
     if (provider.wireFormat === "openai") h["Authorization"] = `Bearer ${key}`;
     else if (provider.wireFormat === "anthropic") h["x-api-key"] = key;
     else h["x-goog-api-key"] = key;
-  } else if (provider.kind === "brand") {
-    h[TOKEN_HEADER] = token;
   }
   if (provider.wireFormat === "anthropic") {
     h["anthropic-version"] = ANTHROPIC_VERSION;

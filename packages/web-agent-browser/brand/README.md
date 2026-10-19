@@ -119,7 +119,7 @@ starter file.
 
 - `lockModel` (boolean, default `false`) — when set to `true`, the options page
   table shows only brand models and no row checkboxes. **Enabled**, **Default**,
-  **Key** and the chat switchers still work. The theme and the token stay editable.
+  **Key** and the chat switchers still work. The theme stays editable.
 - `builtInProviders` (boolean, default `false`) — when set to `true`,
   **Add model** first shows the seven built-in providers and **Custom**.
   Picking a provider fills in the endpoint, the format and, for Anthropic,
@@ -230,6 +230,11 @@ Optional keys:
 
 - `provider` — row name in the options table (defaults to the endpoint's host and path). Entries with the same endpoint and wire format form one provider row.
 - `vision` — boolean (`true` when the model accepts images, default `false`).
+- `apiKey` — the brand's default key for this provider. It is sent in the
+  wire format's auth header with no user action. The **Key** button on the
+  options page replaces it. If entries of one provider row give different
+  keys, the first entry's key is used. The key is in `dist/brand.json`, so
+  use only a key you can ship.
 
 The default entries are:
 

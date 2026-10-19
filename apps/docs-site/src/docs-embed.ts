@@ -19,6 +19,7 @@ import { DEMO_AGENT_AVATAR } from "./gallery-states";
 import { enablePanelResize } from "./panel-resize";
 // 005: the shadow wrapper that hosts the bubble.
 import { DocsAgentWidget } from "./docs-agent-widget";
+import { withGatewayAuth } from "./gateway-auth";
 
 function wireAgent() {
   // 005: the bubble is hosted inside <docs-agent-widget>'s shadow root, not
@@ -35,20 +36,11 @@ function wireAgent() {
   }
   const bubble = widget?.bubble ?? document.querySelector("web-agent-bubble");
   if (bubble) {
-    // Token gate (task 001): every /api/openai call from the browser must
-    // carry X-Web-Agent-Token, or the reverse proxy rejects it with 401.
+    // Key gate (137/001): a gateway LLM call carries the key in its route's
+    // own auth header, or the reverse proxy rejects it with 401.
     // `process.env.WEB_AGENT_TOKEN` is a build-time constant, injected by
-    // webpack.config.cjs's DefinePlugin from the WEB_AGENT_TOKEN env var (same
-    // fallback the devServer proxy uses) — not a source literal, so rotating
-    // the token is a redeploy with a new env value, not a code change.
-    const defaultFetch = window.fetch.bind(window);
-    bubble.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-      const headers = new Headers(init?.headers);
-      if (!headers.has("X-Web-Agent-Token")) {
-        headers.set("X-Web-Agent-Token", process.env.WEB_AGENT_TOKEN as string);
-      }
-      return defaultFetch(input, { ...init, headers });
-    };
+    // webpack.config.cjs's DefinePlugin — not a source literal.
+    bubble.fetch = withGatewayAuth(window.fetch.bind(window), process.env.WEB_AGENT_TOKEN as string);
     // OpenAI transport: /api/openai/v1 → the model gateway → model alias `sonnet`.
     // NOTE: baseURL must include /v1 — the OpenAI provider appends /chat/completions directly;
     // Anthropic is different (/api/anthropic → the provider appends /v1/messages).

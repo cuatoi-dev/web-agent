@@ -343,9 +343,10 @@ function compileSkills(brandDir) {
  * a brand owner who wrote the file meant it to be used.
  * `vision` is `true` only for the YAML boolean `true`; anything else, or no key, compiles to `false`.
  * `provider` is kept when it is a non-empty string and dropped otherwise.
+ * `apiKey` is kept, trimmed, when it is a non-empty string and dropped otherwise (137/001).
  *
  * @param {string} brandDir - the `brand/` folder
- * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string, vision: boolean, provider?: string}[]}
+ * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string, vision: boolean, provider?: string, apiKey?: string}[]}
  * @throws {Error} naming `model.yml`, the entry index and the offending field
  */
 function compileModels(brandDir) {
@@ -398,10 +399,16 @@ function compileModels(brandDir) {
   // 136/005 — `vision` is always a boolean in brand.json, so no reader has to
   // test for a missing key. A blank or non-string `provider` is dropped, and
   // the runtime then names the row after the endpoint.
+  // 137/001 — `apiKey` follows the `provider` rule, trimmed.
   return doc.models.map((entry) => {
     const out = { ...entry, vision: entry.vision === true };
     if (typeof entry.provider !== "string" || entry.provider.trim() === "") {
       delete out.provider;
+    }
+    if (typeof entry.apiKey === "string" && entry.apiKey.trim() !== "") {
+      out.apiKey = entry.apiKey.trim();
+    } else {
+      delete out.apiKey;
     }
     return out;
   });

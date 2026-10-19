@@ -29,7 +29,7 @@ export function urlMatchesProvider(url: string, endpoint: string): boolean {
 export async function handleRelayRequest(msg: RelayRequest, deps: RelayHandlerDeps): Promise<void> {
   const { readModels, fetchImpl, post, signal } = deps;
   try {
-    const { entries, token } = await readModels();
+    const { entries } = await readModels();
     const entry = resolveRef(entries, msg.modelRef);
     if (!entry) {
       post({ type: "error", message: UNKNOWN_MODEL });
@@ -43,7 +43,7 @@ export async function handleRelayRequest(msg: RelayRequest, deps: RelayHandlerDe
     // holds them and cannot strip them. `set` replaces a page header of the
     // same name in any letter case.
     const headers = new Headers(msg.headers);
-    for (const [name, value] of Object.entries(authHeaders(entry.provider, token))) {
+    for (const [name, value] of Object.entries(authHeaders(entry.provider))) {
       headers.set(name, value);
     }
     const res = await fetchImpl(msg.url, {

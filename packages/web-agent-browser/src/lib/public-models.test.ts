@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { toPublicModels } from "./public-models";
+import { toPublicModels, pageBrand } from "./public-models";
+import { EMPTY_BRAND } from "./brand";
 import { providerIconSvg } from "./provider-builtins";
 import type { ModelEntry } from "./model-store.types";
+import type { AgentBrand } from "./types";
 
 describe("public-models", () => {
   it("toPublicModels filters disabled models and scrubs secrets and headers", () => {
@@ -79,5 +81,61 @@ describe("public-models", () => {
     expect(model.icon).toBe(providerIconSvg("anthropic"));
     expect(model.icon).not.toBe(providerIconSvg(undefined));
     expect(model.icon).not.toContain("secret");
+  });
+});
+
+describe("pageBrand", () => {
+  it("strips apiKey from brand models without mutating the input", () => {
+    const b: AgentBrand = {
+      ...EMPTY_BRAND,
+      models: [
+        {
+          id: "m1",
+          label: "M1",
+          endpoint: "https://e1.test",
+          wireFormat: "anthropic",
+          model: "claude",
+          vision: true,
+          provider: "P1",
+          apiKey: "secret",
+        },
+        {
+          id: "m2",
+          label: "M2",
+          endpoint: "https://e2.test",
+          wireFormat: "openai",
+          model: "gpt",
+          vision: false,
+          provider: "P2",
+        },
+      ],
+    };
+
+    const cleaned = pageBrand(b);
+
+    expect(JSON.stringify(cleaned).includes("apiKey")).toBe(false);
+    expect(JSON.stringify(cleaned).includes("secret")).toBe(false);
+
+    expect(cleaned.models[0]).toEqual({
+      id: "m1",
+      label: "M1",
+      endpoint: "https://e1.test",
+      wireFormat: "anthropic",
+      model: "claude",
+      vision: true,
+      provider: "P1",
+    });
+    expect(cleaned.models[1]).toEqual({
+      id: "m2",
+      label: "M2",
+      endpoint: "https://e2.test",
+      wireFormat: "openai",
+      model: "gpt",
+      vision: false,
+      provider: "P2",
+    });
+
+    expect(b.models[0].apiKey).toBe("secret");
+    expect(cleaned.agents).toBe(b.agents);
   });
 });

@@ -5,9 +5,12 @@ import { mountTabs } from "./lib/options-tabs";
 import { chromeSkillStorage } from "./lib/skill-registry";
 import { readAgentStore, chromeAgentStorage, listAgents } from "./lib/agent-store";
 import { mountAgentEditor } from "./lib/agent-editor";
-import { getSettings, getToken, setSettings, setToken } from "./lib/settings";
+import { getSettings, setSettings } from "./lib/settings";
+import { resolveModels } from "./lib/brand-models";
 import { registerBrandThemes, applyTheme, listThemes, type ThemeBinding } from "./lib/theme";
 import {
+  brandDefaultKey,
+  brandProviderId,
   deleteModels,
   listModels,
   readModelStore,
@@ -38,7 +41,6 @@ const addModelBtn = document.getElementById("add-model-btn") as HTMLButtonElemen
 const deleteModelsBtn = document.getElementById("delete-models-btn") as HTMLButtonElement;
 const modelTableHint = document.getElementById("model-table-hint") as HTMLParagraphElement;
 const theme = document.getElementById("theme") as HTMLSelectElement;
-const token = document.getElementById("token") as HTMLInputElement;
 const save = document.getElementById("save") as HTMLButtonElement;
 const status = document.getElementById("status") as HTMLParagraphElement;
 const skillList = document.getElementById("skill-list") as HTMLDivElement;
@@ -124,7 +126,12 @@ function paintModels(brand: AgentBrand, store: ModelStore): void {
         name: provider.name,
         wireFormat: provider.wireFormat,
         endpoint: provider.endpoint,
-        current: provider.apiKey,
+        // 137/001 — only the user's own key; `provider.apiKey` may be the
+        // brand's default key, which must not be shown or saved as the user's.
+        current: store.brandKeys[provider.id] ?? "",
+        hasBrandKey: brandDefaultKey(
+          resolveModels(brand).filter((e) => brandProviderId(e) === provider.id),
+        ) !== "",
       }).then((value) => {
         if (value === null) return;
         void commitModels(brand, setBrandKey(store, provider.id, value));
@@ -189,11 +196,11 @@ deleteModelsBtn.addEventListener("click", () => {
   });
 });
 
-/** Fills the theme picker, the theme, the token and the model table.
+/** Fills the theme picker, the theme and the model table.
  *
  *  ORDER MATTERS for the e2e ready wait (e2e/extension.fixture.ts
  *  optionsReady): `#model-count` is painted LAST, in the same synchronous
- *  block as the theme and token values, so "the count line has text" means
+ *  block as the theme value, so "the count line has text" means
  *  the whole tab is ready. Do not add an `await` inside that block. */
 async function init(): Promise<void> {
   const brand = await brandForThisContext();
@@ -213,11 +220,10 @@ async function init(): Promise<void> {
     theme.append(opt);
   }
 
-  const [s, t, store] = await Promise.all([getSettings(), getToken(), readModelStore()]);
+  const [s, store] = await Promise.all([getSettings(), readModelStore()]);
   // --- no await below this line ---
   theme.value = s.theme;
   applyPageTheme(s.theme);
-  token.value = t;
   paintModels(brand, store);
 }
 
@@ -255,12 +261,11 @@ void (async () => {
   });
 })();
 
-// 136/005 — Save keeps Theme and Token only. The model table saves itself;
+// 136/005 — Save keeps Theme only (137/001 removed Token). The model table saves itself;
 // there is no endpoint here any more, so no host permission is asked for.
 save.addEventListener("click", () => {
   void (async () => {
     await setSettings({ theme: theme.value });
-    await setToken(token.value.trim());
     report("Saved. Reload a page to use the new settings.", false);
   })();
 });

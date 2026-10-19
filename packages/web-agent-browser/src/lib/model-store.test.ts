@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+  brandDefaultKey,
   listModels,
   resolveDefault,
   modelForAgent,
@@ -70,6 +71,7 @@ describe("model-store", () => {
     expect(entries[0].provider.id).toBe("brand:anthropic:https://a.test/api/anthropic");
     expect(entries[0].provider.name).toBe("Acme");
     expect(entries[0].provider.apiKey).toBe("");
+    expect(entries[0].provider.keySource).toBe("none");
 
     // C provider name strips trailing slash
     expect(entries[2].provider.name).toBe("c.test/v1");
@@ -92,8 +94,74 @@ describe("model-store", () => {
     };
     const entries = listModels(FIXTURE_BRAND, store);
     expect(entries[0].provider.apiKey).toBe("k");
+    expect(entries[0].provider.keySource).toBe("user");
     expect(entries[1].provider.apiKey).toBe("k");
     expect(entries[2].provider.apiKey).toBe("");
+    expect(entries[2].provider.keySource).toBe("none");
+  });
+
+  it("listModels uses the first brand apiKey in the group when no user key", () => {
+    const brandWithKeys: AgentBrand = {
+      ...FIXTURE_BRAND,
+      models: [
+        { ...FIXTURE_BRAND.models[0] },
+        { ...FIXTURE_BRAND.models[1], apiKey: " kb " },
+        { ...FIXTURE_BRAND.models[2], apiKey: "kc" },
+      ],
+    };
+    const entries = listModels(brandWithKeys, EMPTY_MODEL_STORE);
+    expect(entries[0].provider.apiKey).toBe("kb");
+    expect(entries[0].provider.keySource).toBe("brand");
+    expect(entries[2].provider.apiKey).toBe("kc");
+    expect(entries[2].provider.keySource).toBe("brand");
+  });
+
+  it("the first key in model.yml order wins", () => {
+    const brandWithTwoKeys: AgentBrand = {
+      ...FIXTURE_BRAND,
+      models: [
+        { ...FIXTURE_BRAND.models[0], apiKey: "ka" },
+        { ...FIXTURE_BRAND.models[1], apiKey: "kb" },
+        { ...FIXTURE_BRAND.models[2] },
+      ],
+    };
+    const entries = listModels(brandWithTwoKeys, EMPTY_MODEL_STORE);
+    expect(entries[0].provider.apiKey).toBe("ka");
+    expect(entries[1].provider.apiKey).toBe("ka");
+  });
+
+  it("a user key wins over the brand key; a blank user key falls back", () => {
+    const brandWithKey: AgentBrand = {
+      ...FIXTURE_BRAND,
+      models: [
+        { ...FIXTURE_BRAND.models[0], apiKey: "kb-default" },
+        { ...FIXTURE_BRAND.models[1] },
+        { ...FIXTURE_BRAND.models[2] },
+      ],
+    };
+    const idA = "brand:anthropic:https://a.test/api/anthropic";
+    const storeUser: ModelStore = {
+      ...EMPTY_MODEL_STORE,
+      brandKeys: { [idA]: "ku" },
+    };
+    const entriesUser = listModels(brandWithKey, storeUser);
+    expect(entriesUser[0].provider.apiKey).toBe("ku");
+    expect(entriesUser[0].provider.keySource).toBe("user");
+
+    const storeBlank: ModelStore = {
+      ...EMPTY_MODEL_STORE,
+      brandKeys: { [idA]: "   " },
+    };
+    const entriesBlank = listModels(brandWithKey, storeBlank);
+    expect(entriesBlank[0].provider.apiKey).toBe("kb-default");
+    expect(entriesBlank[0].provider.keySource).toBe("brand");
+  });
+
+  it("brandDefaultKey returns trimmed first key or empty string", () => {
+    expect(brandDefaultKey([])).toBe("");
+    expect(brandDefaultKey([{ apiKey: "" } as any])).toBe("");
+    expect(brandDefaultKey([{ apiKey: "   " } as any])).toBe("");
+    expect(brandDefaultKey([{} as any, { apiKey: " found " } as any])).toBe("found");
   });
 
   it("listModels includes custom providers and models", () => {
@@ -119,6 +187,7 @@ describe("model-store", () => {
     expect(entries[3].ref).toBe("p1/m-a");
     expect(entries[3].kind).toBe("custom");
     expect(entries[3].provider.headers).toEqual([{ name: "X-Team", value: "web" }]);
+    expect(entries[3].provider.keySource).toBeUndefined();
     expect(entries[4].ref).toBe("p1/m-b");
     expect(entries[4].kind).toBe("custom");
   });

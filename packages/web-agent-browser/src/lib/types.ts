@@ -67,7 +67,7 @@ export type RelayToPage = RelayHead | RelayChunk | RelayEnd | RelayError;
 
 /** What `handleRelayRequest` (relay-handler.ts) needs from the worker. */
 export interface RelayHandlerDeps {
-  readModels: (this: void) => Promise<{ entries: ModelEntry[]; token: string }>;
+  readModels: (this: void) => Promise<{ entries: ModelEntry[] }>;
   fetchImpl: (input: string, init: RequestInit) => Promise<Response>;
   post: (this: void, msg: RelayToPage) => void;
   signal: AbortSignal;
@@ -261,6 +261,8 @@ export interface PresetEntry {
   vision: boolean;
   /** The provider row's display name. Absent: the endpoint's host and path. */
   provider?: string;
+  /** The brand's default key for this provider (model.yml `apiKey`). */
+  apiKey?: string;
 }
 
 // --- panel-setup.ts --------------------------------------------------------

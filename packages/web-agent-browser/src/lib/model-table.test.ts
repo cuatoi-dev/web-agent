@@ -68,7 +68,7 @@ describe("model-table", () => {
     expect(pillBrand?.textContent).toBe("Provided");
 
     const provSub = firstProv.querySelector(".prov-sub");
-    expect(provSub?.textContent).toBe("https://a.test/api/anthropic · shared Token");
+    expect(provSub?.textContent).toBe("https://a.test/api/anthropic · no key");
 
     const countCell = firstProv.querySelector(".count");
     expect(countCell?.textContent).toBe("2 / 2");
@@ -265,8 +265,16 @@ describe("providerSubText", () => {
       }),
     ).toBe("http://x/v1 · 2 custom headers");
   });
-  it("keeps the shared Token wording for brand providers", () => {
-    expect(providerSubText({ ...base, kind: "brand" })).toBe("http://x/v1 · shared Token");
+  it("brand provider shows provided key, user key or no key", () => {
+    expect(providerSubText({ ...base, kind: "brand", apiKey: "bk", keySource: "brand" })).toBe(
+      "http://x/v1 · provided key",
+    );
+    expect(providerSubText({ ...base, kind: "brand", apiKey: "sk-user-1234", keySource: "user" })).toBe(
+      "http://x/v1 · key ••••1234",
+    );
+    expect(providerSubText({ ...base, kind: "brand", apiKey: "", keySource: "none" })).toBe(
+      "http://x/v1 · no key",
+    );
   });
 });
 

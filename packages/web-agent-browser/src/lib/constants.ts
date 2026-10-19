@@ -2,8 +2,6 @@ import type { ThemePreference, TokenSet, WireFormat } from "./types";
 
 export type { ThemePreference, TokenSet, WireFormat };
 
-export const DEFAULT_TOKEN = process.env.WEB_AGENT_TOKEN ?? "wa-demo-token";
-export const TOKEN_HEADER = "X-Web-Agent-Token";
 export const RELAY_PORT = "wa-llm-relay";
 export const SETTLE_MS = 10_000;
 export const TOGGLE_MESSAGE = "wa-toggle";
