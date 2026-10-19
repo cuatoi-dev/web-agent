@@ -60,7 +60,6 @@ describe("panelProps", () => {
       "type",
       "path",
       "model",
-      "streaming",
       "models",
       "imageInput",
       "renderers",
@@ -78,7 +77,6 @@ describe("panelProps", () => {
     expect(props.type).toBe(entry.endpointType);
     expect(props.path).toBe(entry.path);
     expect(props.model).toBe(entry.model);
-    expect(props.streaming).toBe(entry.streaming);
     expect(props.toolProviders.map((provider) => provider.name)).toContain("demomcp");
     expect(props.tools.map((tool) => tool.name)).toContain("add_to_cart");
     expect(typeof props.fetch).toBe("function");
@@ -107,7 +105,6 @@ describe("panelProps", () => {
     expect(target.type).toBe(expected.type);
     expect(target.path).toBe(expected.path);
     expect(target.model).toBe(expected.model);
-    expect(target.streaming).toBe(expected.streaming);
     expect(target.tools!.map((tool) => tool.name)).toEqual(
       expected.tools.map((tool) => tool.name),
     );
@@ -422,20 +419,11 @@ describe("PROVIDER_ENTRIES", () => {
     }
   });
 
-  it("both streaming modes are present per provider", () => {
-    const byType = new Map<string, typeof PROVIDER_ENTRIES>();
-    for (const entry of PROVIDER_ENTRIES) {
-      // The chain is one entry, not a matrix cell: it is a single fallback list
-      // whose own entries carry their own modes.
-      if (entry.endpointType === ANY_MODEL_ENDPOINT_TYPE) continue;
-      const list = byType.get(entry.endpointType) ?? [];
-      list.push(entry);
-      byType.set(entry.endpointType, list);
-    }
-    for (const [, entries] of byType) {
-      expect(entries.some((e) => e.streaming === true)).toBe(true);
-      expect(entries.some((e) => e.streaming === false)).toBe(true);
-    }
+  it("offers exactly one entry per provider route, in route order", () => {
+    const routes = PROVIDER_ENTRIES
+      .filter((e) => e.endpointType !== ANY_MODEL_ENDPOINT_TYPE)
+      .map((e) => e.endpointType);
+    expect(routes).toEqual(["anthropic", "openai", "gemini"]);
   });
 
   it("the default index is inside the list", () => {
@@ -443,15 +431,14 @@ describe("PROVIDER_ENTRIES", () => {
     expect(DEFAULT_PROVIDER_ENTRY_INDEX).toBeLessThan(PROVIDER_ENTRIES.length);
   });
 
-  it("applyProviderEntry writes exactly four properties", () => {
+  it("applyProviderEntry writes exactly three properties", () => {
     const panel = {} as Partial<AgentChatPanel> as unknown as AgentChatPanel;
     const entry = PROVIDER_ENTRIES[0];
     applyProviderEntry(panel, entry);
     expect(panel.type).toBe(entry.endpointType);
     expect(panel.path).toBe(entry.path);
     expect(panel.model).toBe(entry.model);
-    expect(panel.streaming).toBe(entry.streaming);
-    expect(Object.keys(panel).sort()).toEqual(["model", "path", "streaming", "type"]);
+    expect(Object.keys(panel).sort()).toEqual(["model", "path", "type"]);
   });
 
   it("the live path applies the default entry", () => {
@@ -461,7 +448,6 @@ describe("PROVIDER_ENTRIES", () => {
     expect(panel.type).toBe(entry.endpointType);
     expect(panel.path).toBe(entry.path);
     expect(panel.model).toBe(entry.model);
-    expect(panel.streaming).toBe(entry.streaming);
   });
 
   it("the mock seam still overrides the transport", () => {
@@ -470,7 +456,6 @@ describe("PROVIDER_ENTRIES", () => {
     configureAgentPanel(panel, { domAccess: false });
     const entry = PROVIDER_ENTRIES[DEFAULT_PROVIDER_ENTRY_INDEX];
     expect(panel.type).toBe("mock");
-    expect(panel.streaming).toBe(false);
     expect(panel.path).toBe(entry.path);
     expect(panel.model).toBe(entry.model);
   });
@@ -485,6 +470,14 @@ describe("PROVIDER_ENTRIES", () => {
         expect(entry.baseURL).toBe(defaultBaseURLFor("gemini"));
       }
     }
+  });
+
+  it("the chain has one entry per route, in route order", () => {
+    expect(ANY_MODEL_CHAIN.map((e) => e.endpointType)).toEqual([
+      "anthropic",
+      "openai",
+      "gemini",
+    ]);
   });
 
   it("the chain endpoint type resolves through the registry", async () => {

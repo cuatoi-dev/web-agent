@@ -29,7 +29,6 @@ export class WebAgentBubble extends HTMLElement {
   private _models?: import("@cuatoi/web-agent-core").ModelOption[];
   private _path?: string;
   private _type?: "openai" | "anthropic" | "gemini";
-  private _streaming?: boolean;
   private _fetch?: typeof fetch;
   private _tools?: CustomToolDef[];
   private _skills?: SkillDef[];
@@ -95,17 +94,6 @@ export class WebAgentBubble extends HTMLElement {
     this._type = val;
     if (this.panelEl) {
       this.panelEl.type = val;
-    }
-  }
-
-  get streaming() {
-    return this._streaming;
-  }
-
-  set streaming(val: boolean | undefined) {
-    this._streaming = val;
-    if (this.panelEl) {
-      this.panelEl.streaming = val;
     }
   }
 
@@ -382,7 +370,6 @@ export class WebAgentBubble extends HTMLElement {
         if (this._models) this.panelEl.models = this._models;
         this.panelEl.type = this._type ?? BACKEND.type;
         this.panelEl.imageInput = this._imageInput;
-        this.panelEl.streaming = this._streaming;
         this.panelEl.renderers = this._renderers ?? defaultRenderers;
         if (this._cues) this.panelEl.cues = this._cues;
         if (this._onCuesChange) this.panelEl.onCuesChange = this._onCuesChange;

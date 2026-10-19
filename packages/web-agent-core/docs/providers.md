@@ -20,7 +20,7 @@ provider; see [Custom providers](#custom-providers).
 Core depends on no vendor software development kit (SDK). All three real
 providers send their requests through `requestJson()` in
 `src/transport/anthropic-request.ts`, which calls `fetch` directly. Every call
-is one non-streaming request.
+sends one request and reads one complete response.
 
 ## Retry and timeout behavior
 
@@ -68,7 +68,8 @@ receives them (`src/transport/message-filters.ts:18-24`).
 The Anthropic and OpenAI providers always send `"stream": false` in the request
 body (`src/transport/anthropic-provider.ts`, `src/transport/openai-provider.ts`).
 The real APIs treat a missing field as `false`, but a gateway can read a missing
-field as streaming and return a server-sent-events body that core cannot read.
+field as a request for an event stream and return a server-sent-events body
+that core cannot read.
 The Gemini provider calls the `generateContent` endpoint, which always returns
 one complete response.
 
@@ -110,16 +111,15 @@ local gateway by full URL.
 | docs-site | `"openai"` | `/api/openai/v1` | `sonnet` | `apps/docs-site/src/docs-embed.ts:55-56`, `:160-161` |
 | web-agent-browser | `"anthropic"` | `http://localhost:28780/api/anthropic` | `sonnet` | `packages/web-agent-browser/brand/model.yml:14-19` |
 
-cat-store's provider switcher offers seven entries
-(`apps/cat-store/src/web/agent-panel-config.ts:53-116`): Anthropic and OpenAI
-on `sonnet`, Gemini on `gemini-flash-lite-latest`, each in two mode variants,
-plus **Any model**. **Any model** uses the host's
-`"fallback-chain"` endpoint type, which tries the other six combinations in
-order. cat-store registers that endpoint type itself
-(`apps/cat-store/src/web/any-model-chain.ts:10`, `:21-35`).
+cat-store's provider switcher offers four entries
+(`apps/cat-store/src/web/agent-panel-config.ts`, the `PROVIDER_ENTRIES` list):
+Anthropic and OpenAI on `sonnet`, Gemini on `gemini-flash-lite-latest`, plus
+**Any model**. **Any model** uses the host's `"fallback-chain"` endpoint type,
+which tries the other three routes in order. cat-store registers that endpoint
+type itself (`apps/cat-store/src/web/any-model-chain.ts`, `ANY_MODEL_CHAIN`
+and the `providerRegistry.register` call below it).
 
-The two mode variants send identical complete-result requests today. The
-browser extension uses the first entry of the brand's model list on a fresh
+The browser extension uses the first entry of the brand's model list on a fresh
 profile, and the options page offers the whole list
 (`packages/web-agent-browser/src/lib/brand-models.ts:17-31`). A value the user
 saves replaces the default, field by field

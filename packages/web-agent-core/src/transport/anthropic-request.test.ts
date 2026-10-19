@@ -84,7 +84,7 @@ describe("anthropic-request", () => {
     );
   });
 
-  it("returns the parsed JSON body for a non-streaming call", async () => {
+  it("returns the parsed JSON body for one request", async () => {
     const injectedFetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ res: "data" }), { status: 200 }),
     );

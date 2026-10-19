@@ -88,9 +88,9 @@ export const CONVERSATION_GALLERY_STATES: GalleryState[] = [
     }),
   },
   {
-    id: 'working-streaming',
-    title: 'Working (streaming next block)',
-    caption: 'Streaming — an inline, bubble-less 3-dot animated placeholder shows at the transcript tail while awaiting the next block (delayed 400ms to avoid flash).',
+    id: 'working',
+    title: 'Working (next block pending)',
+    caption: 'An inline, bubble-less 3-dot animated placeholder shows at the transcript tail while awaiting the next block (delayed 400ms to avoid flash).',
     kind: 'panel',
     state: makeState({
       messages: [

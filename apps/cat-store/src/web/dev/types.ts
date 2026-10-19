@@ -21,7 +21,7 @@ export type GalleryStateId =
   | 'rich-table'
   | 'generative-ui'
   | 'multi-tool'
-  | 'working-streaming'
+  | 'working'
   | 'working-thinking'
   | 'compacting'
   | 'confirm'

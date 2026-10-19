@@ -71,7 +71,6 @@ export function buildConfig(st: SessionRuntime) {
     cues: st.currentConfig.cues ?? DEFAULT_CONFIG.cues,
     imageInput: st.currentConfig.imageInput ?? DEFAULT_CONFIG.imageInput,
     persist: st.currentConfig.persist ?? DEFAULT_CONFIG.persist,
-    streaming: st.currentConfig.streaming ?? DEFAULT_CONFIG.streaming,
     fetch: st.currentConfig.fetch,
     onRetryAttempt: (attempt: number, maxRetries: number, error: unknown) => {
       const errorMsg = error instanceof Error ? error.message : String(error);

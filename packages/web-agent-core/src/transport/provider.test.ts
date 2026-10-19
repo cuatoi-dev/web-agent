@@ -36,7 +36,7 @@ describe("getAbsoluteBaseURL", () => {
 describe("AnthropicLanguageModel — injected fetch", () => {
   const anthropicCfg: AgentConfig = { ...dummyCfg, baseURL: "/api/anthropic", endpointType: "anthropic" };
 
-  it("runs the injected fetch, not window.fetch, for a non-streaming call", async () => {
+  it("runs the injected fetch, not window.fetch, for one request", async () => {
     const stubFetch = vi.fn<Parameters<typeof globalThis.fetch>, ReturnType<typeof globalThis.fetch>>().mockResolvedValue(
       new Response(JSON.stringify({
         id: "msg_ok",

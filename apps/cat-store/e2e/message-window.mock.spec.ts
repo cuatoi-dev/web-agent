@@ -214,7 +214,7 @@ test.describe('008: the chat message window', () => {
     expect(Math.abs(last.bottom - before.bottom)).toBeLessThan(2);
   });
 
-  test('B8: a streaming turn still appends and renders normally with the window active', async ({ page }) => {
+  test('B8: a turn that grows its reply still appends and renders normally with the window active', async ({ page }) => {
     await openPanel(page);
     const base = transcript(300);
     const growingTexts = ['Wor', 'Working o', 'Working on it, done.'];

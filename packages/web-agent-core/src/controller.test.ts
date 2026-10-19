@@ -128,7 +128,7 @@ describe("AGENTS.md prompt seams", () => {
   const chip = (label: string) => ({ providerId: "test", label });
   const config = () => ({
     persist: false, model: "test-model", endpointType: "anthropic",
-    baseURL: "http://localhost:10032/api/anthropic/v1", streaming: false, maxRetries: 0,
+    baseURL: "http://localhost:10032/api/anthropic/v1", maxRetries: 0,
   });
 
   it.each(["createSession", "reset", "switchSession"] as const)("%s never notifies listeners with a new session ID and old messages", async (action) => {
@@ -1267,7 +1267,7 @@ describe("retryLast", () => {
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",
       maxRetries: 0,
-      streaming: false,
+      
       fetch: fetchFn,
       tools: () => [charge.def],
     });
@@ -1309,7 +1309,7 @@ describe("retryLast", () => {
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",
       maxRetries: 0,
-      streaming: false,
+      
       fetch: fetchFn,
       tools: () => [charge.def],
     });
@@ -1336,7 +1336,7 @@ describe("retryLast", () => {
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",
       maxRetries: 0,
-      streaming: false,
+      
       fetch: fetchFn,
       tools: () => [charge.def],
     });
@@ -1382,7 +1382,7 @@ describe("retryLast", () => {
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",
       maxRetries: 0,
-      streaming: false,
+      
       fetch: fetchFn,
       tools: () => [charge.def],
     });
@@ -1452,7 +1452,7 @@ describe("retryLast", () => {
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",
       maxRetries: 0,
-      streaming: false,
+      
       fetch: fetchFn,
       tools: () => [charge.def],
     });
@@ -1533,7 +1533,7 @@ describe("retryLast", () => {
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",
       maxRetries: 0,
-      streaming: false,
+      
       fetch: fetchFn,
       context: { ...DEFAULT_CONTEXT_CONFIG, kTurnsVerbatim: 1 },
       tools: (ctx: ToolContext) => defaultTools(ctx),
@@ -2151,7 +2151,7 @@ describe("provider fallback events (005)", () => {
       model: "unused",
       endpointType: "ctrl-fallback-chain",
       persist: false,
-      streaming: false,
+      
     });
     await session.initPromise;
     const events: SessionEvent[] = [];
@@ -2233,7 +2233,7 @@ describe("provider fallback events (005)", () => {
       model: "unused",
       endpointType: "ctrl-fb-tool-chain",
       persist: false,
-      streaming: false,
+      
       tools: () => [testTool],
     });
     await session.initPromise;
@@ -2299,7 +2299,7 @@ describe("provider fallback events (005)", () => {
       model: "unused",
       endpointType: "ctrl-single-tool-prov",
       persist: false,
-      streaming: false,
+      
       tools: () => [testTool],
     });
     await session.initPromise;
@@ -4925,9 +4925,9 @@ describe("compaction UI signal (009)", () => {
     const assistantTexts = (s: SessionState) =>
       s.messages.filter((m) => m.role === "assistant").map((m) => m.text || "");
 
-    it("a session created with streaming: true sends stream: false and shows no partial reply", async () => {
+    it("a session shows no partial reply and sends stream: false", async () => {
       const d = deferredFetch();
-      const session = createAgentSession({ ...base, streaming: true, fetch: d.fn });
+      const session = createAgentSession({ ...base, fetch: d.fn });
       await session.initPromise;
 
       const observed: string[][] = [];
@@ -4953,7 +4953,7 @@ describe("compaction UI signal (009)", () => {
 
     it("keeps prior messages unchanged while the next reply is pending", async () => {
       const d = deferredFetch();
-      const session = createAgentSession({ ...base, streaming: true, fetch: d.fn });
+      const session = createAgentSession({ ...base, fetch: d.fn });
       await session.initPromise;
 
       const first = session.send([{ type: "text", text: "turn 1" }]);
@@ -6625,7 +6625,7 @@ describe("default step limit (155400-001)", () => {
       model: "mock-model",
       endpointType: "mock",
       persist: false,
-      streaming: false,
+      
       tools: () => [loopTool],
     });
     await session.initPromise;
@@ -6689,7 +6689,7 @@ describe("tool images persist (003)", () => {
 
     const session = createAgentSession({
       persist: true,
-      streaming: false,
+      
       imageInput: true,
       endpointType: "anthropic",
       baseURL: "http://localhost:8080/api/anthropic/v1",

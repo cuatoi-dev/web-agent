@@ -43,7 +43,7 @@ function makeMockMessage(fields: Partial<Message> = {}): Message {
 }
 
 // The mocked `create` resolves the plain message object, as the real client does
-// for a non-streaming request.
+// for a complete-result request.
 function makeCreateMock(mockResponse: Message) {
   return vi
     .fn<[MessageCreateParams, { signal?: AbortSignal }?], unknown>()
@@ -234,17 +234,13 @@ describe("AnthropicLanguageModel", () => {
   });
 
   describe("complete requests", () => {
-    it("sends stream:false, even when the ignored streaming option is true", async () => {
-      for (const streaming of [false, true, undefined]) {
-        const { model: provider, createMock } = makeProvider(makeMockMessage());
-        const opts = {
-          messages: [{ role: "user" as const, content: "hi" }],
-          model: "claude-3-5",
-          ...(streaming === undefined ? {} : { streaming }),
-        };
-        await provider.generate(opts);
-        expect(createMock.mock.calls[0][0].stream).toBe(false);
-      }
+    it("sends stream:false on every request", async () => {
+      const { model: provider, createMock } = makeProvider(makeMockMessage());
+      await provider.generate({
+        messages: [{ role: "user", content: "hi" }],
+        model: "claude-3-5",
+      });
+      expect(createMock.mock.calls[0][0].stream).toBe(false);
     });
 
     it("returns two tool-use blocks with distinct ids, names and inputs", async () => {
@@ -573,7 +569,7 @@ describe("AnthropicLanguageModel — raw fetch transport", () => {
     expect((lastBlock as { cache_control?: unknown }).cache_control).toEqual({ type: "ephemeral" });
   });
 
-  it("POSTs to /v1/messages for a non-streaming call and parses the JSON response", async () => {
+  it("POSTs to /v1/messages and parses the JSON response", async () => {
     const stubFetch = vi.fn<Parameters<typeof globalThis.fetch>, ReturnType<typeof globalThis.fetch>>().mockResolvedValue(jsonResponse(makeMockMessage({ content: [{ type: "text", text: "hi there" }] })));
     const model = new AnthropicLanguageModel(anthropicCfg, { fetch: stubFetch });
 
@@ -584,8 +580,8 @@ describe("AnthropicLanguageModel — raw fetch transport", () => {
     expect(url).toBe("http://localhost:3000/api/anthropic/v1/messages");
     expect(init!.method).toBe("POST");
     // Sent EXPLICITLY as false, not omitted: a gateway may read a missing
-    // `stream` field as streaming and answer with SSE, which this path cannot
-    // parse.
+    // `stream` field as a request for an event stream and answer with SSE,
+    // which this path cannot parse.
     expect((JSON.parse(init!.body as string) as MessageCreateParams).stream).toBe(false);
     expect(result.content).toEqual([{ type: "text", text: "hi there" }]);
   });

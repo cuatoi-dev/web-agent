@@ -34,8 +34,6 @@ export interface ProviderEntry {
   path: string;
   /** Maps to `panel.model`. */
   model: string;
-  /** Maps to `panel.streaming`. */
-  streaming: boolean;
 }
 
 export interface AgentPanelOptions {
@@ -66,7 +64,6 @@ export interface PanelProps {
   type: string;
   path: string;
   model: string;
-  streaming: boolean;
   models: ModelOption[];
   imageInput: boolean | undefined;
   renderers: BlockRenderer[];

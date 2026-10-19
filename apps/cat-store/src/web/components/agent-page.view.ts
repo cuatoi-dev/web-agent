@@ -158,7 +158,7 @@ function renderProviderPicker(v: AgentPageView) {
     <div class="provider-combo">
       <button
         class="provider-trigger"
-        aria-label="Provider, model and mode"
+        aria-label="Provider and model"
         title=${current.label}
         aria-haspopup="listbox"
         aria-expanded=${v.entryListOpen ? "true" : "false"}
@@ -174,7 +174,7 @@ function renderProviderPicker(v: AgentPageView) {
             <ul
               class="provider-list"
               role="listbox"
-              aria-label="Provider, model and mode"
+              aria-label="Provider and model"
               @keydown=${(e: KeyboardEvent) => {
                 if (e.key === "Escape") {
                   e.preventDefault();
@@ -290,7 +290,6 @@ export function renderAgentPage(v: AgentPageView) {
           .type=${v.props.type}
           .path=${v.props.path}
           .model=${v.props.model}
-          .streaming=${v.props.streaming}
           .fetch=${v.props.fetch}
           .store=${v.props.store}
           .config=${v.props.config}

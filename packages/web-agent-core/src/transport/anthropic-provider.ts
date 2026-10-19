@@ -98,18 +98,18 @@ export class AnthropicLanguageModel implements LanguageModel {
   }
 
   // ---------------------------------------------------------------------------
-  // generate — one non-streaming request
+  // generate — one request, one complete result
   // ---------------------------------------------------------------------------
   async generate(opts: ProviderCallOptions): Promise<ProviderResult> {
     const warnings: ProviderWarning[] = [];
     // `stream: false` is sent EXPLICITLY, not left to the default. The real
     // Anthropic API treats a missing `stream` as false and the SDK therefore
-    // omits it, but a gateway may read "absent" as "streaming" — one gateway did,
-    // verified 2026-09-10: omitting the field returns `text/event-stream`,
-    // sending `stream:false` returns `application/json`. The non-streaming
-    // parser then gets SSE, throws, and the turn retries to exhaustion and
-    // shows the red error. One explicit field costs nothing upstream and makes
-    // the request unambiguous to anything in between.
+    // omits it, but a gateway may read "absent" as a request for an event
+    // stream — one gateway did, verified 2026-09-10: omitting the field
+    // returns `text/event-stream`, sending `stream:false` returns
+    // `application/json`. The JSON parser then gets SSE, throws, and the turn
+    // retries to exhaustion and shows the red error. One explicit field costs
+    // nothing upstream and makes the request unambiguous to anything between.
     const params = { ...this.buildParams(opts, warnings), stream: false as const };
     const anthropicResp: Message = this._client
       ? (await this._client.messages.create(params, { signal: opts.abortSignal })) as Message

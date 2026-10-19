@@ -57,7 +57,6 @@ export abstract class ChatPanelSession extends ChatPanelElements {
       // expects; `undefined` still means "no override", same as before.
       thinking: this._thinking !== undefined ? { enabled: this._thinking } : undefined,
       imageInput: this._imageInput,
-      streaming: this._streaming,
       models: this._models,
       sources: this._sources,
       fetch: this._fetch,

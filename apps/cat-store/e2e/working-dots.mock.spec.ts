@@ -182,7 +182,7 @@ test.describe("live turn — mock tier", () => {
 
 test.describe("gallery — cat-store override", () => {
   const FRAMES: Array<{ id: string; screenshotPrefix?: string }> = [
-    { id: "working-streaming", screenshotPrefix: "02-gallery-working-streaming" },
+    { id: "working", screenshotPrefix: "02-gallery-working" },
     { id: "working-thinking" },
     { id: "compacting", screenshotPrefix: "03-gallery-compacting" },
   ];

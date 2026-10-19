@@ -155,10 +155,8 @@ function wireAgent() {
       // (chat-panel-props.ts's own `type` setter includes "mock") — a web-agent-lit
       // package limitation, out of scope for this docs-site task.
       (bubble as unknown as { type: string }).type = "mock";
-      bubble.streaming = false;
     } else {
       bubble.type = "openai";
-      bubble.streaming = true;
     }
 
     // 003: host opt-in for the drag-to-resize grip. The gallery builds its own

@@ -206,14 +206,6 @@ export abstract class ChatPanelProps extends ChatPanelFields {
     this.requestUpdate();
   }
 
-  get streaming() { return this._streaming; }
-  set streaming(val: boolean | undefined) {
-    if (sameValue(val, this._streaming)) return;
-    this._streaming = val;
-    this._scheduleConfigSync();
-    this.requestUpdate();
-  }
-
   get config() { return this._config; }
   set config(val: Partial<SessionConfig> | undefined) {
     if (sameValue(val, this._config)) return;

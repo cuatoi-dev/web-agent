@@ -32,7 +32,7 @@ describe("AgentChatPanel — live property updates", () => {
     vi.restoreAllMocks();
   });
 
-  it("ten session-affecting properties written in one task call updateConfig once", async () => {
+  it("nine session-affecting properties written in one task call updateConfig once", async () => {
     const panel = await mountRealPanel();
     const spy = vi.spyOn(panel.session!, "updateConfig");
     panel.store = { getState: () => ({}) };
@@ -41,7 +41,6 @@ describe("AgentChatPanel — live property updates", () => {
     panel.path = "/x";
     panel.thinking = true;
     panel.images = { maxDimension: 512 };
-    panel.streaming = false;
     panel.sources = [];
     panel.skills = [];
     panel.hooks = {};
@@ -51,7 +50,6 @@ describe("AgentChatPanel — live property updates", () => {
     expect(spy.mock.calls[0][0]).toMatchObject({
       appContext: { appName: "A" },
       baseURL: "/x",
-      streaming: false,
     });
   });
 

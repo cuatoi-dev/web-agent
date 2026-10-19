@@ -31,13 +31,6 @@ test('live proof against real model in cat-store', async ({ page }) => {
 
   await openPanel(page);
 
-  const streaming = await page.evaluate(() => {
-    const root = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot;
-    const panel = root?.querySelector('agent-chat-panel') as { streaming?: boolean } | null;
-    return panel?.streaming;
-  });
-  expect(streaming).toBe(false);
-
   const fixtureDir = path.resolve(__dirname, '../test-results/attach-folder-fixtures/reports');
   await fs.mkdir(fixtureDir, { recursive: true });
   await fs.writeFile(path.join(fixtureDir, 'q3-sales.csv'), 'quarter,sales\nQ3,120000\n');

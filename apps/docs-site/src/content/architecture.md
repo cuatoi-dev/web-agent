@@ -47,9 +47,9 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
   let _model: LanguageModel = providerRegistry.get(cfg, { fetch });
   // ...
   return {
-    async generate({ messages, abortSignal, onStreamPart }) {
+    async generate({ messages, abortSignal, onStep }) {
       for (let i = 0; i < cfg.maxIterations; i++) {
-        // Call the LLM via _model.doStream() or _model.generate()
+        // Call the LLM with _model.generate(), one request per step
         // Execute tool calls, append results, loop until finishReason !== "tool-calls"
       }
     }
@@ -252,23 +252,21 @@ IndexedDB via the `attachPersistence()` / `rehydrate()` functions in
 
 The core ships a hand-built provider abstraction with zero external LLM-SDK
 runtime dependencies. The central piece is the `LanguageModel` interface in
-`src/transport/provider-types.ts`:
+`src/transport/provider.types.ts`:
 
 ```ts
 interface LanguageModel {
   readonly provider: string;
   readonly modelId: string;
   generate(opts: ProviderCallOptions): Promise<ProviderResult>;
-  doStream?(opts: ProviderCallOptions): Promise<{ stream: AsyncIterable<StreamPart> }>;
 }
 ```
 
 `providerRegistry` (`src/transport/registry.ts`) maps `cfg.endpointType` to a
 provider factory. Two providers are built in:
 
-- **Anthropic** (`endpointType: "anthropic"`) — uses `@anthropic-ai/sdk`. The
-  streaming path uses the low-level raw event stream (`messages.create({stream:true})`)
-  to tolerate non-spec SSE from translating gateways.
+- **Anthropic** (`endpointType: "anthropic"`) — uses `@anthropic-ai/sdk`. Every
+  call sends `stream: false` and reads one complete JSON response.
 - **OpenAI-compatible** (`endpointType: "openai"`) — uses `openai` v6. Works
   with any OpenAI-compatible proxy (Ollama, LiteLLM, etc.). Reasoning models
   (`o1`/`o3`) receive the system prompt as the `"developer"` role.

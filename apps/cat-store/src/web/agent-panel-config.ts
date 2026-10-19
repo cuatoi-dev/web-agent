@@ -68,11 +68,11 @@ import type { AgentPanelOptions, PanelProps, ProviderEntry } from "./types";
 
 export type { ProviderEntry, AgentPanelOptions, PanelProps } from "./types";
 
-/** Six model combinations plus the fallback chain. `sonnet` over each of the
- *  two OpenAI-and-Anthropic-shaped paths, non-streaming and streaming, then the
- *  two Gemini entries, then "Any model". One pass over the switcher therefore
- *  exercises both wire formats in both modes, and the chain falls back through
- *  all six (see any-model-chain.ts).
+/** Four entries: three provider routes plus the fallback chain. `sonnet` over
+ *  each of the two OpenAI-and-Anthropic-shaped paths, then Gemini, then
+ *  "Any model". One pass over the switcher therefore exercises both wire
+ *  formats, and the chain falls back through all three routes (see
+ *  any-model-chain.ts).
  *  OPENAI_URL and ANTHROPIC_URL point at an OpenAI- and Anthropic-compatible
  *  model gateway; GEMINI_URL goes direct to Google. "sonnet" is a model alias
  *  the gateway resolves.
@@ -93,82 +93,52 @@ export type { ProviderEntry, AgentPanelOptions, PanelProps } from "./types";
 export const PROVIDER_ENTRIES: ProviderEntry[] = [
   {
     id: "anthropic-sonnet-nonstream",
-    label: "Sonnet Anthropic (non-stream)",
+    label: "Sonnet Anthropic",
     endpointType: "anthropic",
     path: "/api/anthropic",
     model: "sonnet",
-    streaming: false,
-  },
-  {
-    id: "anthropic-sonnet-stream",
-    label: "Sonnet Anthropic (stream)",
-    endpointType: "anthropic",
-    path: "/api/anthropic",
-    model: "sonnet",
-    streaming: true,
   },
   {
     id: "openai-sonnet-nonstream",
-    label: "Sonnet OpenAI (non-stream)",
+    label: "Sonnet OpenAI",
     endpointType: "openai",
     path: "/api/openai/v1",
     model: "sonnet",
-    streaming: false,
-  },
-  {
-    id: "openai-sonnet-stream",
-    label: "Sonnet OpenAI (stream)",
-    endpointType: "openai",
-    path: "/api/openai/v1",
-    model: "sonnet",
-    streaming: true,
   },
   {
     id: "gemini-flash-nonstream",
-    label: "Gemini Flash (non-stream)",
+    label: "Gemini Flash",
     endpointType: "gemini",
     path: "/api/gemini",
     model: "gemini-flash-lite-latest",
-    streaming: false,
-  },
-  {
-    id: "gemini-flash-stream",
-    label: "Gemini Flash (stream)",
-    endpointType: "gemini",
-    path: "/api/gemini",
-    model: "gemini-flash-lite-latest",
-    streaming: true,
   },
   {
     // The fallback chain (any-model-chain.ts). `path` and `model` are written
     // onto the panel like any other entry, but the chain ignores both: every
-    // chain entry carries its own baseURL and model. `streaming: false` matches
-    // chain entry 1, which is a non-streaming entry.
+    // chain entry carries its own baseURL and model.
     id: "any-model",
     label: "Any model",
     endpointType: ANY_MODEL_ENDPOINT_TYPE,
     path: "/api/anthropic",
     model: "sonnet",
-    streaming: false,
   },
 ];
 
 /** The entry every host starts on. */
 export const DEFAULT_PROVIDER_ENTRY_INDEX = 0;
 
-/** Write one entry onto a panel. The four setters queue ONE
+/** Write one entry onto a panel. The three setters queue ONE
  *  `updateConfig(buildSessionConfig())` between them (chat-panel-props.ts
  *  `_scheduleConfigSync`), so the transport is rebuilt with no package change.
  *  `createSession()` pushes the queued update first, so calling it afterwards
  *  starts the conversation on the new configuration. */
 export function applyProviderEntry(
-  target: { type?: string; path?: string; model?: string; streaming?: boolean },
+  target: { type?: string; path?: string; model?: string },
   entry: ProviderEntry,
 ): void {
   target.type = entry.endpointType;
   target.path = entry.path;
   target.model = entry.model;
-  target.streaming = entry.streaming;
 }
 
 const CUE_SPEED: "slow" | "fast" = "slow";
@@ -216,7 +186,7 @@ function buildPanelProps(
   panel.agentName = "Whiskers";
   panel.agentShortName = "Whiskers";
   panel.agentAvatar = DEMO_AGENT_AVATAR;
-  // path, model, endpoint type and streaming mode all come from one entry, so
+  // path, model and endpoint type all come from one entry, so
   // the switcher and the default can never disagree. "sonnet" is a model alias
   // the gateway resolves. The internal proxy uses the same alias, so hosts and
   // proxy name the model identically.
@@ -232,7 +202,6 @@ function buildPanelProps(
     // applyProviderEntry() so the picker still shows the configured entry.
     setMockScript(mockScript);
     panel.type = "mock";
-    panel.streaming = false;
   }
 
   panel.imageInput = true;

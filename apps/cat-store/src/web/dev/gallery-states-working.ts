@@ -1,4 +1,4 @@
-// gallery-states-working.ts — the in-progress gallery states: streaming the
+// gallery-states-working.ts — the in-progress gallery states: awaiting the
 // next block, thinking before the first response, and compacting the context.
 // Split out of gallery-states.ts; the states are unchanged and stay in their
 // original order.
@@ -8,9 +8,9 @@ import { makeState } from "./gallery-blocks";
 
 export const WORKING_STATES: GalleryState[] = [
   {
-    id: 'working-streaming',
-    title: 'Working (streaming next block)',
-    caption: 'Streaming — an inline, bubble-less 3-dot animated placeholder shows at the transcript tail while awaiting the next block (delayed 400ms to avoid flash).',
+    id: 'working',
+    title: 'Working (next block pending)',
+    caption: 'An inline, bubble-less 3-dot animated placeholder shows at the transcript tail while awaiting the next block (delayed 400ms to avoid flash).',
     kind: 'panel',
     state: makeState({
       messages: [

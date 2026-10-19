@@ -565,7 +565,7 @@ describe("fromOpenAIResponse — content", () => {
     }
   });
 
-  it("drops reasoning property from message content on non-streaming path", () => {
+  it("drops reasoning property from message content on the complete-result path", () => {
     const resp: OpenAIChatCompletion = {
       choices: [
         {

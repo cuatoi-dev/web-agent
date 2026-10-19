@@ -12,8 +12,6 @@ export interface FallbackChainEntry {
   model: string;
   /** Base URL for this entry, in the form its provider expects. */
   baseURL: string;
-  /** Ignored. Every call is non-streaming. */
-  streaming?: boolean;
 }
 
 /** What one chain call did. Reported through `AgentConfig.onProviderFallback`. */

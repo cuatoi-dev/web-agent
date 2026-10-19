@@ -164,13 +164,11 @@ test('7. Confirm applies the entry and starts a new session', async ({ page }) =
       type: el?._panel?.type,
       path: el?._panel?.path,
       model: el?._panel?.model,
-      streaming: el?._panel?.streaming,
     };
   });
   expect(values.type).toBe(target.endpointType);
   expect(values.path).toBe(target.path);
   expect(values.model).toBe(target.model);
-  expect(values.streaming).toBe(target.streaming);
   // No message sent from here — confirming replaces the mock transport with a
   // real provider, and the mock tier has no network.
 });

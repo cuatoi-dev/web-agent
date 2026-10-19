@@ -62,7 +62,6 @@ export const DEFAULT_CONFIG: Omit<AgentConfig, "model"> = {
   generation: { maxOutputTokens: 32_000, maxRetries: 3 },
   cues: { enabled: true, speed: "slow" },
   imageInput: true,
-  streaming: false,
   requestTimeoutMs: 900_000,
   maxRetries: 5,
   appendSystemPrompt: undefined,

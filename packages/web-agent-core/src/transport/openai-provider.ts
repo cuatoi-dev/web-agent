@@ -132,14 +132,14 @@ export class OpenAILanguageModel implements LanguageModel {
   }
 
   // ---------------------------------------------------------------------------
-  // generate — one non-streaming request
+  // generate — one request, one complete result
   // ---------------------------------------------------------------------------
   async generate(opts: ProviderCallOptions): Promise<ProviderResult> {
     const warnings: ProviderWarning[] = [];
     // `stream: false` is sent EXPLICITLY — see the matching note in
-    // anthropic-provider.ts. A gateway may read a missing `stream` field as
-    // streaming (one gateway did, verified 2026-09-10), which hands this
-    // non-streaming path an SSE body it cannot parse.
+    // anthropic-provider.ts. A gateway may read a missing `stream` field as a
+    // request for an event stream (one gateway did, verified 2026-09-10),
+    // which hands this JSON path an SSE body it cannot parse.
     const params = { ...this.buildBaseParams(opts, warnings), stream: false as const };
 
     const response: OpenAIChatCompletion = this._client

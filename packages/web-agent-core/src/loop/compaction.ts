@@ -74,7 +74,7 @@ export function hasUnansweredToolUse(messages: ModelMessage[]): boolean {
  * match at byte zero — so `SUMMARY_INSTRUCTION` itself tells the model not to
  * call one.
  *
- * Every call is non-streaming, and `withRetry` applies its hard per-attempt
+ * Every call sends one request, and `withRetry` applies its hard per-attempt
  * deadline (`requestTimeoutMs`) to this request like any other.
  *
  * The appended turn is never journalled and never appears in the transcript —

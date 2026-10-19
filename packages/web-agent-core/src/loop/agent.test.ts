@@ -769,7 +769,7 @@ describe("createMockProvider — agent loop integration (030-5)", () => {
       signal: new AbortController().signal,
     };
     const cm = { compose: () => [], recordStep: vi.fn(), commitTurn: vi.fn(), recordUsage: vi.fn() } as unknown as ContextManager;
-    const agent = createPageAgent({ ...testCfg, streaming: false, maxIterations: 12 }, ctx, cm);
+    const agent = createPageAgent({ ...testCfg, maxIterations: 12 }, ctx, cm);
 
     // Script: turn 1 → tool call (snapshot_page), turn 2 → final text
     const mockModel = createMockProvider([
@@ -795,7 +795,7 @@ describe("createMockProvider — agent loop integration (030-5)", () => {
     };
     const cm = { compose: () => [], recordStep: vi.fn(), commitTurn: vi.fn(), recordUsage: vi.fn() } as unknown as ContextManager;
     const agent = createPageAgent(
-      { ...testCfg, streaming: false, endpointType: "mock" as const, maxIterations: 3 },
+      { ...testCfg, endpointType: "mock" as const, maxIterations: 3 },
       ctx,
       cm,
     );

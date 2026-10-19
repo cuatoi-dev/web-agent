@@ -410,7 +410,7 @@ A host with no v1 pin needs nothing here.
 | UI registry | Default Beer CSS | Any (via Webpack alias) |
 
 The bubble is a thin wrapper — it forwards `store`, `path`, `model`,
-`models`, `type`, `imageInput`, `streaming`, `renderers`, `cues`,
+`models`, `type`, `imageInput`, `renderers`, `cues`,
 `onCuesChange`, `tools`, `skills`, `skillRegistry`, `agentName`,
 `agentShortName`, `userAvatar`, `agentAvatar`, `debug`, `sources`,
 `toolProviders`, `fetch`, `notify`, `hooks` and `config` to the panel it

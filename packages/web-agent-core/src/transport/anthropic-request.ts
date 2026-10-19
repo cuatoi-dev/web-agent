@@ -73,7 +73,7 @@ async function send(opts: AnthropicRequestOptions): Promise<Response> {
   return res;
 }
 
-/** Non-streaming call: returns the parsed JSON body. */
+/** One request: returns the parsed JSON body. */
 export async function requestJson<T>(opts: AnthropicRequestOptions): Promise<T> {
   const res = await send(opts);
   return (await res.json()) as T;

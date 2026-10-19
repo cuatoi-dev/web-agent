@@ -856,7 +856,6 @@ describe("AgentPage", () => {
       expect(el._panel.type).toBe(target.endpointType);
       expect(el._panel.path).toBe(target.path);
       expect(el._panel.model).toBe(target.model);
-      expect(el._panel.streaming).toBe(target.streaming);
       expect(el._entryIndex).toBe(targetIndex);
       expect(calls).toContainEqual(["createSession"]);
     });

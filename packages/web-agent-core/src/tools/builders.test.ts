@@ -120,7 +120,7 @@ describe("builders", () => {
 
     it("search_skills rejects a call with no query instead of throwing", async () => {
       // Found live: a call that loses its arguments (e.g. over a corrupted
-      // streaming transport) must not crash the tool with a raw TypeError.
+      // transport) must not crash the tool with a raw TypeError.
       const defs = skillTools();
       const searchDef = defs.find((d) => d.name === "search_skills")!;
       const ctx = mockCtx({ skills: testSkills });

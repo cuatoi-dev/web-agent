@@ -162,8 +162,6 @@ export interface AgentConfig {
    * registration order and awaited inline with NO timeout. See {@link AgentHooks}.
    */
   hooks?: AgentHooks;
-  /** Ignored. Every call is non-streaming. Removed in a later release. */
-  streaming?: boolean;
   /**
    * Hard deadline (ms) for one request attempt, applied by the withRetry
    * transport middleware. Nothing restarts it while the response arrives. An
