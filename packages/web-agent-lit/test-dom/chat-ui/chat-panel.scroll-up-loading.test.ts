@@ -195,8 +195,21 @@ function gateLoadWindow(el: AgentChatPanel) {
  *  the microtasks up to the `setTimeout` hold, then advance past
  *  `LOADER_MIN_MS`, settling `updateComplete` around each step. */
 async function settleLoad(el: AgentChatPanel) {
-  await el.updateComplete;
-  await vi.advanceTimersByTimeAsync(1000);
+  const priv = el as unknown as Record<string, unknown>;
+  // Flush microtasks and intermediate renders until _loadOlder reaches its timer hold (or finishes).
+  while (priv["_loadingOlder"] && priv["_loadOlderTimer"] === null) {
+    await el.updateComplete;
+    await Promise.resolve();
+  }
+  // Advance past LOADER_MIN_MS now that the timer is registered.
+  if (priv["_loadOlderTimer"] !== null) {
+    await vi.advanceTimersByTimeAsync(1000);
+  }
+  // Settle any remaining render triggered by _loadOlder completing.
+  while (priv["_loadingOlder"]) {
+    await el.updateComplete;
+    await vi.advanceTimersByTimeAsync(100);
+  }
   await el.updateComplete;
 }
 
