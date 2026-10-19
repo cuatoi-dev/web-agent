@@ -1413,13 +1413,9 @@ test.describe("Options page 137/002: General tab and shared spacing", () => {
 });
 
 const ARTIFACTS_137_003 =
-  process.env.E2E_ARTIFACTS_DIR ??
-  path.resolve(
-    HERE,
-    "../../../../tasks/artifacts/2026-10-20-004146-003-model-table-capabilities-and-id-badge",
-  );
+  process.env.E2E_ARTIFACTS_DIR ?? path.resolve(HERE, "../../../temp/e2e-artifacts/model-table-capabilities");
 
-test.describe("Model table capabilities and ID badge (idea 137 task 003)", () => {
+test.describe("Model table capabilities and ID badge", () => {
   test.beforeAll(async () => {
     await fs.mkdir(ARTIFACTS_137_003, { recursive: true });
   });
