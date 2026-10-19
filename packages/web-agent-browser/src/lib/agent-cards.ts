@@ -5,7 +5,7 @@ import { orderAgents } from "./agent-switcher";
 import type { CardView } from "./agent-editor.types";
 import { EMPTY_MODEL_STORE, listModels, modelForAgent } from "./model-store";
 
-export const BRAND_LOCKED_NOTE = "Display name and id come from the brand and cannot be changed.";
+export const BRAND_LOCKED_NOTE = "Display name and id are provided and cannot be changed.";
 /** 121/004 — `editingId` while the new card is open. Never a valid agent id:
  *  brand ids match `^[a-z]` (`tool/compile-brand.cjs:344`) and `makeId`
  *  emits only `[a-z0-9-]`. */
@@ -68,7 +68,7 @@ function buildCard(
 
     const originPill = document.createElement("span");
     originPill.className = "pill";
-    originPill.textContent = a.origin === "brand" ? "From brand" : "Added by you";
+    originPill.textContent = a.origin === "brand" ? "Provided" : "Added by you";
     nameRow.append(originPill);
 
     if (a.edited) {

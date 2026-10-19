@@ -107,4 +107,102 @@ describe("openProviderDialog", () => {
     ]);
     q<HTMLButtonElement>(".cancel-btn").click();
   });
+  it("opens Anthropic with its logo, selected format, endpoint and four vision models", () => {
+    void openProviderDialog({ builtIn: "anthropic" });
+    expect(q("dialog h2")?.textContent).toBe("Add Anthropic");
+    expect(q("dialog h2 svg.logo")).not.toBeNull();
+    expect(q<HTMLInputElement>("#provider-endpoint").value).toBe("https://api.anthropic.com");
+    expect(q(".format-opt[data-format='anthropic']").getAttribute("aria-pressed")).toBe("true");
+    expect(document.querySelectorAll(".format-opt")).toHaveLength(2);
+    expect([...document.querySelectorAll<HTMLInputElement>(".form-model-id")].map((i) => i.value)).toEqual([
+      "claude-fable-5-1",
+      "claude-opus-5-5",
+      "claude-sonnet-5-5",
+      "claude-haiku-5-5",
+    ]);
+    expect([...document.querySelectorAll<HTMLInputElement>(".form-model-vision")].every((i) => i.checked)).toBe(true);
+    expect(q<HTMLButtonElement>(".refresh-models-btn").hidden).toBe(true);
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("switches a two-format provider's endpoint and shows Refresh for openai", () => {
+    void openProviderDialog({ builtIn: "google" });
+    expect(q<HTMLInputElement>("#provider-name").value).toBe("Google AI");
+    expect(q<HTMLInputElement>("#provider-endpoint").value).toBe("https://generativelanguage.googleapis.com");
+    expect(q(".format-opt[data-format='gemini']").getAttribute("aria-pressed")).toBe("true");
+    expect(q<HTMLButtonElement>(".refresh-models-btn").hidden).toBe(true);
+    expect(document.querySelectorAll(".form-model-row").length).toBe(7);
+
+    q<HTMLButtonElement>(".format-opt[data-format='openai']").click();
+    expect(q<HTMLInputElement>("#provider-endpoint").value).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/openai/",
+    );
+    expect(q(".format-opt[data-format='openai']").getAttribute("aria-pressed")).toBe("true");
+    expect(q(".format-opt[data-format='gemini']").getAttribute("aria-pressed")).toBe("false");
+    expect(q<HTMLButtonElement>(".refresh-models-btn").hidden).toBe(false);
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("shows one fixed format and no models for xAI", () => {
+    void openProviderDialog({ builtIn: "xai" });
+    expect(q(".format-fixed").textContent).toBe("openai");
+    expect(document.querySelector(".format-opt")).toBeNull();
+    expect(q<HTMLInputElement>("#provider-endpoint").value).toBe("https://api.x.ai/v1");
+    expect(document.querySelectorAll(".form-model-row").length).toBe(1);
+    expect(q<HTMLInputElement>(".form-model-id").value).toBe("");
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("saves a built-in provider with its id, endpoint and known models", async () => {
+    const requestPermission = vi.fn().mockResolvedValue(true);
+    const p = openProviderDialog({ builtIn: "deepseek", requestPermission, newId: () => "id-ds" });
+    q<HTMLButtonElement>(".save-provider-btn").click();
+    expect(requestPermission).toHaveBeenCalledWith("https://api.deepseek.com/*");
+    const saved = await p;
+    expect(saved?.builtIn).toBe("deepseek");
+    expect(saved?.wireFormat).toBe("openai");
+    expect(saved?.endpoint).toBe("https://api.deepseek.com");
+    expect(saved?.models).toEqual([
+      { model: "deepseek-flash", label: "DeepSeek V4.1 Flash", vision: true },
+      { model: "deepseek-v4-pro", label: "DeepSeek V4 Pro", vision: false },
+    ]);
+  });
+
+  it("keeps the built-in heading and the stored values when editing", () => {
+    const existing: CustomProvider = {
+      id: "p1",
+      builtIn: "anthropic",
+      name: "My Claude",
+      wireFormat: "openai",
+      endpoint: "https://api.anthropic.com/v1/",
+      apiKey: "secret",
+      headers: [],
+      models: [{ model: "mine", label: "Mine", vision: false }],
+    };
+    void openProviderDialog({ provider: existing });
+    expect(q("dialog h2")?.textContent).toBe("Edit Anthropic");
+    expect(q<HTMLInputElement>("#provider-name").value).toBe("My Claude");
+    expect(q(".format-opt[data-format='openai']").getAttribute("aria-pressed")).toBe("true");
+    expect(q<HTMLInputElement>("#provider-endpoint").value).toBe("https://api.anthropic.com/v1/");
+    expect([...document.querySelectorAll<HTMLInputElement>(".form-model-id")].map((i) => i.value)).toEqual(["mine"]);
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+  it("opens the current OpenAI models as editable vision rows", () => {
+    void openProviderDialog({ builtIn: "openai" });
+    expect(document.querySelectorAll(".form-model-row")).toHaveLength(7);
+    const rows = [...document.querySelectorAll<HTMLInputElement>(".form-model-id")];
+    expect(rows.every((row) => /^gpt-(6|5\.6)/.test(row.value))).toBe(true);
+    expect(new Set(rows.map((row) => row.value)).size).toBe(rows.length);
+    expect([...document.querySelectorAll<HTMLInputElement>(".form-model-vision")].every((row) => row.checked)).toBe(true);
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("opens Moonshot with one fixed format and an empty editable row", () => {
+    void openProviderDialog({ builtIn: "moonshot" });
+    expect(q(".format-fixed").textContent).toBe("openai");
+    expect(document.querySelector(".format-opt")).toBeNull();
+    expect(q<HTMLInputElement>(".form-model-id").value).toBe("");
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
 });

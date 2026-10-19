@@ -1,4 +1,10 @@
 import { iconNode } from "@cuatoi/web-agent-lit/ui/icon-svgs";
+import {
+  builtInById,
+  builtInInitialModels,
+  endpointForFormat,
+  providerIconNode,
+} from "./provider-builtins";
 import { originPattern } from "./origin";
 import {
   API_KEY_HINT,
@@ -108,13 +114,25 @@ function replaceModelRows(list: HTMLElement, rows: ProviderFormModelRow[]): void
   for (const r of rows) appendModelRow(list, r);
 }
 
-/** Opens the custom provider modal (mockup state 6). Resolves with the saved
- *  `CustomProvider`, or `null` when cancelled. */
+/** Opens the provider modal. Resolves with the saved
+ *  `CustomProvider`, or `null` when cancelled. A built-in provider fills in
+ *  the endpoint, the format and its known models. */
 export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<CustomProvider | null> {
   return new Promise<CustomProvider | null>((resolve) => {
     const existing = opts.provider;
+    const def = builtInById(existing?.builtIn ?? opts.builtIn);
+    const preset = existing ? undefined : def;
     const dialog = el("dialog", "confirm-dialog provider-dialog");
-    const heading = el("h2", "", existing ? `Edit provider — ${existing.name}` : "Add custom provider");
+    const heading = el(
+      "h2",
+      "",
+      def
+        ? `${existing ? "Edit" : "Add"} ${def.name}`
+        : existing
+          ? `Edit provider — ${existing.name}`
+          : "Add custom provider",
+    );
+    if (def) heading.prepend(providerIconNode(def.id));
 
     const topGrid = el("div", "form-grid-2");
     const nameWrap = el("div");
@@ -124,21 +142,49 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     nameInput.id = "provider-name";
     nameInput.type = "text";
     nameInput.placeholder = "Local vLLM";
-    nameInput.value = existing?.name ?? "";
+    nameInput.value = existing?.name ?? preset?.name ?? "";
     nameWrap.append(nameLabel, nameInput);
 
     const formatWrap = el("div");
     const formatLabel = el("label", "", "Format");
-    formatLabel.htmlFor = "provider-format";
-    const formatSelect = el("select");
-    formatSelect.id = "provider-format";
-    for (const fmt of ["openai", "anthropic", "gemini"] as WireFormat[]) {
-      const opt = el("option", "", fmt);
-      opt.value = fmt;
-      formatSelect.append(opt);
+    let formatSelect: HTMLSelectElement | null = null;
+    let fixedFormat: WireFormat | null = null;
+    const formatButtons: HTMLButtonElement[] = [];
+    let currentFormat: WireFormat = existing?.wireFormat ?? def?.formats[0].wireFormat ?? "openai";
+
+    if (def && def.formats.length === 2) {
+      // Two formats: a segmented control in the provider's own order.
+      const group = el("div", "format-switch");
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-label", "Format");
+      for (const f of def.formats) {
+        const btn = el("button", "btn format-opt", f.wireFormat);
+        btn.type = "button";
+        btn.dataset.format = f.wireFormat;
+        btn.setAttribute("aria-pressed", String(f.wireFormat === currentFormat));
+        btn.addEventListener("click", () => setFormat(f.wireFormat));
+        group.append(btn);
+        formatButtons.push(btn);
+      }
+      formatWrap.append(formatLabel, group);
+    } else if (def) {
+      // One format: shown, not changeable.
+      fixedFormat = def.formats[0].wireFormat;
+      currentFormat = fixedFormat;
+      formatWrap.append(formatLabel, el("p", "format-fixed", fixedFormat));
+    } else {
+      // Custom provider: all three formats remain available.
+      formatSelect = el("select");
+      formatSelect.id = "provider-format";
+      formatLabel.htmlFor = "provider-format";
+      for (const fmt of ["openai", "anthropic", "gemini"] as WireFormat[]) {
+        const opt = el("option", "", fmt);
+        opt.value = fmt;
+        formatSelect.append(opt);
+      }
+      formatSelect.value = currentFormat;
+      formatWrap.append(formatLabel, formatSelect);
     }
-    formatSelect.value = existing?.wireFormat ?? "openai";
-    formatWrap.append(formatLabel, formatSelect);
     topGrid.append(nameWrap, formatWrap);
 
     const endpointLabel = el("label", "", "Endpoint URL");
@@ -147,7 +193,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     endpointInput.id = "provider-endpoint";
     endpointInput.type = "text";
     endpointInput.placeholder = "http://localhost:8000/v1";
-    endpointInput.value = existing?.endpoint ?? "";
+    endpointInput.value = existing?.endpoint ?? (def ? (endpointForFormat(def, currentFormat) ?? "") : "");
     const endpointErr = el("p", "field-error provider-endpoint-error");
     endpointErr.setAttribute("role", "alert");
     endpointErr.hidden = true;
@@ -180,7 +226,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     refreshSvg.classList.add("logo");
     refreshSvg.setAttribute("aria-hidden", "true");
     refreshBtn.append(refreshSvg, document.createTextNode("Refresh from /models"));
-    refreshBtn.hidden = formatSelect.value !== "openai";
+    refreshBtn.hidden = currentFormat !== "openai";
 
     const addModelRowBtn = el("button", "btn add-model-row-btn", "+ Add model");
     addModelRowBtn.type = "button";
@@ -191,8 +237,9 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     modelCols.append(el("span", "", "Model ID"), el("span", "", "Display name"), el("span", "", "Vision"), el("span"));
 
     const modelsList = el("div", "models-list");
-    if (existing && existing.models.length > 0) {
-      for (const m of existing.models) appendModelRow(modelsList, m);
+    const initialModels = existing ? existing.models : preset ? builtInInitialModels(preset) : [];
+    if (initialModels.length > 0) {
+      for (const m of initialModels) appendModelRow(modelsList, m);
     } else {
       appendModelRow(modelsList);
     }
@@ -202,9 +249,22 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     modelsErr.setAttribute("role", "alert");
     modelsErr.hidden = true;
 
-    formatSelect.addEventListener("change", () => {
-      refreshBtn.hidden = formatSelect.value !== "openai";
-    });
+    /** Applies a format choice: endpoint, pressed state and Refresh. */
+    const setFormat = (next: WireFormat): void => {
+      if (fixedFormat !== null && next !== fixedFormat) return;
+      currentFormat = next;
+      for (const b of formatButtons) b.setAttribute("aria-pressed", String(b.dataset.format === next));
+      if (def) {
+        const ep = endpointForFormat(def, next);
+        if (ep !== undefined) endpointInput.value = ep;
+      }
+      refreshBtn.hidden = next !== "openai";
+    };
+
+    if (formatSelect) {
+      const select = formatSelect;
+      select.addEventListener("change", () => setFormat(select.value as WireFormat));
+    }
 
     refreshBtn.addEventListener("click", () => {
       void (async () => {
@@ -261,9 +321,9 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     saveBtn.addEventListener("click", () => {
       const draft: ProviderFormDraft = {
         id: existing?.id,
-        builtIn: existing?.builtIn,
+        builtIn: existing?.builtIn ?? def?.id,
         name: nameInput.value,
-        wireFormat: formatSelect.value as WireFormat,
+        wireFormat: currentFormat,
         endpoint: endpointInput.value,
         apiKey: keyInput.value,
         headers: readHeaderRows(headersList),

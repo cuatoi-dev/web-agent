@@ -99,13 +99,15 @@ export interface BubblePayload {
  *  `brand/agents/<id>.yml` instead (see {@link BrandAgent}). */
 export type AgentPromptKey = "inPage";
 
-/** Settings a brand fixes for every install. Task 002 defines one flag; a
- *  later task may add more keys here. */
+/** Settings a brand fixes for every install. */
 export interface BrandOptions {
   /** True shows only brand models in the options page table and hides the
    *  row checkboxes (136/005). Enable, Default and Key still work. Absent
    *  means false. */
   lockModel?: boolean;
+  /** True makes "+ Add model" offer the seven built-in providers and Custom
+   *  first; absent means the custom form opens directly. */
+  builtInProviders?: boolean;
 }
 
 /** One flag in `plugin.yml`'s `tools` or `skills` block. The same shape core

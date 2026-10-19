@@ -1,16 +1,14 @@
-import { ICON_SVGS } from "@cuatoi/web-agent-lit/ui/icon-svgs";
+import { providerIconSvg } from "./provider-builtins";
 import type { ModelEntry, PublicModel } from "./types";
 
-/** Brand and custom providers both use the generic server icon (idea 136
- *  item 22); task 007 adds the provider logos. */
-export const PROVIDER_ICON = "dns";
-
-/** What the page may see of one model: never `apiKey`, never `headers`. */
+/** What the page may see of one model: never `apiKey`, never `headers`. A
+ *  built-in provider contributes its own logo; every other provider gets the
+ *  generic server icon. */
 export function toPublicModel(e: ModelEntry): PublicModel {
   return {
     ref: e.ref,
     label: e.label,
-    icon: ICON_SVGS[PROVIDER_ICON],
+    icon: providerIconSvg(e.provider.builtIn),
     vision: e.vision,
     endpoint: e.provider.endpoint,
     wireFormat: e.provider.wireFormat,

@@ -56,6 +56,7 @@ module.exports = {
     }),
     new CopyWebpackPlugin({
       patterns: [
+        { from: path.resolve(__dirname, "docs/third-party-notices.md"), to: "third-party-notices.md" },
         { from: path.resolve(__dirname, "src/options.html"), to: "options.html" },
         { from: path.resolve(__dirname, "src/sidepanel.html"), to: "sidepanel.html" },
         // The theme tokens the manifest injects with the content_scripts "css"

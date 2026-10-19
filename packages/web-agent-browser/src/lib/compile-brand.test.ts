@@ -527,7 +527,7 @@ describe("compileBrand", () => {
     writeDefaultAgent(tempDir);
     writePlugin(tempDir, "defaultAgent: chromagent\noptions:\n  lockModel: true\n");
     const brand = compileBrand(tempDir);
-    expect(brand.options).toEqual({ lockModel: true });
+    expect(brand.options).toEqual({ lockModel: true, builtInProviders: false });
   });
 
   it("a non-boolean lockModel leaves the fields editable", () => {
@@ -535,7 +535,7 @@ describe("compileBrand", () => {
     writeDefaultAgent(tempDir);
     writePlugin(tempDir, 'defaultAgent: chromagent\noptions:\n  lockModel: "yes"\n');
     const brand = compileBrand(tempDir);
-    expect(brand.options).toEqual({ lockModel: false });
+    expect(brand.options).toEqual({ lockModel: false, builtInProviders: false });
   });
 
   it("an absent plugin.yml still requires a defaultAgent", () => {
@@ -1181,5 +1181,20 @@ describe("compileBrand", () => {
         { id: "acme", label: "A", scheme: "dark", base: "wa2-dark", css: "themes/bad.css" },
       ])).toThrow("plugin.yml themes[0]: error: --wa-font-size-mm is not a web-agent token");
     });
+  });
+  it("builtInProviders: true compiles to true", () => {
+    const tempDir = makeTempDir();
+    writeDefaultAgent(tempDir);
+    writePlugin(tempDir, "defaultAgent: chromagent\noptions:\n  builtInProviders: true\n");
+    const brand = compileBrand(tempDir);
+    expect(brand.options).toEqual({ lockModel: false, builtInProviders: true });
+  });
+
+  it("a non-boolean builtInProviders leaves the custom form in place", () => {
+    const tempDir = makeTempDir();
+    writeDefaultAgent(tempDir);
+    writePlugin(tempDir, 'defaultAgent: chromagent\noptions:\n  builtInProviders: "yes"\n');
+    const brand = compileBrand(tempDir);
+    expect(brand.options).toEqual({ lockModel: false, builtInProviders: false });
   });
 });

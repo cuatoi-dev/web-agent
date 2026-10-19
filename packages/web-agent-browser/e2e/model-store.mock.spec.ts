@@ -709,6 +709,13 @@ test.describe("Custom providers, multi-select delete and Refresh from /models (1
     await expect(diff.locator(".diff-keep li")).toHaveText(["b"]);
     await diff.screenshot({ path: path.join(ARTIFACTS_006, "compare-dialog-light.png") });
     await page.emulateMedia({ colorScheme: "dark" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "wa2-dark");
+    await expect.poll(() => diff.locator(".diff-keep .pill").evaluate((e) =>
+      getComputedStyle(e).color === getComputedStyle(e.closest("dialog")!).color,
+    )).toBe(true);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
     await diff.screenshot({ path: path.join(ARTIFACTS_006, "compare-dialog-dark.png") });
     await page.emulateMedia({ colorScheme: "light" });
     await diff.locator(".cancel-btn").click();

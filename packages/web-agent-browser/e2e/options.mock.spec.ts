@@ -270,7 +270,7 @@ test.describe("Saved skills", () => {
     const firstCard = cardsLoc.nth(0);
     await expect(firstCard.locator(".card-title .n")).toContainText("Chromagent");
     await expect(firstCard.locator(".pill.def")).toHaveText("Default");
-    await expect(firstCard.locator(".pill").nth(1)).toHaveText("From brand");
+    await expect(firstCard.locator(".pill").nth(1)).toHaveText("Provided");
     await expect(firstCard.locator(".card-title .d")).toHaveText("Your Personal Assistant");
     await expect(firstCard.locator(".card-edit-btn")).toBeEnabled();
     await expect(firstCard.locator(".facts")).toContainText("Model Options page model");
@@ -281,7 +281,7 @@ test.describe("Saved skills", () => {
     const secondCard = cardsLoc.nth(1);
     await expect(secondCard.locator(".card-title .n")).toContainText("Tesagent");
     await expect(secondCard.locator(".pill.def")).toHaveCount(0);
-    await expect(secondCard.locator(".pill")).toHaveText("From brand");
+    await expect(secondCard.locator(".pill")).toHaveText("Provided");
     await expect(secondCard.locator(".card-edit-btn")).toBeEnabled();
   });
 
@@ -312,7 +312,7 @@ test.describe("Saved skills", () => {
     await page.locator("#tab-btn-agents").click();
 
     const tesagentCard = page.locator("#agent-cards .card").nth(1);
-    await expect(tesagentCard.locator(".pill")).toContainText(["From brand", "Edited"]);
+    await expect(tesagentCard.locator(".pill")).toContainText(["Provided", "Edited"]);
     await expect(tesagentCard.locator(".card-title .d")).toHaveText("Custom tesagent tester");
     await expect(tesagentCard.locator(".facts")).toContainText("Model Sonnet");
     await expect(tesagentCard.locator(".facts")).toContainText("Tools 2 selected");

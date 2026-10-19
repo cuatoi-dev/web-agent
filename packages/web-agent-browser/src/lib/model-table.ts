@@ -1,8 +1,9 @@
 import { iconNode } from "@cuatoi/web-agent-lit/ui/icon-svgs";
+import { providerIconNode } from "./provider-builtins";
 import { resolveDefault } from "./model-store";
 import type { ModelEntry, ModelRef, ModelStore, ModelTableHandlers, ResolvedProvider } from "./types";
 
-export const FROM_BRAND = "From brand";
+export const PROVIDED_LABEL = "Provided";
 export const BRAND_CHECKBOX_TITLE = "Brand models cannot be deleted";
 export const SHARED_TOKEN_TEXT = "shared Token";
 
@@ -103,8 +104,8 @@ export function renderModelTable(
     }
     const nameCell = prov.insertCell();
     const name = el("div", "prov-name");
-    name.append(icon("dns"), el("span", "prov-label", p.name));
-    if (p.kind === "brand") name.append(el("span", "pill brand", FROM_BRAND));
+    name.append(providerIconNode(p.builtIn), el("span", "prov-label", p.name));
+    if (p.kind === "brand") name.append(el("span", "pill brand", PROVIDED_LABEL));
     nameCell.append(name, el("div", "prov-sub", providerSubText(p)));
     prov.insertCell().textContent = p.wireFormat;
     prov.insertCell();

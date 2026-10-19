@@ -65,7 +65,7 @@ describe("model-table", () => {
     expect(provLabel?.textContent).toBe("Acme");
 
     const pillBrand = firstProv.querySelector(".pill.brand");
-    expect(pillBrand?.textContent).toBe("From brand");
+    expect(pillBrand?.textContent).toBe("Provided");
 
     const provSub = firstProv.querySelector(".prov-sub");
     expect(provSub?.textContent).toBe("https://a.test/api/anthropic · shared Token");
@@ -308,5 +308,43 @@ describe("custom rows", () => {
     expect(table.querySelector('tr[data-provider-id="p1"]')).toBeNull();
     expect(table.querySelector(".edit-btn")).toBeNull();
     expect(table.querySelectorAll("input[type=checkbox]:not([role=switch])").length).toBe(0);
+  });
+  it("draws the built-in provider logo and keeps the server icon for a custom one", () => {
+    const table = document.createElement("table");
+    const providers: CustomProvider[] = [
+      {
+        id: "p-anthropic",
+        name: "My Anthropic",
+        builtIn: "anthropic",
+        wireFormat: "anthropic",
+        endpoint: "https://api.anthropic.com",
+        apiKey: "",
+        headers: [],
+        models: [{ model: "claude-sonnet-5-5", label: "Sonnet", vision: true }],
+      },
+      {
+        id: "p-local",
+        name: "Local",
+        wireFormat: "openai",
+        endpoint: "http://localhost:8000/v1",
+        apiKey: "",
+        headers: [],
+        models: [{ model: "m1", label: "M1", vision: false }],
+      },
+    ];
+    const store: ModelStore = { providers, brandKeys: {}, disabled: [], defaultModel: null };
+    renderModelTable(table, listModels({ ...FIXTURE_BRAND, models: [] }, store), store, {
+      lockModel: false,
+      onToggle: vi.fn(),
+      onDefault: vi.fn(),
+      onKey: vi.fn(),
+    });
+
+    const firstIcon = table.querySelector('tr[data-provider-id="p-anthropic"] .prov-name svg.logo')?.outerHTML ?? "";
+    const secondIcon = table.querySelector('tr[data-provider-id="p-local"] .prov-name svg.logo')?.outerHTML ?? "";
+    expect(firstIcon).not.toBe(secondIcon);
+    expect(firstIcon).toContain("<path");
+    expect(secondIcon).toContain("<path");
+    expect(firstIcon).not.toContain("<title>");
   });
 });

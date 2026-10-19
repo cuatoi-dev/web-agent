@@ -89,6 +89,7 @@ export function listModels(brand: AgentBrand, store: ModelStore): ModelEntry[] {
       wireFormat: p.wireFormat,
       apiKey: p.apiKey,
       headers: p.headers,
+      builtIn: p.builtIn,
     };
     for (const d of p.models) {
       const ref = `${p.id}/${d.model}`;

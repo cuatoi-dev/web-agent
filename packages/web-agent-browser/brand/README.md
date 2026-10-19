@@ -120,6 +120,10 @@ starter file.
 - `lockModel` (boolean, default `false`) — when set to `true`, the options page
   table shows only brand models and no row checkboxes. **Enabled**, **Default**,
   **Key** and the chat switchers still work. The theme and the token stay editable.
+- `builtInProviders` (boolean, default `false`) — when set to `true`,
+  **Add model** first shows the seven built-in providers and **Custom**.
+  Picking a provider fills in the endpoint, the format and, for Anthropic,
+  OpenAI, DeepSeek and Google AI, its current models.
 
 ### Extra hosts
 

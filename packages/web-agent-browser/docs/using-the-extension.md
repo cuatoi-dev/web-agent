@@ -137,7 +137,7 @@ it (`src/lib/brand-capabilities.ts:19-22`). To add a skill, see
 
 1. The **Models** tab shows one row per provider and its models under it.
    Models that share an endpoint and a wire format in `brand/model.yml` form
-   one provider row with the **From brand** tag. The count line reads
+   one provider row with the **Provided** tag. The count line reads
    "N of M models enabled".
 2. The **Enabled** switch turns a model on or off. Only enabled models
    appear in the side panel and bubble kebab menus and in the agent editor.
@@ -205,7 +205,7 @@ The options page lists your agents on the **Agents** tab (`src/lib/agent-store.t
 The list shows the default agent first, then the other agents by display name.
 
 - Each card shows the agent's display name, description, and status tags: `Default`
-  for the brand's default agent, `From brand` or `Added by you`, and `Edited`
+  for the brand's default agent, `Provided` or `Added by you`, and `Edited`
   when a brand agent has stored changes.
 - The summary line lists the assigned model (or `Options page model`, or `Options page model (its model is off or deleted)` when the agent's model is off or gone), tools,
   and skills.
@@ -232,8 +232,7 @@ You can change these fields:
   field above them is set to **All**. When you select single names instead,
   the excluded field is cleared and turned off.
 
-A brand agent's display name and id come from the brand, so you cannot change
-them.
+A provided agent's display name and id cannot be changed.
 
 Select **Save agent** to store the change, or **Cancel** to close the card
 without saving. If a required field is empty, a message shows under the field

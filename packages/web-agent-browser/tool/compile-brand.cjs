@@ -631,11 +631,12 @@ function compileBrand(brandDir) {
   brand.defaultAgent = plugin.defaultAgent;
   brand.prompts = prompts;
 
-  // `=== true` rather than a validation branch: the plan asks for one flag with
-  // a default of false, and nothing more. Anything that is not the boolean true
-  // leaves the fields editable, which is the documented default.
+  // Installation options are enabled only by the boolean true.
   const options = isMapping(plugin.options) ? plugin.options : {};
-  brand.options = { lockModel: options.lockModel === true };
+  brand.options = {
+    lockModel: options.lockModel === true,
+    builtInProviders: options.builtInProviders === true,
+  };
   brand.tools = compileFlags(plugin.tools, "tools", "tool", TOOL_GROUPS);
   brand.skills = compileFlags(plugin.skills, "skills", "skill", SKILL_GROUPS);
   brand.hosts = compileHosts(plugin.hosts);

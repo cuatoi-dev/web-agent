@@ -1,3 +1,4 @@
+import { openProviderGrid } from "./lib/provider-grid-dialog";
 import { brandForThisContext } from "./lib/brand-source";
 import { renderSkills } from "./lib/saved-skills";
 import { mountTabs } from "./lib/options-tabs";
@@ -21,7 +22,7 @@ import { openBrandKeyDialog } from "./lib/brand-key-dialog";
 import { openProviderDialog } from "./lib/provider-dialog";
 import { openModelDeleteDialog } from "./lib/model-delete-dialog";
 import { deleteDialogMessage, deleteDialogTitle } from "./lib/provider-form-rules";
-import type { AgentBrand, ModelRef, ModelStore } from "./lib/types";
+import type { AgentBrand, CustomProvider, ModelRef, ModelStore } from "./lib/types";
 
 const tabModels = document.getElementById("tab-btn-models") as HTMLButtonElement;
 const tabSkills = document.getElementById("tab-btn-skills") as HTMLButtonElement;
@@ -150,12 +151,21 @@ addModelBtn.addEventListener("click", () => {
   if (!currentBrand || !currentModelStore) return;
   const brand = currentBrand;
   const store = currentModelStore;
-  void openProviderDialog().then((saved) => {
+  void openAddProvider(brand).then((saved) => {
     if (!saved) return;
     modelTableHint.hidden = true;
     void commitModels(brand, saveCustomProvider(brand, store, saved));
   });
 });
+
+/** "+ Add model": the provider grid when the brand turns it on, else the
+ *  custom form directly. */
+async function openAddProvider(brand: AgentBrand): Promise<CustomProvider | null> {
+  if (brand.options.builtInProviders !== true) return openProviderDialog();
+  const choice = await openProviderGrid();
+  if (choice === null) return null;
+  return choice === "custom" ? openProviderDialog() : openProviderDialog({ builtIn: choice.builtIn });
+}
 
 deleteModelsBtn.addEventListener("click", () => {
   if (!currentBrand || !currentModelStore || selectedRefs.size === 0) return;

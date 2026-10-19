@@ -43,6 +43,8 @@ The extension's own behavior is described in [`docs/`](./docs/README.md):
   in-page agent.
 - [Website edit skill](./docs/website-edit.md) — how the side panel agent
   restyles a page.
+- [Third-party notices](./docs/third-party-notices.md) — the licence of the
+  provider logos.
 
 ## Commands
 

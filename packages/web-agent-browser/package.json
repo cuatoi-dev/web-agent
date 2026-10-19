@@ -19,7 +19,8 @@
     "brand",
     "tool",
     "bin",
-    "README.md"
+    "README.md",
+    "docs/third-party-notices.md"
   ],
   "bin": {
     "web-agent-brand": "bin/web-agent-brand.mjs"

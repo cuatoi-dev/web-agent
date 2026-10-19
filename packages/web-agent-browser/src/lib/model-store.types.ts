@@ -56,6 +56,9 @@ export interface ModelStore {
 export interface ResolvedProvider {
   id: string;
   kind: "brand" | "custom";
+  /** The built-in provider this one came from; absent for a brand
+   *  provider or a fully custom one. Picks the logo. */
+  builtIn?: string;
   name: string;
   endpoint: string;
   wireFormat: WireFormat;
@@ -205,4 +208,7 @@ export interface ProviderDialogDeps {
 export interface ProviderDialogOptions extends ProviderDialogDeps {
   /** Existing provider when editing; omitted when adding a new provider. */
   provider?: CustomProvider;
+  /** Id from `BUILT_IN` when adding a built-in provider. Ignored
+   *  when `provider` is set: an edited provider carries its own `builtIn`. */
+  builtIn?: string;
 }

@@ -279,9 +279,9 @@
   .confirm-dialog .dialog-actions { justify-content: flex-end; flex-wrap: wrap; }
   .confirm-dialog button { margin-top: 0; }
   .edit-body code { font-size: 12px; }
-  /* Model table (136/005, mockup states 1, 7, 8). Colours are tokens only.
+  /* Model table. Colours are tokens only.
      Meaning never rests on colour: the switch knob moves, the Vision pill and
-     "From brand" pill carry words, and a disabled radio is a native state. */
+     "Provided" pill carry words, and a disabled radio is a native state. */
   #tab-models > .table-wrap { width: 100%; overflow-x: auto; margin: 8px 0 0; }
   .model-table {
     width: 100%; border-collapse: collapse;
@@ -329,6 +329,25 @@
   .confirm-dialog.provider-dialog .hint, .confirm-dialog.diff-dialog .hint { margin: 4px 0 12px; font-size: 12px; }
   .confirm-dialog.provider-dialog .field-error { margin: 4px 0 0; font-size: 12px; }
   .provider-dialog .dialog-actions, .diff-dialog .dialog-actions { margin-top: 16px; }
+  /* Built-in provider grid and format controls. Every colour is a
+     theme token. Meaning never rests on colour: a selected tile sets
+     aria-pressed, and Next only enables after a selection. */
+  .provider-dialog h2 svg.logo { width: 24px; height: 24px; margin-right: 8px; vertical-align: -5px; }
+  .provider-grid-dialog { max-width: min(560px, calc(100vw - 48px)); width: 100%; }
+  .provider-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+  .provider-tile {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 6px; margin-top: 0; font-size: 13px; text-align: center;
+    background: var(--wa-input-background-color); color: var(--wa-text-color);
+    border: 1px solid var(--wa-border-color); border-radius: 6px; cursor: pointer;
+  }
+  .provider-tile svg.logo { width: 28px; height: 28px; flex: none; }
+  .provider-tile[aria-pressed="true"] { border: 2px solid var(--wa-action-color-info); padding: 13px 5px; }
+  .provider-tile:focus-visible { outline: 3px solid var(--wa-outline-color); outline-offset: 1px; }
+  .format-switch { display: flex; gap: 4px; }
+  .format-opt { margin-top: 0; flex: 1; }
+  .format-opt[aria-pressed="true"] { border-color: var(--wa-action-color-info); box-shadow: inset 0 0 0 1px var(--wa-action-color-info); }
+  .provider-dialog .format-fixed { margin: 0; padding: 8px 0; font-size: 14px; }
   .form-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
   .section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .section-head label { margin: 0; }

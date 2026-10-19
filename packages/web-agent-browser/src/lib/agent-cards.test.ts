@@ -88,7 +88,7 @@ describe("renderAgents", () => {
     expect(tesagentCard.querySelector(".pill.def")).toBeNull();
   });
 
-  it("C6: shows From brand vs Added by you based on origin", () => {
+  it("C6: shows Provided vs Added by you based on origin", () => {
     const el = container();
     const store: AgentStore = {
       edits: {},
@@ -98,10 +98,10 @@ describe("renderAgents", () => {
     // orderAgents: default first, then the rest by displayName — "Data
     // Analyst" sorts before "tesagent".
     const [chromagentCard, userCard, tesagentCard] = cards(el);
-    expect(pills(chromagentCard)).toContain("From brand");
-    expect(pills(tesagentCard)).toContain("From brand");
+    expect(pills(chromagentCard)).toContain("Provided");
+    expect(pills(tesagentCard)).toContain("Provided");
     expect(pills(userCard)).toContain("Added by you");
-    expect(pills(userCard)).not.toContain("From brand");
+    expect(pills(userCard)).not.toContain("Provided");
     expect(userCard.querySelector(".pill.def")).toBeNull();
   });
 

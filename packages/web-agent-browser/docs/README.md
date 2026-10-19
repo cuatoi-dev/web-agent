@@ -29,6 +29,7 @@ branded copy of the extension. To make one, follow the
 | [Page agent tools](./page-agent-tools.md) | `toggle_page_agent`, `send_to_page_agent`, `read_page_agent`, the `/compact` and `/new` commands, and the `page_agent` wait loop |
 | [In-page tools](./in-page-tools.md) | The in-page `page_fetch` and `page_eval`, and what they can reach on the visited page |
 | [Website edit skill](./website-edit.md) | The `website_edit` skill: the four-step loop, the three shadow-DOM routes, and the defect table |
+| [Third-party notices](./third-party-notices.md) | The licence of the provider logos in `src/lib/provider-logos.ts` |
 
 ## Related packages
 

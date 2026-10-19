@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { toPublicModels } from "./public-models";
-import { ICON_SVGS } from "@cuatoi/web-agent-lit/ui/icon-svgs";
+import { providerIconSvg } from "./provider-builtins";
 import type { ModelEntry } from "./model-store.types";
 
 describe("public-models", () => {
@@ -9,10 +9,8 @@ describe("public-models", () => {
       {
         ref: "brand:a",
         kind: "brand",
-        id: "a",
         label: "Model A",
         model: "claude-a",
-        wireFormat: "anthropic",
         vision: true,
         enabled: true,
         provider: {
@@ -28,10 +26,8 @@ describe("public-models", () => {
       {
         ref: "brand:b",
         kind: "brand",
-        id: "b",
         label: "Model B",
         model: "claude-b",
-        wireFormat: "anthropic",
         vision: false,
         enabled: false,
         provider: {
@@ -56,6 +52,32 @@ describe("public-models", () => {
     expect(serialized).not.toContain("secret");
     expect(serialized).not.toContain("X-Team");
 
-    expect(result[0].icon).toBe(ICON_SVGS.dns);
+    expect(result[0].icon).toBe(providerIconSvg(undefined));
+  });
+  it("gives a built-in provider its own logo", () => {
+    const entries: ModelEntry[] = [
+      {
+        ref: "p1/claude-sonnet-5-5",
+        kind: "custom",
+        label: "Sonnet",
+        model: "claude-sonnet-5-5",
+        vision: true,
+        enabled: true,
+        provider: {
+          id: "p1",
+          kind: "custom",
+          name: "Anthropic",
+          endpoint: "https://api.anthropic.com",
+          wireFormat: "anthropic",
+          apiKey: "secret",
+          headers: [],
+          builtIn: "anthropic",
+        },
+      },
+    ];
+    const [model] = toPublicModels(entries);
+    expect(model.icon).toBe(providerIconSvg("anthropic"));
+    expect(model.icon).not.toBe(providerIconSvg(undefined));
+    expect(model.icon).not.toContain("secret");
   });
 });

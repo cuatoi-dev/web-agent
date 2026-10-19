@@ -74,7 +74,7 @@ test.describe("Agent card editor", () => {
     await expect(tesagent.locator(".card-edit-btn")).toHaveText("Editing");
     await expect(tesagent.locator(".card-edit-btn")).toBeDisabled();
     await expect(tesagent.locator(".card-title .n")).toContainText("Tesagent");
-    await expect(tesagent.locator(".card-title .d")).toHaveText("Display name and id come from the brand and cannot be changed.");
+    await expect(tesagent.locator(".card-title .d")).toHaveText("Display name and id are provided and cannot be changed.");
     await expect(page.locator("#edit-tesagent-displayName")).toHaveCount(0);
     await expect(page.locator("#edit-tesagent-description")).toHaveValue("Test agent — explores a website, writes and runs test cases");
     await expect(page.locator("#edit-tesagent-instructions")).toHaveValue(/^You are Tesagent, a manual tester\./);
@@ -243,7 +243,7 @@ test.describe("Agent card editor", () => {
     await page.locator(`${TESAGENT} .save-btn`).click();
 
     await expect(page.locator(`${TESAGENT} .edit-body`)).toHaveCount(0);
-    await expect(page.locator(`${TESAGENT} .pill`)).toContainText(["From brand", "Edited"]);
+    await expect(page.locator(`${TESAGENT} .pill`)).toContainText(["Provided", "Edited"]);
     await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Custom tesagent tester");
     await expect(page.locator(`${TESAGENT} .facts`)).toContainText("Model Sonnet");
     const s = await stored(page);
@@ -271,7 +271,7 @@ test.describe("Agent card editor", () => {
     await expect(page.locator(`${TESAGENT} .edit-body`)).toHaveCount(0);
     const s = await stored(page);
     expect(s.agentEdits).toEqual({});
-    await expect(page.locator(`${TESAGENT} .pill`)).toHaveText(["From brand"]);
+    await expect(page.locator(`${TESAGENT} .pill`)).toHaveText(["Provided"]);
   });
 
   test("ED17-ED19: validation messages; card stays open; storage unchanged", async ({ context, extensionId }) => {
@@ -325,11 +325,11 @@ test.describe("Agent card editor", () => {
     });
     const page = await context.newPage();
     await openAgents(page, extensionId);
-    await expect(page.locator(`${TESAGENT} .pill`)).toContainText(["From brand", "Edited"]);
+    await expect(page.locator(`${TESAGENT} .pill`)).toContainText(["Provided", "Edited"]);
     await edit(page, TESAGENT);
     await page.locator(`${TESAGENT} .reset-btn`).click();
     await expect(page.locator(`${TESAGENT} .edit-body`)).toHaveCount(0);
-    await expect(page.locator(`${TESAGENT} .pill`)).toHaveText(["From brand"]);
+    await expect(page.locator(`${TESAGENT} .pill`)).toHaveText(["Provided"]);
     await expect(page.locator(`${TESAGENT} .card-title .d`)).toHaveText("Test agent — explores a website, writes and runs test cases");
     const s = await stored(page);
     expect(s.agentEdits).toEqual({});

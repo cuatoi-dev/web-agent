@@ -11,7 +11,7 @@ export type { PanelLike } from "./types";
  * The bubble uses createRelayFetch() because a MAIN-world content script is
  * bound by the visited page's CORS rules. A side panel is an extension page and
  * calls the gateway itself under the existing host_permissions
- * (generated into dist/manifest.json from brand/model.yml and brand/plugin.yml
+ * (generated into dist/manifest.json using brand/model.yml and brand/plugin.yml
  * `hosts`), so the relay in background.ts:24-69 solves a problem
  * this page does not have. No RELAY_PORT connection is opened from here.
  *

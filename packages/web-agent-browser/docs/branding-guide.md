@@ -240,7 +240,22 @@ With `lockModel: true`, the options page table shows only brand models and no ro
 checkboxes. **Enabled**, **Default**, **Key** and the chat switchers still work.
 The theme and the token stay editable. Only the value `true` locks the table.
 Any other value, or no value, leaves row checkboxes present
-(`tool/compile-brand.cjs:343-344`).
+(`tool/compile-brand.cjs:635-639`).
+
+### Offer the built-in providers
+
+```yaml
+options:
+  builtInProviders: true
+```
+
+With `builtInProviders: true`, **Add model** first shows a grid of eight tiles:
+OpenRouter, Anthropic, OpenAI, xAI, Google AI, DeepSeek, Moonshot (Kimi) and
+Custom. When you select a provider, the form fills in its endpoint and format.
+Anthropic, OpenAI, DeepSeek and Google AI also fill in their current model list
+and each model's Vision value. You can edit the endpoint and model rows, and
+choose among the provider's formats. Only the value `true` shows the grid. Any
+other value, or no value, opens the custom form directly.
 
 ### Add hosts
 
