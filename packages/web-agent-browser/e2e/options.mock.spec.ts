@@ -1641,3 +1641,115 @@ test.describe("Model table capabilities and ID badge", () => {
     await dialog.locator(".cancel-btn").click();
   });
 });
+
+// --- 138/001: API keys encrypted at rest in extension storage ----------------
+
+async function findMarkerFiles(rootDir: string, needle: Buffer): Promise<string[]> {
+  const matches: string[] = [];
+  async function walk(dir: string): Promise<void> {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+      } else if (entry.isFile()) {
+        try {
+          const buf = await fs.readFile(full);
+          if (buf.includes(needle)) matches.push(full);
+        } catch {
+          // Ignore transient lock files removed during close
+        }
+      }
+    }
+  }
+  await walk(rootDir);
+  return matches;
+}
+
+test.describe("API keys encrypted at rest (138/001)", () => {
+  test("E1: saved custom provider and brand keys are not on disk as plain text and still open after profile reopen", async () => {
+    const profileDir = path.resolve(HERE, `../temp/e2e-profiles/key-vault-${Date.now()}`);
+    const rand = Math.random().toString(36).slice(2, 10);
+    const customMarker = `PROBEMARKER-CUSTOM-${rand}-9182`;
+    const brandMarker = `PROBEMARKER-BRAND-${rand}-7364`;
+    const brandProvSelector =
+      '#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:28780/api/anthropic"]';
+
+    await fs.rm(profileDir, { recursive: true, force: true });
+    try {
+      const ctx1 = await chromium.launchPersistentContext(profileDir, {
+        channel: "chromium",
+        args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
+      });
+      try {
+        let [worker] = ctx1.serviceWorkers();
+        if (!worker) worker = await ctx1.waitForEvent("serviceworker");
+        const extId = worker.url().split("/")[2];
+
+        const page = await ctx1.newPage();
+        await openOptions(page, extId);
+        await page.locator("#tab-btn-models").click();
+
+        // Save custom provider key through the options page form
+        await page.locator("#add-model-btn").click();
+        const addDialog = page.locator("dialog.provider-dialog");
+        await expect(addDialog).toBeVisible();
+        await addDialog.locator("#provider-name").fill("VaultCheck");
+        await addDialog.locator("#provider-endpoint").fill("http://localhost:10040/v1");
+        await addDialog.locator(".form-model-id").first().fill("m-vault");
+        await addDialog.locator("#provider-api-key").fill(customMarker);
+        await addDialog.locator(".save-provider-btn").click();
+        await expect(addDialog).toBeHidden();
+
+        const customProvRow = page.locator("#model-table tr.prov").filter({ hasText: "VaultCheck" });
+        await expect(customProvRow.locator(".prov-sub")).toContainText("key ••••9182");
+
+        // Save brand key through the Key button
+        const brandProvRow = page.locator(brandProvSelector);
+        await brandProvRow.locator(".key-btn").click();
+        const keyDialog = page.locator("#brand-key-dialog");
+        await expect(keyDialog).toBeVisible();
+        await keyDialog.locator('input[type="password"]').fill(brandMarker);
+        await keyDialog.locator(".dialog-save-btn").click();
+        await expect(keyDialog).toBeHidden();
+        await expect(brandProvRow.locator(".prov-sub")).toContainText("key ••••7364");
+      } finally {
+        await ctx1.close();
+      }
+
+      // Byte search of the closed profile directory finds neither marker
+      expect(await findMarkerFiles(profileDir, Buffer.from(customMarker, "utf8"))).toEqual([]);
+      expect(await findMarkerFiles(profileDir, Buffer.from(brandMarker, "utf8"))).toEqual([]);
+      expect((await findMarkerFiles(profileDir, Buffer.from("enc:v1:", "utf8"))).length).toBeGreaterThan(0);
+
+      // Reopen the same profile and verify both keys decrypt for the UI
+      const ctx2 = await chromium.launchPersistentContext(profileDir, {
+        channel: "chromium",
+        args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
+      });
+      try {
+        let [worker2] = ctx2.serviceWorkers();
+        if (!worker2) worker2 = await ctx2.waitForEvent("serviceworker");
+        const extId2 = worker2.url().split("/")[2];
+
+        const page2 = await ctx2.newPage();
+        await openOptions(page2, extId2);
+        await page2.locator("#tab-btn-models").click();
+
+        await expect(page2.locator(brandProvSelector).locator(".prov-sub")).toContainText("key ••••7364");
+        const customProvRow2 = page2.locator("#model-table tr.prov").filter({ hasText: "VaultCheck" });
+        await expect(customProvRow2.locator(".prov-sub")).toContainText("key ••••9182");
+
+        await customProvRow2.locator(".edit-btn").click();
+        const editDialog = page2.locator("dialog.provider-dialog");
+        await expect(editDialog).toBeVisible();
+        await expect(editDialog.locator("#provider-api-key")).toHaveValue(customMarker);
+        await editDialog.locator(".cancel-btn").click();
+      } finally {
+        await ctx2.close();
+      }
+    } finally {
+      await fs.rm(profileDir, { recursive: true, force: true });
+    }
+  });
+});

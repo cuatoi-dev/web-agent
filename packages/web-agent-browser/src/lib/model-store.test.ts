@@ -1,4 +1,6 @@
+import "fake-indexeddb/auto";
 import { describe, it, expect, vi } from "vitest";
+import { createIdbKeyVault, KEY_VAULT_PREFIX } from "./key-vault";
 import {
   brandDefaultKey,
   listModels,
@@ -13,7 +15,7 @@ import {
   writeModelStore,
   EMPTY_MODEL_STORE,
 } from "./model-store";
-import type { AgentBrand, CustomProvider, ModelStore } from "./types";
+import type { AgentBrand, CustomProvider, ModelStorage, ModelStore } from "./types";
 
 const FIXTURE_BRAND: AgentBrand = {
   name: "Test",
@@ -318,15 +320,16 @@ describe("model-store", () => {
     const getFn = vi.fn();
     const setFn = vi.fn();
     const fakeStorage = { get: getFn, set: setFn } as any;
+    const vault = createIdbKeyVault();
 
     // Nothing stored
     getFn.mockResolvedValueOnce({});
-    const r1 = await readModelStore(fakeStorage);
+    const r1 = await readModelStore(fakeStorage, vault);
     expect(r1).toEqual(EMPTY_MODEL_STORE);
 
     // Garbage stored
     getFn.mockResolvedValueOnce({ modelStore: "garbage" });
-    const r2 = await readModelStore(fakeStorage);
+    const r2 = await readModelStore(fakeStorage, vault);
     expect(r2).toEqual(EMPTY_MODEL_STORE);
 
     // Partial and invalid types cleaned
@@ -338,15 +341,100 @@ describe("model-store", () => {
         providers: [{ id: "p", models: [] }, { nope: 1 }],
       },
     });
-    const r3 = await readModelStore(fakeStorage);
+    const r3 = await readModelStore(fakeStorage, vault);
     expect(r3.disabled).toEqual(["a"]);
     expect(r3.brandKeys).toEqual({ x: "k" });
     expect(r3.defaultModel).toBeNull();
     expect(r3.providers).toHaveLength(1);
 
     // Write
-    await writeModelStore(EMPTY_MODEL_STORE, fakeStorage);
+    await writeModelStore(EMPTY_MODEL_STORE, fakeStorage, vault);
     expect(setFn).toHaveBeenCalledWith({ modelStore: EMPTY_MODEL_STORE });
+  });
+
+  it("writeModelStore seals provider and brand keys on disk without mutating caller, and readModelStore opens them", async () => {
+    let saved: Record<string, unknown> = {};
+    const storage: ModelStorage = {
+      get: () => Promise.resolve(saved),
+      set: (items) => {
+        saved = items;
+        return Promise.resolve();
+      },
+    };
+    const vault = createIdbKeyVault();
+    const callerStore: ModelStore = {
+      providers: [
+        {
+          id: "p1",
+          name: "Custom",
+          wireFormat: "openai",
+          endpoint: "https://api.example.com/v1",
+          apiKey: "sk-custom-plain",
+          headers: [{ name: "X-One", value: "1" }],
+          models: [{ model: "m1", label: "M1", vision: false }],
+        },
+      ],
+      brandKeys: {
+        "brand:anthropic:https://a.test/api/anthropic": "sk-brand-plain",
+      },
+      disabled: ["brand:b"],
+      defaultModel: "p1/m1",
+    };
+
+    await writeModelStore(callerStore, storage, vault);
+
+    // Caller's store object keeps plain keys
+    expect(callerStore.providers[0].apiKey).toBe("sk-custom-plain");
+    expect(callerStore.brandKeys["brand:anthropic:https://a.test/api/anthropic"]).toBe("sk-brand-plain");
+
+    // Stored object on disk has both keys sealed with enc:v1:
+    const onDisk = saved.modelStore as ModelStore;
+    expect(onDisk.providers[0].apiKey.startsWith(KEY_VAULT_PREFIX)).toBe(true);
+    expect(onDisk.providers[0].apiKey).not.toContain("sk-custom-plain");
+    expect(onDisk.brandKeys["brand:anthropic:https://a.test/api/anthropic"].startsWith(KEY_VAULT_PREFIX)).toBe(true);
+    expect(onDisk.brandKeys["brand:anthropic:https://a.test/api/anthropic"]).not.toContain("sk-brand-plain");
+
+    // Reading with the same vault returns the plain keys
+    const opened = await readModelStore(storage, vault);
+    expect(opened).toEqual(callerStore);
+  });
+
+  it("with vault = null, readModelStore returns stored values unchanged and writeModelStore throws", async () => {
+    let saved: Record<string, unknown> = {};
+    const storage: ModelStorage = {
+      get: () => Promise.resolve(saved),
+      set: (items) => {
+        saved = items;
+        return Promise.resolve();
+      },
+    };
+    const vault = createIdbKeyVault();
+    const input: ModelStore = {
+      providers: [
+        {
+          id: "p1",
+          name: "Custom",
+          wireFormat: "openai",
+          endpoint: "https://api.example.com/v1",
+          apiKey: "sk-custom-secret",
+          headers: [],
+          models: [{ model: "m1", label: "M1", vision: false }],
+        },
+      ],
+      brandKeys: { "brand:a": "sk-brand-secret" },
+      disabled: [],
+      defaultModel: null,
+    };
+    await writeModelStore(input, storage, vault);
+    const onDisk = saved.modelStore as ModelStore;
+
+    const fromContentScript = await readModelStore(storage, null);
+    expect(fromContentScript.providers[0].apiKey).toBe(onDisk.providers[0].apiKey);
+    expect(fromContentScript.brandKeys["brand:a"]).toBe(onDisk.brandKeys["brand:a"]);
+
+    await expect(writeModelStore(input, storage, null)).rejects.toThrow(
+      "writeModelStore must run in an extension page",
+    );
   });
 });
 

@@ -1,8 +1,10 @@
 import { resolveModels } from "./brand-models";
+import { defaultKeyVault } from "./key-vault";
 import type {
   AgentBrand,
   AgentModelChoice,
   CustomProvider,
+  KeyVault,
   ModelEntry,
   ModelRef,
   ModelStorage,
@@ -246,15 +248,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /** Reads "modelStore" tolerantly: a value of the wrong shape reads as empty,
  *  field by field, the same tolerance readAgentStore gives (agent-store.ts:26-56). */
-export async function readModelStore(storage: ModelStorage = chromeModelStorage): Promise<ModelStore> {
+export async function readModelStore(
+  storage: ModelStorage = chromeModelStorage,
+  vault: KeyVault | null = defaultKeyVault(),
+): Promise<ModelStore> {
   const got = await storage.get(MODEL_STORE_KEY);
   const raw = got[MODEL_STORE_KEY];
   if (!isRecord(raw)) return { ...EMPTY_MODEL_STORE };
-  const providers = Array.isArray(raw.providers)
+  const rawProviders = Array.isArray(raw.providers)
     ? (raw.providers as unknown[]).filter(
         (p): p is CustomProvider => isRecord(p) && typeof p.id === "string" && Array.isArray(p.models),
       )
     : [];
+  const providers = rawProviders.map((p) => ({ ...p }));
   const brandKeys: Record<string, string> = {};
   if (isRecord(raw.brandKeys)) {
     for (const [id, key] of Object.entries(raw.brandKeys)) {
@@ -265,12 +271,44 @@ export async function readModelStore(storage: ModelStorage = chromeModelStorage)
     ? (raw.disabled as unknown[]).filter((r): r is string => typeof r === "string")
     : [];
   const defaultModel = typeof raw.defaultModel === "string" && raw.defaultModel ? raw.defaultModel : null;
+  if (vault === null) return { providers, brandKeys, disabled, defaultModel };
+  for (const p of providers) {
+    if (typeof p.apiKey === "string") {
+      p.apiKey = await vault.open(p.apiKey);
+    }
+  }
+  for (const id of Object.keys(brandKeys)) {
+    brandKeys[id] = await vault.open(brandKeys[id]);
+  }
   return { providers, brandKeys, disabled, defaultModel };
 }
 
 export async function writeModelStore(
   store: ModelStore,
   storage: ModelStorage = chromeModelStorage,
+  vault: KeyVault | null = defaultKeyVault(),
 ): Promise<void> {
-  await storage.set({ [MODEL_STORE_KEY]: store });
+  if (vault === null) {
+    throw new Error("writeModelStore must run in an extension page");
+  }
+  const providers: CustomProvider[] = [];
+  for (const p of store.providers) {
+    providers.push({
+      ...p,
+      headers: p.headers.map((h) => ({ ...h })),
+      models: p.models.map((m) => ({ ...m })),
+      apiKey: await vault.seal(p.apiKey),
+    });
+  }
+  const brandKeys: Record<string, string> = {};
+  for (const [id, key] of Object.entries(store.brandKeys)) {
+    brandKeys[id] = await vault.seal(key);
+  }
+  const copy: ModelStore = {
+    providers,
+    brandKeys,
+    disabled: [...store.disabled],
+    defaultModel: store.defaultModel,
+  };
+  await storage.set({ [MODEL_STORE_KEY]: copy });
 }

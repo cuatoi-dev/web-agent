@@ -116,6 +116,12 @@ export interface ModelStorage {
   set(items: Record<string, unknown>): Promise<void>;
 }
 
+/** Seals plain API keys to `enc:v1:<base64>` and opens them back (138/001). */
+export interface KeyVault {
+  seal(plain: string): Promise<string>;
+  open(stored: string): Promise<string>;
+}
+
 /** The element fields the model switch writes. `<web-agent-bubble>` and
  *  `<agent-chat-panel>` both have them. */
 export interface ModelSwitchTarget {
