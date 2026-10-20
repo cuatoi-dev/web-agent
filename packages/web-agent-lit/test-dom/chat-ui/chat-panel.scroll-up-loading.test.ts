@@ -1,6 +1,17 @@
 // 009 — scroll-up window loading. Every case that drives a load runs under
 // `vi.useFakeTimers()` and advances past `LOADER_MIN_MS`, so the file stays
 // fast rather than waiting out a real 900 ms hold per case.
+//
+// Every case also runs with a 50-row host window (`config.messageWindow`)
+// instead of the 200-row default. The rule under test — which slice of the
+// transcript is on screen, and what the loader does while an older window
+// loads — does not depend on the window size, but the DOM cost does: each case
+// renders its window three to five times, so 200 rows means roughly four times
+// the nodes of 50. Measured on 2026-10-20: the 200-row version spent 434-1115 ms
+// per case and 5.45-8.55 s on the file, and under a parallel `pnpm test:dom`
+// run (every unit at once) the heaviest case crossed vitest's 5000 ms default and
+// timed out. The 50-row version spends at most about 350 ms on a case and about
+// 2 s on the file.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { AgentChatPanel } from "../../src/chat-ui/chat-panel.js";
 import type {
@@ -220,6 +231,9 @@ describe("AgentChatPanel — scroll-up window loading", () => {
     vi.useFakeTimers();
     element = document.createElement("agent-chat-panel");
     element.session = makeMockSession().session;
+    // 50 rows, not the 200-row default: same behaviour, a quarter of the DOM
+    // work per render (see the file header).
+    element.config = { messageWindow: 50 };
     document.body.appendChild(element);
   });
 
@@ -307,10 +321,12 @@ describe("AgentChatPanel — scroll-up window loading", () => {
   });
 
   it("repeated scroll-ups load until the start of the session is reached", async () => {
-    // 70 turns, not 300: big enough to need several loads to reach the
-    // start (proving "repeated"), small enough that the load/settle cycles
-    // below don't turn into a multi-second real-wall-clock loop under load.
-    element.messages = transcript(70, 4);
+    // 30 turns (180 rows) against the 50-row window: several loads are needed
+    // to reach the start, which is what "repeated" means here, and the
+    // load/settle cycles stay short. 70 turns made this case the slowest in the
+    // file (about 1.2 s per run), so it was the one most likely to cross the
+    // 5000 ms default under a parallel run.
+    element.messages = transcript(30, 4);
     await element.updateComplete;
     const list = stubListMetrics(element);
 
@@ -452,8 +468,10 @@ describe("AgentChatPanel — scroll-up window loading", () => {
     // `messages` setter (chat-panel-state.ts:143-147) calls `_recomputeWindow()`
     // synchronously, which re-cuts `_windowStart` to 0 right here — before
     // `_loadWindow` ever resolves — because `_windowStart < msgs.length` no
-    // longer holds.
-    element.messages = transcript(10, 4);
+    // longer holds. Three turns (18 rows) is under the 50-row window, so the
+    // re-cut really does reach 0, and 18 rows still clear the stubbed 400 px
+    // viewport, so the panel stays off the bottom.
+    element.messages = transcript(3, 4);
     expect((element as unknown as Record<string, unknown>)["_windowStart"]).toBe(0);
     expect((element as unknown as Record<string, unknown>)["_windowStart"]).not.toBe(beforeCursor);
     // Let the shrink's own render land before releasing the gate, so
