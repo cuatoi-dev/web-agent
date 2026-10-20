@@ -15,8 +15,6 @@ export const ENDPOINT_ERROR = "Enter an endpoint URL that starts with http:// or
 export const EMPTY_MODELS_ERROR = "Add at least one model.";
 export const DUPLICATE_MODELS_ERROR = "Each model ID can appear only once.";
 export const PERMISSION_DENIED_ERROR = "Permission to reach this endpoint was not granted.";
-export const API_KEY_HINT =
-  "The key is stored unencrypted in this browser profile's extension storage. It is sent only to the endpoint above, and never to the web pages you visit.";
 
 /** Validates the draft from the provider dialog. */
 export function validateProviderDraft(draft: ProviderFormDraft): ProviderFormErrors {

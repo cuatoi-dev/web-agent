@@ -10,7 +10,6 @@ import {
 import type { BuiltIn } from "./provider-builtins.types";
 import { originPattern } from "./origin";
 import {
-  API_KEY_HINT,
   applyModelsDiff,
   buildCustomProvider,
   PERMISSION_DENIED_ERROR,
@@ -259,7 +258,6 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     keyInput.autocomplete = "off";
     keyInput.placeholder = "Optional for local endpoints";
     keyInput.value = existing?.apiKey ?? "";
-    const keyHintEl = el("p", "hint", API_KEY_HINT);
 
     const headersHead = el("div", "section-head");
     const headersTitle = el("label", "", "Custom headers");
@@ -370,7 +368,6 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
       endpointErr,
       keyLabel,
       keyInput,
-      keyHintEl,
       headersHead,
       headersList,
       modelsHead,
