@@ -1635,7 +1635,7 @@ test.describe("Model table capabilities and ID badge", () => {
     await page.locator("#add-model-btn").click();
     const dialog = page.locator("dialog.provider-dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator(".form-model-cols span")).toHaveText(["Model ID", "Display name", "Vision", ""]);
+    await expect(dialog.locator(".form-model-cols span")).toHaveText(["Model ID", "Display name", "Vision", "", ""]);
     await expect(dialog.locator(".vision-check").first()).toHaveText("Vision");
     await expect(dialog.locator("input.form-model-vision").first()).toHaveAttribute("aria-label", "Vision");
     await dialog.locator(".cancel-btn").click();

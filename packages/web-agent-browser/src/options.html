@@ -359,13 +359,28 @@
   .section-head label { margin: 0; }
   .section-head .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   .header-row { display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px; align-items: center; margin-top: 6px; }
-  .form-model-cols { display: grid; grid-template-columns: 1fr 1fr 76px 36px; gap: 8px; font-size: 12px; opacity: 0.82; margin-top: 6px; }
+  .form-model-cols { display: grid; grid-template-columns: 1fr 1fr 76px 36px 36px; gap: 8px; font-size: 12px; opacity: 0.82; margin-top: 6px; }
   .form-model-id { font-family: ui-monospace, monospace; }
-  .form-model-row { display: grid; grid-template-columns: 1fr 1fr 76px 36px; gap: 8px; align-items: center; margin-top: 6px; }
-  .remove-model-btn, .remove-header-btn {
+  .form-model-row { display: grid; grid-template-columns: 1fr 1fr 76px 36px 36px; gap: 8px; align-items: center; margin-top: 6px; }
+  .remove-model-btn, .remove-header-btn, .test-model-btn {
     width: 36px; height: 36px; box-sizing: border-box; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
   }
+  /* 138/001 — the per-row Test button and its result line. The line starts
+     with ✓ or ✗ and says what happened in words, so the colour only repeats
+     the meaning. Every colour is a theme token. */
+  .test-model-btn svg.logo { width: 18px; height: 18px; flex: none; }
+  .test-spinner {
+    width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%;
+    border: 2px solid var(--wa-border-color); border-top-color: var(--wa-action-color-info);
+    animation: test-spin 1s linear infinite;
+  }
+  @keyframes test-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .test-spinner { animation: none; } }
+  .form-model-result { grid-column: 1 / -1; margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+  .form-model-result[hidden] { display: none; }
+  .form-model-result.ok { color: var(--wa-action-color-success); }
+  .form-model-result.fail { color: var(--wa-action-color-error); }
   .vision-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; font-size: 13px; cursor: pointer; }
   .vision-check input { width: auto; padding: 0; margin: 0; }
   .diff-dialog { max-width: min(520px, calc(100vw - 48px)); width: 100%; }

@@ -342,3 +342,239 @@ describe("openProviderDialog", () => {
     q<HTMLButtonElement>(".cancel-btn").click();
   });
 });
+
+describe("Test button (138/001)", () => {
+  function setVal(input: HTMLInputElement, val: string): void {
+    input.value = val;
+    input.dispatchEvent(new Event("input"));
+  }
+
+  async function waitForResult(resultEl: HTMLElement): Promise<void> {
+    for (let i = 0; i < 20; i++) {
+      if (!resultEl.hidden && resultEl.textContent !== "") return;
+      await tick();
+    }
+  }
+
+  it("D1: every row has a test button with svg, empty text, aria-label, 5 cols, correct element order", () => {
+    void openProviderDialog();
+    const rows = document.querySelectorAll(".form-model-row");
+    expect(rows.length).toBeGreaterThan(0);
+    const btn = rows[0].querySelector<HTMLButtonElement>(".test-model-btn")!;
+    expect(btn).not.toBeNull();
+    expect(btn.querySelector("svg path")).not.toBeNull();
+    expect(btn.textContent).toBe("");
+    expect(btn.getAttribute("aria-label")).toBe("Test key and model");
+
+    const cols = document.querySelectorAll(".form-model-cols span");
+    expect(cols).toHaveLength(5);
+
+    const children = Array.from(rows[0].children);
+    expect(children[0].className).toContain("form-model-id");
+    expect(children[1].className).toContain("form-model-label");
+    expect(children[2].className).toContain("vision-check");
+    expect(children[3].className).toContain("test-model-btn");
+    expect(children[4].className).toContain("remove-model-btn");
+    expect(children[5].className).toContain("form-model-result");
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("D2: unsaved values are sent to test request", async () => {
+    const requestPermission = vi.fn().mockResolvedValue(true);
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "x", object: "chat.completion", choices: [{ message: { role: "assistant", content: "OK" } }] }), { status: 200 }),
+    );
+    void openProviderDialog({ requestPermission, fetchImpl });
+    fill("#provider-endpoint", "http://h/v1");
+    fill("#provider-api-key", "new-key");
+    setVal(q<HTMLInputElement>(".form-model-id"), "m1");
+
+    q<HTMLButtonElement>(".add-header-btn").click();
+    const hRows = document.querySelectorAll(".header-row");
+    hRows[0].querySelector<HTMLInputElement>(".header-name")!.value = "X-Team";
+    hRows[0].querySelector<HTMLInputElement>(".header-value")!.value = "web";
+
+    q<HTMLButtonElement>(".add-header-btn").click();
+    const hRows2 = document.querySelectorAll(".header-row");
+    hRows2[1].querySelector<HTMLInputElement>(".header-name")!.value = "";
+    hRows2[1].querySelector<HTMLInputElement>(".header-value")!.value = "ignored";
+
+    q<HTMLButtonElement>(".test-model-btn").click();
+    await waitForResult(q(".form-model-result"));
+
+    expect(requestPermission).toHaveBeenCalledWith("http://h/*");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://h/v1/chat/completions");
+    const h = new Headers((init as RequestInit).headers);
+    expect(h.get("authorization")).toBe("Bearer new-key");
+    expect(h.get("x-team")).toBe("web");
+    expect(q(".form-model-result").textContent).toMatch(/^✓ OK · /);
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("D3: clear rules on row ID edit and form-wide changes", async () => {
+    const requestPermission = vi.fn().mockResolvedValue(true);
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "x", object: "chat.completion", choices: [{ message: { role: "assistant", content: "OK" } }] }), { status: 200 }),
+    );
+    void openProviderDialog({ requestPermission, fetchImpl });
+    fill("#provider-endpoint", "http://h/v1");
+    fill("#provider-api-key", "k");
+
+    q<HTMLButtonElement>(".add-model-row-btn").click();
+    const modelRows = document.querySelectorAll(".form-model-row");
+    setVal(modelRows[0].querySelector<HTMLInputElement>(".form-model-id")!, "m1");
+    setVal(modelRows[1].querySelector<HTMLInputElement>(".form-model-id")!, "m2");
+
+    q<HTMLButtonElement>(".add-header-btn").click();
+    const hRow = document.querySelector(".header-row")!;
+    hRow.querySelector<HTMLInputElement>(".header-name")!.value = "H1";
+    hRow.querySelector<HTMLInputElement>(".header-value")!.value = "V1";
+
+    const runBoth = async (): Promise<void> => {
+      const rows = document.querySelectorAll(".form-model-row");
+      rows[0].querySelector<HTMLButtonElement>(".test-model-btn")!.click();
+      rows[1].querySelector<HTMLButtonElement>(".test-model-btn")!.click();
+      await waitForResult(rows[0].querySelector<HTMLElement>(".form-model-result")!);
+      await waitForResult(rows[1].querySelector<HTMLElement>(".form-model-result")!);
+      expect(rows[0].querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(false);
+      expect(rows[1].querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(false);
+    };
+
+    // ID edit on row 0 clears only row 0
+    await runBoth();
+    const r0 = document.querySelectorAll(".form-model-row")[0];
+    const r1 = document.querySelectorAll(".form-model-row")[1];
+    r0.querySelector<HTMLInputElement>(".form-model-id")!.dispatchEvent(new Event("input"));
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(false);
+
+    // endpoint input clears both
+    await runBoth();
+    q("#provider-endpoint").dispatchEvent(new Event("input"));
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+
+    // api key input clears both
+    await runBoth();
+    q("#provider-api-key").dispatchEvent(new Event("input"));
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+
+    // add header button clears both
+    await runBoth();
+    q<HTMLButtonElement>(".add-header-btn").click();
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+
+    // header value input clears both
+    await runBoth();
+    q<HTMLInputElement>(".header-value").dispatchEvent(new Event("input", { bubbles: true }));
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+
+    // remove header button clears both
+    await runBoth();
+    q<HTMLButtonElement>(".remove-header-btn").click();
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+
+    // format switch clears both
+    await runBoth();
+    const fmt = q<HTMLSelectElement>("#provider-format");
+    fmt.value = "anthropic";
+    fmt.dispatchEvent(new Event("change"));
+    expect(r0.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+    expect(r1.querySelector<HTMLElement>(".form-model-result")!.hidden).toBe(true);
+
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("D4: stale result after input change is dropped", async () => {
+    let resolveFetch!: (res: Response) => void;
+    const fetchImpl = vi.fn(() => new Promise<Response>((r) => { resolveFetch = r; }));
+    const requestPermission = vi.fn().mockResolvedValue(true);
+    void openProviderDialog({ requestPermission, fetchImpl });
+    fill("#provider-endpoint", "http://h/v1");
+    fill("#provider-api-key", "k");
+    setVal(q<HTMLInputElement>(".form-model-id"), "m1");
+
+    q<HTMLButtonElement>(".test-model-btn").click();
+    for (let i = 0; i < 20 && fetchImpl.mock.calls.length === 0; i++) {
+      await tick();
+    }
+
+    fill("#provider-api-key", "new-k");
+    q("#provider-api-key").dispatchEvent(new Event("input"));
+
+    resolveFetch(new Response(JSON.stringify({ id: "x", object: "chat.completion", choices: [{ message: { role: "assistant", content: "OK" } }] }), { status: 200 }));
+    await tick();
+    await tick();
+
+    const result = q<HTMLElement>(".form-model-result");
+    expect(result.hidden).toBe(true);
+    expect(result.textContent).toBe("");
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("D5: Refresh Apply and Provider change rebuild rows with Test buttons", async () => {
+    void openProviderDialog({ showProviderSelect: true });
+    const select = q<HTMLSelectElement>("#provider-select");
+    select.value = "anthropic";
+    select.dispatchEvent(new Event("change"));
+    const presetRows = document.querySelectorAll(".form-model-row");
+    expect(presetRows.length).toBeGreaterThan(0);
+    for (const r of presetRows) {
+      expect(r.querySelector(".test-model-btn")).not.toBeNull();
+    }
+    q<HTMLButtonElement>(".cancel-btn").click();
+
+    const requestPermission = vi.fn().mockResolvedValue(true);
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ data: [{ id: "model-added" }] }), { status: 200 }),
+    );
+    void openProviderDialog({ requestPermission, fetchImpl });
+    fill("#provider-endpoint", "http://localhost:8000/v1");
+    q<HTMLButtonElement>(".refresh-models-btn").click();
+    for (let i = 0; i < 20; i++) {
+      if (document.querySelector(".diff-dialog")) break;
+      await tick();
+    }
+    const applyBtn = document.querySelector<HTMLButtonElement>(".diff-dialog .apply-btn");
+    expect(applyBtn).not.toBeNull();
+    applyBtn!.click();
+    for (let i = 0; i < 20; i++) {
+      if (!document.querySelector(".diff-dialog")) break;
+      await tick();
+    }
+    const refreshedRows = document.querySelectorAll(".form-model-row");
+    expect(refreshedRows.length).toBeGreaterThan(0);
+    for (const r of refreshedRows) {
+      expect(r.querySelector(".test-model-btn")).not.toBeNull();
+    }
+    q<HTMLButtonElement>(".cancel-btn").click();
+  });
+
+  it("D6: a test does not resolve the dialog", async () => {
+    const requestPermission = vi.fn().mockResolvedValue(true);
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "x", object: "chat.completion", choices: [{ message: { role: "assistant", content: "OK" } }] }), { status: 200 }),
+    );
+    let resolved = false;
+    const dialogPromise = openProviderDialog({ requestPermission, fetchImpl });
+    void dialogPromise.then(() => { resolved = true; });
+
+    fill("#provider-endpoint", "http://h/v1");
+    setVal(q<HTMLInputElement>(".form-model-id"), "m1");
+    q<HTMLButtonElement>(".test-model-btn").click();
+    await waitForResult(q(".form-model-result"));
+    expect(q(".form-model-result").textContent).toMatch(/^✓ OK · /);
+
+    await tick();
+    expect(resolved).toBe(false);
+    q<HTMLButtonElement>(".cancel-btn").click();
+    await dialogPromise;
+  });
+});
+

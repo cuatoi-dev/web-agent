@@ -10,6 +10,8 @@ import {
 } from "./provider-builtins";
 import type { BuiltIn } from "./provider-builtins.types";
 import { originPattern } from "./origin";
+import { clearRowResults, mountRowTest } from "./model-test";
+import type { RowTestContext } from "./model-test.types";
 import {
   applyModelsDiff,
   buildCustomProvider,
@@ -66,6 +68,7 @@ function appendHeaderRow(list: HTMLElement, initial: HeaderPair = { name: "", va
 
 function appendModelRow(
   list: HTMLElement,
+  test: RowTestContext,
   initial: ProviderFormModelRow = { model: "", label: "", vision: false },
 ): void {
   const row = el("div", "form-model-row");
@@ -93,7 +96,8 @@ function appendModelRow(
   removeBtn.setAttribute("aria-label", "Remove model");
   removeBtn.addEventListener("click", () => row.remove());
 
-  row.append(idInput, labelInput, visionLabel, removeBtn);
+  const { button: testBtn, result } = mountRowTest(row, idInput, test);
+  row.append(idInput, labelInput, visionLabel, testBtn, removeBtn, result);
   list.append(row);
 }
 
@@ -112,9 +116,9 @@ function readModelRows(list: HTMLElement): ProviderFormModelRow[] {
   }));
 }
 
-function replaceModelRows(list: HTMLElement, rows: ProviderFormModelRow[]): void {
+function replaceModelRows(list: HTMLElement, rows: ProviderFormModelRow[], test: RowTestContext): void {
   list.textContent = "";
-  for (const r of rows) appendModelRow(list, r);
+  for (const r of rows) appendModelRow(list, test, r);
 }
 
 /** Opens the provider modal. Resolves with the saved
@@ -272,6 +276,23 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     }
     addHeaderBtn.addEventListener("click", () => appendHeaderRow(headersList));
 
+    /** The unsaved form values a row's Test sends (138/001). Blank header
+     *  names are dropped, as Refresh from /models does. */
+    const rowTest: RowTestContext = {
+      getProvider: () => ({
+        id: "",
+        kind: "custom",
+        name: nameInput.value,
+        endpoint: endpointInput.value,
+        wireFormat: currentFormat,
+        apiKey: keyInput.value,
+        headers: readHeaderRows(headersList)
+          .map((h) => ({ name: h.name.trim(), value: h.value.trim() }))
+          .filter((h) => h.name !== ""),
+      }),
+      deps: opts,
+    };
+
     const modelsHead = el("div", "section-head");
     const modelsTitle = el("label", "", "Models");
     const modelsActions = el("div", "row");
@@ -289,16 +310,27 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     modelsHead.append(modelsTitle, modelsActions);
 
     const modelCols = el("div", "form-model-cols");
-    modelCols.append(el("span", "", "Model ID"), el("span", "", "Display name"), el("span", "", "Vision"), el("span"));
+    modelCols.append(el("span", "", "Model ID"), el("span", "", "Display name"), el("span", "", "Vision"), el("span"), el("span"));
 
     const modelsList = el("div", "models-list");
     const initialModels = existing ? existing.models : currentDef ? builtInInitialModels(currentDef) : [];
     if (initialModels.length > 0) {
-      for (const m of initialModels) appendModelRow(modelsList, m);
+      for (const m of initialModels) appendModelRow(modelsList, rowTest, m);
     } else {
-      appendModelRow(modelsList);
+      appendModelRow(modelsList, rowTest);
     }
-    addModelRowBtn.addEventListener("click", () => appendModelRow(modelsList));
+    addModelRowBtn.addEventListener("click", () => appendModelRow(modelsList, rowTest));
+
+    // 138/001 — an edit to the endpoint, the key or any header clears every
+    // row's result. A format switch clears them in setFormat.
+    const clearResults = (): void => clearRowResults(modelsList);
+    endpointInput.addEventListener("input", clearResults);
+    keyInput.addEventListener("input", clearResults);
+    headersList.addEventListener("input", clearResults);
+    headersList.addEventListener("click", (e) => {
+      if ((e.target as Element | null)?.closest(".remove-header-btn")) clearResults();
+    });
+    addHeaderBtn.addEventListener("click", clearResults);
 
     const modelsErr = el("p", "field-error provider-models-error");
     modelsErr.setAttribute("role", "alert");
@@ -317,7 +349,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
       endpointErr.hidden = true;
       modelsErr.hidden = true;
       const rows = provider ? builtInInitialModels(provider) : [];
-      replaceModelRows(modelsList, rows.length > 0 ? rows : [{ model: "", label: "", vision: false }]);
+      replaceModelRows(modelsList, rows.length > 0 ? rows : [{ model: "", label: "", vision: false }], rowTest);
       refreshBtn.hidden = currentFormat !== "openai";
       if (provider) {
         for (const h of builtInDefaultHeaders(provider, readHeaderRows(headersList))) {
@@ -335,6 +367,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     /** Applies a format choice: endpoint, pressed state and Refresh. */
     const setFormat = (next: WireFormat): void => {
       if (fixedFormat !== null && next !== fixedFormat) return;
+      clearResults();
       currentFormat = next;
       for (const b of formatButtons) b.setAttribute("aria-pressed", String(b.dataset.format === next));
       if (currentDef) {
@@ -356,7 +389,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
           opts,
         );
         if (diff) {
-          replaceModelRows(modelsList, applyModelsDiff(readModelRows(modelsList), diff));
+          replaceModelRows(modelsList, applyModelsDiff(readModelRows(modelsList), diff), rowTest);
         }
       })();
     });

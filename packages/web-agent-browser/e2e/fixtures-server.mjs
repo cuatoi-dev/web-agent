@@ -8,6 +8,7 @@ const PORT = Number(process.env.FIXTURES_PORT ?? 10040);
 
 /** 136/005 — requests the stub LLM received, per run id. */
 const LLM_LOG = new Map();
+const MTEST_LOG = new Map();
 
 /** Extra response headers for individual fixture pages.
  *
@@ -130,6 +131,59 @@ createServer(async (req, res) => {
               };
           res.writeHead(200, { "content-type": "application/json; charset=utf-8" });
           res.end(JSON.stringify(reply));
+        });
+        return;
+      }
+    }
+    // 138/001 — a stub for the model Test button. The model id picks the
+    // answer; GET /api/mtest/<run>/requests returns what arrived. CORS headers
+    // are sent so the stub works with or without the host permission.
+    const mtest = pathname.match(/^\/api\/mtest\/([A-Za-z0-9-]+)\/(.+)$/);
+    if (mtest) {
+      const [, run, rest] = mtest;
+      if (!MTEST_LOG.has(run)) MTEST_LOG.set(run, []);
+      const log = MTEST_LOG.get(run);
+      const cors = {
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET, POST, OPTIONS",
+        "access-control-allow-headers": req.headers["access-control-request-headers"] ?? "*",
+      };
+      if (req.method === "OPTIONS") { res.writeHead(204, cors); res.end(); return; }
+      if (rest === "requests" && req.method === "GET") {
+        res.writeHead(200, { ...cors, "content-type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(log));
+        return;
+      }
+      const gemini = rest.match(/^gemini\/v1beta\/models\/([^/:]+):generateContent$/);
+      const known = gemini || rest === "openai/v1/chat/completions" || rest === "anthropic/v1/messages";
+      if (req.method === "POST" && known) {
+        let body = "";
+        req.on("data", (chunk) => { body += chunk; });
+        req.on("end", () => {
+          let parsed = null;
+          try { parsed = JSON.parse(body); } catch { parsed = null; }
+          const model = gemini ? decodeURIComponent(gemini[1]) : (parsed && typeof parsed.model === "string" ? parsed.model : "");
+          log.push({ path: rest, model, headers: req.headers, body: parsed });
+          if (model === "hang") return;
+          const json = (status, obj) => {
+            res.writeHead(status, { ...cors, "content-type": "application/json; charset=utf-8" });
+            res.end(JSON.stringify(obj));
+          };
+          const errors = { e401: [401, "bad key"], e403: [403, "forbidden"], e404: [404, "no such model"], e500: [500, "boom"] };
+          if (errors[model]) { json(errors[model][0], { error: { message: errors[model][1] } }); return; }
+          if (model === "e502") {
+            res.writeHead(502, { ...cors, "content-type": "text/html; charset=utf-8" });
+            res.end(`<html><body>${"x".repeat(200)}</body></html>`);
+            return;
+          }
+          const text = model === "okay" ? "Okay, done" : model === "token" ? "token" : "ok.";
+          const reply = gemini
+            ? { candidates: [{ content: { role: "model", parts: [{ text }] }, finishReason: "STOP" }], usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1 } }
+            : rest.startsWith("anthropic/")
+              ? { id: "msg_stub", type: "message", role: "assistant", model, content: [{ type: "text", text }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } }
+              : { id: "chatcmpl-stub", object: "chat.completion", created: 0, model, choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: "stop" }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } };
+          if (model === "slow") { setTimeout(() => json(200, reply), 2000); return; }
+          json(200, reply);
         });
         return;
       }
