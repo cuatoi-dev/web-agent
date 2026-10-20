@@ -109,7 +109,7 @@ local gateway by full URL.
 |---|---|---|---|---|
 | cat-store | `"anthropic"` | `/api/anthropic` | `sonnet` | `apps/cat-store/src/web/agent-panel-config.ts:54-61`, applied at `:181` |
 | docs-site | `"openai"` | `/api/openai/v1` | `sonnet` | `apps/docs-site/src/docs-embed.ts:55-56`, `:160-161` |
-| web-agent-browser | `"anthropic"` | `http://localhost:28780/api/anthropic` | `sonnet` | `packages/web-agent-browser/brand/model.yml:14-19` |
+| web-agent-browser | `"anthropic"` | `http://localhost:30000/api/anthropic` | `sonnet` | `packages/web-agent-browser/brand/model.yml:22-29` |
 
 cat-store's provider switcher offers four entries
 (`apps/cat-store/src/web/agent-panel-config.ts`, the `PROVIDER_ENTRIES` list):

@@ -84,7 +84,7 @@ test.describe("Options page", () => {
       };
     });
     expect(applied).toEqual({
-      path: "http://localhost:28780/api/gemini",
+      path: "http://localhost:30000/api/gemini",
       type: "gemini",
       model: "gemini-flash-lite-latest",
       selectedModel: "brand:gemini-flash",
@@ -1727,7 +1727,7 @@ test.describe("API keys encrypted at rest (138/001)", () => {
     const customMarker = `PROBEMARKER-CUSTOM-${rand}-9182`;
     const brandMarker = `PROBEMARKER-BRAND-${rand}-7364`;
     const brandProvSelector =
-      '#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:28780/api/anthropic"]';
+      '#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:30000/api/anthropic"]';
 
     await fs.rm(profileDir, { recursive: true, force: true });
     try {

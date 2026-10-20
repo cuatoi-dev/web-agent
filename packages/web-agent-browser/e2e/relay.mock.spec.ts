@@ -8,7 +8,7 @@ test.describe("Relay worker key verification", () => {
     const statuses = await worker.evaluate(async () => {
       const brand = await (await fetch(chrome.runtime.getURL("brand.json"))).json();
       const key = brand.models.find((m: { id: string }) => m.id === "openai-sonnet").apiKey as string;
-      const url = "http://localhost:28780/api/openai/v1/models";
+      const url = "http://localhost:30000/api/openai/v1/models";
       const ok = await fetch(url, { headers: { Authorization: `Bearer ${key}` } });
       const wrong = await fetch(url, { headers: { Authorization: "Bearer wrong-key" } });
       return [ok.status, wrong.status];

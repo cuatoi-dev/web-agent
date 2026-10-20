@@ -51,10 +51,10 @@ your server at that path. If the proxy is misconfigured or absent, the LLM
 API calls fail.
 
 **Checks:**
-1. Confirm the proxy is running. The dev server for cat-store proxies `/api`
-   to `http://localhost:28780` (see `apps/cat-store/webpack.config.js:141-147`):
+1. Confirm the proxy is running. The dev server for cat-store proxies
+   `/api/openai` to `http://localhost:30000` (see `apps/cat-store/webpack.config.js:130-135`):
    ```js
-   proxy: [{ context: ["/api"], target: "http://localhost:28780", changeOrigin: true }]
+   proxy: [{ context: ["/api/openai"], target: "http://localhost:30000", changeOrigin: true }]
    ```
 2. If the API is on a different origin, set `path` to the absolute URL. The
    `getAbsoluteBaseURL()` function in `src/transport/provider.ts:41-49`

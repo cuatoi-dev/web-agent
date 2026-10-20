@@ -75,7 +75,7 @@ describe("deriveHosts", () => {
   });
 
   it("the port is omitted from model endpoints so the pattern matches every port", () => {
-    expect(deriveHosts([{ endpoint: "http://localhost:28780/api/anthropic" }], [])).toEqual(["http://localhost/*"]);
+    expect(deriveHosts([{ endpoint: "http://localhost:30000/api/anthropic" }], [])).toEqual(["http://localhost/*"]);
   });
 
   it("three endpoints sharing one origin produces one entry", () => {
@@ -118,14 +118,14 @@ describe("deriveHosts", () => {
   });
 
   it("derived host_permissions entry and originPattern produce the same pattern for the same endpoint", () => {
-    const endpoint = "http://localhost:28780/api/anthropic";
+    const endpoint = "http://localhost:30000/api/anthropic";
     const [derived] = deriveHosts([{ endpoint }], []);
     expect(derived).toBe(originPattern(endpoint));
   });
 
   it("brand hosts preserve explicit ports while model endpoints are portless", () => {
     const result = deriveHosts(
-      [{ endpoint: "http://localhost:28780/api/anthropic" }],
+      [{ endpoint: "http://localhost:30000/api/anthropic" }],
       ["http://localhost:10040/*"],
     );
     expect(result).toEqual([

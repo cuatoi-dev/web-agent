@@ -39,7 +39,7 @@ export function brandProviderId(entry: Pick<PresetEntry, "wireFormat" | "endpoin
 }
 
 /** The first non-empty `provider` in the group, else the endpoint's host and
- *  path without a trailing slash, e.g. "localhost:28780/api/anthropic". */
+ *  path without a trailing slash, e.g. "localhost:30000/api/anthropic". */
 export function brandProviderName(group: PresetEntry[]): string {
   const named = group.find((e) => typeof e.provider === "string" && e.provider.trim() !== "");
   if (named?.provider) return named.provider;

@@ -93,7 +93,7 @@ export const IN_PAGE_SYSTEM_PROMPT =
   "You are an assistant inside the current web page. You operate the current page only and cannot change pages; if the user needs a different page, ask them to switch to it. Keep replies precise, concise, and helpful.";
 
 /** The base of the team gateway, used to build the ready-made entries. */
-export const GATEWAY_BASE = "http://localhost:28780";
+export const GATEWAY_BASE = "http://localhost:30000";
 
 /** A fresh install follows the operating system. User decision, 2026-08-18. */
 export const DEFAULT_THEME: ThemePreference = "auto";

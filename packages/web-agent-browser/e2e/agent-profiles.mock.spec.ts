@@ -226,7 +226,7 @@ test.describe("Agent profiles mock e2e", () => {
         await chrome.storage.local.set({
           modelStore: {
             providers: [],
-            brandKeys: { "brand:anthropic:http://localhost:28780/api/anthropic": "options-secret-key" },
+            brandKeys: { "brand:anthropic:http://localhost:30000/api/anthropic": "options-secret-key" },
             disabled: [],
             defaultModel: "brand:gemini-flash",
           },
@@ -261,7 +261,7 @@ test.describe("Agent profiles mock e2e", () => {
       });
 
       await expect.poll(() => interceptedReq).not.toBeNull();
-      expect(interceptedReq.url).toBe("http://localhost:28780/api/anthropic/v1/messages");
+      expect(interceptedReq.url).toBe("http://localhost:30000/api/anthropic/v1/messages");
       expect(interceptedReq.postData.model).toBe("sonnet");
       expect(interceptedReq.postData.stream).toBe(false);
       expect(interceptedReq.headers["x-api-key"]).toBe("options-secret-key");
@@ -280,7 +280,7 @@ test.describe("Agent profiles mock e2e", () => {
     const textOnlyEntry = {
       id: "test-text-only",
       label: "Text-only",
-      endpoint: "http://localhost:28780/api/anthropic",
+      endpoint: "http://localhost:30000/api/anthropic",
       wireFormat: "anthropic",
       model: "text-only-model",
     };

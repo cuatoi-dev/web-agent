@@ -92,7 +92,7 @@ test.describe("Model store, relay and switchers", () => {
     await openOptions(page, extensionId);
     await page.locator("#tab-btn-models").click();
 
-    const provRow = page.locator('#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:28780/api/anthropic"]');
+    const provRow = page.locator('#model-table tr.prov[data-provider-id="brand:anthropic:http://localhost:30000/api/anthropic"]');
     await expect(provRow.locator(".prov-sub")).toContainText("provided key");
     await provRow.locator(".key-btn").click();
 
@@ -241,7 +241,7 @@ test.describe("Model store, relay and switchers", () => {
 
     await expect.poll(() => openaiRequests.length).toBe(1);
     const req = openaiRequests[0];
-    expect(req.url).toBe("http://localhost:28780/api/openai/v1/chat/completions");
+    expect(req.url).toBe("http://localhost:30000/api/openai/v1/chat/completions");
     expect(req.postData.model).toBe("sonnet");
     const msgsStr = JSON.stringify(req.postData.messages);
     expect(msgsStr).toContain("first question");
@@ -349,8 +349,8 @@ test.describe("Model store, relay and switchers", () => {
     const dir = path.resolve(TEMP_DIR, "vision");
     const brandVision = {
       models: [
-        { id: "text-only", label: "Text only", endpoint: "http://localhost:28780/api/anthropic", wireFormat: "anthropic", model: "text-only-model", vision: false },
-        { id: "seeing", label: "Seeing", endpoint: "http://localhost:28780/api/openai/v1", wireFormat: "openai", model: "sonnet", vision: true },
+        { id: "text-only", label: "Text only", endpoint: "http://localhost:30000/api/anthropic", wireFormat: "anthropic", model: "text-only-model", vision: false },
+        { id: "seeing", label: "Seeing", endpoint: "http://localhost:30000/api/openai/v1", wireFormat: "openai", model: "sonnet", vision: true },
       ],
     };
     await patchedBrand(dir, brandVision);

@@ -9,9 +9,9 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PATCH_DIR_NAME = "brand-models-demo";
 
 const PROOF_MODELS = [
-  { id: "proof-anthropic", label: "Proof Anthropic", endpoint: "http://localhost:28780/api/anthropic", wireFormat: "anthropic", model: "sonnet", vision: true },
-  { id: "proof-openai", label: "Proof OpenAI", endpoint: "http://localhost:28780/api/openai/v1", wireFormat: "openai", model: "sonnet", vision: true },
-  { id: "proof-gemini", label: "Proof Gemini", endpoint: "http://localhost:28780/api/gemini", wireFormat: "gemini", model: "gemini-flash-lite-latest", vision: true },
+  { id: "proof-anthropic", label: "Proof Anthropic", endpoint: "http://localhost:30000/api/anthropic", wireFormat: "anthropic", model: "sonnet", vision: true },
+  { id: "proof-openai", label: "Proof OpenAI", endpoint: "http://localhost:30000/api/openai/v1", wireFormat: "openai", model: "sonnet", vision: true },
+  { id: "proof-gemini", label: "Proof Gemini", endpoint: "http://localhost:30000/api/gemini", wireFormat: "gemini", model: "gemini-flash-lite-latest", vision: true },
 ];
 
 /** Which bundled model.yml entry gives each proof model its key (137/001). */
@@ -63,8 +63,8 @@ test.describe("Brand models — live proof", () => {
     await expect(panel.locator("#chat agent-chat-panel")).toBeAttached();
     const anthropic = await ask(panel, PROMPT_TEXT);
     expect(normalizeBrandReply(anthropic.reply)).toBe("BRAND002");
-    expect(anthropicRequests.some((r) => r.url.startsWith("http://localhost:28780/api/anthropic"))).toBe(true);
-    const anthropicReq = anthropicRequests.find((r) => r.url.startsWith("http://localhost:28780/api/anthropic"));
+    expect(anthropicRequests.some((r) => r.url.startsWith("http://localhost:30000/api/anthropic"))).toBe(true);
+    const anthropicReq = anthropicRequests.find((r) => r.url.startsWith("http://localhost:30000/api/anthropic"));
     expect(anthropicReq).toBeDefined();
     expect(anthropicReq!.names).toContain("x-api-key");
     expect(anthropicReq!.names).not.toContain("x-web-agent-token");
@@ -79,8 +79,8 @@ test.describe("Brand models — live proof", () => {
     await expect(panel.locator("#chat agent-chat-panel")).toBeAttached();
     const openai = await ask(panel, PROMPT_TEXT);
     expect(normalizeBrandReply(openai.reply)).toBe("BRAND002");
-    expect(openaiRequests.some((r) => r.url.startsWith("http://localhost:28780/api/openai/v1"))).toBe(true);
-    const openaiReq = openaiRequests.find((r) => r.url.startsWith("http://localhost:28780/api/openai/v1"));
+    expect(openaiRequests.some((r) => r.url.startsWith("http://localhost:30000/api/openai/v1"))).toBe(true);
+    const openaiReq = openaiRequests.find((r) => r.url.startsWith("http://localhost:30000/api/openai/v1"));
     expect(openaiReq).toBeDefined();
     expect(openaiReq!.names).toContain("authorization");
     expect(openaiReq!.names).not.toContain("x-web-agent-token");
@@ -95,8 +95,8 @@ test.describe("Brand models — live proof", () => {
     await expect(panel.locator("#chat agent-chat-panel")).toBeAttached();
     const gemini = await ask(panel, PROMPT_TEXT);
     expect(normalizeBrandReply(gemini.reply)).toBe("BRAND002");
-    expect(geminiRequests.some((r) => r.url.startsWith("http://localhost:28780/api/gemini"))).toBe(true);
-    const geminiReq = geminiRequests.find((r) => r.url.startsWith("http://localhost:28780/api/gemini"));
+    expect(geminiRequests.some((r) => r.url.startsWith("http://localhost:30000/api/gemini"))).toBe(true);
+    const geminiReq = geminiRequests.find((r) => r.url.startsWith("http://localhost:30000/api/gemini"));
     expect(geminiReq).toBeDefined();
     expect(geminiReq!.names).toContain("x-goog-api-key");
     expect(geminiReq!.names).not.toContain("x-web-agent-token");

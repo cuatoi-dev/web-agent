@@ -1,8 +1,8 @@
 /** Every preset endpoint shares one origin, so one entry covers the fallback.
- *  Mirrors GATEWAY_BASE in src/lib/constants.ts:105 — src/ is TypeScript and a
+ *  Mirrors GATEWAY_BASE in src/lib/constants.ts:96 — src/ is TypeScript and a
  *  CommonJS build script cannot import it. The drift is pinned by
  *  src/lib/manifest-gen.test.ts "the fallback endpoint's host matches PRESET_ENTRIES (drift guard)". */
-const FALLBACK_ENDPOINTS = ["http://localhost:28780/api/anthropic"];
+const FALLBACK_ENDPOINTS = ["http://localhost:30000/api/anthropic"];
 
 /** <all_urls>, or scheme://host/path. The host segment may carry a port —
  *  Chrome's match-pattern grammar is <scheme>://<host>:<port>/<path> and the

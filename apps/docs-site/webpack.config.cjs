@@ -87,15 +87,15 @@ module.exports = {
     static: { directory: path.resolve(__dirname, "dist"), publicPath: "/public/web-agent-docs" },
     devMiddleware: { publicPath: "/public/web-agent-docs/" },
     historyApiFallback: { index: "/public/web-agent-docs/index.html" },
-    // Same method as cat-store: /api/* → the reverse proxy on :28780 (per-provider LLM routes).
+    // Same method as cat-store: the three LLM routes → the reverse proxy on :30000; any other /api path → :28780.
     // 137/001 — each LLM route gets its own auth header; any other /api
     // path is proxied with no header, as before.
     proxy: [
-      { context: ["/api/openai"], target: "http://localhost:28780", changeOrigin: true,
+      { context: ["/api/openai"], target: "http://localhost:30000", changeOrigin: true,
         headers: { Authorization: `Bearer ${GATEWAY_KEY}` } },
-      { context: ["/api/anthropic"], target: "http://localhost:28780", changeOrigin: true,
+      { context: ["/api/anthropic"], target: "http://localhost:30000", changeOrigin: true,
         headers: { "x-api-key": GATEWAY_KEY } },
-      { context: ["/api/gemini"], target: "http://localhost:28780", changeOrigin: true,
+      { context: ["/api/gemini"], target: "http://localhost:30000", changeOrigin: true,
         headers: { "x-goog-api-key": GATEWAY_KEY } },
       { context: ["/api"], target: "http://localhost:28780", changeOrigin: true },
     ],

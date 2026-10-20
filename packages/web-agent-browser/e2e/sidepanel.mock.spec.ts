@@ -298,7 +298,7 @@ test.describe("Side panel mock e2e", () => {
       };
     });
 
-    expect(panelAttrs.path).toBe("http://localhost:28780/api/openai/v1");
+    expect(panelAttrs.path).toBe("http://localhost:30000/api/openai/v1");
     expect(panelAttrs.type).toBe("openai");
     expect(panelAttrs.model).toBe("sonnet");
     expect(panelAttrs.selectedModel).toBe("brand:openai-sonnet");

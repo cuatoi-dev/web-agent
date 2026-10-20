@@ -3,7 +3,7 @@ import { originPattern } from "./origin";
 
 describe("originPattern", () => {
   it("returns a portless https pattern for a URL that carries a port", () => {
-    expect(originPattern("http://localhost:28780/api/openai/v1")).toBe(
+    expect(originPattern("http://localhost:30000/api/openai/v1")).toBe(
       "http://localhost/*",
     );
   });

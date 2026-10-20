@@ -21,7 +21,7 @@
 models:
   - id: anthropic-sonnet
     label: "Sonnet"
-    endpoint: "http://localhost:28780/api/anthropic"
+    endpoint: "http://localhost:30000/api/anthropic"
     wireFormat: anthropic
     model: sonnet
     provider: Gateway
@@ -29,7 +29,7 @@ models:
     vision: true
   - id: openai-sonnet
     label: "Sonnet OpenAI"
-    endpoint: "http://localhost:28780/api/openai/v1"
+    endpoint: "http://localhost:30000/api/openai/v1"
     wireFormat: openai
     model: sonnet
     provider: Gateway
@@ -37,7 +37,7 @@ models:
     vision: true
   - id: gemini-flash
     label: "Gemini Flash"
-    endpoint: "http://localhost:28780/api/gemini"
+    endpoint: "http://localhost:30000/api/gemini"
     wireFormat: gemini
     model: gemini-flash-lite-latest
     provider: Gateway

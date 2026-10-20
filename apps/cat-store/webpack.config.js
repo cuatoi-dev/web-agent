@@ -117,7 +117,7 @@ module.exports = {
     port: 10030,
     open: false,
     // /api/orders, /api/es-orders, /mcp and /genui go to the local Express
-    // server; the LLM proxy paths keep hitting the reverse proxy on :28780
+    // server; the LLM proxy paths keep hitting the reverse proxy on :30000
     // (serves the demo + proxies the LLM providers with injected auth).
     proxy: [
       {
@@ -129,19 +129,19 @@ module.exports = {
       // auth header.
       {
         context: ["/api/openai"],
-        target: "http://localhost:28780",
+        target: "http://localhost:30000",
         changeOrigin: true,
         headers: { Authorization: `Bearer ${GATEWAY_KEY}` },
       },
       {
         context: ["/api/anthropic"],
-        target: "http://localhost:28780",
+        target: "http://localhost:30000",
         changeOrigin: true,
         headers: { "x-api-key": GATEWAY_KEY },
       },
       {
         context: ["/api/gemini"],
-        target: "http://localhost:28780",
+        target: "http://localhost:30000",
         changeOrigin: true,
         headers: { "x-goog-api-key": GATEWAY_KEY },
       },

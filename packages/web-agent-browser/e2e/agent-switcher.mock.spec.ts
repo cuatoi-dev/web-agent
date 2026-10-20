@@ -555,7 +555,7 @@ test.describe("Agent switcher mock e2e", () => {
     // brand/model.yml's anthropic-sonnet entry (External facts table,
     // task 002): model "sonnet" at the shared gateway's anthropic path.
     expect(routed.model).toBe("sonnet");
-    expect(routed.path).toBe("http://localhost:28780/api/anthropic");
+    expect(routed.path).toBe("http://localhost:30000/api/anthropic");
   });
 
   test("a stored edit's tools filter the panel to exactly those two of its own tool providers", async ({ context, extensionId }) => {
