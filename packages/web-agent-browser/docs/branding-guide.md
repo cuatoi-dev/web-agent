@@ -250,13 +250,15 @@ options:
   builtInProviders: true
 ```
 
-With `builtInProviders: true`, **Add model** first shows a grid of eight tiles:
-OpenRouter, Anthropic, OpenAI, xAI, Google AI, DeepSeek, Moonshot (Kimi) and
-Custom. When you select a provider, the form fills in its endpoint and format.
-Anthropic, OpenAI, DeepSeek and Google AI also fill in their current model list
-and each model's Vision value. You can edit the endpoint and model rows, and
-choose among the provider's formats. Only the value `true` shows the grid. Any
-other value, or no value, opens the custom form directly.
+With `builtInProviders: true`, the **Add model** form starts with a
+**Provider** select: OpenRouter, Anthropic, OpenAI, xAI, Google AI, DeepSeek,
+Moonshot (Kimi), OpenCode Go, Ollama Cloud and Custom. When you select a
+provider, the form fills in its endpoint and format. Anthropic, OpenAI, DeepSeek
+and Google AI also fill in their current model list and each model's Vision
+value. OpenCode Go also adds the `x-opencode-session` header, which its API
+requires, with a random value. You can edit the endpoint, the headers and the
+model rows, and choose among the provider's formats. Only the value `true`
+shows the select. Any other value, or no value, opens the custom form directly.
 
 ### Add hosts
 

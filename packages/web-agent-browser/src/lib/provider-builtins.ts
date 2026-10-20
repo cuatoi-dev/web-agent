@@ -1,6 +1,6 @@
 import { ICON_SVGS } from "@cuatoi/web-agent-lit/ui/icon-svgs";
 import { PROVIDER_LOGOS } from "./provider-logos";
-import type { ModelDef, WireFormat } from "./types";
+import type { HeaderPair, ModelDef, WireFormat } from "./types";
 
 import type { BuiltIn } from "./provider-builtins.types";
 
@@ -87,6 +87,24 @@ export const BUILT_IN: BuiltIn[] = [
     formats: [{ wireFormat: "openai", endpoint: "https://api.moonshot.ai/v1" }],
     models: [],
   },
+  {
+    id: "opencode-go",
+    name: "OpenCode Go",
+    formats: [
+      { wireFormat: "openai", endpoint: "https://opencode.ai/zen/go/v1" },
+      { wireFormat: "anthropic", endpoint: "https://opencode.ai/zen/go" },
+    ],
+    models: [],
+    // OpenCode Go answers 400 MissingSessionID without this header. One fixed
+    // value per provider; OpenCode asks for one per conversation.
+    defaultHeaders: () => [{ name: "x-opencode-session", value: crypto.randomUUID() }],
+  },
+  {
+    id: "ollama-cloud",
+    name: "Ollama Cloud",
+    formats: [{ wireFormat: "openai", endpoint: "https://ollama.com/v1" }],
+    models: [],
+  },
 ];
 
 /** The last entry of the Provider select, which is the custom form. */
@@ -107,6 +125,14 @@ export function endpointForFormat(provider: BuiltIn, wireFormat: WireFormat): st
  *  constant. */
 export function builtInInitialModels(provider: BuiltIn): ModelDef[] {
   return provider.models.map((m) => ({ ...m }));
+}
+
+/** The header rows `provider` adds to a new provider's form, minus any whose
+ *  name is already in `current` (case-insensitive), so a switch back and forth
+ *  adds no duplicate. */
+export function builtInDefaultHeaders(provider: BuiltIn, current: HeaderPair[]): HeaderPair[] {
+  const taken = new Set(current.map((h) => h.name.trim().toLowerCase()));
+  return (provider.defaultHeaders?.() ?? []).filter((h) => !taken.has(h.name.toLowerCase()));
 }
 
 /** The logo markup of a built-in provider. A brand provider, or an unknown

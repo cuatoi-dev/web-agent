@@ -1,4 +1,4 @@
-import type { ModelDef, WireFormat } from "./types";
+import type { HeaderPair, ModelDef, WireFormat } from "./types";
 
 /** One wire format a built-in provider accepts, with the endpoint that format
  *  calls. The first entry is the provider's default format. */
@@ -17,4 +17,7 @@ export interface BuiltIn {
   formats: BuiltInFormat[];
   /** The known model list. Empty when the provider has none. */
   models: ModelDef[];
+  /** Header rows the Add model form starts with when this provider is
+   *  chosen. A function, so each new provider gets its own values. */
+  defaultHeaders?: () => HeaderPair[];
 }

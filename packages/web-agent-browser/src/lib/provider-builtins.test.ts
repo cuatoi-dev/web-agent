@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   BUILT_IN,
   builtInById,
+  builtInDefaultHeaders,
   builtInInitialModels,
   endpointForFormat,
   providerIconSvg,
@@ -53,6 +54,22 @@ describe("provider-builtins", () => {
     expect(rows.length).toBeGreaterThan(0);
     rows[0].label = "changed";
     expect(anthropic!.models[0].label).not.toBe("changed");
+  });
+
+  it("gives each new OpenCode Go provider its own session header", () => {
+    const go = builtInById("opencode-go");
+    expect(go).toBeDefined();
+    const first = builtInDefaultHeaders(go!, []);
+    const second = builtInDefaultHeaders(go!, []);
+    expect(first.map((h) => h.name)).toEqual(["x-opencode-session"]);
+    expect(first[0].value).not.toBe("");
+    expect(first[0].value).not.toBe(second[0].value);
+  });
+
+  it("adds no default header whose name the form already has", () => {
+    const go = builtInById("opencode-go");
+    expect(builtInDefaultHeaders(go!, [{ name: "X-OpenCode-Session", value: "mine" }])).toEqual([]);
+    expect(builtInDefaultHeaders(builtInById("ollama-cloud")!, [])).toEqual([]);
   });
 
   it("carries unique model ids with a label and a vision flag", () => {

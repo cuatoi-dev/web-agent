@@ -3,6 +3,7 @@ import {
   BUILT_IN,
   CUSTOM_TILE,
   builtInById,
+  builtInDefaultHeaders,
   builtInInitialModels,
   endpointForFormat,
   providerIconNode,
@@ -266,6 +267,9 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     headersHead.append(headersTitle, addHeaderBtn);
     const headersList = el("div", "headers-list");
     for (const h of existing?.headers ?? []) appendHeaderRow(headersList, h);
+    if (!existing && currentDef) {
+      for (const h of builtInDefaultHeaders(currentDef, [])) appendHeaderRow(headersList, h);
+    }
     addHeaderBtn.addEventListener("click", () => appendHeaderRow(headersList));
 
     const modelsHead = el("div", "section-head");
@@ -301,8 +305,8 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     modelsErr.hidden = true;
 
     /** Applies `providerId`'s preset to Name, Endpoint, Format and the model
-     *  rows. The API key and the custom header rows are never touched, so what
-     *  the user typed survives the switch. */
+     *  rows. The API key and the custom header rows are kept, so what the user
+     *  typed survives the switch; the preset's default headers are added. */
     const applyPreset = (providerId: string): void => {
       currentDef = builtInById(providerId);
       const provider = currentDef;
@@ -315,6 +319,11 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
       const rows = provider ? builtInInitialModels(provider) : [];
       replaceModelRows(modelsList, rows.length > 0 ? rows : [{ model: "", label: "", vision: false }]);
       refreshBtn.hidden = currentFormat !== "openai";
+      if (provider) {
+        for (const h of builtInDefaultHeaders(provider, readHeaderRows(headersList))) {
+          appendHeaderRow(headersList, h);
+        }
+      }
       paintLogo(provider?.id);
     };
 

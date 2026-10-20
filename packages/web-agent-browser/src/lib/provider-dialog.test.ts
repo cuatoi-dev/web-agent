@@ -210,10 +210,10 @@ describe("openProviderDialog", () => {
     void openProviderDialog({ showProviderSelect: true });
     const options = [...document.querySelectorAll<HTMLOptionElement>("#provider-select option")];
     expect(options.map((o) => o.value)).toEqual([
-      "openrouter", "anthropic", "openai", "xai", "google", "deepseek", "moonshot", "custom",
+      "openrouter", "anthropic", "openai", "xai", "google", "deepseek", "moonshot", "opencode-go", "ollama-cloud", "custom",
     ]);
     expect(options.map((o) => o.textContent)).toEqual([
-      "OpenRouter", "Anthropic", "OpenAI", "xAI", "Google AI", "DeepSeek", "Moonshot (Kimi)", "Custom",
+      "OpenRouter", "Anthropic", "OpenAI", "xAI", "Google AI", "DeepSeek", "Moonshot (Kimi)", "OpenCode Go", "Ollama Cloud", "Custom",
     ]);
     const select = q<HTMLSelectElement>("#provider-select");
     expect(select.value).toBe("openrouter");

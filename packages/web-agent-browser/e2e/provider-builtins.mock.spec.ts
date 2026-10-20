@@ -46,7 +46,8 @@ test("B1: one-form Add model starts on OpenRouter and applies Anthropic", async 
     await expect(form).toBeVisible();
     await expect(page.locator("dialog")).toHaveCount(1);
     await expect(select.locator("option")).toHaveText([
-      "OpenRouter", "Anthropic", "OpenAI", "xAI", "Google AI", "DeepSeek", "Moonshot (Kimi)", "Custom",
+      "OpenRouter", "Anthropic", "OpenAI", "xAI", "Google AI", "DeepSeek", "Moonshot (Kimi)", "OpenCode Go",
+      "Ollama Cloud", "Custom",
     ]);
     await expect(select).toHaveValue("openrouter");
     await expect(page.locator("dialog.provider-dialog h2")).toHaveText("Add model");
@@ -60,7 +61,9 @@ test("B1: one-form Add model starts on OpenRouter and applies Anthropic", async 
 
     await select.selectOption("custom");
     const fallback = await page.locator(".prov-select svg.logo").evaluate((e) => e.innerHTML);
-    for (const provider of ["openrouter", "anthropic", "openai", "xai", "google", "deepseek", "moonshot"]) {
+    for (const provider of [
+      "openrouter", "anthropic", "openai", "xai", "google", "deepseek", "moonshot", "opencode-go", "ollama-cloud",
+    ]) {
       await select.selectOption(provider);
       expect(await page.locator(".prov-select svg.logo").evaluate((e) => e.innerHTML)).not.toBe(fallback);
     }
@@ -81,6 +84,38 @@ test("B1: one-form Add model starts on OpenRouter and applies Anthropic", async 
       expect(Math.abs(heights.id - heights.label)).toBeLessThanOrEqual(1);
       await form.screenshot({ path: path.join(ARTIFACTS, `anthropic-form-${colorScheme}.png`) });
     }
+    await page.locator(".cancel-btn").click();
+  } finally { await ctx.close(); }
+});
+
+test("B7: OpenCode Go adds its session header once; Ollama Cloud keeps it", async () => {
+  const { ctx, id } = await launch();
+  try {
+    const page = await ctx.newPage();
+    await openOptions(page, id);
+    await page.locator("#tab-btn-models").click();
+    await page.locator("#add-model-btn").click();
+    const select = page.locator("#provider-select");
+    await expect(page.locator(".header-row")).toHaveCount(0);
+
+    await select.selectOption("opencode-go");
+    await expect(page.locator("#provider-name")).toHaveValue("OpenCode Go");
+    await expect(page.locator("#provider-endpoint")).toHaveValue("https://opencode.ai/zen/go/v1");
+    await expect(page.locator(".header-row")).toHaveCount(1);
+    await expect(page.locator(".header-name")).toHaveValue("x-opencode-session");
+    await expect(page.locator(".header-value")).not.toHaveValue("");
+    const session = await page.locator(".header-value").inputValue();
+    await page.locator('.format-opt[data-format="anthropic"]').click();
+    await expect(page.locator("#provider-endpoint")).toHaveValue("https://opencode.ai/zen/go");
+
+    await select.selectOption("ollama-cloud");
+    await expect(page.locator("#provider-name")).toHaveValue("Ollama Cloud");
+    await expect(page.locator("#provider-endpoint")).toHaveValue("https://ollama.com/v1");
+    await expect(page.locator(".refresh-models-btn")).toBeVisible();
+    await select.selectOption("opencode-go");
+    await expect(page.locator(".header-row")).toHaveCount(1);
+    await expect(page.locator(".header-value")).toHaveValue(session);
+    await page.locator("dialog.provider-dialog").screenshot({ path: path.join(ARTIFACTS, "opencode-go-form.png") });
     await page.locator(".cancel-btn").click();
   } finally { await ctx.close(); }
 });
