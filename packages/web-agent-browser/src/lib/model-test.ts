@@ -203,18 +203,23 @@ export async function runTest(
   getProvider: () => ResolvedProvider,
   modelId: string,
   deps: RunTestDeps = {},
+  onResult?: (line: ResultLine) => void,
 ): Promise<void> {
   const provider = getProvider();
   const origin = originPattern(provider.endpoint);
   if (origin === null) {
-    showResult(resultEl, testResultLine({ ok: false, kind: "network", ms: 0 }));
+    const line = testResultLine({ ok: false, kind: "network", ms: 0 });
+    showResult(resultEl, line);
+    onResult?.(line);
     return;
   }
   const requestPerm =
     deps.requestPermission ?? ((o: string) => chrome.permissions.request({ origins: [o] }));
   const granted = await requestPerm(origin);
   if (!granted) {
-    showResult(resultEl, testResultLine({ ok: false, kind: "denied", ms: 0 }));
+    const line = testResultLine({ ok: false, kind: "denied", ms: 0 });
+    showResult(resultEl, line);
+    onResult?.(line);
     return;
   }
   const gen = ++row.generation;
@@ -229,7 +234,9 @@ export async function runTest(
   button.removeAttribute("aria-busy");
   button.disabled = false;
   if (gen !== row.generation) return;
-  showResult(resultEl, testResultLine(r));
+  const line = testResultLine(r);
+  showResult(resultEl, line);
+  onResult?.(line);
 }
 
 /** Row → its test state and result line, so a form-wide edit can clear every row. */

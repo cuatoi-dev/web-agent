@@ -1,6 +1,7 @@
 import { iconNode } from "@cuatoi/web-agent-lit/ui/icon-svgs";
 import { providerIconNode } from "./provider-builtins";
 import { resolveDefault } from "./model-store";
+import { runTest, showResult } from "./model-test";
 import type { ModelEntry, ModelRef, ModelStore, ModelTableHandlers, ResolvedProvider } from "./types";
 
 export const PROVIDED_LABEL = "Provided";
@@ -122,7 +123,8 @@ export function renderModelTable(
       keyBtn.type = "button";
       keyBtn.dataset.providerId = p.id;
       keyBtn.setAttribute("aria-label", `Key for ${p.name}`);
-      keyBtn.append(icon("key"), document.createTextNode("Key"));
+      keyBtn.title = `Key for ${p.name}`;
+      keyBtn.append(icon("key"));
       keyBtn.addEventListener("click", () => h.onKey(p));
       actions.append(keyBtn);
     } else if (!h.lockModel) {
@@ -130,7 +132,8 @@ export function renderModelTable(
       editBtn.type = "button";
       editBtn.dataset.providerId = p.id;
       editBtn.setAttribute("aria-label", `Edit ${p.name}`);
-      editBtn.textContent = "Edit";
+      editBtn.title = `Edit ${p.name}`;
+      editBtn.append(icon("edit"));
       editBtn.addEventListener("click", () => h.onEdit?.(p.id));
       actions.append(editBtn);
     }
@@ -193,7 +196,24 @@ export function renderModelTable(
         if (radio.checked) h.onDefault(e.ref);
       });
       row.insertCell().append(radio);
-      row.insertCell();
+      const testCell = row.insertCell();
+      testCell.className = "model-test-cell";
+      const testButton = el("button", "btn test-model-btn");
+      testButton.type = "button";
+      testButton.setAttribute("aria-label", "Test key and model");
+      testButton.title = "Test key and model";
+      testButton.append(icon("science"));
+      const testResult = el("span", "table-model-result");
+      showResult(testResult, h.testResults.get(e.ref) ?? null);
+      const testState = { generation: 0 };
+      testButton.addEventListener("click", () => {
+        void runTest(testButton, testResult, testState, () => e.provider, e.model, undefined, (line) => {
+          h.testResults.set(e.ref, line);
+        });
+      });
+      const testActions = el("div", "model-test-actions");
+      testActions.append(testButton, testResult);
+      testCell.append(testActions);
     }
 
     if (provBox && p.kind === "custom") {

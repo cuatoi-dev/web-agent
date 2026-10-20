@@ -381,6 +381,35 @@
   .form-model-result[hidden] { display: none; }
   .form-model-result.ok { color: var(--wa-action-color-success); }
   .form-model-result.fail { color: var(--wa-action-color-error); }
+  /* 138/002 — the Models tab: icon-only Edit, Key and Test, and the inline result. */
+  .model-table .key-btn, .model-table .edit-btn, .model-table .test-model-btn {
+    margin-top: 0;
+    width: calc(var(--wa-icon-size-s) + 2 * var(--wa-padding-m));
+    height: calc(var(--wa-icon-size-s) + 2 * var(--wa-padding-m));
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .model-table .key-btn svg.logo, .model-table .edit-btn svg.logo,
+  .model-table .test-model-btn svg.logo {
+    width: var(--wa-icon-size-s);
+    height: var(--wa-icon-size-s);
+  }
+  .model-test-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--wa-padding-m);
+  }
+  .table-model-result {
+    font-size: var(--wa-font-size-s);
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .table-model-result[hidden] { display: none; }
+  .table-model-result.ok { color: var(--wa-action-color-success); }
+  .table-model-result.fail { color: var(--wa-action-color-error); }
   .vision-check { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; font-size: 13px; cursor: pointer; }
   .vision-check input { width: auto; padding: 0; margin: 0; }
   .diff-dialog { max-width: min(520px, calc(100vw - 48px)); width: 100%; }

@@ -153,9 +153,16 @@ export interface ModelSwitch {
   current(): ModelRef;
 }
 
+/** The line shown under a row: `ok` picks the colour, `text` carries the meaning. */
+export interface ResultLine {
+  ok: boolean;
+  text: string;
+}
+
 /** The callbacks of the options page model table. */
 export interface ModelTableHandlers {
   lockModel: boolean;
+  testResults: Map<ModelRef, ResultLine>;
   selected?: ReadonlySet<ModelRef>;
   onToggle(ref: ModelRef, on: boolean): void;
   onDefault(ref: ModelRef): void;

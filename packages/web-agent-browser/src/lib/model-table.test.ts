@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { renderModelTable, modelCountText, providerSubText, deleteButtonText } from "./model-table";
 import { listModels, EMPTY_MODEL_STORE } from "./model-store";
 import type { AgentBrand, CustomProvider, ModelStore, ResolvedProvider } from "./types";
@@ -43,6 +43,7 @@ describe("model-table", () => {
     const entries = listModels(FIXTURE_BRAND, EMPTY_MODEL_STORE);
     const handlers = {
       lockModel: false,
+      testResults: new Map(),
       onToggle: vi.fn(),
       onDefault: vi.fn(),
       onKey: vi.fn(),
@@ -89,12 +90,10 @@ describe("model-table", () => {
     const keyBtn = firstProv.querySelector(".key-btn") as HTMLButtonElement;
     expect(keyBtn).not.toBeNull();
     expect(keyBtn.querySelector("svg")).not.toBeNull();
-    expect(keyBtn.textContent).toContain("Key");
+    expect(keyBtn.textContent).toBe("");
+    expect(keyBtn.title).toBe(keyBtn.getAttribute("aria-label"));
 
-    const editBtns = Array.from(firstProv.querySelectorAll("button")).filter(
-      (b) => b.textContent?.includes("Edit"),
-    );
-    expect(editBtns.length).toBe(0);
+    expect(firstProv.querySelector(".edit-btn")).toBeNull();
 
     // Model label and id badge, plus Capabilities icons
     const rowA = table.querySelector('tr.model-row[data-ref="brand:a"]') as HTMLTableRowElement;
@@ -147,6 +146,7 @@ describe("model-table", () => {
     const entries = listModels(FIXTURE_BRAND, store);
     const handlers = {
       lockModel: false,
+      testResults: new Map(),
       onToggle: vi.fn(),
       onDefault: vi.fn(),
       onKey: vi.fn(),
@@ -168,6 +168,7 @@ describe("model-table", () => {
     const entries = listModels(FIXTURE_BRAND, store);
     const handlers = {
       lockModel: false,
+      testResults: new Map(),
       onToggle: vi.fn(),
       onDefault: vi.fn(),
       onKey: vi.fn(),
@@ -191,6 +192,7 @@ describe("model-table", () => {
     const entries = listModels(FIXTURE_BRAND, EMPTY_MODEL_STORE);
     const handlers = {
       lockModel: false,
+      testResults: new Map(),
       onToggle: vi.fn(),
       onDefault: vi.fn(),
       onKey: vi.fn(),
@@ -222,6 +224,7 @@ describe("model-table", () => {
     const entries = listModels(FIXTURE_BRAND, EMPTY_MODEL_STORE);
     const handlers = {
       lockModel: true,
+      testResults: new Map(),
       onToggle: vi.fn(),
       onDefault: vi.fn(),
       onKey: vi.fn(),
@@ -293,6 +296,7 @@ function paintCustom(h: Partial<Parameters<typeof renderModelTable>[3]> = {}) {
   const store: ModelStore = { ...EMPTY_MODEL_STORE, providers: [CUSTOM] };
   const handlers = {
     lockModel: false,
+    testResults: new Map(),
     onToggle: vi.fn(),
     onDefault: vi.fn(),
     onKey: vi.fn(),
@@ -409,6 +413,7 @@ describe("custom rows", () => {
     const store: ModelStore = { providers, brandKeys: {}, disabled: [], defaultModel: null };
     renderModelTable(table, listModels({ ...FIXTURE_BRAND, models: [] }, store), store, {
       lockModel: false,
+      testResults: new Map(),
       onToggle: vi.fn(),
       onDefault: vi.fn(),
       onKey: vi.fn(),
@@ -420,5 +425,231 @@ describe("custom rows", () => {
     expect(firstIcon).toContain("<path");
     expect(secondIcon).toContain("<path");
     expect(firstIcon).not.toContain("<title>");
+  });
+});
+
+const okBody = (text: string) => ({
+  id: "x",
+  object: "chat.completion",
+  created: 0,
+  model: "m1",
+  choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: "stop" }],
+  usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+});
+const okResponse = (text = "OK") => new Response(JSON.stringify(okBody(text)), { status: 200 });
+
+function stubNetwork(fetchImpl: ReturnType<typeof vi.fn>) {
+  const request = vi.fn().mockResolvedValue(true);
+  vi.stubGlobal("fetch", fetchImpl);
+  vi.stubGlobal("chrome", { permissions: { request } });
+  return request;
+}
+
+function handlersWith(over: Partial<Parameters<typeof renderModelTable>[3]> = {}) {
+  return {
+    lockModel: false,
+    testResults: new Map(),
+    onToggle: vi.fn(),
+    onDefault: vi.fn(),
+    onKey: vi.fn(),
+    onEdit: vi.fn(),
+    ...over,
+  };
+}
+
+function paint(table: HTMLTableElement, brand: AgentBrand, store: ModelStore, h: ReturnType<typeof handlersWith>) {
+  renderModelTable(table, listModels(brand, store), store, h);
+}
+
+const CUSTOM_STORE: ModelStore = { ...EMPTY_MODEL_STORE, providers: [CUSTOM] };
+const NO_BRAND: AgentBrand = { ...FIXTURE_BRAND, models: [] };
+const tickTable = () => new Promise<void>((r) => setTimeout(r, 0));
+const testBtn = (table: HTMLElement, ref: string) =>
+  table.querySelector<HTMLButtonElement>(`tr.model-row[data-ref="${ref}"] .test-model-btn`)!;
+const resultOf = (table: HTMLElement, ref: string) =>
+  table.querySelector<HTMLElement>(`tr.model-row[data-ref="${ref}"] .table-model-result`)!;
+
+describe("Models tab Test button (138/002)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("U1: every model row has a Test icon button; Key and Edit are icon-only", () => {
+    const table = document.createElement("table");
+    const store: ModelStore = { ...CUSTOM_STORE, disabled: ["brand:b"] };
+    const h = handlersWith();
+    paint(table, FIXTURE_BRAND, store, h);
+
+    const rows = table.querySelectorAll("tr.model-row");
+    expect(rows.length).toBe(5);
+    for (const row of rows) {
+      const btns = row.querySelectorAll<HTMLButtonElement>(".test-model-btn");
+      expect(btns.length).toBe(1);
+      const b = btns[0];
+      expect(b.querySelector("svg path")).not.toBeNull();
+      expect(b.textContent).toBe("");
+      expect(b.getAttribute("aria-label")).toBe("Test key and model");
+      expect(b.title).toBe("Test key and model");
+      expect(b.type).toBe("button");
+      expect(b.disabled).toBe(false);
+      const r = row.querySelector<HTMLElement>(".table-model-result")!;
+      expect(r.hidden).toBe(true);
+      expect(r.textContent).toBe("");
+    }
+    expect(table.querySelectorAll("tr.prov .test-model-btn").length).toBe(0);
+
+    const edit = table.querySelector<HTMLButtonElement>(".edit-btn")!;
+    expect(edit.querySelector("svg path")).not.toBeNull();
+    expect(edit.textContent).toBe("");
+    expect(edit.getAttribute("aria-label")).toBe("Edit Local");
+    expect(edit.title).toBe("Edit Local");
+    edit.click();
+    expect(h.onEdit).toHaveBeenCalledWith("p1");
+
+    const key = table.querySelector<HTMLButtonElement>(".key-btn")!;
+    expect(key.querySelector("svg path")).not.toBeNull();
+    expect(key.textContent).toBe("");
+    expect(key.getAttribute("aria-label")).toMatch(/^Key for /);
+    expect(key.title).toBe(key.getAttribute("aria-label"));
+    key.click();
+    expect(h.onKey).toHaveBeenCalledTimes(1);
+  });
+
+  it("U2: a click tests with the saved provider's key, headers and model", async () => {
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(okResponse()));
+    const request = stubNetwork(fetchImpl);
+    const table = document.createElement("table");
+    const h = handlersWith();
+    paint(table, NO_BRAND, CUSTOM_STORE, h);
+
+    testBtn(table, "p1/m1").click();
+    await vi.waitFor(() => expect(resultOf(table, "p1/m1").textContent).toMatch(/^✓ OK · /));
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith({ origins: ["http://localhost/*"] });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(String(url)).toBe("http://localhost:8000/v1/chat/completions");
+    const headers = new Headers(init.headers);
+    expect(headers.get("authorization")).toBe("Bearer sk-test-9876");
+    expect(headers.get("x-team")).toBe("web");
+    expect((JSON.parse(init.body as string) as { model: string }).model).toBe("m1");
+    expect(resultOf(table, "p1/m1").hidden).toBe(false);
+    expect(resultOf(table, "p1/m1").classList.contains("ok")).toBe(true);
+    expect(h.testResults.get("p1/m1")?.text).toMatch(/^✓ OK · /);
+    expect(resultOf(table, "p1/m2").textContent).toBe("");
+  });
+
+  it("U3: a brand row sends the Key-button key, else the brand default key", async () => {
+    const brand: AgentBrand = {
+      ...FIXTURE_BRAND,
+      models: [{ ...FIXTURE_BRAND.models[0], apiKey: "brand-default" }],
+    };
+    const keys: string[] = [];
+    const fetchImpl = vi.fn().mockImplementation((_u: string, init: RequestInit) => {
+      keys.push(String(new Headers(init.headers).get("x-api-key") ?? new Headers(init.headers).get("authorization")));
+      return Promise.resolve(new Response(JSON.stringify({
+        id: "m", type: "message", role: "assistant", model: "claude-a",
+        content: [{ type: "text", text: "OK" }], stop_reason: "end_turn", stop_sequence: null,
+        usage: { input_tokens: 1, output_tokens: 1 },
+      }), { status: 200 }));
+    });
+    stubNetwork(fetchImpl);
+
+    const table = document.createElement("table");
+    paint(table, brand, EMPTY_MODEL_STORE, handlersWith());
+    testBtn(table, "brand:a").click();
+    await vi.waitFor(() => expect(keys.length).toBe(1));
+    expect(keys[0]).toContain("brand-default");
+
+    const providerId = listModels(brand, EMPTY_MODEL_STORE)[0].provider.id;
+    const withUser: ModelStore = { ...EMPTY_MODEL_STORE, brandKeys: { [providerId]: "user-key" } };
+    const table2 = document.createElement("table");
+    paint(table2, brand, withUser, handlersWith());
+    testBtn(table2, "brand:a").click();
+    await vi.waitFor(() => expect(keys.length).toBe(2));
+    expect(keys[1]).toContain("user-key");
+    expect(keys[1]).not.toContain("brand-default");
+  });
+
+  it("U3b: a brand row with no key is still testable", () => {
+    const table = document.createElement("table");
+    paint(table, FIXTURE_BRAND, EMPTY_MODEL_STORE, handlersWith());
+    const entry = listModels(FIXTURE_BRAND, EMPTY_MODEL_STORE)[0];
+    expect(entry.provider.keySource).toBe("none");
+    expect(testBtn(table, "brand:a").disabled).toBe(false);
+  });
+
+  it("U4: a result is repainted from the shared map, success and failure", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockImplementationOnce(() => Promise.resolve(okResponse()))
+      .mockImplementationOnce(() => Promise.resolve(new Response("no", { status: 401, statusText: "Unauthorized" })));
+    stubNetwork(fetchImpl);
+    const table = document.createElement("table");
+    const h = handlersWith();
+    paint(table, NO_BRAND, CUSTOM_STORE, h);
+
+    testBtn(table, "p1/m1").click();
+    await vi.waitFor(() => expect(h.testResults.has("p1/m1")).toBe(true));
+    testBtn(table, "p1/m2").click();
+    await vi.waitFor(() => expect(h.testResults.has("p1/m2")).toBe(true));
+
+    const again = document.createElement("table");
+    paint(again, NO_BRAND, CUSTOM_STORE, h);
+    expect(resultOf(again, "p1/m1").textContent).toBe(resultOf(table, "p1/m1").textContent);
+    expect(resultOf(again, "p1/m1").classList.contains("ok")).toBe(true);
+    expect(resultOf(again, "p1/m2").textContent).toBe("✗ 401 Unauthorized. Check the API key.");
+    expect(resultOf(again, "p1/m2").classList.contains("fail")).toBe(true);
+
+    const fresh = document.createElement("table");
+    paint(fresh, NO_BRAND, CUSTOM_STORE, handlersWith());
+    expect(resultOf(fresh, "p1/m1").textContent).toBe("");
+  });
+
+  it("U5: a pending test survives a repaint and its result shows at the next one", async () => {
+    let resolveFetch!: (r: Response) => void;
+    const fetchImpl = vi.fn(() => new Promise<Response>((r) => { resolveFetch = r; }));
+    stubNetwork(fetchImpl);
+    const table = document.createElement("table");
+    const h = handlersWith();
+    paint(table, NO_BRAND, CUSTOM_STORE, h);
+
+    const b = testBtn(table, "p1/m1");
+    b.click();
+    await vi.waitFor(() => expect(fetchImpl).toHaveBeenCalledTimes(1));
+    expect(b.disabled).toBe(true);
+    expect(b.getAttribute("aria-busy")).toBe("true");
+    expect(b.querySelector(".test-spinner")).not.toBeNull();
+    expect(table.textContent).not.toContain("Testing…");
+    expect(testBtn(table, "p1/m2").disabled).toBe(false);
+
+    const replacement = document.createElement("table");
+    paint(replacement, NO_BRAND, CUSTOM_STORE, h);
+    expect(testBtn(replacement, "p1/m1").disabled).toBe(false);
+    expect(resultOf(replacement, "p1/m1").textContent).toBe("");
+
+    resolveFetch(okResponse());
+    await vi.waitFor(() => expect(h.testResults.has("p1/m1")).toBe(true));
+    await tickTable();
+    expect(resultOf(replacement, "p1/m1").textContent).toBe("");
+
+    const third = document.createElement("table");
+    paint(third, NO_BRAND, CUSTOM_STORE, h);
+    expect(resultOf(third, "p1/m1").textContent).toMatch(/^✓ OK · /);
+  });
+
+  it("U6: under lockModel brand rows keep Test and Key, and lose Edit and the boxes", () => {
+    const table = document.createElement("table");
+    const h = handlersWith({ lockModel: true });
+    paint(table, FIXTURE_BRAND, CUSTOM_STORE, h);
+
+    expect(table.querySelectorAll("tr.model-row").length).toBe(3);
+    expect(table.querySelectorAll("tr.model-row .test-model-btn").length).toBe(3);
+    expect(table.querySelectorAll(".key-btn").length).toBeGreaterThan(0);
+    expect(table.querySelector(".edit-btn")).toBeNull();
+    expect(table.querySelector('tr[data-provider-id="p1"]')).toBeNull();
+    expect(table.querySelectorAll("input[type=checkbox]:not([role=switch])").length).toBe(0);
+    expect(table.querySelectorAll("input.model-default").length).toBe(3);
   });
 });

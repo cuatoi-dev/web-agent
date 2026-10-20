@@ -432,3 +432,85 @@ describe("mountRowTest", () => {
     expect(button.title).toBe("Enter a model ID first");
   });
 });
+
+describe("runTest onResult (138/002)", () => {
+  const setup = () => {
+    const button = document.createElement("button");
+    const resultEl = document.createElement("p");
+    resultEl.hidden = true;
+    return { button, resultEl, row: { generation: 0 } };
+  };
+
+  it("C1: reports the shown line once for pass and auth failure", async () => {
+    for (const [fetchImpl, cls] of [
+      [ok(openai("OK")), "ok"],
+      [fail(401, "bad", "Unauthorized"), "fail"],
+    ] as const) {
+      const { button, resultEl, row } = setup();
+      const seen: Array<{ text: string; shown: string; cls: boolean; hidden: boolean }> = [];
+      await runTest(button, resultEl, row, () => provider(), "m1",
+        { fetchImpl, requestPermission: vi.fn().mockResolvedValue(true) },
+        (line) => {
+          seen.push({ text: line.text, shown: resultEl.textContent ?? "", cls: resultEl.classList.contains(cls), hidden: resultEl.hidden });
+        });
+      expect(seen.length).toBe(1);
+      expect(seen[0].shown).toBe(seen[0].text);
+      expect(seen[0].cls).toBe(true);
+      expect(seen[0].hidden).toBe(false);
+    }
+  });
+
+  it("C2: reports denied permission and a bad endpoint without calling fetch", async () => {
+    const fetchImpl = vi.fn();
+    const denied = vi.fn();
+    const a = setup();
+    await runTest(a.button, a.resultEl, a.row, () => provider(), "m1",
+      { fetchImpl, requestPermission: vi.fn().mockResolvedValue(false) }, denied);
+    expect(denied).toHaveBeenCalledTimes(1);
+    expect(denied.mock.calls[0][0].text).toBe(a.resultEl.textContent);
+
+    const bad = vi.fn();
+    const b = setup();
+    await runTest(b.button, b.resultEl, b.row, () => provider({ endpoint: "ftp://x" }), "m1",
+      { fetchImpl, requestPermission: vi.fn() }, bad);
+    expect(bad).toHaveBeenCalledTimes(1);
+    expect(bad.mock.calls[0][0].text).toBe(b.resultEl.textContent);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("C3: a stale generation emits nothing; clearing the result emits nothing", async () => {
+    const { button, resultEl, row } = setup();
+    let resolveFetch!: (res: Response) => void;
+    const fetchImpl = vi.fn(() => new Promise<Response>((r) => { resolveFetch = r; }));
+    const onResult = vi.fn();
+    const p = runTest(button, resultEl, row, () => provider(), "m1",
+      { fetchImpl, requestPermission: vi.fn().mockResolvedValue(true) }, onResult);
+    await tick();
+    expect(onResult).not.toHaveBeenCalled();
+    row.generation++;
+    resolveFetch(new Response(JSON.stringify(openai("OK")), { status: 200 }));
+    await p;
+    expect(onResult).not.toHaveBeenCalled();
+    expect(resultEl.textContent).toBe("");
+  });
+
+  it("C4: a detached result element still emits its result", async () => {
+    const { button, resultEl, row } = setup();
+    const host = document.createElement("div");
+    host.append(button, resultEl);
+    document.body.append(host);
+    const onResult = vi.fn();
+    const p = runTest(button, resultEl, row, () => provider(), "m1",
+      { fetchImpl: ok(openai("OK")), requestPermission: vi.fn().mockResolvedValue(true) }, onResult);
+    host.remove();
+    await p;
+    expect(onResult).toHaveBeenCalledTimes(1);
+  });
+
+  it("C5: a call without the callback still completes", async () => {
+    const { button, resultEl, row } = setup();
+    await runTest(button, resultEl, row, () => provider(), "m1",
+      { fetchImpl: ok(openai("OK")), requestPermission: vi.fn().mockResolvedValue(true) });
+    expect(resultEl.textContent).toMatch(/^✓ OK · /);
+  });
+});

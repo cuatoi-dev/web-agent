@@ -25,6 +25,7 @@ import { openProviderDialog } from "./lib/provider-dialog";
 import { openModelDeleteDialog } from "./lib/model-delete-dialog";
 import { deleteDialogMessage, deleteDialogTitle } from "./lib/provider-form-rules";
 import type { AgentBrand, ModelRef, ModelStore } from "./lib/types";
+import type { ResultLine } from "./lib/model-test.types";
 
 const tabGeneral = document.getElementById("tab-btn-general") as HTMLButtonElement;
 const tabModels = document.getElementById("tab-btn-models") as HTMLButtonElement;
@@ -80,6 +81,7 @@ function applyPageTheme(pref: string): void {
 let currentBrand: AgentBrand | null = null;
 let currentModelStore: ModelStore | null = null;
 let selectedRefs = new Set<ModelRef>();
+const testResults = new Map<ModelRef, ResultLine>();
 
 function syncDeleteButton(): void {
   const n = selectedRefs.size;
@@ -102,6 +104,7 @@ function paintModels(brand: AgentBrand, store: ModelStore): void {
   modelCount.textContent = modelCountText(entries);
   renderModelTable(modelTable, entries, store, {
     lockModel: locked,
+    testResults,
     selected: selectedRefs,
     onSelectionChange: (next) => {
       selectedRefs = next;

@@ -1,5 +1,5 @@
 import { test, expect, openOptions, optionsReady } from "./extension.fixture";
-import type { BrowserContext, Locator, Page, Worker } from "@playwright/test";
+import { chromium, type BrowserContext, type Locator, type Page, type Worker } from "@playwright/test";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
@@ -343,5 +343,254 @@ test.describe("Model Test button (138/001)", () => {
     await dialog.locator(".cancel-btn").click();
     const afterCancelStore = await storeSnapshot(w);
     expect(afterCancelStore).toBe(beforeStore);
+  });
+});
+
+// ---- 138/002 — the Models tab ----
+
+const EXT_DIST = path.resolve(HERE, "../dist");
+const SCRATCH = path.resolve(HERE, "../temp/e2e-extensions/model-test-table");
+const OK_LINE = /^✓ OK · (\d+ ms|\d+\.\d s)$/;
+const E401_LINE = "✗ 401 Unauthorized. Check the API key.";
+const SAVED_KEY = "saved-fixture-key";
+
+function customStore() {
+  return {
+    providers: [
+      {
+        id: "p1",
+        name: "Stub",
+        wireFormat: "openai",
+        endpoint: `${BASE}/openai/v1`,
+        apiKey: SAVED_KEY,
+        headers: [{ name: "X-Custom", value: "saved-fixture-header" }],
+        models: ["pass", "e401", "okay", "slow"].map((m) => ({ model: m, label: `M ${m}`, vision: false })),
+      },
+    ],
+    brandKeys: {},
+    disabled: [],
+    defaultModel: "p1/pass",
+  };
+}
+
+async function seed(w: Worker, store: unknown): Promise<void> {
+  await w.evaluate((st) => chrome.storage.local.set({ modelStore: st }), store);
+}
+
+const modelRow = (page: Page, ref: string): Locator => page.locator(`tr.model-row[data-ref="${ref}"]`);
+
+/** A fresh copy of the built extension whose brand has one synthetic model. */
+async function brandCopy(name: string, lockModel: boolean) {
+  await fs.mkdir(SCRATCH, { recursive: true });
+  const dir = await fs.mkdtemp(path.join(SCRATCH, `${name}-`));
+  await fs.cp(EXT_DIST, dir, { recursive: true });
+  const file = path.join(dir, "brand.json");
+  const brand = JSON.parse(await fs.readFile(file, "utf8"));
+  brand.models = [
+    {
+      id: "fixture-brand",
+      label: "Brand pass",
+      endpoint: `${BASE}/openai/v1`,
+      wireFormat: "openai",
+      model: "pass",
+      apiKey: "brand-fixture-key",
+      vision: false,
+      provider: "Fixture brand",
+    },
+  ];
+  brand.options = { ...brand.options, lockModel };
+  await fs.writeFile(file, JSON.stringify(brand));
+  const ctx = await chromium.launchPersistentContext("", {
+    channel: "chromium",
+    args: [`--disable-extensions-except=${dir}`, `--load-extension=${dir}`],
+  });
+  const w = await worker(ctx);
+  return { ctx, w, extensionId: w.url().split("/")[2] };
+}
+
+async function lastAuth(page: Page): Promise<string | undefined> {
+  const reqs = await requests(page);
+  return reqs[reqs.length - 1]?.headers.authorization;
+}
+
+test.describe("Models tab Test button (138/002)", () => {
+  test("T1: saved custom model, results, memory, icon buttons", async ({ context, extensionId }) => {
+    const w = await worker(context);
+    await seed(w, customStore());
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+
+    for (const id of ["pass", "e401", "okay", "slow"]) {
+      const b = modelRow(page, `p1/${id}`).locator(".test-model-btn");
+      await expect(b).toHaveAttribute("aria-label", "Test key and model");
+      await expect(b).toHaveAttribute("title", "Test key and model");
+      await expect(b.locator("svg path")).toHaveCount(1);
+    }
+    await expect(page.locator(".edit-btn")).toHaveAttribute("title", "Edit Stub");
+    expect(await page.locator(".edit-btn").textContent()).toBe("");
+
+    const before = await storeSnapshot(w);
+    const startCount = (await requests(page)).length;
+    await modelRow(page, "p1/pass").locator(".test-model-btn").click();
+    await expect(modelRow(page, "p1/pass").locator(".table-model-result")).toHaveText(OK_LINE);
+    await modelRow(page, "p1/e401").locator(".test-model-btn").click();
+    await expect(modelRow(page, "p1/e401").locator(".table-model-result")).toHaveText(E401_LINE);
+    await modelRow(page, "p1/okay").locator(".test-model-btn").click();
+    await expect(modelRow(page, "p1/okay").locator(".table-model-result")).toHaveText('✗ The reply did not contain OK: "Okay, done…"');
+
+    const reqs = (await requests(page)).slice(startCount);
+    expect(reqs.map((r) => r.model)).toEqual(["pass", "e401", "okay"]);
+    for (const r of reqs) {
+      expect(r.headers.authorization).toBe(`Bearer ${SAVED_KEY}`);
+      expect(r.headers["x-custom"]).toBe("saved-fixture-header");
+    }
+    expect(await storeSnapshot(w)).toBe(before);
+
+    // A repaint (toggle, default) keeps the results.
+    await modelRow(page, "p1/slow").locator(".model-enabled").evaluate((el: HTMLInputElement) => el.click());
+    await expect(modelRow(page, "p1/slow").locator(".model-enabled")).not.toBeChecked();
+    await expect(modelRow(page, "p1/pass").locator(".table-model-result")).toHaveText(OK_LINE);
+    await expect(modelRow(page, "p1/e401").locator(".table-model-result")).toHaveText(E401_LINE);
+    await modelRow(page, "p1/okay").locator(".model-default").check();
+    await expect(modelRow(page, "p1/okay").locator(".model-default")).toBeChecked();
+    await expect(modelRow(page, "p1/pass").locator(".table-model-result")).toHaveText(OK_LINE);
+
+    // The Edit icon opens the provider dialog; cancel writes nothing.
+    const mid = await storeSnapshot(w);
+    await page.getByRole("button", { name: "Edit Stub" }).click();
+    const dialog = page.locator("dialog.provider-dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.locator(".cancel-btn").click();
+    await expect(dialog).toBeHidden();
+    expect(await storeSnapshot(w)).toBe(mid);
+
+    // A reload starts with no results.
+    await page.reload();
+    await optionsReady(page);
+    await page.locator("#tab-btn-models").click();
+    for (const id of ["pass", "e401", "okay"]) {
+      await expect(modelRow(page, `p1/${id}`).locator(".table-model-result")).toBeHidden();
+      await expect(modelRow(page, `p1/${id}`).locator(".table-model-result")).toHaveText("");
+    }
+  });
+
+  test("T2: a pending test survives a repaint", async ({ context, extensionId }) => {
+    const w = await worker(context);
+    await seed(w, customStore());
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openOptions(page, extensionId);
+    await page.locator("#tab-btn-models").click();
+
+    const reply = page.waitForResponse((r) => r.url().startsWith(`${BASE}/openai/v1/chat/completions`) && r.request().postData()?.includes('"slow"') === true);
+    const btn = modelRow(page, "p1/slow").locator(".test-model-btn");
+    await btn.click();
+    await expect(btn).toBeDisabled();
+    await expect(btn).toHaveAttribute("aria-busy", "true");
+    await expect(btn).toHaveAttribute("aria-label", "Testing key and model");
+    await expect(btn.locator(".test-spinner")).toHaveCount(1);
+    await expect(btn.locator("svg")).toHaveCount(0);
+    await expect(page.getByText("Testing…")).toHaveCount(0);
+    await page.screenshot({ path: path.join(ARTIFACTS, "models-running.png") });
+
+    await modelRow(page, "p1/pass").locator(".model-enabled").evaluate((el: HTMLInputElement) => el.click());
+    await expect(modelRow(page, "p1/pass").locator(".model-enabled")).not.toBeChecked();
+    await expect(modelRow(page, "p1/slow").locator(".test-model-btn")).toBeEnabled();
+
+    await (await reply).finished();
+    await modelRow(page, "p1/e401").locator(".model-default").check();
+    await expect(modelRow(page, "p1/e401").locator(".model-default")).toBeChecked();
+    await expect(modelRow(page, "p1/slow").locator(".table-model-result")).toHaveText(/^✓ OK/);
+  });
+
+  test("T3: brand key precedence, and lockModel", async () => {
+    await fs.mkdir(ARTIFACTS, { recursive: true });
+    const open = await brandCopy("brand-open", false);
+    try {
+      const page = await open.ctx.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await openOptions(page, open.extensionId);
+      await page.locator("#tab-btn-models").click();
+      const test = modelRow(page, "brand:fixture-brand").locator(".test-model-btn");
+
+      const before = await storeSnapshot(open.w);
+      await test.click();
+      await expect(modelRow(page, "brand:fixture-brand").locator(".table-model-result")).toHaveText(OK_LINE);
+      expect(await lastAuth(page)).toBe("Bearer brand-fixture-key");
+      expect(await storeSnapshot(open.w)).toBe(before);
+
+      const keyBtn = page.getByRole("button", { name: "Key for Fixture brand" });
+      await expect(keyBtn).toHaveAttribute("title", "Key for Fixture brand");
+      await keyBtn.click();
+      const dlg = page.locator("#brand-key-dialog");
+      await dlg.locator("input").fill("override-fixture-key");
+      await dlg.locator(".dialog-save-btn").click();
+      await expect(dlg).toBeHidden();
+      await expect.poll(() => storeSnapshot(open.w)).toContain("enc:v1:");
+      const withKey = await storeSnapshot(open.w);
+      await test.click();
+      await expect.poll(() => lastAuth(page)).toBe("Bearer override-fixture-key");
+      expect(await storeSnapshot(open.w)).toBe(withKey);
+
+      await keyBtn.click();
+      await dlg.locator("input").fill("");
+      await dlg.locator(".dialog-save-btn").click();
+      await expect(dlg).toBeHidden();
+      await test.click();
+      await expect.poll(() => lastAuth(page)).toBe("Bearer brand-fixture-key");
+    } finally {
+      await open.ctx.close();
+    }
+
+    const locked = await brandCopy("brand-lock", true);
+    try {
+      await seed(locked.w, customStore());
+      const page = await locked.ctx.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await openOptions(page, locked.extensionId);
+      await page.locator("#tab-btn-models").click();
+      await expect(page.locator("tr.model-row")).toHaveCount(1);
+      await expect(page.locator('tr[data-provider-id="p1"]')).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Key for Fixture brand" })).toBeVisible();
+      await expect(page.locator(".edit-btn")).toHaveCount(0);
+      await expect(page.locator("input.prov-select, input.model-select")).toHaveCount(0);
+      await expect(page.locator("#model-toolbar-actions")).toBeHidden();
+      await expect(page.locator(".model-enabled")).toBeEnabled();
+      await expect(page.locator(".model-default")).toHaveCount(1);
+      const t = modelRow(page, "brand:fixture-brand").locator(".test-model-btn");
+      await t.click();
+      await expect(modelRow(page, "brand:fixture-brand").locator(".table-model-result")).toHaveText(OK_LINE);
+      await page.screenshot({ path: path.join(ARTIFACTS, "models-lock.png") });
+    } finally {
+      await locked.ctx.close();
+    }
+  });
+
+  test("T4: light and dark screenshots with a pass and a failure line", async () => {
+    await fs.mkdir(ARTIFACTS, { recursive: true });
+    const c = await brandCopy("brand-visual", false);
+    try {
+      await seed(c.w, customStore());
+      const page = await c.ctx.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await openOptions(page, c.extensionId);
+      await page.locator("#tab-btn-models").click();
+      await modelRow(page, "brand:fixture-brand").locator(".test-model-btn").click();
+      await expect(modelRow(page, "brand:fixture-brand").locator(".table-model-result")).toHaveText(OK_LINE);
+      await modelRow(page, "p1/e401").locator(".test-model-btn").click();
+      await expect(modelRow(page, "p1/e401").locator(".table-model-result")).toHaveText(E401_LINE);
+
+      await page.emulateMedia({ colorScheme: "light" });
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await page.screenshot({ path: path.join(ARTIFACTS, "models-light.png"), fullPage: true });
+      await page.emulateMedia({ colorScheme: "dark" });
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "wa2-dark");
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await page.screenshot({ path: path.join(ARTIFACTS, "models-dark.png"), fullPage: true });
+    } finally {
+      await c.ctx.close();
+    }
   });
 });

@@ -18,11 +18,7 @@ export interface TestResult {
   reply?: string;
 }
 
-/** The line shown under a row: `ok` picks the colour, `text` carries the meaning. */
-export interface ResultLine {
-  ok: boolean;
-  text: string;
-}
+export type { ResultLine } from "./model-store.types";
 
 /** Injected for unit tests. Defaults: the global fetch and performance.now(). */
 export interface ModelTestDeps {
