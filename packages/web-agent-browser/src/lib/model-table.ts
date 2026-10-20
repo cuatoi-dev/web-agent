@@ -9,6 +9,12 @@ export const BRAND_CHECKBOX_TITLE = "Brand models cannot be deleted";
 export const PROVIDED_KEY_TEXT = "provided key";
 export const NO_KEY_TEXT = "no key";
 
+/** The entries the Models tab shows: only brand entries when `lockModel` is
+ *  true, every entry otherwise. */
+export function visibleEntries(entries: ModelEntry[], lockModel?: boolean): ModelEntry[] {
+  return lockModel ? entries.filter((e) => e.kind === "brand") : entries;
+}
+
 /** "Enabled N/M". */
 export function modelCountText(entries: ModelEntry[]): string {
   const on = entries.filter((e) => e.enabled).length;
@@ -78,8 +84,7 @@ export function renderModelTable(
   const body = table.createTBody();
   const defaultRef = resolveDefault(entries, store)?.ref ?? null;
   const groups = new Map<string, ModelEntry[]>();
-  for (const e of entries) {
-    if (h.lockModel && e.kind !== "brand") continue;
+  for (const e of visibleEntries(entries, h.lockModel)) {
     const group = groups.get(e.provider.id);
     if (group) group.push(e);
     else groups.set(e.provider.id, [e]);

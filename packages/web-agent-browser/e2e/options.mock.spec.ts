@@ -397,6 +397,9 @@ const EXT = path.resolve(HERE, "../dist");
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/options");
 const TWO_MODELS = path.resolve(TEMP_DIR, "two-models");
 const LOCKED = path.resolve(TEMP_DIR, "lock-model");
+const LOCKED_ONE = path.resolve(TEMP_DIR, "lock-one-model");
+const ARTIFACTS_LOCK_COUNT =
+  process.env.E2E_ARTIFACTS_DIR ?? path.resolve(HERE, "../temp/e2e-artifacts/lock-model-count");
 
 const TWO_ENTRIES = [
   { id: "acme-sonnet", label: "Acme Assistant", endpoint: "http://localhost:10040/api/anthropic", wireFormat: "anthropic", model: "sonnet", vision: false },
@@ -510,10 +513,61 @@ test.describe("Brand model list", () => {
       for (let i = 0; i < 3; i++) {
         await expect(page.locator("#model-table input.model-enabled").nth(i)).toBeEnabled();
       }
+      await expect(page.locator("#model-table tr.model-row")).toHaveCount(3);
+      await expect(page.locator("#model-count")).toHaveText("Enabled 3/3");
       await page.click('#model-table tr.model-row[data-ref="brand:openai-sonnet"] input.model-enabled');
       await expect(page.locator("#model-count")).toHaveText("Enabled 2/3");
     } finally {
       await ctx.close();
+    }
+
+    const oneDir = await patchedBrand(LOCKED_ONE, {
+      models: [TWO_ENTRIES[0]],
+      options: { lockModel: true },
+    });
+    const oneCtx = await launchExtensionContext(oneDir);
+    try {
+      let [worker] = oneCtx.serviceWorkers();
+      if (!worker) worker = await oneCtx.waitForEvent("serviceworker");
+      await worker.evaluate(async () => {
+        await chrome.storage.local.set({
+          modelStore: {
+            providers: [
+              {
+                id: "p1",
+                name: "Local",
+                wireFormat: "openai",
+                endpoint: "http://localhost:10040/v1",
+                apiKey: "",
+                headers: [],
+                models: [
+                  { model: "m1", label: "M1", vision: false },
+                  { model: "m2", label: "M2", vision: false },
+                  { model: "m3", label: "M3", vision: false },
+                  { model: "m4", label: "M4", vision: false },
+                ],
+              },
+            ],
+            brandKeys: {},
+            disabled: [],
+            defaultModel: null,
+          },
+        });
+      });
+      const id = worker.url().split("/")[2];
+      const page = await oneCtx.newPage();
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await openOptions(page, id);
+      await page.locator("#tab-btn-models").click();
+      await expect(page.locator("#model-table tr.model-row")).toHaveCount(1);
+      await expect(page.locator("#model-count")).toHaveText("Enabled 1/1");
+      await fs.mkdir(ARTIFACTS_LOCK_COUNT, { recursive: true });
+      await page.screenshot({ path: path.join(ARTIFACTS_LOCK_COUNT, "models-lock-1-of-1.png"), fullPage: true });
+      await page.click('#model-table tr.model-row[data-ref="brand:acme-sonnet"] input.model-enabled');
+      await expect(page.locator("#model-count")).toHaveText("Enabled 0/1");
+      await page.screenshot({ path: path.join(ARTIFACTS_LOCK_COUNT, "models-lock-0-of-1.png"), fullPage: true });
+    } finally {
+      await oneCtx.close();
     }
   });
 

@@ -552,6 +552,7 @@ test.describe("Models tab Test button (138/002)", () => {
       await openOptions(page, locked.extensionId);
       await page.locator("#tab-btn-models").click();
       await expect(page.locator("tr.model-row")).toHaveCount(1);
+      await expect(page.locator("#model-count")).toHaveText("Enabled 1/1");
       await expect(page.locator('tr[data-provider-id="p1"]')).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Key for Fixture brand" })).toBeVisible();
       await expect(page.locator(".edit-btn")).toHaveCount(0);

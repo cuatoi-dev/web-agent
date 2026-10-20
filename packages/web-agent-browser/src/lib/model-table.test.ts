@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { renderModelTable, modelCountText, providerSubText, deleteButtonText } from "./model-table";
+import { renderModelTable, modelCountText, providerSubText, deleteButtonText, visibleEntries } from "./model-table";
 import { listModels, EMPTY_MODEL_STORE } from "./model-store";
 import type { AgentBrand, CustomProvider, ModelStore, ResolvedProvider } from "./types";
 
@@ -275,6 +275,60 @@ describe("model-table", () => {
 
     expect(modelCountText(copy)).toBe("Enabled 2/3");
     expect(modelCountText(entries)).toBe("Enabled 3/3");
+  });
+
+  it("visibleEntries returns all entries when unlocked and only brand entries when locked", () => {
+    const oneBrand: AgentBrand = {
+      ...FIXTURE_BRAND,
+      models: [FIXTURE_BRAND.models[0]],
+    };
+    const fourCustomStore: ModelStore = {
+      ...EMPTY_MODEL_STORE,
+      providers: [
+        {
+          id: "p1",
+          name: "Local",
+          wireFormat: "openai",
+          endpoint: "http://localhost:10040/v1",
+          apiKey: "",
+          headers: [],
+          models: [
+            { model: "m1", label: "M1", vision: false },
+            { model: "m2", label: "M2", vision: false },
+            { model: "m3", label: "M3", vision: false },
+            { model: "m4", label: "M4", vision: false },
+          ],
+        },
+      ],
+    };
+    const entries = listModels(oneBrand, fourCustomStore);
+    expect(entries).toHaveLength(5);
+
+    expect(visibleEntries(entries, false).map((e) => e.ref)).toEqual([
+      "brand:a",
+      "p1/m1",
+      "p1/m2",
+      "p1/m3",
+      "p1/m4",
+    ]);
+    expect(visibleEntries(entries).map((e) => e.ref)).toEqual([
+      "brand:a",
+      "p1/m1",
+      "p1/m2",
+      "p1/m3",
+      "p1/m4",
+    ]);
+    expect(modelCountText(visibleEntries(entries, false))).toBe("Enabled 5/5");
+
+    const lockedVisible = visibleEntries(entries, true);
+    expect(lockedVisible.map((e) => e.ref)).toEqual(["brand:a"]);
+    expect(modelCountText(lockedVisible)).toBe("Enabled 1/1");
+
+    const disabledBrandEntries = listModels(oneBrand, {
+      ...fourCustomStore,
+      disabled: ["brand:a"],
+    });
+    expect(modelCountText(visibleEntries(disabledBrandEntries, true))).toBe("Enabled 0/1");
   });
 });
 

@@ -19,7 +19,7 @@ import {
   setEnabled,
   writeModelStore,
 } from "./lib/model-store";
-import { deleteButtonText, modelCountText, renderModelTable } from "./lib/model-table";
+import { deleteButtonText, modelCountText, renderModelTable, visibleEntries } from "./lib/model-table";
 import { openBrandKeyDialog } from "./lib/brand-key-dialog";
 import { openProviderDialog } from "./lib/provider-dialog";
 import { openModelDeleteDialog } from "./lib/model-delete-dialog";
@@ -101,7 +101,7 @@ function paintModels(brand: AgentBrand, store: ModelStore): void {
   const validCustomRefs = new Set(entries.filter((e) => e.kind === "custom").map((e) => e.ref));
   selectedRefs = new Set([...selectedRefs].filter((r) => validCustomRefs.has(r)));
   syncDeleteButton();
-  modelCount.textContent = modelCountText(entries);
+  modelCount.textContent = modelCountText(visibleEntries(entries, locked));
   renderModelTable(modelTable, entries, store, {
     lockModel: locked,
     testResults,
