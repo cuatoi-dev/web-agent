@@ -2,50 +2,22 @@ import { Component } from "../ui/component.js";
 import { html } from "../ui/template.js";
 import type { TodoItem } from "@cuatoi/web-agent-core";
 
-export class AgentTodoIndicator extends Component {
-  private _items: TodoItem[] = [];
-  get items() { return this._items; }
-  set items(val: TodoItem[]) {
-    this._items = Array.isArray(val) ? val : [];
-    this.requestUpdate();
+function sameTodoItems(a: TodoItem[], b: TodoItem[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].id !== b[i].id || a[i].status !== b[i].status || a[i].text !== b[i].text) {
+      return false;
+    }
   }
+  return true;
+}
 
-  private _open = false;
-
-  private _setOpen(next: boolean) {
-    if (this._open === next) return;
-    this._open = next;
-    this.requestUpdate();
-  }
-
-  /** The popover's ceiling is HALF THE PANEL's height, not half the viewport
-   *  and not 50% of its own containing block — the containing block here is the
-   *  40px indicator, so a plain `max-height: 50%` would resolve to 20px. It is
-   *  therefore measured from the panel on every render. With no panel ancestor
-   *  (the gallery mounts the element directly in some tiles) it falls back to
-   *  50vh, which is the same intent against the only box that exists. */
-  updated() {
-    const pop = this.querySelector<HTMLElement>(".todo-pop");
-    if (!pop) return;
-    const panel = this.closest("agent-chat-panel");
-    const h = panel?.getBoundingClientRect().height ?? 0;
-    pop.style.maxHeight = h > 0 ? `${Math.round(h * 0.5)}px` : "50vh";
-  }
-
-  template() {
-    const items = this._items;
-    const total = items.length;
-    const remaining = items.filter((i) => i.status !== "done").length;
-    const doneCount = total - remaining;
-    const allDone = total > 0 && remaining === 0;
-
-    const label = allDone
-      ? `Todo list: all ${total} done`
-      : `Todo list: ${doneCount} of ${total} done, ${remaining} remaining`;
-
-    return html`
-      <style>
-        agent-todo-indicator {
+/** The indicator's own rules. The panel concatenates this into its single
+ *  `<style>` block, so no extra stylesheet is parsed inside the panel's shadow
+ *  root when the indicator mounts. Mounted on its own, it still renders the
+ *  block itself. */
+export const TODO_INDICATOR_CSS = `        agent-todo-indicator {
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -207,7 +179,55 @@ export class AgentTodoIndicator extends Component {
           border-bottom: 1.6px solid var(--wa-dropdown-background-color, #ffffff);
           transform: rotate(-45deg);
         }
-      </style>
+`;
+
+export class AgentTodoIndicator extends Component {
+  private _items: TodoItem[] = [];
+  get items() { return this._items; }
+  set items(val: TodoItem[]) {
+    const next = Array.isArray(val) ? val : [];
+    // The panel re-reads a fresh clone of the list on every render. Assigning
+    // the same content again must not schedule another render.
+    if (sameTodoItems(this._items, next)) return;
+    this._items = next;
+    this.requestUpdate();
+  }
+
+  private _open = false;
+
+  private _setOpen(next: boolean) {
+    if (this._open === next) return;
+    this._open = next;
+    this.requestUpdate();
+  }
+
+  /** The popover's ceiling is HALF THE PANEL's height, not half the viewport
+   *  and not 50% of its own containing block — the containing block here is the
+   *  40px indicator, so a plain `max-height: 50%` would resolve to 20px. It is
+   *  therefore measured from the panel on every render. With no panel ancestor
+   *  (the gallery mounts the element directly in some tiles) it falls back to
+   *  50vh, which is the same intent against the only box that exists. */
+  updated() {
+    const pop = this.querySelector<HTMLElement>(".todo-pop");
+    if (!pop) return;
+    const panel = this.closest("agent-chat-panel");
+    const h = panel?.getBoundingClientRect().height ?? 0;
+    pop.style.maxHeight = h > 0 ? `${Math.round(h * 0.5)}px` : "50vh";
+  }
+
+  template() {
+    const items = this._items;
+    const total = items.length;
+    const remaining = items.filter((i) => i.status !== "done").length;
+    const doneCount = total - remaining;
+    const allDone = total > 0 && remaining === 0;
+
+    const label = allDone
+      ? `Todo list: all ${total} done`
+      : `Todo list: ${doneCount} of ${total} done, ${remaining} remaining`;
+
+    return html`
+      ${this.closest("agent-chat-panel") ? "" : html`<style>${TODO_INDICATOR_CSS}</style>`}
       <div
         class="todo-wrapper"
         tabindex="0"

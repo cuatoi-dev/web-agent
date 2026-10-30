@@ -75,6 +75,11 @@ export const ACME_PANEL_MD_STYLES = `
       --md-menu-item-selected-container-color: var(--wa-dropdown-item-background-color-selected, #1a73e8);
       --md-menu-item-selected-label-text-color: var(--wa-dropdown-item-text-color-selected, #ffffff);
     }
+    /* The ripple is suppressed on menu rows (acme-fields.ts), so the hover
+       background comes from CSS instead of the ripple's state layer. */
+    agent-chat-panel md-menu-item:not([disabled]):hover {
+      --md-menu-item-container-color: var(--wa-dropdown-item-background-color-hover, transparent);
+    }
     /* "Choose model" is a disabled group header (chat-panel.ts:172). Material
        dims disabled items to opacity 0.3 and exposes no disabled label colour,
        so undim it and set the label colour on the [disabled] attribute instead

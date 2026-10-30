@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   clampPanelSize,
   resizeFromGrip,
@@ -136,6 +136,22 @@ describe("enablePanelResize (002)", () => {
     enablePanelResize(bubble);
     expect(bubble.shadowRoot!.querySelector(".wa-resize-grip")).not.toBeNull();
     expect(bubble.querySelector(".wa-resize-grip")).toBeNull();
+    bubble.remove();
+  });
+
+  /** The grip is anchored to the box's top-left corner in CSS, so opening,
+   *  resizing and dragging read no layout. Before this, every open forced a
+   *  full-panel layout from the MutationObserver microtask. */
+  it("reads no layout when the panel opens and closes", async () => {
+    const bubble = stubBubble();
+    const container = bubble.shadowRoot!.querySelector<HTMLElement>("#panel-container")!;
+    const rect = vi.spyOn(container, "getBoundingClientRect");
+    enablePanelResize(bubble);
+    container.style.display = "flex";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    container.style.display = "none";
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(rect).not.toHaveBeenCalled();
     bubble.remove();
   });
 

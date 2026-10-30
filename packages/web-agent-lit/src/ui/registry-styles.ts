@@ -168,22 +168,28 @@ export const REGISTRY_STYLES = `
   height: 4px;
 }
 
+/* No CSS animation here: a running @keyframes makes Blink tick
+   DocumentAnimations on the main thread on every 60 Hz frame for the whole
+   length of a turn. <wa-working-dots> drives the same fade and pulse from a
+   timer instead (ui/wa-elements.ts). The @keyframes below stay defined so the
+   stylesheet text keeps its keyframes. */
 .wa-working-dots {
   display: flex;
   gap: var(--wa-padding-s, 4px);
   padding: var(--wa-padding-l, 12px) var(--wa-padding-xl, 16px);
   align-items: center;
-  animation: wa-fade-in 0.2s 400ms both;
+  /* Layout, style and paint containment: the three spans only ever change
+     their own transform, so this stops each working-dots frame from forcing
+     Blink to re-run layer overlap analysis for the whole scrolling message
+     list. */
+  contain: layout style paint;
 }
 .wa-working-dots span {
   /* Foreground token, not the border token: --wa-border-color is a line
      colour and sits within 1.25:1-1.82:1 of --wa-background-color in every
      shipped theme, which made the dots invisible (task 017). */
-  width: 6px; height: 6px; border-radius: 50%; background: var(--wa-text-color, #c4c7c5);
-  animation: wa-bounce 1.4s infinite ease-in-out both;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--wa-text-color, #c4c7c5); will-change: transform;
 }
-.wa-working-dots span:nth-child(1) { animation-delay: -0.32s; }
-.wa-working-dots span:nth-child(2) { animation-delay: -0.16s; }
 @keyframes wa-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 @keyframes wa-fade-in { from { opacity: 0; } to { opacity: 1; } }
 `;

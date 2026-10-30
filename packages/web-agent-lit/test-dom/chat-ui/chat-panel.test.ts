@@ -1769,6 +1769,77 @@ describe("AgentChatPanel", () => {
     expect(first.textContent).toContain("agent-chat-panel");
   });
 
+  /** The gauge's rules live in the panel stylesheet, so the gauge must not
+   *  render a second copy of them inside the panel's light DOM. */
+  it("the context gauge inside the panel renders no stylesheet of its own", async () => {
+    await element.updateComplete;
+    const gauge = element.querySelector("agent-context-gauge")!;
+    expect(gauge).toBeTruthy();
+    expect(gauge.querySelector("style")).toBeNull();
+    expect(element.querySelector("style")!.textContent).toContain("agent-context-gauge .fg-circle");
+  });
+
+  it("renders the message row stylesheet once for the whole thread (011)", async () => {
+    mockState.messages = [
+      { role: "user", text: "one" },
+      { role: "assistant", text: "two" },
+      { role: "user", text: "three" },
+    ];
+    triggerStateUpdate();
+    await element.updateComplete;
+
+    const rows = Array.from(element.querySelectorAll("agent-message-view"));
+    expect(rows).toHaveLength(3);
+    for (const row of rows) expect(row.querySelector("style")).toBeNull();
+
+    // Exactly one sheet in the panel carries the row rules, however many rows
+    // are on screen.
+    const rowSheets = Array.from(element.querySelectorAll("style"))
+      .filter((s) => s.textContent?.includes("agent-message-view .message-row"));
+    expect(rowSheets).toHaveLength(1);
+  });
+
+  it("a menu toggle or a title change re-renders nothing and re-pins no scroll (011)", async () => {
+    mockState.messages = [
+      { role: "user", text: "hello" },
+      { role: "assistant", text: "hi there" },
+    ];
+    triggerStateUpdate();
+    await element.updateComplete;
+
+    // Warm-up. The first render after the transcript arrives pins the scroll
+    // through `_forceScrollToBottom`, and only the queued animation frame
+    // clears that flag; the next render is the first one that reads the
+    // transcript snapshot. Run both before the spies go in, so the assertions
+    // below observe the steady state.
+    const kebab = element.querySelector("#menu-anchor") as HTMLElement;
+    const toggleMenu = async (): Promise<void> => {
+      kebab.dispatchEvent(new CustomEvent("press", { bubbles: true, composed: true }));
+      await element.updateComplete;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    };
+    await toggleMenu();
+    await toggleMenu();
+
+    const rowUpdates = Array.from(element.querySelectorAll("agent-message-view"))
+      .map((row) => vi.spyOn(row, "requestUpdate"));
+    const scroll = vi.spyOn(
+      element as unknown as { _scrollToBottomQueue: () => void },
+      "_scrollToBottomQueue",
+    );
+
+    await toggleMenu();
+    expect(scroll).not.toHaveBeenCalled();
+
+    mockState.sessions[0].title = "Renamed Session";
+    triggerStateUpdate();
+    await element.updateComplete;
+
+    for (const spy of rowUpdates) expect(spy).not.toHaveBeenCalled();
+    expect(scroll).not.toHaveBeenCalled();
+    expect(element.querySelector(".header-title")?.textContent).toBe("Renamed Session");
+  });
+
   // ── Choose model menu tests (067-ui) ─────────────────────────────────
 
   describe("choose model menu", () => {
@@ -2946,6 +3017,41 @@ describe("AgentChatPanel", () => {
       expect(cafSpy).toHaveBeenCalledWith(pendingId2);
       expect(priv(element)._scrollRafId).toBeNull();
     });
+
+    /** `scrollHeight - scrollTop - clientHeight` forces a synchronous layout,
+     *  so it is read before `render()` dirties the list, not after. Measuring
+     *  after the render also saw the grown height, which failed the 30 px test
+     *  whenever one render added more than that. */
+    it("measures the pin before render grows the list, and still queues a scroll", async () => {
+      const list = element.querySelector(".messages-list") as HTMLElement;
+      let reads = 0;
+      let grown = false;
+      Object.defineProperty(list, "scrollHeight", {
+        configurable: true,
+        get: () => {
+          reads += 1;
+          return grown ? 900 : 400;
+        },
+      });
+      Object.defineProperty(list, "clientHeight", { configurable: true, get: () => 400 });
+      Object.defineProperty(list, "scrollTop", { configurable: true, get: () => 0 });
+
+      // Stands in for a new message row: the transcript grows during the render.
+      const originalTemplate = element.template.bind(element);
+      element.template = () => {
+        grown = true;
+        return originalTemplate();
+      };
+
+      mockState.messages = [{ role: "assistant", text: "hi", trace: [] }];
+      triggerStateUpdate();
+      await element.updateComplete;
+
+      // One read, in willUpdate, while the list still reported the previous
+      // frame's height. updated() must not read it again after the render.
+      expect(reads).toBe(1);
+      expect(rafSpy).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("slash commands (105/001)", () => {
@@ -3433,6 +3539,28 @@ describe("AgentChatPanel", () => {
       expect(priv(element)._composerValue).toBe("/de");
     });
 
+    /** Every ordinary keystroke used to write the menu away even when it was
+     *  already closed: a `hidden` attribute, a `replaceChildren`, an
+     *  `aria-activedescendant` removal and a `#input` query. None of that may
+     *  happen while the menu is closed; a real close must still remove the
+     *  attribute. */
+    it("ordinary typing does not clear aria-activedescendant, Escape still does", () => {
+      const ta = element.querySelector("#input textarea") as HTMLTextAreaElement;
+      const removeAttr = vi.spyOn(ta, "removeAttribute");
+      typeInComposer(element, "hello");
+      expect(removeAttr).not.toHaveBeenCalledWith("aria-activedescendant");
+
+      typeInComposer(element, "/de");
+      expect(priv(element)._slashMenuEl.hidden).toBe(false);
+      expect(ta.getAttribute("aria-activedescendant")).toBe("wa-slash-opt-0");
+      priv(element)._handleKeyDown(
+        new KeyboardEvent("keydown", { key: "Escape", cancelable: true }),
+      );
+      expect(priv(element)._slashMenuEl.hidden).toBe(true);
+      expect(removeAttr).toHaveBeenCalledWith("aria-activedescendant");
+      expect(ta.getAttribute("aria-activedescendant")).toBeNull();
+    });
+
     it("an outside click closes the menu", () => {
       typeInComposer(element, "/");
       expect(priv(element)._slashMenuEl.hidden).toBe(false);
@@ -3692,6 +3820,29 @@ describe("AgentChatPanel", () => {
       const gauge = element.querySelector("agent-context-gauge")!;
       const kids = [...controls.children];
       expect(kids.indexOf(todo)).toBe(kids.indexOf(gauge) - 1);
+    });
+
+    /** Both indicators' rules live in the panel's single <style> block, so the
+     *  shadow root gains no extra stylesheet when they mount. */
+    it("the indicators bring no <style> of their own", async () => {
+      element.config = { todo: { enabled: false }, scheduler: { enabled: false } };
+      triggerStateUpdate();
+      await element.updateComplete;
+      const stylesBefore = element.querySelectorAll("style").length;
+
+      element.config = { todo: { enabled: true }, scheduler: { enabled: true } };
+      mockSession.todos.mockReturnValue(sampleTodos);
+      mockSession.pendingCounts.mockReturnValue({ schedules: 1, reminders: 0, total: 1 });
+      triggerStateUpdate();
+      await element.updateComplete;
+
+      const todo = element.querySelector("agent-todo-indicator")!;
+      const clock = element.querySelector("agent-schedule-clock")!;
+      expect(todo).not.toBeNull();
+      expect(clock).not.toBeNull();
+      expect(todo.querySelectorAll("style").length).toBe(0);
+      expect(clock.querySelectorAll("style").length).toBe(0);
+      expect(element.querySelectorAll("style").length).toBe(stylesBefore);
     });
 
     it("the badge reflects the list", async () => {

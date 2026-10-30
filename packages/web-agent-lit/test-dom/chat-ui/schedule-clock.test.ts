@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { AgentScheduleClock, scheduleSummary } from "../../src/chat-ui/schedule-clock.js";
 
 if (!customElements.get("agent-schedule-clock")) {
@@ -35,6 +35,15 @@ describe("AgentScheduleClock", () => {
   beforeEach(() => {
     element = document.createElement("agent-schedule-clock");
     document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    element.remove();
+  });
+
+  it("renders its own <style> when it has no panel ancestor", async () => {
+    await element.updateComplete;
+    expect(element.querySelector("style")).not.toBeNull();
   });
 
   it("badge shows the total", async () => {

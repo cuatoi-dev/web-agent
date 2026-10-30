@@ -559,6 +559,38 @@ describe("ContextManager", () => {
   });
 
   // ------------------------------------------------------------
+  // 011: commitTurn deduplication
+  // ------------------------------------------------------------
+  describe("commitTurn deduplication (011)", () => {
+    it("does not serialize messages recordStep already journaled", () => {
+      cm.appendUser({ role: "user", content: "hi" });
+      const assistant: ModelMessage = { role: "assistant", content: "hello" };
+      cm.recordStep([assistant]);
+
+      const stringify = vi.spyOn(JSON, "stringify");
+      cm.commitTurn([assistant]);
+      expect(stringify).not.toHaveBeenCalled();
+      stringify.mockRestore();
+
+      expect(cm.journal.filter((e) => e.msg === assistant)).toHaveLength(1);
+    });
+
+    it("still deduplicates a structurally equal clone, and appends a new message", () => {
+      cm.appendUser({ role: "user", content: "hi" });
+      const assistant: ModelMessage = { role: "assistant", content: "hello" };
+      cm.recordStep([assistant]);
+
+      const clone: ModelMessage = JSON.parse(JSON.stringify(assistant)) as ModelMessage;
+      const fresh: ModelMessage = { role: "assistant", content: "later" };
+      cm.commitTurn([clone, fresh]);
+
+      expect(cm.journal.some((e) => e.msg === clone)).toBe(false);
+      expect(cm.journal.filter((e) => e.msg === fresh)).toHaveLength(1);
+      expect(cm.journal).toHaveLength(3);
+    });
+  });
+
+  // ------------------------------------------------------------
   // 074: activeTurnId getter
   // ------------------------------------------------------------
   describe("activeTurnId (074)", () => {

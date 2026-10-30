@@ -154,9 +154,18 @@ export abstract class ChatPanelElements extends ChatPanelState {
     ></wa-menu>`;
   }
 
-  /** Rebuild the change subscriptions when the provider list changes. */
+  /** Rebuild the change subscriptions when the provider list changes.
+   *
+   *  Called from every state update, and the resolved list is usually the same
+   *  objects in the same order, so an unchanged list keeps its subscriptions
+   *  instead of being torn down and rebuilt. */
   protected _syncAttachmentProviders(): void {
     const providers = this._resolveProviders();
+    const prev = this._subscribedProviders;
+    if (prev && prev.length === providers.length && prev.every((p, i) => p === providers[i])) {
+      return;
+    }
+    this._subscribedProviders = [...providers];
     for (const un of this._attachmentUnsubs) un();
     this._attachmentUnsubs = providers.flatMap((p) => {
       const un = p.subscribe?.(() => {

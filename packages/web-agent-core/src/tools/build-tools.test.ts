@@ -1588,6 +1588,71 @@ describe("executor error flag (001)", () => {
   });
 });
 
+describe("input_schema memoization (011)", () => {
+  const noopExecute: ExecuteMock = vi.fn();
+  const CLEAN_SCHEMA: JsonSchemaObject = {
+    type: "object",
+    properties: { q: { type: "string" } },
+    required: ["q"],
+  };
+
+  it("returns the same object for two buildTools() calls with the same definitions", () => {
+    const ctx = mockCtx();
+    const zodDef: CustomToolDef = {
+      name: "zod_tool",
+      description: "zod tool",
+      inputSchema: z.object({ a: z.string() }),
+      execute: noopExecute,
+    };
+    const jsonDef: CustomToolDef = {
+      name: "json_tool",
+      description: "json tool",
+      inputSchema: CLEAN_SCHEMA,
+      execute: noopExecute,
+    };
+    const first = buildTools(ctx, [zodDef, jsonDef]).tools;
+    const second = buildTools(ctx, [zodDef, jsonDef]).tools;
+    expect(first[0].input_schema).toBe(second[0].input_schema);
+    expect(first[1].input_schema).toBe(second[1].input_schema);
+  });
+
+  it("keeps a draft-2020-12 JSON Schema by reference, so its validator is shared", () => {
+    const ctx = mockCtx();
+    const def: CustomToolDef = {
+      name: "clean_tool",
+      description: "clean tool",
+      inputSchema: CLEAN_SCHEMA,
+      execute: noopExecute,
+    };
+    const { tools } = buildTools(ctx, [def]);
+    expect(tools[0].input_schema).toBe(def.inputSchema);
+  });
+
+  it("still strips $schema and converts a draft-07 tuple, and still does it once", () => {
+    const ctx = mockCtx();
+    const schema: JsonSchemaObject = {
+      type: "object",
+      properties: { pair: { type: "array", items: [{ type: "string" }, { type: "number" }] } },
+      $schema: "http://json-schema.org/draft-07/schema#",
+    };
+    const def: CustomToolDef = {
+      name: "tuple_tool",
+      description: "tuple tool",
+      inputSchema: schema,
+      execute: noopExecute,
+    };
+    const first = buildTools(ctx, [def]).tools[0].input_schema as unknown as {
+      $schema?: unknown;
+      properties: { pair: { prefixItems?: unknown[]; items?: unknown } };
+    };
+    expect("$schema" in first).toBe(false);
+    expect(first.properties.pair.prefixItems).toHaveLength(2);
+    expect(Array.isArray(first.properties.pair.items)).toBe(false);
+    // Memoized: the second build hands back the same converted object.
+    expect(buildTools(ctx, [def]).tools[0].input_schema).toBe(first);
+  });
+});
+
 describe("executeToolByName", () => {
   it("returns {content, isError:true} when ctx.signal is aborted", async () => {
     const ac = new AbortController();

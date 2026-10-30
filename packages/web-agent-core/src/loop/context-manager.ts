@@ -3,7 +3,7 @@ import { DEFAULT_CONTEXT_CONFIG } from "../config.js";
 import type { ContextConfig } from "../config.types.js";
 import type { AuditEntry, JournalEntry, ToolTtlPolicy } from "./types.js";
 export type { AuditEntry, JournalEntry, PartKind, ToolTtlPolicy } from "./types.js";
-import { isDev, extractMeta, cloneJournal } from "./context-helpers.js";
+import { isDev, extractMeta, cloneJournal, unjournaled } from "./context-helpers.js";
 export { classifyParts } from "./context-helpers.js";
 import {
   assembleContext,
@@ -388,15 +388,16 @@ export class ContextManager {
   }
 
   commitTurn(messages?: ModelMessage[]): void {
-    if (messages) {
-      for (const msg of messages) {
-        const alreadyExists = this.#journal.some(
-          (j) => j.meta.turnId === this.#currentTurnId && JSON.stringify(j.msg) === JSON.stringify(msg)
-        );
-        if (!alreadyExists) {
-          const meta = extractMeta(msg, this.#currentTurnId, this.#stepNo, currentUserTurn(this.#journal) - 1);
-          this.#journal.push({ msg, meta });
-        }
+    if (messages && messages.length > 0) {
+      const current = this.#currentTurnId;
+      const known = new Set(
+        this.#journal.filter((j) => j.meta.turnId === current).map((j) => j.msg),
+      );
+      for (const msg of unjournaled(known, messages)) {
+        this.#journal.push({
+          msg,
+          meta: extractMeta(msg, current, this.#stepNo, currentUserTurn(this.#journal) - 1),
+        });
       }
     }
     this.#completedTurns.add(this.#currentTurnId);

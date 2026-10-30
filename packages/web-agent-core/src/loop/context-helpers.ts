@@ -177,3 +177,29 @@ export function cloneJournal(journal: JournalEntry[]): JournalEntry[] {
     };
   });
 }
+
+/** The candidates that are not already in `known` — by object reference first,
+ *  and by serialized value only for a candidate that failed the reference
+ *  check. `known` grows as matches are found, so a duplicate candidate inside
+ *  one call is dropped too.
+ *
+ *  Serializing is a fallback, not the main path: `commitTurn()` normally hands
+ *  over the very messages `recordStep()` already journaled, and a turn can hold
+ *  ten tool calls whose results run to kilobytes each. */
+export function unjournaled(
+  known: Set<ModelMessage>,
+  candidates: readonly ModelMessage[],
+): ModelMessage[] {
+  const out: ModelMessage[] = [];
+  let knownJson: Set<string> | null = null;
+  for (const msg of candidates) {
+    if (known.has(msg)) continue;
+    if (!knownJson) knownJson = new Set(Array.from(known, (m) => JSON.stringify(m)));
+    const serialized = JSON.stringify(msg);
+    if (knownJson.has(serialized)) continue;
+    out.push(msg);
+    known.add(msg);
+    knownJson.add(serialized);
+  }
+  return out;
+}

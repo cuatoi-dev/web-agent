@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { AgentTodoIndicator } from "../../src/chat-ui/todo-indicator.js";
 import type { TodoItem } from "@cuatoi/web-agent-core";
 
@@ -16,6 +16,37 @@ describe("AgentTodoIndicator", () => {
 
   afterEach(() => {
     element.remove();
+  });
+
+  it("renders its own <style> when it has no panel ancestor", async () => {
+    await element.updateComplete;
+    expect(element.querySelector("style")).not.toBeNull();
+  });
+
+  /** The panel re-reads the todo store on every render, and the store returns
+   *  a fresh clone each time. Re-assigning the same content must not schedule
+   *  another render; a real change must. */
+  it("an identical cloned list does not re-render, a changed one does", async () => {
+    const items: TodoItem[] = [
+      { id: "1", text: "Task 1", status: "pending" },
+      { id: "2", text: "Task 2", status: "in_progress" },
+    ];
+    element.items = items;
+    await element.updateComplete;
+    expect(element.querySelector(".todo-badge")!.textContent?.trim()).toBe("2");
+
+    const requestUpdate = vi.spyOn(element, "requestUpdate");
+    try {
+      element.items = items.map((it) => ({ ...it }));
+      expect(requestUpdate).not.toHaveBeenCalled();
+
+      element.items = [{ ...items[0], status: "done" }, { ...items[1] }];
+      expect(requestUpdate).toHaveBeenCalledTimes(1);
+    } finally {
+      requestUpdate.mockRestore();
+    }
+    await element.updateComplete;
+    expect(element.querySelector(".todo-badge")!.textContent?.trim()).toBe("1");
   });
 
   it("badge counts what is left", async () => {

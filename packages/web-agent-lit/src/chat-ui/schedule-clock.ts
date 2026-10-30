@@ -13,40 +13,11 @@ export function scheduleSummary(schedules: number, reminders: number): string {
   return `${parts.join(", ")}. Use /schedule-list to see or cancel them.`;
 }
 
-export class AgentScheduleClock extends Component {
-  private _schedules = 0;
-  get schedules() { return this._schedules; }
-  set schedules(val: number) {
-    if (this._schedules !== val) { this._schedules = val; this.requestUpdate(); }
-  }
-
-  private _reminders = 0;
-  get reminders() { return this._reminders; }
-  set reminders(val: number) {
-    if (this._reminders !== val) { this._reminders = val; this.requestUpdate(); }
-  }
-
-  static get observedAttributes() {
-    return ["schedules", "reminders"];
-  }
-
-  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
-    if (newVal === null) return;
-    const num = parseInt(newVal, 10);
-    if (isNaN(num)) return;
-    if (name === "schedules") this.schedules = num;
-    else if (name === "reminders") this.reminders = num;
-  }
-
-  template() {
-    // scheduler.ts:228 defines `total` as `schedules + reminders`, so the badge
-    // shows exactly `pendingCounts().total` without needing a third property.
-    const total = this._schedules + this._reminders;
-    const summary = scheduleSummary(this._schedules, this._reminders);
-
-    return html`
-      <style>
-        agent-schedule-clock {
+/** The clock's own rules. The panel concatenates this into its single
+ *  `<style>` block, so no extra stylesheet is parsed inside the panel's shadow
+ *  root when the clock mounts. Mounted on its own, it still renders the block
+ *  itself. */
+export const SCHEDULE_CLOCK_CSS = `        agent-schedule-clock {
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -102,7 +73,41 @@ export class AgentScheduleClock extends Component {
              colour, so it reads as a gap rather than a stroke. */
           border: 1.5px solid var(--wa-input-background-color, #fff);
         }
-      </style>
+`;
+
+export class AgentScheduleClock extends Component {
+  private _schedules = 0;
+  get schedules() { return this._schedules; }
+  set schedules(val: number) {
+    if (this._schedules !== val) { this._schedules = val; this.requestUpdate(); }
+  }
+
+  private _reminders = 0;
+  get reminders() { return this._reminders; }
+  set reminders(val: number) {
+    if (this._reminders !== val) { this._reminders = val; this.requestUpdate(); }
+  }
+
+  static get observedAttributes() {
+    return ["schedules", "reminders"];
+  }
+
+  attributeChangedCallback(name: string, oldVal: string | null, newVal: string | null) {
+    if (newVal === null) return;
+    const num = parseInt(newVal, 10);
+    if (isNaN(num)) return;
+    if (name === "schedules") this.schedules = num;
+    else if (name === "reminders") this.reminders = num;
+  }
+
+  template() {
+    // scheduler.ts:228 defines `total` as `schedules + reminders`, so the badge
+    // shows exactly `pendingCounts().total` without needing a third property.
+    const total = this._schedules + this._reminders;
+    const summary = scheduleSummary(this._schedules, this._reminders);
+
+    return html`
+      ${this.closest("agent-chat-panel") ? "" : html`<style>${SCHEDULE_CLOCK_CSS}</style>`}
       <div class="clock-wrapper" title=${summary} role="img" aria-label=${summary}>
         <svg class="clock-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <circle cx="10" cy="10" r="7.4" stroke="currentColor" stroke-width="1.5"></circle>

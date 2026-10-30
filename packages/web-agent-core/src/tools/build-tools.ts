@@ -206,12 +206,35 @@ export function draft07ToDraft2020(node: unknown): unknown {
   return node;
 }
 
+/** `buildTools()` runs on every `initAgent()`, and a session runs that two or
+ *  three times while the panel opens. Both conversions below are pure functions
+ *  of the definition object, so their result is cached on that identity. */
+const zodInputSchemaCache = new WeakMap<object, Tool["input_schema"]>();
+const jsonInputSchemaCache = new WeakMap<object, Tool["input_schema"]>();
+
+/** True when any `items` in the tree is an ARRAY (the draft-07 tuple form) and
+ *  so must still be rewritten to `prefixItems`. */
+function hasDraft07TupleItems(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(hasDraft07TupleItems);
+  if (node !== null && typeof node === "object") {
+    const obj = node as Record<string, unknown>;
+    if (Array.isArray(obj.items)) return true;
+    for (const key of Object.keys(obj)) {
+      if (hasDraft07TupleItems(obj[key])) return true;
+    }
+  }
+  return false;
+}
+
 function zodToInputSchema(schema: z.ZodType): Tool["input_schema"] {
+  const cached = zodInputSchemaCache.get(schema);
+  if (cached) return cached;
   const raw = zodToJsonSchema(schema) as Record<string, unknown>;
   const input_schema = { ...raw };
   delete input_schema.$schema;
-  const processed = draft07ToDraft2020(input_schema);
-  return processed as Tool["input_schema"];
+  const processed = draft07ToDraft2020(input_schema) as Tool["input_schema"];
+  zodInputSchemaCache.set(schema, processed);
+  return processed;
 }
 
 /**
@@ -223,11 +246,25 @@ function isZodSchema(schema: ToolInputSchema): schema is z.ZodType {
   return typeof (schema as z.ZodType).safeParse === "function";
 }
 
-/** Raw JSON Schema → model-facing draft 2020-12, mirroring `zodToInputSchema`. */
+/** Raw JSON Schema → model-facing draft 2020-12, mirroring `zodToInputSchema`.
+ *
+ *  A schema already in draft 2020-12 with no tuple `items` is returned as the
+ *  SAME object, not a clone. That identity is what lets `wrapExecutor` and
+ *  `validateDataQuery` share one compiled ajv validator for `DataQuerySchema`
+ *  instead of compiling a clone each. */
 function jsonSchemaToInputSchema(schema: JsonSchemaObject): Tool["input_schema"] {
-  const rest = { ...(schema as Record<string, unknown>) };
-  delete rest.$schema;
-  return draft07ToDraft2020(rest) as Tool["input_schema"];
+  const cached = jsonInputSchemaCache.get(schema);
+  if (cached) return cached;
+  let converted: Tool["input_schema"];
+  if (!("$schema" in schema) && !hasDraft07TupleItems(schema)) {
+    converted = schema;
+  } else {
+    const rest = { ...(schema as Record<string, unknown>) };
+    delete rest.$schema;
+    converted = draft07ToDraft2020(rest) as Tool["input_schema"];
+  }
+  jsonInputSchemaCache.set(schema, converted);
+  return converted;
 }
 
 export function buildTools(

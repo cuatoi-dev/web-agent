@@ -8,6 +8,17 @@ import { iconNode } from "./acme-icon-svgs";
 import { AcmeMenu, AcmeTextInput, AcmeTextArea } from "./acme-fields";
 import type { WaButtonVariant, WaElementEntry } from "@cuatoi/web-agent-lit";
 
+/** Removes the `<md-ripple>` a Material button or checkbox renders into its
+ *  shadow root. Those components offer no `renderRipple` hook, so the element
+ *  is detached once its first render settles. The press Web Animation and the
+ *  opacity transition it runs cost ~600 ms of 60 Hz compositor frames per
+ *  press. */
+function stripShadowRipple(el: HTMLElement): void {
+  void (el as HTMLElement & { updateComplete?: Promise<boolean> }).updateComplete?.then(() => {
+    el.shadowRoot?.querySelector("md-ripple")?.remove();
+  });
+}
+
 export class AcmeButton extends AcmeElement {
   static get observedAttributes() { return ["label", "variant"]; }
   private _label = "";
@@ -21,6 +32,7 @@ export class AcmeButton extends AcmeElement {
   set disabled(v: boolean) { if (v === this._disabled) return; this._disabled = v; if (this._inner) this.sync(); }
   private make(): HTMLElement {
     const btn = document.createElement(this._variant === "secondary" ? "md-outlined-button" : "md-filled-button");
+    stripShadowRipple(btn);
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       if (this._disabled) { e.preventDefault(); return; }
@@ -70,7 +82,10 @@ export class AcmeIconButton extends AcmeElement {
   get disabled() { return this._disabled; }
   set disabled(v: boolean) { if (v === this._disabled) return; this._disabled = v; if (this._inner) this.sync(); }
   protected build(): HTMLElement {
-    const btn = document.createElement("md-icon-button");
+    const btn = document.createElement("md-icon-button") as unknown as HTMLElement & { renderRipple?: () => string };
+    // No ripple element is ever created for this button: the override runs
+    // before the first render, so Material's template gets no `<md-ripple>`.
+    btn.renderRipple = () => "";
     btn.addEventListener("click", (e) => { e.stopPropagation(); if (!this._disabled) this.fire("press"); });
     return btn;
   }
@@ -121,6 +136,7 @@ export class AcmeCheckbox extends AcmeElement {
     wrapper.style.cursor = "pointer";
     wrapper.style.fontFamily = "inherit";
     const cb = document.createElement("md-checkbox") as HTMLElement & { checked: boolean; disabled: boolean };
+    stripShadowRipple(cb);
     cb.addEventListener("change", () => { this._checked = cb.checked; this.fire("checked-change", { checked: cb.checked }); });
     const span = document.createElement("span");
     span.style.color = "var(--wa-text-color, #202124)";
@@ -144,7 +160,28 @@ export class AcmeProgress extends AcmeElement {
   protected sync(): void { (this._inner as HTMLElement & { indeterminate: boolean }).indeterminate = this._indeterminate; }
 }
 
+/** The three dot transforms one pulse step shows, in source order. Cycled on a
+ *  timer rather than a CSS `@keyframes` animation: a running keyframe animation
+ *  keeps Blink stepping `DocumentAnimations` on the main thread on every frame
+ *  for the whole turn. Kept in step with `WaWorkingDots` (web-agent-lit
+ *  `ui/wa-elements.ts`). */
+const DOT_REST_FRAMES: readonly [string, string, string] = ["scale(1)", "scale(1)", "scale(1)"];
+const DOT_FRAMES: readonly (readonly [string, string, string])[] = [
+  ["scale(1)", "scale(0.35)", "scale(0.2)"],
+  ["scale(0.35)", "scale(1)", "scale(0.35)"],
+  ["scale(0.2)", "scale(0.35)", "scale(1)"],
+  ["scale(0.2)", "scale(0.2)", "scale(0.2)"],
+];
+
+/** One pulse step every 350 ms: four steps make the original 1.4 s cycle. */
+const DOT_PULSE_MS = 350;
+
 export class AcmeWorkingDots extends AcmeElement {
+  private _fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  private _pulseTimer: ReturnType<typeof setInterval> | null = null;
+  private _dots: HTMLSpanElement[] = [];
+  private _step = 0;
+
   protected build(): HTMLElement {
     const el = document.createElement("div");
     el.className = "wa-working-dots";
@@ -152,16 +189,73 @@ export class AcmeWorkingDots extends AcmeElement {
     el.style.gap = "4px";
     el.style.padding = "12px 16px";
     el.style.alignItems = "center";
-    el.style.animation = "wa-fade-in 0.2s 400ms both";
-    el.innerHTML = `<style>
-      @keyframes wa-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-      @keyframes wa-fade-in { from { opacity: 0; } to { opacity: 1; } }
-    </style>
-    <span style="width:6px;height:6px;border-radius:50%;background:var(--wa-text-color, #c4c7c5);animation:wa-bounce 1.4s infinite ease-in-out both;animation-delay:-0.32s"></span>
-    <span style="width:6px;height:6px;border-radius:50%;background:var(--wa-text-color, #c4c7c5);animation:wa-bounce 1.4s infinite ease-in-out both;animation-delay:-0.16s"></span>
-    <span style="width:6px;height:6px;border-radius:50%;background:var(--wa-text-color, #c4c7c5);animation:wa-bounce 1.4s infinite ease-in-out both;"></span>`;
+    // Layout, style and paint containment: the three spans only ever change
+    // their own transform, so this stops each working-dots frame from forcing
+    // Blink to re-run layer overlap analysis for the whole message list.
+    el.style.contain = "layout style paint";
+    const dotCss = "width:6px;height:6px;border-radius:50%;background:var(--wa-text-color, #c4c7c5);will-change:transform";
+    el.innerHTML = `<span style="${dotCss}"></span><span style="${dotCss}"></span><span style="${dotCss}"></span>`;
+    this._dots = Array.from(el.querySelectorAll("span"));
     return el;
   }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this._stopTimers();
+    const wrap = this._inner;
+    if (!wrap) return;
+    wrap.style.opacity = "0";
+    this._fadeTimer = setTimeout(() => {
+      this._fadeTimer = null;
+      wrap.style.opacity = "1";
+    }, 400);
+    const reduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      this._applyFrame(DOT_REST_FRAMES);
+      return;
+    }
+    this._step = 0;
+    this._applyFrame(DOT_FRAMES[0]);
+    this._pulseTimer = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      this._step = (this._step + 1) % DOT_FRAMES.length;
+      this._applyFrame(DOT_FRAMES[this._step]);
+    }, DOT_PULSE_MS);
+  }
+
+  disconnectedCallback(): void {
+    this._stopTimers();
+  }
+
+  /** `_freezeOlderDots()` parks a dot by setting its inline `animation` to
+   *  `none`; a frozen dot keeps its parked scale. The cached spans and
+   *  prebuilt transform strings keep a tick off both the DOM query and the
+   *  string allocation, and a dot whose scale did not change gets no style
+   *  write at all. */
+  private _applyFrame(transforms: readonly [string, string, string]): void {
+    const dots = this._dots;
+    for (let i = 0; i < dots.length; i++) {
+      const dot = dots[i];
+      if (dot.style.animation === "none") continue;
+      const next = transforms[i];
+      if (dot.style.transform !== next) dot.style.transform = next;
+    }
+  }
+
+  private _stopTimers(): void {
+    if (this._fadeTimer !== null) {
+      clearTimeout(this._fadeTimer);
+      this._fadeTimer = null;
+    }
+    if (this._pulseTimer !== null) {
+      clearInterval(this._pulseTimer);
+      this._pulseTimer = null;
+    }
+  }
+
   protected sync(): void {}
 }
 

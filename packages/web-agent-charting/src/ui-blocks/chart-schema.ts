@@ -48,6 +48,13 @@ const DATA_POINT_SCALAR_OR_WRAPPED = {
   anyOf: [{ type: "number" }, { type: "string" }, WRAPPED_SCALAR_SCHEMA],
 };
 
+/** `r`, `o`, `h`, `l` and `c` all accept the same pair, so they share one
+ *  object. Shared identity is what lets the ajv compile step hoist it into a
+ *  single `$defs` entry instead of inlining it five times. */
+const DATA_POINT_NUMBER_OR_WRAPPED = {
+  anyOf: [{ type: "number" }, WRAPPED_SCALAR_SCHEMA],
+};
+
 export const ChartDatasetSchema: JsonSchemaObject = {
   type: "object",
   properties: {
@@ -63,7 +70,7 @@ export const ChartDatasetSchema: JsonSchemaObject = {
             properties: {
               x: DATA_POINT_SCALAR_OR_WRAPPED,
               y: DATA_POINT_SCALAR_OR_WRAPPED,
-              r: { anyOf: [{ type: "number" }, WRAPPED_SCALAR_SCHEMA] },
+              r: DATA_POINT_NUMBER_OR_WRAPPED,
             },
             required: ["x", "y"],
             additionalProperties: true,
@@ -72,10 +79,10 @@ export const ChartDatasetSchema: JsonSchemaObject = {
             type: "object",
             properties: {
               x: DATA_POINT_SCALAR_OR_WRAPPED,
-              o: { anyOf: [{ type: "number" }, WRAPPED_SCALAR_SCHEMA] },
-              h: { anyOf: [{ type: "number" }, WRAPPED_SCALAR_SCHEMA] },
-              l: { anyOf: [{ type: "number" }, WRAPPED_SCALAR_SCHEMA] },
-              c: { anyOf: [{ type: "number" }, WRAPPED_SCALAR_SCHEMA] },
+              o: DATA_POINT_NUMBER_OR_WRAPPED,
+              h: DATA_POINT_NUMBER_OR_WRAPPED,
+              l: DATA_POINT_NUMBER_OR_WRAPPED,
+              c: DATA_POINT_NUMBER_OR_WRAPPED,
             },
             required: ["x", "o", "h", "l", "c"],
             additionalProperties: true,

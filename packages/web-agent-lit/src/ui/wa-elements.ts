@@ -138,13 +138,96 @@ export class WaProgress extends WaElement {
   }
 }
 
+/** The three dot transforms one pulse step shows, in source order. Cycled by
+ *  `WaWorkingDots` and `AcmeWorkingDots` on a timer instead of a CSS
+ *  `@keyframes` animation, which would keep the compositor-synchronised
+ *  `DocumentAnimations` step running on the main thread for the whole turn.
+ *  Prebuilt strings, so a frame writes no template literal. */
+const DOT_REST_FRAMES: readonly [string, string, string] = ["scale(1)", "scale(1)", "scale(1)"];
+const DOT_FRAMES: readonly (readonly [string, string, string])[] = [
+  ["scale(1)", "scale(0.35)", "scale(0.2)"],
+  ["scale(0.35)", "scale(1)", "scale(0.35)"],
+  ["scale(0.2)", "scale(0.35)", "scale(1)"],
+  ["scale(0.2)", "scale(0.2)", "scale(0.2)"],
+];
+
+/** One pulse step every 350 ms: four steps make the original 1.4 s cycle. */
+const DOT_PULSE_MS = 350;
+
 export class WaWorkingDots extends WaElement {
+  private _fadeTimer: ReturnType<typeof setTimeout> | null = null;
+  private _pulseTimer: ReturnType<typeof setInterval> | null = null;
+  private _dots: HTMLSpanElement[] = [];
+  private _step = 0;
+
   protected build(): HTMLElement {
     const el = document.createElement("div");
     el.className = "wa-working-dots";
-    el.append(document.createElement("span"), document.createElement("span"), document.createElement("span"));
+    const d0 = document.createElement("span");
+    const d1 = document.createElement("span");
+    const d2 = document.createElement("span");
+    this._dots = [d0, d1, d2];
+    el.append(d0, d1, d2);
     return el;
   }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this._stopTimers();
+    const wrap = this._inner;
+    if (!wrap) return;
+    wrap.style.opacity = "0";
+    this._fadeTimer = setTimeout(() => {
+      this._fadeTimer = null;
+      wrap.style.opacity = "1";
+    }, 400);
+    const reduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      this._applyFrame(DOT_REST_FRAMES);
+      return;
+    }
+    this._step = 0;
+    this._applyFrame(DOT_FRAMES[0]);
+    this._pulseTimer = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      this._step = (this._step + 1) % DOT_FRAMES.length;
+      this._applyFrame(DOT_FRAMES[this._step]);
+    }, DOT_PULSE_MS);
+  }
+
+  disconnectedCallback(): void {
+    this._stopTimers();
+  }
+
+  /** `_freezeOlderDots()` (chat-ui/chat-panel-state.ts) parks a dot by setting
+   *  its inline `animation` to `none`; a frozen dot keeps its parked scale.
+   *  The cached spans and prebuilt transform strings keep a tick off both the
+   *  DOM query and the string allocation, and a dot whose scale did not change
+   *  gets no style write at all. */
+  private _applyFrame(transforms: readonly [string, string, string]): void {
+    const dots = this._dots;
+    for (let i = 0; i < dots.length; i++) {
+      const dot = dots[i];
+      if (dot.style.animation === "none") continue;
+      const next = transforms[i];
+      if (dot.style.transform !== next) dot.style.transform = next;
+    }
+  }
+
+  private _stopTimers(): void {
+    if (this._fadeTimer !== null) {
+      clearTimeout(this._fadeTimer);
+      this._fadeTimer = null;
+    }
+    if (this._pulseTimer !== null) {
+      clearInterval(this._pulseTimer);
+      this._pulseTimer = null;
+    }
+  }
+
   protected sync(): void {}
 }
 

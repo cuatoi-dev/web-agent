@@ -7,6 +7,7 @@ export const messageViewStyles = html`
       <style>
         agent-message-view {
           display: block;
+          contain: style;
         }
         agent-message-view .message-row { display: flex; margin: var(--wa-padding-m, 0.5rem) 0; }
         agent-message-view .message-row.user { justify-content: flex-end; }

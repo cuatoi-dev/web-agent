@@ -164,13 +164,42 @@ export abstract class ChatPanelScreens extends ChatPanelHistory {
    *  too — a restored (page-reload) history line resolves its tool's own
    *  phrase without waiting for a new turn. */
   protected _toolPhrases(): Map<string, ToolPhraseDef> | undefined {
-    const map = new Map<string, ToolPhraseDef>();
+    const entries: Array<{
+      name: string;
+      phrase?: ToolPhraseDef["phrase"];
+      inProgressPhrase?: ToolPhraseDef["inProgressPhrase"];
+    }> = [];
     for (const t of this._availableTools()) {
       if (t.phrase || t.inProgressPhrase) {
-        map.set(t.name, { phrase: t.phrase, inProgressPhrase: t.inProgressPhrase });
+        entries.push({ name: t.name, phrase: t.phrase, inProgressPhrase: t.inProgressPhrase });
       }
     }
-    return map.size > 0 ? map : undefined;
+    // Rebuilt on every panel render, and `template()` runs on any state change,
+    // so hand back the previous map while the tool list is unchanged. The map is
+    // bound onto every row, and a fresh map on each render defeats the row's own
+    // identity check.
+    const prev = this._cachedPhraseSource;
+    if (
+      prev !== null &&
+      prev.length === entries.length &&
+      prev.every((p, i) =>
+        p.name === entries[i].name &&
+        p.phrase === entries[i].phrase &&
+        p.inProgressPhrase === entries[i].inProgressPhrase)
+    ) {
+      return this._cachedToolPhrases;
+    }
+    this._cachedPhraseSource = entries;
+    if (entries.length === 0) {
+      this._cachedToolPhrases = undefined;
+      return undefined;
+    }
+    const map = new Map<string, ToolPhraseDef>();
+    for (const e of entries) {
+      map.set(e.name, { phrase: e.phrase, inProgressPhrase: e.inProgressPhrase });
+    }
+    this._cachedToolPhrases = map;
+    return map;
   }
 
   /** The host/agent config header the debug log starts with. One source for

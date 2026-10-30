@@ -8,6 +8,8 @@ export type MaterialField = HTMLElement & {
   max: string;
   required: boolean;
   name: string;
+  rows?: number;
+  handleInput?: (event: Event) => void;
   updateComplete?: Promise<unknown>;
 };
 

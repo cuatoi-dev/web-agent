@@ -100,8 +100,9 @@ export abstract class ChatPanelHistory extends ChatPanelSession {
     const rect = anchor.getBoundingClientRect();
     const vw = window.innerWidth || document.documentElement.clientWidth;
     const vh = window.innerHeight || document.documentElement.clientHeight;
-    const contW = container.getBoundingClientRect().width;
-    const contH = container.getBoundingClientRect().height;
+    const contRect = container.getBoundingClientRect();
+    const contW = contRect.width;
+    const contH = contRect.height;
     let top = rect.bottom;
     let left = rect.left;
     if (left + contW > vw) left = rect.right - contW;

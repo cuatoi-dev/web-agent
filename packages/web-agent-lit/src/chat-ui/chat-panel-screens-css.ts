@@ -45,6 +45,7 @@ export const PANEL_SCREENS_CSS = `        agent-chat-panel .wa-title-edit-row {
           min-width: 260px;
           max-width: 320px;
           padding: var(--wa-padding-m, 8px) 0;
+          contain: layout style paint;
         }
         agent-chat-panel .wa-history-list { max-height: 360px; overflow-y: auto; }
         agent-chat-panel .wa-history-row {

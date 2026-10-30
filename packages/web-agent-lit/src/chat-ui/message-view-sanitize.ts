@@ -14,11 +14,28 @@ function escapePasswordTag(text: string): string {
   }).join("");
 }
 
+/** Bound on the cache below. A long session renders far more distinct
+ *  markdown strings than this, so the cache must not grow without limit. */
+const SANITIZE_CACHE_MAX = 256;
+
+/** Sanitized HTML per source markdown, oldest entry dropped first. Every panel
+ *  render re-reads `part.text`, and a turn re-renders the thread many times, so
+ *  the same string was being parsed and sanitized again and again. */
+const sanitizeCache = new Map<string, string>();
+
 export function sanitize(text: string): string {
   if (!text) return "";
+  const hit = sanitizeCache.get(text);
+  if (hit !== undefined) return hit;
   try {
     const rawHtml = marked.parse(escapePasswordTag(text)) as string;
-    return DOMPurify.sanitize(rawHtml);
+    const clean = DOMPurify.sanitize(rawHtml);
+    if (sanitizeCache.size >= SANITIZE_CACHE_MAX) {
+      const oldest = sanitizeCache.keys().next().value;
+      if (oldest !== undefined) sanitizeCache.delete(oldest);
+    }
+    sanitizeCache.set(text, clean);
+    return clean;
   } catch (err) {
     console.error("Markdown parse/sanitize error", err);
     return text;

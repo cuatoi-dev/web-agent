@@ -13,12 +13,10 @@ const TOP_THRESHOLD_PX = 80;
 /** 009 — the older-window loader is held at least this long, so an in-memory
  *  load that resolves in the same frame is still visible.
  *
- *  900 ms, not the 300 ms of an earlier draft: the shared `.wa-working-dots`
- *  element carries `animation: wa-fade-in 0.2s 400ms both`
- *  (`ui/registry-styles.ts:140`). `both` holds the `from` keyframe
- *  (`opacity: 0`) through the whole 400 ms delay, so the dots are invisible
- *  until 400 ms and only fully opaque at 600 ms. 900 leaves 300 ms of visible
- *  loader. */
+ *  900 ms, not the 300 ms of an earlier draft: `.wa-working-dots` fades in from
+ *  `opacity: 0`, and that fade is a 400 ms timer in the element itself
+ *  (`ui/wa-elements.ts`). The dots are therefore invisible for the first
+ *  400 ms, so 900 leaves 500 ms of visible loader. */
 const LOADER_MIN_MS = 900;
 
 /** The failure notices, the scroll pin and the 008/009 message window —
@@ -169,6 +167,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
             onRetry: () => this._handleRetry(),
             onDismiss: () => {
               this._dismissedFailures.add(failed);
+              this._dismissalRevision++;
               this.requestUpdate();
             },
           })
@@ -293,8 +292,15 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
    *  pin is absolute (`scrollTop = scrollHeight`), so the observable result —
    *  the bottom row stays where it was — is identical either way. An unread
    *  local would also fail `no-unused-vars`. */
-  protected _handleListScroll() {
-    const list = this.querySelector(".messages-list");
+  /** The last message list and window size the scroll-time window target was
+   *  computed from, plus that target. A scroll event repeats the same
+   *  `_computeWindowStart()` walk over every message otherwise. */
+  private _scrollWindowMsgs: SessionMessage[] | null = null;
+  private _scrollWindowSize = -1;
+  private _scrollWindowTarget = 0;
+
+  protected _handleListScroll(listEl?: HTMLElement | null) {
+    const list = listEl ?? this.querySelector(".messages-list");
     if (!list) return;
     // 010 — the jump button's visibility is `!_atBottom`, so a change in this
     // flag is on its own a reason to redraw. Before 010 only the at-bottom
@@ -320,11 +326,17 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
       }
       return;
     }
-    const target = this._computeWindowStart(
-      this.messages,
-      this.messages.length - 1,
-      this._messageWindowSize(),
-    );
+    const msgs = this.messages;
+    const size = this._messageWindowSize();
+    let target: number;
+    if (this._scrollWindowMsgs === msgs && this._scrollWindowSize === size) {
+      target = this._scrollWindowTarget;
+    } else {
+      target = this._computeWindowStart(msgs, msgs.length - 1, size);
+      this._scrollWindowMsgs = msgs;
+      this._scrollWindowSize = size;
+      this._scrollWindowTarget = target;
+    }
     if (target <= this._windowStart) return;
     this._windowStart = target;
     this._forceScrollToBottom = true;

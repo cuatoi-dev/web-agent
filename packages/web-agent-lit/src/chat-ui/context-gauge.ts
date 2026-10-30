@@ -1,6 +1,82 @@
 import { Component } from "../ui/component.js";
 import { html } from "../ui/template.js";
 
+/** The gauge's own rules. Rendered as a `<style>` element only when the gauge
+ *  stands alone; inside `<agent-chat-panel>` the panel stylesheet already
+ *  carries them (chat-ui/chat-panel-composer-css.ts), so a second copy is
+ *  omitted. No transition on `.fg-circle`: `stroke-dashoffset` and `stroke`
+ *  are non-composited SVG paint properties, so every usage update used to
+ *  drive an 18-frame main-thread paint loop on an 18 px ring. */
+export const CONTEXT_GAUGE_CSS = `        agent-context-gauge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
+          position: relative;
+        }
+        agent-context-gauge .gauge-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          cursor: default;
+        }
+        agent-context-gauge .gauge-wrapper.clickable {
+          cursor: pointer;
+        }
+        agent-context-gauge .gauge-wrapper.disabled .bg-circle {
+          /* 005: the disabled gauge is distinguished by a DASHED track, not by
+             dimming. Opacity was measured and rejected: at 0.45 the ring falls
+             to 1.84:1 in wa2-light and 2.74:1 in wa2-dark, below the 3:1 AA
+             floor for a graphical object, and the opacity that does pass (0.75)
+             is not visibly different. A dash pattern keeps the stroke at full
+             contrast, reads at a glance, and survives a greyscale conversion
+             because it carries no colour. */
+          stroke-dasharray: 2 2;
+        }
+        agent-context-gauge .gauge-svg {
+          transform: rotate(-90deg);
+          width: 18px;
+          height: 18px;
+        }
+        agent-context-gauge .gauge-svg.busy {
+          animation: agent-gauge-spin 1.2s linear infinite;
+        }
+        @keyframes agent-gauge-spin {
+          from { transform: rotate(-90deg); }
+          to { transform: rotate(270deg); }
+        }
+        agent-context-gauge .bg-circle {
+          fill: none;
+          /* 002: the gauge now sits on --wa-input-background-color (white in
+             wa2-light), where the raw tokens measure 1.55–2.53:1. Mixing 60% of
+             the token with the theme text colour darkens it on the light surface
+             and brightens it on the dark one: 5.12:1 light / 9.04:1 dark. */
+          stroke: color-mix(in oklab, var(--wa-text-color-disabled, rgba(255, 255, 255, 0.25)) 60%, var(--wa-text-color));
+          stroke-width: 3;
+        }
+        agent-context-gauge .fg-circle {
+          fill: none;
+          stroke-width: 3;
+          stroke-linecap: round;
+        }
+        agent-context-gauge .color-green {
+          /* 3.60:1 light / 14.20:1 dark */
+          stroke: color-mix(in oklab, var(--wa-gauge-green-color, #10b981) 60%, var(--wa-text-color)); /* emerald-500 */
+        }
+        agent-context-gauge .color-amber {
+          /* 4.66:1 light / 11.60:1 dark */
+          stroke: color-mix(in oklab, var(--wa-gauge-orange-color, #f59e0b) 60%, var(--wa-text-color)); /* amber-500 */
+        }
+        agent-context-gauge .color-red {
+          /* 6.20:1 light / 9.11:1 dark */
+          stroke: color-mix(in oklab, var(--wa-gauge-red-color, #ef4444) 60%, var(--wa-text-color)); /* red-500 */
+        }
+`;
+
 export class AgentContextGauge extends Component {
   private _percent = 0;
   private _tokens = 0;
@@ -115,77 +191,7 @@ export class AgentContextGauge extends Component {
     };
 
     return html`
-      <style>
-        agent-context-gauge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 40px;
-          flex-shrink: 0;
-          position: relative;
-        }
-        agent-context-gauge .gauge-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 40px;
-          cursor: default;
-        }
-        agent-context-gauge .gauge-wrapper.clickable {
-          cursor: pointer;
-        }
-        agent-context-gauge .gauge-wrapper.disabled .bg-circle {
-          /* 005: the disabled gauge is distinguished by a DASHED track, not by
-             dimming. Opacity was measured and rejected: at 0.45 the ring falls
-             to 1.84:1 in wa2-light and 2.74:1 in wa2-dark, below the 3:1 AA
-             floor for a graphical object, and the opacity that does pass (0.75)
-             is not visibly different. A dash pattern keeps the stroke at full
-             contrast, reads at a glance, and survives a greyscale conversion
-             because it carries no colour. */
-          stroke-dasharray: 2 2;
-        }
-        agent-context-gauge .gauge-svg {
-          transform: rotate(-90deg);
-          width: 18px;
-          height: 18px;
-        }
-        agent-context-gauge .gauge-svg.busy {
-          animation: agent-gauge-spin 1.2s linear infinite;
-        }
-        @keyframes agent-gauge-spin {
-          from { transform: rotate(-90deg); }
-          to { transform: rotate(270deg); }
-        }
-        agent-context-gauge .bg-circle {
-          fill: none;
-          /* 002: the gauge now sits on --wa-input-background-color (white in
-             wa2-light), where the raw tokens measure 1.55–2.53:1. Mixing 60% of
-             the token with the theme text colour darkens it on the light surface
-             and brightens it on the dark one: 5.12:1 light / 9.04:1 dark. */
-          stroke: color-mix(in oklab, var(--wa-text-color-disabled, rgba(255, 255, 255, 0.25)) 60%, var(--wa-text-color));
-          stroke-width: 3;
-        }
-        agent-context-gauge .fg-circle {
-          fill: none;
-          stroke-width: 3;
-          stroke-linecap: round;
-          transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
-        }
-        agent-context-gauge .color-green {
-          /* 3.60:1 light / 14.20:1 dark */
-          stroke: color-mix(in oklab, var(--wa-gauge-green-color, #10b981) 60%, var(--wa-text-color)); /* emerald-500 */
-        }
-        agent-context-gauge .color-amber {
-          /* 4.66:1 light / 11.60:1 dark */
-          stroke: color-mix(in oklab, var(--wa-gauge-orange-color, #f59e0b) 60%, var(--wa-text-color)); /* amber-500 */
-        }
-        agent-context-gauge .color-red {
-          /* 6.20:1 light / 9.11:1 dark */
-          stroke: color-mix(in oklab, var(--wa-gauge-red-color, #ef4444) 60%, var(--wa-text-color)); /* red-500 */
-        }
-      </style>
+      ${this.closest("agent-chat-panel") ? "" : html`<style>${CONTEXT_GAUGE_CSS}</style>`}
       <div
         class=${`gauge-wrapper${this._disabled ? " disabled" : " clickable"}`}
         title=${tooltip}

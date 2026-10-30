@@ -28,7 +28,10 @@ export function buildChartJsConfig(
           data: rows.map(r => ({ x: r[xF], o: Number(r[oF]), h: Number(r[hF]), l: Number(r[lF]), c: Number(r[cF]) })),
         }],
       },
-      options: { responsive: true, maintainAspectRatio: false },
+      // `animation: { duration: 0 }`: Chart.js defaults the entry animation to
+      // 1000 ms, which drives a 60-frame requestAnimationFrame canvas redraw
+      // loop for a chart that is correct from its first frame.
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 } },
     };
   }
 
@@ -45,7 +48,7 @@ export function buildChartJsConfig(
           backgroundColor: CHART_PALETTE.slice(0, rows.length),
         }],
       },
-      options: { responsive: true, maintainAspectRatio: false },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 } },
     };
   }
 
@@ -102,6 +105,7 @@ export function buildChartJsConfig(
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: { duration: 0 },
         ...(Object.keys(scales).length ? { scales } : {}),
       },
     };
@@ -124,6 +128,7 @@ export function buildChartJsConfig(
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 0 },
       ...(Object.keys(scales).length ? { scales } : {}),
     },
   };

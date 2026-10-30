@@ -66,6 +66,12 @@ function createStyleEl(): HTMLStyleElement {
   style.textContent = `
     .wa-resize-grip {
       position: fixed;
+      /* Anchored to the box's top-left corner in CSS, so opening, resizing and
+         dragging never read layout. The box is fixed at right 20px / bottom
+         80px (bubble-shadow-template.ts), sized by the two custom properties,
+         and capped at 80vh until the user has dragged. */
+      right: calc(20px + var(--web-agent-panel-width, 480px));
+      bottom: calc(80px + min(var(--web-agent-panel-height, 660px), 80vh));
       z-index: 1001;
       display: none;
       width: ${GRIP_SIZE}px;
@@ -73,6 +79,9 @@ function createStyleEl(): HTMLStyleElement {
       color: var(--wa-text-color, #202124);
       cursor: nwse-resize;
       touch-action: none;
+    }
+    :host([data-wa-resized]) .wa-resize-grip {
+      bottom: calc(80px + var(--web-agent-panel-height, 660px));
     }
     /* The arrow is an inline SVG, never an icon font: the two apps do not
        share a font, and a missing glyph would render as a tofu box. Hidden at
@@ -130,14 +139,6 @@ export function enablePanelResize(bubble: HTMLElement): void {
     bubble.setAttribute("data-wa-resized", "");
   };
 
-  /** Flush: the grip's bottom-right corner sits exactly on the box's top-left
-   *  corner, with no overlap and no gap. */
-  const placeGrip = (): void => {
-    const r = container.getBoundingClientRect();
-    grip.style.left = `${r.left - GRIP_SIZE}px`;
-    grip.style.top = `${r.top - GRIP_SIZE}px`;
-  };
-
   /** No persistence: closing the chat drops the dragged size. */
   const reset = (): void => {
     bubble.style.removeProperty("--web-agent-panel-width");
@@ -153,7 +154,6 @@ export function enablePanelResize(bubble: HTMLElement): void {
   const onMove = (e: PointerEvent): void => {
     if (!start) return;
     apply(resizeFromGrip(start, e.clientX - startX, e.clientY - startY, viewport()));
-    placeGrip();
   };
 
   const onEnd = (): void => {
@@ -173,7 +173,6 @@ export function enablePanelResize(bubble: HTMLElement): void {
     // Commit the size that is already on screen before lifting the 80vh cap, so
     // the box cannot jump on the first pixel of the drag.
     apply(clampPanelSize(start, viewport()));
-    placeGrip();
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onEnd);
     document.addEventListener("pointercancel", onEnd);
@@ -184,7 +183,6 @@ export function enablePanelResize(bubble: HTMLElement): void {
     // The agreed maximum is the window, so a smaller window pulls a dragged box
     // back inside it.
     if (bubble.hasAttribute("data-wa-resized")) apply(clampPanelSize(boxSize(), viewport()));
-    placeGrip();
   });
 
   // The bubble opens and closes by setting `#panel-container.style.display`
@@ -194,8 +192,7 @@ export function enablePanelResize(bubble: HTMLElement): void {
   const sync = (): void => {
     const open = container.style.display === "flex";
     grip.style.display = open ? "block" : "none";
-    if (open) placeGrip();
-    else reset();
+    if (!open) reset();
   };
 
   new MutationObserver(sync).observe(container, { attributes: true, attributeFilter: ["style"] });

@@ -114,6 +114,7 @@ interface MockChartConfig {
   options: {
     responsive?: boolean;
     maintainAspectRatio?: boolean;
+    animation?: { duration?: number };
     legend?: { display?: boolean };
     scales?: {
       yAxes?: Array<{ ticks?: { beginAtZero?: boolean }; scaleLabel?: { labelString?: string } }>;
@@ -445,6 +446,9 @@ describe("AgentChartBlock", () => {
       expect(passedConfig.type).toBe("bar");
       expect(passedConfig.data.labels).toEqual(["Jan", "Feb", "Mar"]);
       expect(passedConfig.data.datasets[0].data).toEqual([100, 150, 80]);
+      // Built from `encoding`, so no host-supplied animation can exist; the
+      // 1000 ms default must not apply.
+      expect(passedConfig.options.animation).toEqual({ duration: 0 });
     });
 
     it("groups datasets by color.field when encoding.color set", async () => {
@@ -1399,6 +1403,37 @@ describe("AgentChartBlock", () => {
     expect(optsNoOptions.maintainAspectRatio).toBe(false);
   });
 
+  /** Chart.js defaults `animation.duration` to 1000 ms, which drives a 60-frame
+   *  requestAnimationFrame canvas redraw loop for a chart that is correct from
+   *  its first frame. A host-supplied animation must survive untouched. */
+  it("U7: options.animation defaults to duration 0 and a supplied animation survives", async () => {
+    vi.mocked(Chart).mockClear();
+    const elNoAnimation = document.createElement("agent-chart-block");
+    elNoAnimation.block = {
+      type: "chart",
+      config: { type: "bar", data: { labels: ["X"], datasets: [{ data: [1] }] } },
+    };
+    document.body.appendChild(elNoAnimation);
+    await elNoAnimation.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(chartCallConfig().options.animation).toEqual({ duration: 0 });
+
+    vi.mocked(Chart).mockClear();
+    const elWithAnimation = document.createElement("agent-chart-block");
+    elWithAnimation.block = {
+      type: "chart",
+      config: {
+        type: "bar",
+        data: { labels: ["X"], datasets: [{ data: [1] }] },
+        options: { animation: { duration: 300 } },
+      },
+    };
+    document.body.appendChild(elWithAnimation);
+    await elWithAnimation.updateComplete;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(chartCallConfig().options.animation).toEqual({ duration: 300 });
+  });
+
   // 003: chart-block.ts installs a ResizeObserver on itself so Chart.js
   // resizes across a shadow boundary (Chart.js 2.x's own resize detection is
   // a legacy hidden-iframe trick that does not fire there). Same shape as the
@@ -1432,6 +1467,33 @@ describe("AgentChartBlock", () => {
       resizeObserverCallback?.([]);
 
       expect(mockChartInstance?.resize).toHaveBeenCalledTimes(1);
+    });
+
+    /** One delivery at `0 x 0` (the bubble panel closed) and one at the same
+     *  `380 x 260` box (panel reopened) both redrew the canvas for nothing. */
+    it("skips a hidden or unchanged-size delivery and resizes on a real resize", async () => {
+      const el = document.createElement("agent-chart-block");
+      el.block = {
+        type: "chart",
+        config: { type: "line", data: { datasets: [] } },
+      };
+      document.body.appendChild(el);
+      await el.updateComplete;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      resizeObserverCallback?.([{ contentRect: { width: 380, height: 260 } }]);
+      expect(mockChartInstance?.resize).toHaveBeenCalledTimes(1);
+
+      // Panel closed: a `0 x 0` box has nothing to lay out.
+      resizeObserverCallback?.([{ contentRect: { width: 0, height: 0 } }]);
+      expect(mockChartInstance?.resize).toHaveBeenCalledTimes(1);
+
+      // Panel reopened at the same size the chart already has.
+      resizeObserverCallback?.([{ contentRect: { width: 380, height: 260 } }]);
+      expect(mockChartInstance?.resize).toHaveBeenCalledTimes(1);
+
+      resizeObserverCallback?.([{ contentRect: { width: 440, height: 260 } }]);
+      expect(mockChartInstance?.resize).toHaveBeenCalledTimes(2);
     });
 
     it("disconnects the ResizeObserver on disconnectedCallback", async () => {

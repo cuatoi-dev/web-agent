@@ -94,6 +94,11 @@ export abstract class ChatPanelComposer extends ChatPanelScreens {
   }
 
   protected _closeSlashMenu(): void {
+    // Already closed and nothing attached: every ordinary keystroke reaches
+    // here, and the writes below (a `hidden` attribute, a `replaceChildren`, an
+    // `aria-activedescendant` removal, a `#input` query) cost style work for no
+    // state change.
+    if (!this._slashOpen && !this._slashOutsideHandler) return;
     if (this._slashOutsideHandler) {
       document.removeEventListener("click", this._slashOutsideHandler);
       this._slashOutsideHandler = undefined;

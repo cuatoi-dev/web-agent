@@ -291,6 +291,42 @@ describe("AgentMessageView", () => {
     expect(element.querySelector(".role-label")).toBeNull();
   });
 
+  it("renders its own stylesheet when it has no chat panel ancestor (011)", async () => {
+    await element.updateComplete;
+    const sheet = element.querySelector("style");
+    expect(sheet).not.toBeNull();
+    expect(sheet!.textContent).toContain("agent-message-view .message-row");
+  });
+
+  it("re-assigning identical values requests no further update (011)", async () => {
+    const registry = new BlockRendererRegistry();
+    const toolRenderers = new Map();
+    const toolPhrases = new Map();
+    Object.assign(element, {
+      userAvatar: "u",
+      agentAvatar: "a",
+      userName: "Alex",
+      agentShortName: "Whiskers",
+      toolRenderers,
+      toolPhrases,
+      registry,
+    });
+    await element.updateComplete;
+
+    const spy = vi.spyOn(element, "requestUpdate");
+    Object.assign(element, {
+      userAvatar: "u",
+      agentAvatar: "a",
+      userName: "Alex",
+      agentShortName: "Whiskers",
+      toolRenderers,
+      toolPhrases,
+      registry,
+      dataSource: undefined,
+    });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it("keeps avatar/name setters as no-render API seam", async () => {
     element.userAvatar = "data:image/svg+xml,user";
     element.agentAvatar = "data:image/svg+xml,agent";

@@ -67,10 +67,11 @@ export abstract class ChatPanelState extends ChatPanelProps {
     if (val.loadingOlder !== undefined) this._loadingOlder = val.loadingOlder;
     this.requestUpdate();
     // 010 round 2 — demo/gallery-only: a frozen loader photographs the same
-    // every time. `wa-bounce` holds every dot near `scale(0)` for most of its
-    // 1.4 s cycle, so a static capture lands on sub-pixel dots by luck of
-    // timing. Freezing parks all three dots at full scale after the render,
-    // and only for a gallery tile — the live loader keeps animating.
+    // every time. The pulse keeps one dot at `scale(0.2)` and the others part
+    // way up the scale for most of the cycle, so a static capture lands on
+    // sub-pixel dots by luck of timing. Freezing parks all three dots at full
+    // scale after the render, and only for a gallery tile — the live loader
+    // keeps pulsing.
     const freezeDots = val.loadingOlder === true;
     void this.updateComplete.then(() => {
       this._freezeOlderDots(freezeDots);
@@ -89,11 +90,12 @@ export abstract class ChatPanelState extends ChatPanelProps {
   }
 
   /** 010 round 2 — demo/gallery-only. Freezing parks the older-loader dots at
-   *  full scale with their bounce paused, so a static gallery capture always
-   *  shows three visible dots. Unfreezing (`false`) restores the stashed
-   *  inline styles, so the live loader's animation is untouched. jsdom has no
-   *  layout, so the DOM tests assert the stash/apply behaviour instead of
-   *  pixels (see J9). */
+   *  full scale with their pulse paused, so a static gallery capture always
+   *  shows three visible dots. The pause marker is the inline `animation: none`
+   *  on each dot, which `WaWorkingDots._applyFrame()` honours by leaving the dot
+   *  alone. Unfreezing (`false`) restores the stashed inline styles, so the live
+   *  loader's pulse is untouched. jsdom has no layout, so the DOM tests assert
+   *  the stash/apply behaviour instead of pixels (see J9). */
   protected _freezeOlderDots(freeze: boolean): void {
     if (freeze) {
       if (this._frozenDots !== null) return;
@@ -179,4 +181,34 @@ export abstract class ChatPanelState extends ChatPanelProps {
   }
   set usage(_val: { tokens: number; max: number; percent: number }) {}
 
+  /** The transcript inputs the last render saw. A render caused by something
+   *  else — a session title arriving from `autoTitle()`, the kebab menu opening
+   *  — must not pay for the forced layout read in `updated()`. */
+  protected _lastTranscriptSnap: readonly unknown[] | null = null;
+
+  protected _didTranscriptChange(): boolean {
+    const next: readonly unknown[] = [
+      this.messages,
+      this.messages.length,
+      this._windowStart,
+      this._loadingOlder,
+      this.running,
+      this.compacting,
+      this._state?.inProgressTurnId,
+      this._retryAttempt,
+      this.error,
+      this._transientWarning,
+      this._dismissalRevision,
+      this._debugOpen,
+      this._configOpen,
+      this._openScreen,
+    ];
+    const prev = this._lastTranscriptSnap;
+    this._lastTranscriptSnap = next;
+    if (!prev) return true;
+    for (let i = 0; i < next.length; i++) {
+      if (prev[i] !== next[i]) return true;
+    }
+    return false;
+  }
 }

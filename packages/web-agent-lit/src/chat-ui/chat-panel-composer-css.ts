@@ -3,7 +3,16 @@
  *  One slice of the `<style>` block `AgentChatPanel.template()` renders,
  *  moved verbatim out of chat-panel.ts. The slices are concatenated back
  *  together inside the same single `<style>` element, so the emitted CSS
- *  text is unchanged. */
+ *  text is unchanged.
+ *
+ *  The trailing slice is the context gauge's own rules, which the gauge omits
+ *  from its own template while it sits inside the panel (chat-ui/
+ *  context-gauge.ts). The todo indicator's and the schedule clock's rules
+ *  follow the same pattern. */
+import { CONTEXT_GAUGE_CSS } from "./context-gauge.js";
+import { SCHEDULE_CLOCK_CSS } from "./schedule-clock.js";
+import { TODO_INDICATOR_CSS } from "./todo-indicator.js";
+
 export const PANEL_COMPOSER_CSS = `        agent-chat-panel .input-area {
           display: block;
           padding: var(--wa-padding-l, 0.5rem);   /* 8px, was 12px */
@@ -30,6 +39,7 @@ export const PANEL_COMPOSER_CSS = `        agent-chat-panel .input-area {
           width: 100%;
           box-sizing: border-box;
           min-width: 0;
+          contain: layout style paint;
         }
         agent-chat-panel .composer-controls {
           display: flex;
@@ -168,4 +178,4 @@ export const PANEL_COMPOSER_CSS = `        agent-chat-panel .input-area {
         agent-chat-panel .wa-thumb-wrap img:hover {
           opacity: 0.85;
         }
-`;
+${CONTEXT_GAUGE_CSS}${TODO_INDICATOR_CSS}${SCHEDULE_CLOCK_CSS}`;

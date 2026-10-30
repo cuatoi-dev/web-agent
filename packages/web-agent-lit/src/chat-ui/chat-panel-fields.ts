@@ -18,7 +18,7 @@ import type {
 import { BlockRenderer, BlockRendererRegistry } from "../ui-blocks/renderer/types.js";
 import { generativeUiRenderer } from "../ui-blocks/renderer/generative-ui-renderer.js";
 import { createConfirmScrim } from "./confirm-scrim.js";
-import type { HostStore, PanelAppContext, PanelMenuItemDef, SendOutcome } from "./types.js";
+import type { HostStore, PanelAppContext, PanelMenuItemDef, SendOutcome, ToolPhraseDef } from "./types.js";
 import type { WaMenuItem } from "../ui/types.js";
 
 /** 128/003 — numbers each panel, so its attachment buttons get ids that are
@@ -110,6 +110,18 @@ export abstract class ChatPanelFields extends Component {
   protected _imageProvider?: AttachmentProvider;
   /** Unsubscribe callbacks from every provider's `subscribe()`. */
   protected _attachmentUnsubs: Array<() => void> = [];
+  /** The provider list the current subscriptions were made from, so re-syncing
+   *  an unchanged list does not tear down and rebuild them. */
+  protected _subscribedProviders: AttachmentProvider[] | null = null;
+  /** The tool list the cached phrase map below was built from, entry by entry. */
+  protected _cachedPhraseSource: Array<{
+    name: string;
+    phrase?: ToolPhraseDef["phrase"];
+    inProgressPhrase?: ToolPhraseDef["inProgressPhrase"];
+  }> | null = null;
+  /** The phrase map `_toolPhrases()` returns while `_cachedPhraseSource` still
+   *  matches the session's tool list. */
+  protected _cachedToolPhrases: Map<string, ToolPhraseDef> | undefined = undefined;
   /** 128/003 — id of the provider whose `choices()` menu is open, or null. */
   protected _attachMenuFor: string | null = null;
   /** The open menu's rows, built once per open so `<wa-menu>` keeps them. */
@@ -170,6 +182,10 @@ export abstract class ChatPanelFields extends Component {
    *  persisted: a reload rebuilds the journal with a new object, so the
    *  notice reappears — the turn really did fail and was never retried. */
   protected _dismissedFailures = new WeakSet<object>();
+  /** Bumped whenever a failed-turn notice is dismissed. A `WeakSet` cannot
+   *  report its size, and `updated()` needs to know that a render happens to
+   *  change the transcript's height. */
+  protected _dismissalRevision = 0;
 
   /** The default registry's stylesheet, rendered as a child of this panel so
    *  the rules live in the panel's own tree — the document, or a host's shadow

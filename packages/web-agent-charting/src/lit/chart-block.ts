@@ -37,6 +37,9 @@ export class AgentChartBlock extends Component {
   private _refreshTimer: ReturnType<typeof setInterval> | null = null;
   private _themeObserver: MutationObserver | null = null;
   private _resizeObserver: ResizeObserver | null = null;
+  /** Box the chart was laid out at; a same-size or hidden (0 x 0) delivery is skipped. */
+  private _lastResizeW = 0;
+  private _lastResizeH = 0;
   private _inView = false;
   private _boundVisibilityHandler = () => this._syncTimer();
   private _lastRenderedBlock: ChartBlock | null = null;
@@ -117,7 +120,17 @@ export class AgentChartBlock extends Component {
     // lives in — so drive Chart.js's resize from it explicitly. `resize()` is
     // a no-op before a chart exists, so this is safe to install unconditionally.
     if (typeof ResizeObserver !== "undefined") {
-      this._resizeObserver = new ResizeObserver(() => {
+      this._resizeObserver = new ResizeObserver((entries) => {
+        const rect = entries[0]?.contentRect;
+        if (rect) {
+          const w = Math.round(rect.width);
+          const h = Math.round(rect.height);
+          // Hidden (0 x 0, panel closed) and unchanged boxes redraw for nothing.
+          if (w === 0 || h === 0) return;
+          if (w === this._lastResizeW && h === this._lastResizeH) return;
+          this._lastResizeW = w;
+          this._lastResizeH = h;
+        }
         this._chartInstance?.resize();
       });
       this._resizeObserver.observe(this);
@@ -138,6 +151,7 @@ export class AgentChartBlock extends Component {
     if (this._chartInstance) {
       this._chartInstance.destroy();
       this._chartInstance = null;
+      this._lastResizeW = this._lastResizeH = 0;
     }
   }
 
@@ -290,10 +304,19 @@ export class AgentChartBlock extends Component {
     return buildChartJsConfig(encoding, rows, fields);
   }
 
+  private _recordRenderedSize(): void {
+    const rect = this.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      this._lastResizeW = Math.round(rect.width);
+      this._lastResizeH = Math.round(rect.height);
+    }
+  }
+
   private async _renderChart() {
     if (this._chartInstance) {
       this._chartInstance.destroy();
       this._chartInstance = null;
+      this._lastResizeW = this._lastResizeH = 0;
     }
     this.error = null;
     applyChartDefaults(this);
@@ -327,6 +350,9 @@ export class AgentChartBlock extends Component {
       sanitized.options = options;
       if (options.responsive === undefined) options.responsive = true;
       if (options.maintainAspectRatio === undefined) options.maintainAspectRatio = false;
+      // Chart.js defaults `animation.duration` to 1000 ms: a 60-frame canvas
+      // redraw loop on every render, for a chart that is right from frame one.
+      if (options.animation === undefined) options.animation = { duration: 0 };
       const finalConfig = transformFinancialConfig(
         transformPayoffConfig(transformPnlConfig(transformWaterfallConfig(sanitized))),
       ) as Chart.ChartConfiguration;
@@ -334,6 +360,7 @@ export class AgentChartBlock extends Component {
       if (!canvas) return;
       try {
         this._chartInstance = new Chart(canvas.getContext("2d")!, finalConfig);
+        this._recordRenderedSize();
       } catch (err) {
         this._chartInstance = null;
         this._setError(errMessage(err) || "Failed to render chart");
@@ -376,6 +403,7 @@ export class AgentChartBlock extends Component {
             transformPayoffConfig(transformPnlConfig(transformWaterfallConfig(chartConfig))),
           ) as Chart.ChartConfiguration,
         );
+        this._recordRenderedSize();
         this.lastUpdated = Date.now();
       } catch (err) {
         console.error("Failed to render datasource chart:", err);

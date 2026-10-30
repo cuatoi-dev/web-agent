@@ -107,6 +107,7 @@ export const PANEL_SHELL_CSS = `        agent-chat-panel {
           overflow-x: hidden;
           padding: var(--wa-padding-l, 0.75rem);   /* 12px, was 16px */
           background: var(--wa-background-color, #fafafa);
+          contain: layout style paint;
         }
         /* 010 — the scroll-to-bottom button.
            The anchor always reserves space between the list and the composer

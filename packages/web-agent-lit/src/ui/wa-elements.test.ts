@@ -6,7 +6,7 @@ import { WaMenu } from "./wa-menu.js";
 import { WaTextInput, WaTextArea } from "./wa-text-fields.js";
 
 defineUiElements();
-afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); });
+afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); vi.useRealTimers(); });
 const mount = <T extends HTMLElement>(tag: string): T => {
   const el = document.createElement(tag) as T;
   document.body.append(el);
@@ -223,6 +223,147 @@ describe("default UI elements", () => {
     const p = document.createElement("wa-progress") as WaProgress; p.indeterminate = true; document.body.append(p);
     expect(p.querySelector("progress")!.hasAttribute("value")).toBe(false);
     expect(mount<WaWorkingDots>("wa-working-dots").querySelectorAll("span")).toHaveLength(3);
+  });
+
+  /** The dots fade and pulse from timers, not from a CSS animation: a running
+   *  `@keyframes` keeps Blink stepping `DocumentAnimations` on the main thread
+   *  on every frame for the whole turn. */
+  describe("wa-working-dots timing", () => {
+    const mountDots = (): { el: WaWorkingDots; wrap: HTMLElement; dots: HTMLElement[] } => {
+      vi.useFakeTimers();
+      const el = mount<WaWorkingDots>("wa-working-dots");
+      const wrap = el.firstElementChild as HTMLElement;
+      const dots = Array.from(wrap.querySelectorAll("span")) as HTMLElement[];
+      return { el, wrap, dots };
+    };
+    const frame = (dots: HTMLElement[]) => dots.map((d) => d.style.transform).join("|");
+
+    it("starts transparent and fades in at 400 ms", () => {
+      const { wrap } = mountDots();
+      expect(wrap.style.opacity).toBe("0");
+      vi.advanceTimersByTime(399);
+      expect(wrap.style.opacity).toBe("0");
+      vi.advanceTimersByTime(1);
+      expect(wrap.style.opacity).toBe("1");
+    });
+
+    it("cycles the dot scales every 350 ms, and every dot reaches full scale", () => {
+      const { dots } = mountDots();
+      const frames = [frame(dots)];
+      for (let i = 0; i < 3; i++) {
+        vi.advanceTimersByTime(350);
+        frames.push(frame(dots));
+      }
+      expect(new Set(frames).size).toBe(4);
+      for (let dot = 0; dot < 3; dot++) {
+        expect(frames.some((f) => f.split("|")[dot] === "scale(1)")).toBe(true);
+      }
+    });
+
+    it("leaves a frozen dot at its parked scale", () => {
+      const { dots } = mountDots();
+      dots[1].style.animation = "none";
+      dots[1].style.transform = "scale(1)";
+      vi.advanceTimersByTime(350 * 2);
+      expect(dots[1].style.transform).toBe("scale(1)");
+      expect(dots[0].style.transform).not.toBe("scale(1)");
+    });
+
+    /** Two of the twelve per-cycle writes repeat the value already on the dot
+     *  (dot 0 from step 2 to 3, dot 2 from step 3 to 0). A repeated write still
+     *  dirties the style attribute and costs a style recalculation, so the
+     *  frame must skip it. */
+    it("writes only the dots whose scale changes", () => {
+      const { dots } = mountDots();
+      const writes = dots.map(() => 0);
+      dots.forEach((dot, i) => {
+        const real = dot.style;
+        const counted = new Proxy(real, {
+          set(target, prop, value) {
+            if (prop === "transform") writes[i] += 1;
+            return Reflect.set(target, prop, value);
+          },
+        });
+        Object.defineProperty(dot, "style", { configurable: true, get: () => counted });
+      });
+      // Step 3 of the cycle holds dot 0 at scale(0.2), where step 2 left it.
+      vi.advanceTimersByTime(350 * 3);
+      expect(writes).toEqual([2, 3, 3]);
+      expect(dots[0].style.transform).toBe("scale(0.2)");
+      // Step 0 then holds dot 2 at scale(0.2), where step 3 left it.
+      vi.advanceTimersByTime(350);
+      expect(writes).toEqual([3, 4, 3]);
+      expect(dots[2].style.transform).toBe("scale(0.2)");
+    });
+
+    it("stops both timers when the element is removed", () => {
+      const { el, wrap, dots } = mountDots();
+      el.remove();
+      const frozen = frame(dots);
+      vi.advanceTimersByTime(350 * 10);
+      expect(frame(dots)).toBe(frozen);
+      // Still transparent: the 400 ms fade timer was cleared, not just the pulse.
+      expect(wrap.style.opacity).toBe("0");
+    });
+
+    /** A hidden tab cannot show the pulse, so a tick there is pure cost: it
+     *  still commits, re-lays out and re-layers the dots. */
+    it("skips a pulse tick while the document is hidden", () => {
+      const { dots } = mountDots();
+      const first = frame(dots);
+      Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+      try {
+        vi.advanceTimersByTime(350 * 2);
+        expect(frame(dots)).toBe(first);
+      } finally {
+        delete (document as unknown as { hidden?: unknown }).hidden;
+      }
+      vi.advanceTimersByTime(350);
+      expect(frame(dots)).not.toBe(first);
+    });
+  });
+
+  /** The composer textarea grows to fit its text. A keystroke that cannot have
+   *  made the text shorter and still fits the box must not measure or write
+   *  anything: it used to force three layouts and three style recalcs per key. */
+  describe("wa-text-area auto-grow", () => {
+    /** The panel height cap is read from the nearest `<agent-chat-panel>`, so
+     *  the element is mounted inside one, as the real composer is. */
+    const mountArea = (): { area: HTMLTextAreaElement; panel: HTMLElement; box: { clientHeight: number; scrollHeight: number } } => {
+      const panel = document.createElement("agent-chat-panel");
+      const el = document.createElement("wa-text-area");
+      panel.append(el);
+      document.body.append(panel);
+      const area = el.querySelector("textarea")!;
+      const box = { clientHeight: 40, scrollHeight: 40 };
+      Object.defineProperty(area, "clientHeight", { configurable: true, get: () => box.clientHeight });
+      Object.defineProperty(area, "scrollHeight", { configurable: true, get: () => box.scrollHeight });
+      return { area, panel, box };
+    };
+    const type = (area: HTMLTextAreaElement, value: string): void => {
+      area.value = value;
+      area.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    it("measures nothing while the text still fits the box", () => {
+      const { area, panel } = mountArea();
+      const rect = vi.spyOn(panel, "getBoundingClientRect");
+      type(area, "hello");
+      type(area, "hello there");
+      expect(rect).not.toHaveBeenCalled();
+      expect(area.style.height).toBe("");
+    });
+
+    it("grows when the text overflows, and shrinks again when a line is deleted", () => {
+      const { area, panel, box } = mountArea();
+      vi.spyOn(panel, "getBoundingClientRect").mockReturnValue({ height: 600 } as DOMRect);
+      box.scrollHeight = 80;
+      type(area, "a\nb");
+      expect(area.style.height).toBe("80px");
+      box.scrollHeight = 40;
+      type(area, "a");
+      expect(area.style.height).toBe("40px");
+    });
   });
   it("wa-icon draws the SVG with aria-hidden when unlabeled", () => {
     const el = document.createElement("wa-icon") as WaIcon; el.name = "history"; document.body.append(el);

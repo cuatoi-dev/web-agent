@@ -47,6 +47,7 @@ export abstract class Component extends HTMLElement {
     this._updatePromise = null;
     this._resolveUpdate = null;
     try {
+      this.willUpdate();
       const t = this.template();
       if (t) {
         render(t, this);
@@ -58,6 +59,8 @@ export abstract class Component extends HTMLElement {
       }
     }
   }
+
+  willUpdate() {}
 
   updated() {}
 

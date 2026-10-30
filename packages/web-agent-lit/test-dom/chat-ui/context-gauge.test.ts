@@ -149,6 +149,20 @@ describe("AgentContextGauge Component Tests", () => {
     expect(css).not.toContain("opacity: 0.45");
   });
 
+  /** `stroke-dashoffset` and `stroke` are non-composited SVG paint properties,
+   *  so a transition on them drove an 18-frame main-thread paint loop on an
+   *  18 px ring for every usage update. A standalone gauge keeps its own
+   *  stylesheet; inside the panel the panel sheet carries it. */
+  it("renders its own stylesheet and transitions no SVG paint property", async () => {
+    await element.updateComplete;
+    const sheet = element.querySelector("style");
+    expect(sheet).not.toBeNull();
+    const css = sheet!.textContent ?? "";
+    const fgRule = css.slice(css.indexOf(".fg-circle"), css.indexOf(".color-green"));
+    expect(fgRule).toContain("stroke-width: 3");
+    expect(fgRule).not.toContain("transition");
+  });
+
   it("busy adds the spin class to the gauge SVG; the ring and arc stay (009)", async () => {
     element.busy = true;
     await element.updateComplete;

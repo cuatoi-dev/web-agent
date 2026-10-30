@@ -111,6 +111,41 @@ describe("AgentChatPanel history dropdown inside a shadow root", () => {
     host.remove();
   });
 
+  it("reads the dropdown box once when positioning it", async () => {
+    const proto = HTMLElement.prototype;
+    // Read the original off its property descriptor: a bare method reference
+    // held across statements trips `@typescript-eslint/unbound-method`.
+    const realRect = Object.getOwnPropertyDescriptor(proto, "getBoundingClientRect")?.value as
+      ((this: HTMLElement) => DOMRect) | undefined;
+    let popupReads = 0;
+    const anchorRect = { top: 690, left: 800, right: 900, bottom: 700, width: 100, height: 10 };
+    const popupRect = { width: 260, height: 300, top: 0, left: 0, right: 260, bottom: 300 };
+    const spy = vi.spyOn(proto, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains("wa-history-popup")) {
+        popupReads++;
+        return popupRect as DOMRect;
+      }
+      if (this.id === "history-anchor") return anchorRect as DOMRect;
+      return realRect ? realRect.call(this) : ({ width: 0, height: 0 } as DOMRect);
+    });
+    try {
+      priv(element)._toggleHistoryPanel();
+      await element.updateComplete;
+      await Promise.resolve();
+
+      const popup = element.querySelector<HTMLElement>(".wa-history-popup")!;
+      expect(popup).not.toBeNull();
+      // One read: the width and the height come from the same box.
+      expect(popupReads).toBe(1);
+      // Same clamped result as before: the dropdown would overhang the
+      // viewport on both axes, so it is moved back inside.
+      expect(popup.style.left).toBe("640px");
+      expect(popup.style.top).toBe("390px");
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("stays open when the opening click on #history-anchor reaches document", async () => {
     const anchor = element.querySelector("#history-anchor") as HTMLElement;
     expect(anchor).not.toBeNull();

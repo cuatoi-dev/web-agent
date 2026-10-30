@@ -45,19 +45,24 @@ export class AgentMessageView extends Component {
   private _userName?: string;
   private _agentShortName?: string;
 
+  /** Every setter below returns early when the value is unchanged.
+   *  The panel re-binds all of these on every render, including renders caused
+   *  by something else entirely (a session title arriving from `autoTitle()`,
+   *  a menu opening), so an unguarded write made every visible row re-render. */
   get userAvatar() { return this._userAvatar; }
-  set userAvatar(val: string | undefined) { this._userAvatar = val; this.requestUpdate(); }
+  set userAvatar(val: string | undefined) { if (this._userAvatar === val) return; this._userAvatar = val; this.requestUpdate(); }
   get agentAvatar() { return this._agentAvatar; }
-  set agentAvatar(val: string | undefined) { this._agentAvatar = val; this.requestUpdate(); }
+  set agentAvatar(val: string | undefined) { if (this._agentAvatar === val) return; this._agentAvatar = val; this.requestUpdate(); }
   get userName() { return this._userName; }
-  set userName(val: string | undefined) { this._userName = val; this.requestUpdate(); }
+  set userName(val: string | undefined) { if (this._userName === val) return; this._userName = val; this.requestUpdate(); }
 
   get agentShortName() { return this._agentShortName; }
-  set agentShortName(val: string | undefined) { this._agentShortName = val; this.requestUpdate(); }
+  set agentShortName(val: string | undefined) { if (this._agentShortName === val) return; this._agentShortName = val; this.requestUpdate(); }
 
   private _toolRenderers?: Map<string, ToolRenderer>;
   get toolRenderers() { return this._toolRenderers; }
   set toolRenderers(val: Map<string, ToolRenderer> | undefined) {
+    if (this._toolRenderers === val) return;
     this._toolRenderers = val;
     this.requestUpdate();
   }
@@ -65,19 +70,23 @@ export class AgentMessageView extends Component {
   private _toolPhrases?: Map<string, ToolPhraseDef>;
   get toolPhrases() { return this._toolPhrases; }
   set toolPhrases(val: Map<string, ToolPhraseDef> | undefined) {
+    if (this._toolPhrases === val) return;
     this._toolPhrases = val;
     this.requestUpdate();
   }
 
   private _text = "";
 
+  /** Lazy on purpose: `template()` sanitizes the text part with `sanitize()`,
+   *  which is cached, so parsing here only duplicated that work for a value the
+   *  following `.parts` write was about to replace anyway. */
   get text() { return this._text; }
   set text(val: string) {
     if (this._text !== val) {
       this._text = val;
-      this._html = sanitize(val);
+      this._html = "";
       const keep = this._parts.filter((p) => p.kind !== "text");
-      this._parts = val ? [{ kind: "text", text: val, html: this._html }, ...keep] : [...keep];
+      this._parts = val ? [{ kind: "text", text: val }, ...keep] : [...keep];
       this.requestUpdate();
     }
   }
@@ -167,12 +176,14 @@ export class AgentMessageView extends Component {
 
   get dataSource() { return this._dataSource; }
   set dataSource(val: DataSourceProvider | undefined) {
+    if (this._dataSource === val) return;
     this._dataSource = val;
     this.requestUpdate();
   }
 
   get registry() { return this._registry; }
   set registry(val: BlockRendererRegistry | undefined) {
+    if (this._registry === val) return;
     this._registry = val;
     this.requestUpdate();
   }
@@ -236,7 +247,7 @@ export class AgentMessageView extends Component {
     if (isSystem) rowClass += " system";
 
     return html`
-      ${messageViewStyles}
+      ${this.closest("agent-chat-panel") ? "" : messageViewStyles}
       <div class=${rowClass}>
         <div class=${containerClass}>
         ${isUser && this._attachmentChips.length > 0

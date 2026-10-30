@@ -7,6 +7,7 @@ import "./context-gauge.js";
 import "./schedule-clock.js";
 import "./todo-indicator.js";
 import { getAgentCursor } from "./agent-cursor.js";
+import { messageViewStyles } from "./message-view-styles.js";
 import { ChatPanelWindow } from "./chat-panel-window.js";
 import { PANEL_SHELL_CSS } from "./chat-panel-shell-css.js";
 import { PANEL_COMPOSER_CSS } from "./chat-panel-composer-css.js";
@@ -107,18 +108,27 @@ export class AgentChatPanel extends ChatPanelWindow {
     this._session = undefined;
   }
 
+  private _pinAfterRender = true;
+
+  /** Captured before `render()` mutates `.messages-list`, while the previous
+   *  frame's layout is still clean, so the read costs no synchronous layout.
+   *  Measuring after the render also saw the already-grown `scrollHeight`, and
+   *  failed the 30 px test whenever one render added more than that. */
+  override willUpdate() {
+    if (this._forceScrollToBottom || !this._didTranscriptChange()) {
+      this._pinAfterRender = false;
+      return;
+    }
+    const list = this.querySelector(".messages-list");
+    this._pinAfterRender = list ? (list.scrollHeight - list.scrollTop - list.clientHeight < 30) : true;
+  }
+
   updated() {
     this._ensureElements();
     this._updateSendButtonState();
     this._lastShowStop = this._showStopButton();
     this._syncHistoryPopup();
-
-    const list = this.querySelector(".messages-list");
-    const wasAtBottom = list ? (list.scrollHeight - list.scrollTop - list.clientHeight < 30) : true;
-
-    if (this._forceScrollToBottom || wasAtBottom) {
-      this._scrollToBottomQueue();
-    }
+    if (this._forceScrollToBottom || this._pinAfterRender) this._scrollToBottomQueue();
   }
 
 
@@ -287,6 +297,9 @@ export class AgentChatPanel extends ChatPanelWindow {
 ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
       </style>
       ${this._registryStyleEl}
+      ${/* 011 — one message-row stylesheet for the whole thread. A row renders
+            its own copy only with no <agent-chat-panel> ancestor. */ ""}
+      ${messageViewStyles}
       ${this._hideHeader
         ? ""
         : html`<div class="header">
@@ -356,7 +369,7 @@ ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
 
             <div
               class="messages-list"
-              @scroll=${() => this._handleListScroll()}
+              @scroll=${(e: Event) => this._handleListScroll(e.currentTarget as HTMLElement)}
               @block-button=${(e: CustomEvent<{ prompt: string }>) => this._handleBlockButton(e)}
               @block-submit=${(e: CustomEvent<{ id: string; values: Record<string, unknown> }>) => this._handleBlockSubmit(e)}
             >
@@ -368,11 +381,15 @@ ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
                     `.message-row.assistant .message-container.assistant > div`
                     selector (`apps/cat-store/e2e/working-dots.mock.spec.ts:22`). */ ""}
               ${this._loadingOlder ? html`<wa-working-dots></wa-working-dots>` : ""}
+              ${/* 011 — a message that carries `parts` already holds its text
+                    there, so the row gets `.text` empty and the view does not
+                    write a text->html cache the following `.parts` write would
+                    throw away in the same property batch. */ ""}
               ${this._visibleMessages().map(
                 (msg) => html`
                   <agent-message-view
                     .role=${msg.role}
-                    .text=${msg.text || ""}
+                    .text=${msg.parts?.length ? "" : (msg.text || "")}
                     .images=${msg.images || []}
                     .trace=${msg.trace}
                     .blocks=${msg.blocks || []}
