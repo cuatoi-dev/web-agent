@@ -413,6 +413,8 @@ export class WebAgentBubble extends HTMLElement {
       this.containerEl.style.display = "none";
       this._renderLauncher();
     }
+    // An icon-only button: the label is its accessible name.
+    this.launcherBtn.setAttribute("aria-label", this.isOpen ? "Close chat" : "Open chat");
     this._syncStopBtn();
   }
 }

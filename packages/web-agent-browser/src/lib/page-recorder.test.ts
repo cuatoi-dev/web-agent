@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi, beforeAll } from "vitest";
 import * as recorder from "./page-recorder";
-import { REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
+import { EXTENSION_UI_ATTR, REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
 import type { RecordedStep } from "./recorder.types";
 
 beforeAll(() => {
@@ -122,9 +122,9 @@ describe("page-recorder", () => {
     expect(steps()).toHaveLength(0);
   });
 
-  it("U-R5: a trusted click inside <div data-agent-ui='true'><button>X</button></div>", () => {
+  it("U-R5: a trusted click inside the extension's own UI wrapper records nothing", () => {
     const wrapper = document.createElement("div");
-    wrapper.setAttribute("data-agent-ui", "true");
+    wrapper.setAttribute(EXTENSION_UI_ATTR, "true");
     const btn = document.createElement("button");
     btn.textContent = "X";
     wrapper.appendChild(btn);
@@ -646,12 +646,23 @@ describe("page-recorder", () => {
       expect(s[0].target?.role).toBe("textbox");
     });
 
-    it("click on a <button> inside the open shadow root of <web-agent-bubble> records nothing", () => {
-      const { root } = host("web-agent-bubble", "open", "<button>Close</button>");
+    it("click on a <button> inside the extension's own <web-agent-bubble> records nothing", () => {
+      const { host: bubble, root } = host("web-agent-bubble", "open", "<button>Close</button>");
+      bubble.setAttribute(EXTENSION_UI_ATTR, "true");
       recorder.start("r1");
       fire(root.querySelector("button") as Element, new MouseEvent("click", composed));
 
       expect(steps()).toHaveLength(0);
+    });
+
+    it("click on a <button> inside the site's own <web-agent-bubble> records a click step", () => {
+      const { root } = host("web-agent-bubble", "open", "<button>Close</button>");
+      recorder.start("r1");
+      fire(root.querySelector("button") as Element, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Close"');
     });
 
     it("wheel scroll where the only visible heading is inside an open shadow root records scroll to heading", () => {

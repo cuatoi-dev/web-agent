@@ -12,6 +12,8 @@ import {
   CLOSE_ICON_SVG,
   IN_PAGE_SESSION_NAMESPACE,
   IN_PAGE_SYSTEM_PROMPT,
+  EXTENSION_UI_ATTR,
+  EXTENSION_UI_SELECTOR,
 } from "./lib/constants";
 import { applyAgentBrand, EMPTY_BRAND } from "./lib/brand";
 import { EMPTY_MODEL_STORE, listModels } from "./lib/model-store";
@@ -69,6 +71,7 @@ function mount(payload: BubblePayload): Promise<void> {
       const { filesScreen } = vfsLit;
       const el = document.createElement("web-agent-bubble");
       el.setAttribute("data-agent-ui", "true");
+      el.setAttribute(EXTENSION_UI_ATTR, "true");
       el.launcherIcon = LAUNCHER_ICON_SVG;
       el.closeIcon = CLOSE_ICON_SVG;
 
@@ -106,7 +109,7 @@ function mount(payload: BubblePayload): Promise<void> {
           actionCue: createActionCue({ getCursor: () => getAgentCursor(), speed: () => CUE_SPEED }),
           typingPaceMs: SPEED_PRESETS[CUE_SPEED].msPerWord,
           confirmInteraction: el.confirmInteraction.bind(el),
-          agentUiSelector: "web-agent-bubble, [data-agent-ui]",
+          agentUiSelector: EXTENSION_UI_SELECTOR,
           images: vision,
         }),
         ...pageFetchTools(),

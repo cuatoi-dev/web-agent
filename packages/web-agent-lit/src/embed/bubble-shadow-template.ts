@@ -102,7 +102,7 @@ export const BUBBLE_SHADOW_HTML = `
         }
         #stop-run svg { width: 20px; height: 20px; }
       </style>
-      <button id="launcher" part="launcher">
+      <button id="launcher" part="launcher" aria-label="Open chat">
         <span id="launcher-icon" part="launcher-icon" class="wa-launcher-icon"><i>chat</i></span>
       </button>
       <button id="stop-run" part="stop-run" type="button" aria-label="Stop" title="Stop">

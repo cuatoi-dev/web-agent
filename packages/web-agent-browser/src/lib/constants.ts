@@ -118,10 +118,17 @@ export const NOT_ACTIVATED = (tabId: number, origin: string) =>
  *  snapshot uses (packages/web-agent-dom/src/adapters/dom-adapter.ts:53). */
 export const SNAPSHOT_MAX_CHARS = 12_000;
 
-/** 131/002 — the in-page bubble's own root selector, read by page_verify's
- *  helper-world checks so they agree with the panel on what to exclude
- *  (content.ts:59, :114). */
-export const AGENT_UI_SELECTOR = "web-agent-bubble, [data-agent-ui]";
+/** The attribute content.ts sets on the extension's OWN bubble. A site may ship
+ *  its own <web-agent-bubble> (cat-store does), so the tag name cannot tell the
+ *  two apart; the recorder ignores only an element carrying this attribute. */
+export const EXTENSION_UI_ATTR = "data-web-agent-extension";
+export const EXTENSION_UI_SELECTOR = `[${EXTENSION_UI_ATTR}]`;
+
+/** 131/002 — the selector page_verify's helper-world checks use to skip the
+ *  agent's own UI (panel-page-tools-verify-locator.ts:85-86). A site's own
+ *  <web-agent-bubble> IS the page, so only the extension's own bubble is
+ *  skipped, the same rule the recorder follows (page-recorder.ts:17). */
+export const AGENT_UI_SELECTOR = EXTENSION_UI_SELECTOR;
 
 /** The most requests one tab's debugger network log keeps; the oldest is
  *  dropped (124/003). */

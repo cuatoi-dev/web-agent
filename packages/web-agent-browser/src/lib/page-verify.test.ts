@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { runVerify } from "./page-verify";
+import { AGENT_UI_SELECTOR, EXTENSION_UI_ATTR } from "./constants";
 import type { VerifyAdapter } from "./types";
-
-const AGENT_UI_SELECTOR = "web-agent-bubble, [data-agent-ui]";
 
 const CHECKOUT_BODY = `
   <main id="checkout">
@@ -85,6 +84,18 @@ function adapterFor(el: Element): VerifyAdapter {
   return { agentUiSelector: AGENT_UI_SELECTOR, el };
 }
 
+/** An element with an open shadow root, appended to the body. Mirrors
+ *  cat-store: <cat-agent-widget> -> shadow root -> <web-agent-bubble> ->
+ *  shadow root -> button. */
+function shadowHost(tag: string, html: string): { host: HTMLElement; root: ShadowRoot } {
+  const host = document.createElement(tag);
+  const root = host.attachShadow({ mode: "open" });
+  root.innerHTML = html;
+  host.setAttribute("data-agent-ui", "true");
+  document.body.appendChild(host);
+  return { host, root };
+}
+
 describe("page-verify", () => {
   beforeEach(() => {
     document.body.innerHTML = CHECKOUT_BODY;
@@ -107,9 +118,9 @@ describe("page-verify", () => {
     });
   });
 
-  it("S3: text_visible ignores hidden text, agent UI and script source", () => {
+  it("S3: text_visible ignores hidden text, the extension's own UI and script source", () => {
     const agentDiv = document.createElement("div");
-    agentDiv.setAttribute("data-agent-ui", "true");
+    agentDiv.setAttribute(EXTENSION_UI_ATTR, "true");
     agentDiv.textContent = "Enter a code";
     document.body.appendChild(agentDiv);
 
@@ -227,5 +238,38 @@ describe("page-verify", () => {
       text: 'FAIL expected list "Nope" to be visible; found no matching element.',
       isError: false,
     });
+  });
+
+  it("S13: a button inside the site's own <web-agent-bubble> is found by role and name, and its text is page text", () => {
+    const widget = shadowHost("cat-agent-widget", "");
+    const bubble = document.createElement("web-agent-bubble");
+    const bubbleRoot = bubble.attachShadow({ mode: "open" });
+    bubbleRoot.innerHTML = '<button aria-label="Open chat"><i>chat</i></button><p>Ask the assistant...</p>';
+    widget.root.appendChild(bubble);
+
+    const adapter = adapterFor(document.documentElement);
+    expect(runVerify({ kind: "element_visible", role: "button", name: "Open chat" }, adapter, document).text).toBe(
+      'PASS button "Open chat" is visible.',
+    );
+    expect(runVerify({ kind: "text_visible", text: "Ask the assistant..." }, adapter, document).text).toBe(
+      'PASS text "Ask the assistant..." is visible.',
+    );
+  });
+
+  it("S14: page_verify finds nothing inside the extension's own bubble", () => {
+    const own = shadowHost("web-agent-bubble", '<button aria-label="Session history">history</button>');
+    own.host.setAttribute(EXTENSION_UI_ATTR, "true");
+
+    const adapter = adapterFor(document.documentElement);
+    expect(runVerify({ kind: "element_visible", role: "button", name: "Session history" }, adapter, document).text).toBe(
+      'FAIL expected button "Session history" to be visible; found no matching element.',
+    );
+    expect(runVerify({ kind: "text_visible", text: "history" }, adapter, document).text).toBe(
+      'FAIL expected text "history" to be visible; found no matching text.',
+    );
+    // Only the bubble is skipped: the rest of the page is still searched.
+    expect(runVerify({ kind: "element_visible", role: "button", name: "Apply" }, adapter, document).text).toBe(
+      'PASS button "Apply" is visible.',
+    );
   });
 });

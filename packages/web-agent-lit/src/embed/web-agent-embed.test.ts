@@ -46,6 +46,18 @@ describe("WebAgentBubble launcher", () => {
     expect(iconHtml()).toBe("<i>close</i>");
   });
 
+  it("the launcher's accessible name follows the open state", () => {
+    const launcher = el.shadowRoot!.querySelector("#launcher")!;
+    const closed = launcher.getAttribute("aria-label");
+    el.toggle();
+    const open = launcher.getAttribute("aria-label");
+    el.toggle();
+    expect(closed).toBeTruthy();
+    expect(open).toBeTruthy();
+    expect(open).not.toBe(closed);
+    expect(launcher.getAttribute("aria-label")).toBe(closed);
+  });
+
   it("open state uses closeIcon verbatim when a host overrides it", () => {
     el.closeIcon = "✕";
     el.toggle();

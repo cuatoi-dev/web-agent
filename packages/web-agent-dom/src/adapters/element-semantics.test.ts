@@ -34,6 +34,16 @@ describe("getName inside an open shadow root", () => {
     expect(getName(root.querySelector("input") as Element)).toBe("Inner");
   });
 
+  it("falls back to the placeholder of a textarea that has no label", () => {
+    const root = shadowHost('<textarea placeholder="Ask the assistant..."></textarea>');
+    expect(getName(root.querySelector("textarea") as Element)).toBe("Ask the assistant...");
+  });
+
+  it("prefers a <label for> over the placeholder", () => {
+    const root = shadowHost('<label for="q">Search</label><input id="q" placeholder="Type here">');
+    expect(getName(root.querySelector("input") as Element)).toBe("Search");
+  });
+
   it("still finds a <label for> and an aria-labelledby id in the main document", () => {
     document.body.innerHTML =
       '<label for="a">Alpha</label><input id="a"><span id="b">Beta</span><input aria-labelledby="b">';

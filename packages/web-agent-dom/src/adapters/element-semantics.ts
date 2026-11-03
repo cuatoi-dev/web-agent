@@ -250,6 +250,12 @@ export function getName(el: Element): string {
   const title = el.getAttribute("title");
   if (title?.trim()) return title.trim();
 
+  // placeholder — the last name source for a text field (HTML-AAM: after title)
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    const placeholder = el.placeholder.trim();
+    if (placeholder) return placeholder;
+  }
+
   // button textContent
   if (tagLC(el) === "button") {
     const t = getTextContentWithSlots(el).trim();

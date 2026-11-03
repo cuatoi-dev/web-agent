@@ -6,14 +6,15 @@
 // It reaches the panel through the Runtime.addBinding function __waRecStep,
 // which takes exactly ONE string argument — so every step is JSON.
 import { describeElementParts } from "@cuatoi/web-agent-dom";
-import { REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
+import { EXTENSION_UI_SELECTOR, REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
 import { journalTarget, locatorSet } from "./locator-builder";
 import { pwNormalizeWhiteSpace } from "./playwright-match";
 import type { RecordedStep, RecordedStepKind } from "./recorder.types";
 
-/** The same selector content.ts gives the panel DomAdapter (content.ts:72).
- *  An event inside the agent's own UI is never the user acting on the page. */
-const AGENT_UI = "web-agent-bubble, [data-agent-ui]";
+/** The extension's own bubble (content.ts). An event inside it is never the
+ *  user acting on the page. A site's own <web-agent-bubble> IS the page, so it
+ *  is recorded like any other element. */
+const AGENT_UI = EXTENSION_UI_SELECTOR;
 
 /** What "the closest interactive element" means for a click and for a hover.
  *  A click with no interactive ancestor records nothing: the plan's rule is
