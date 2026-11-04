@@ -1046,6 +1046,26 @@ describe("page-recorder", () => {
       expect(s[0].value).toBe("9");
     });
 
+    it("pointerdown on a range slider cancels the hover timer and prevents a hover step during a slow drag", () => {
+      vi.useFakeTimers();
+      const { range } = section3();
+      recorder.start("r1");
+      // Pointer moves onto the range, arming the hover timer.
+      fire(range, new PointerEvent("pointermove", { bubbles: true }));
+      // Pointer goes down (drag begins).
+      fire(range, new PointerEvent("pointerdown", { bubbles: true }));
+      // Time advances past REC_HOVER_REST_MS with NO input event yet (user holds or drags slowly).
+      vi.advanceTimersByTime(REC_HOVER_REST_MS + 100);
+      // Now the value changes.
+      range.value = "9";
+      fire(range, new Event("input", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("fill");
+      expect(s[0].line).toBe('fill slider "Level" "9"');
+    });
+
     it("picking a color records one fill step with the #rrggbb value", () => {
       const { color } = section3();
       recorder.start("r1");

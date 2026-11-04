@@ -278,6 +278,14 @@ function scrollLine(step: RecordedStep): string {
   return `scroll ${delta < 0 ? "up" : "down"} ${Math.abs(Math.round(delta))} px`;
 }
 
+function onPointerDown(event: PointerEvent): void {
+  if (ignored(event)) return;
+  const el = target(event);
+  if (!el) return;
+  window.clearTimeout(hoverTimer);
+  restedEl = el;
+}
+
 function onPointerMove(event: PointerEvent): void {
   if (ignored(event)) return;
   const el = target(event);
@@ -305,6 +313,7 @@ function attach(): void {
   on("input", onInput);
   on("keydown", onKeyDown);
   on("wheel", onWheel);
+  on("pointerdown", onPointerDown);
   on("pointermove", onPointerMove);
 }
 
