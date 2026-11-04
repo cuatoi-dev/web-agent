@@ -250,7 +250,7 @@ describe("page-recorder", () => {
     expect(s[2].seq).not.toBe(s[0].seq);
   });
 
-  it("U-R11: a change on <select id=shipping> with Express selected", () => {
+  it("U-R11: an input on <select id=shipping> with Express selected", () => {
     const label = document.createElement("label");
     label.htmlFor = "shipping";
     label.textContent = "Shipping";
@@ -268,7 +268,7 @@ describe("page-recorder", () => {
     recorder.start("r1");
 
     opt2.selected = true;
-    fire(select, new Event("change", { bubbles: true }));
+    fire(select, new Event("input", { bubbles: true, composed: true }));
 
     const s = steps();
     expect(s).toHaveLength(1);
@@ -277,7 +277,7 @@ describe("page-recorder", () => {
     expect(s[0].line).toBe('select combobox "Shipping" "Express"');
   });
 
-  it("U-R12: a change on a <select multiple> with two options selected", () => {
+  it("U-R12: an input on a <select multiple> with two options selected", () => {
     const label = document.createElement("label");
     label.htmlFor = "extras";
     label.textContent = "Extras";
@@ -297,12 +297,41 @@ describe("page-recorder", () => {
 
     opt1.selected = true;
     opt2.selected = true;
-    fire(select, new Event("change", { bubbles: true }));
+    fire(select, new Event("input", { bubbles: true, composed: true }));
 
     const s = steps();
     expect(s).toHaveLength(1);
     expect(s[0].values).toEqual(["Gift wrap", "Card"]);
     expect(s[0].line.endsWith('"Gift wrap", "Card"')).toBe(true);
+  });
+
+  it("a light-DOM <select> receiving input then change records one select step", () => {
+    const label = document.createElement("label");
+    label.htmlFor = "shipping";
+    label.textContent = "Shipping";
+    const select = document.createElement("select");
+    select.id = "shipping";
+    const opt1 = document.createElement("option");
+    opt1.value = "standard";
+    opt1.text = "Standard";
+    const opt2 = document.createElement("option");
+    opt2.value = "express";
+    opt2.text = "Express";
+    select.append(opt1, opt2);
+    document.body.append(label, select);
+
+    recorder.start("r1");
+
+    opt2.selected = true;
+    fire(select, new Event("input", { bubbles: true, composed: true }));
+    fire(select, new Event("change", { bubbles: true }));
+
+    expect(calls).toHaveLength(1);
+    const s = steps();
+    expect(s).toHaveLength(1);
+    expect(s[0].kind).toBe("select");
+    expect(s[0].values).toEqual(["Express"]);
+    expect(s[0].line).toBe('select combobox "Shipping" "Express"');
   });
 
   it("U-R13: keydown Enter on <button>, Escape on <body>, and a on <button>", () => {
@@ -628,12 +657,35 @@ describe("page-recorder", () => {
       const select = root.querySelector("select") as HTMLSelectElement;
       recorder.start("r1");
       select.selectedIndex = 1;
-      fire(select, new Event("change", composed));
+      fire(select, new Event("input", composed));
+      fire(select, new Event("change", { bubbles: true }));
 
+      expect(calls).toHaveLength(1);
       const s = steps();
+      expect(s).toHaveLength(1);
       expect(s[0].kind).toBe("select");
       expect(s[0].values).toEqual(["Large"]);
       expect(s[0].line).toBe('select combobox "Size" "Large"');
+    });
+
+    it("trusted composed input on a <select> inside an open shadow root records one select step with its label", () => {
+      const { root } = host(
+        "store-view",
+        "open",
+        '<label for="cat-filter">Category:</label><select id="cat-filter"><option value="">All</option><option value="Food">Food</option><option value="Toys">Toys</option></select>',
+      );
+      const select = root.querySelector("select") as HTMLSelectElement;
+      recorder.start("r1");
+      select.selectedIndex = 2;
+      fire(select, new Event("input", composed));
+
+      expect(calls).toHaveLength(1);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("select");
+      expect(s[0].values).toEqual(["Toys"]);
+      expect(s[0].line).toBe('select combobox "Category:" "Toys"');
+      expect(s[0].target).toMatchObject({ role: "combobox", name: "Category:" });
     });
 
     it("Enter pressed in an <input> inside an open shadow root records a press step targeting the input", () => {

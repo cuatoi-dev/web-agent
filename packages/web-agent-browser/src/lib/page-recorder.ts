@@ -148,6 +148,13 @@ function onInput(event: Event): void {
   if (ignored(event)) return;
   const el = innermost(event);
   if (!el) return;
+  if (el instanceof HTMLSelectElement) {
+    closeOpen();
+    const values = [...el.selectedOptions].map((o) => pwNormalizeWhiteSpace(o.label));
+    const line = `select ${named(el)} ${values.map((v) => `"${v}"`).join(", ")}`;
+    emit(withTarget(el, "select", line, { values }));
+    return;
+  }
   const isText =
     (el instanceof HTMLInputElement && !["checkbox", "radio", "file", "range", "color"].includes(el.type)) ||
     el instanceof HTMLTextAreaElement ||
@@ -175,16 +182,6 @@ function onInput(event: Event): void {
   const step = withTarget(el, "fill", line, masked ? { masked: true } : { value });
   openFill = { el, step };
   emit(step);
-}
-
-function onChange(event: Event): void {
-  if (ignored(event)) return;
-  const el = innermost(event);
-  if (!(el instanceof HTMLSelectElement)) return;
-  closeOpen();
-  const values = [...el.selectedOptions].map((o) => pwNormalizeWhiteSpace(o.label));
-  const line = `select ${named(el)} ${values.map((v) => `"${v}"`).join(", ")}`;
-  emit(withTarget(el, "select", line, { values }));
 }
 
 function onKeyDown(event: KeyboardEvent): void {
@@ -270,7 +267,6 @@ function attach(): void {
   };
   on("click", onClick);
   on("input", onInput);
-  on("change", onChange);
   on("keydown", onKeyDown);
   on("wheel", onWheel);
   on("pointermove", onPointerMove);
