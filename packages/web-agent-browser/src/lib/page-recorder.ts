@@ -12,6 +12,7 @@ import {
   eventElements,
   headings,
   innermost,
+  isDisabledClick,
   isPrintable,
   isTextEntry,
   MODIFIER_KEYS,
@@ -109,6 +110,7 @@ function onClick(event: MouseEvent): void {
   if (!clicked) return;
   window.clearTimeout(hoverTimer);
   restedEl = clicked;
+  if (isDisabledClick(event, clicked)) return;
   // `detail` is 0 for a click the browser made from the keyboard. When the step
   // just emitted is the Enter or Space press on this element, that click is the
   // press itself, not a second action.
@@ -156,6 +158,13 @@ function onClick(event: MouseEvent): void {
 
 function onDblClick(event: MouseEvent): void {
   if (ignored(event)) return;
+  const el = target(event);
+  const tgt = el ?? closedHostOf(event, el);
+  if (isDisabledClick(event, tgt)) {
+    window.clearTimeout(hoverTimer);
+    restedEl = tgt;
+    return;
+  }
   const closed = closedDblClick(event, seq);
   if (closed !== null) {
     window.clearTimeout(hoverTimer);
@@ -163,7 +172,6 @@ function onDblClick(event: MouseEvent): void {
     if (closed !== "handled") emit(closed);
     return;
   }
-  const el = target(event);
   if (!el) return;
   window.clearTimeout(hoverTimer);
   restedEl = el;

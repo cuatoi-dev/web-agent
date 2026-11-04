@@ -1079,4 +1079,94 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     await context.close();
   });
+
+  test("M21 section 6 clicks and double-clicks on disabled controls record nothing until enabled", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record section 6.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    const clickCenter = async (selector: string): Promise<void> => {
+      const box = await sitePage.locator(selector).boundingBox();
+      expect(box).not.toBeNull();
+      await sitePage.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await sitePage.mouse.move(2, 2);
+    };
+    const dblclickCenter = async (selector: string): Promise<void> => {
+      const box = await sitePage.locator(selector).boundingBox();
+      expect(box).not.toBeNull();
+      await sitePage.mouse.dblclick(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      await sitePage.mouse.move(2, 2);
+    };
+
+    await clickCenter("#divclick");
+
+    // (a) Custom-element host + cursor:pointer wrapper, (b) aria-disabled button, (c) disabled fieldset.
+    await clickCenter("#dis-host-btn");
+    await clickCenter("#dis-wrap-btn");
+    await clickCenter("#dis-aria");
+    await clickCenter("#dis-fieldset-btn");
+
+    // Double-clicks on disabled controls record nothing as well.
+    await dblclickCenter("#dis-host-btn");
+    await dblclickCenter("#dis-wrap-btn");
+    await dblclickCenter("#dis-aria");
+
+    await clickCenter("#opt-red");
+    await expect(stepList(panelPage)).toHaveText([
+      'click div "Plain div onclick"',
+      'click option "Red option"',
+    ]);
+
+    // Enable the two wrapped buttons and confirm clicks now record their button names.
+    await sitePage.evaluate(() => {
+      for (const id of ["dis-host-btn", "dis-wrap-btn"]) {
+        const btn = document.getElementById(id) as HTMLButtonElement;
+        btn.disabled = false;
+        btn.style.pointerEvents = "";
+      }
+    });
+    await clickCenter("#dis-host-btn");
+    await clickCenter("#dis-wrap-btn");
+    await sitePage.waitForTimeout(200);
+
+    await expect(stepList(panelPage)).toHaveText([
+      'click div "Plain div onclick"',
+      'click option "Red option"',
+      'click button "Host action"',
+      'click button "Wrapped action"',
+    ]);
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const stopText = bodyOf(results[2].text);
+    const topLines = stopText.split("\n").filter((l) => !l.startsWith("  "));
+
+    expect(topLines.slice(0, 5)).toEqual([
+      "Recorded 4 steps on localhost:10040:",
+      '1. click div "Plain div onclick"',
+      '2. click option "Red option"',
+      '3. click button "Host action"',
+      '4. click button "Wrapped action"',
+    ]);
+    expect(stopText).not.toContain("disabled-host");
+    expect(stopText).not.toContain("Aria action");
+    expect(stopText).not.toContain("Fieldset action");
+
+    await context.close();
+  });
 });

@@ -8,7 +8,7 @@
     h1 { font-size: 18px; margin: 0 0 8px; }
     h2 { font-size: 14px; margin: 0 0 4px; }
     section { border: 1px solid currentColor; margin: 6px 0; padding: 6px 8px; }
-    closed-host, .group { display: inline-block; margin: 2px 4px 2px 0; }
+    closed-host, disabled-host, .group { display: inline-block; margin: 2px 4px 2px 0; }
     .chip { display: inline-block; padding: 4px 10px; border: 1px solid currentColor; margin: 2px 4px 2px 0; }
     label { display: inline-block; margin: 2px 10px 2px 0; }
     #drop { display: inline-block; padding: 4px 16px; border: 1px dashed currentColor; margin: 2px 4px 2px 0; }
@@ -52,6 +52,14 @@
     <button id="ctx" type="button" oncontextmenu="log('contextmenu'); return false">Right me</button>
     <div class="chip" id="drag" draggable="true">Drag me</div>
     <div id="drop" role="region" aria-label="Drop zone">Drop zone</div>
+  </section>
+
+  <section id="sec-disabled">
+    <h2>6 Disabled controls</h2>
+    <disabled-host id="dis-host"><button id="dis-host-btn" type="button" disabled style="pointer-events:none">Host action</button></disabled-host>
+    <div class="chip" id="dis-wrap" style="cursor:pointer"><button id="dis-wrap-btn" type="button" disabled style="pointer-events:none">Wrapped action</button></div>
+    <div class="chip" id="dis-aria" role="button" aria-disabled="true">Aria action</div>
+    <fieldset class="group" id="dis-fieldset" disabled style="cursor:pointer"><button id="dis-fieldset-btn" type="button" style="pointer-events:none">Fieldset action</button></fieldset>
   </section>
 
   <div id="log" aria-live="polite"></div>

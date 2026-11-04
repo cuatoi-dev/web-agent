@@ -1971,4 +1971,187 @@ describe("page-recorder", () => {
       expect(s[0].dropTarget?.name).toBe("Drop 3");
     });
   });
+
+  describe("disabled clicks (003)", () => {
+    afterEach(() => {
+      Reflect.deleteProperty(document, "elementFromPoint");
+    });
+
+    function box(el: Element, left: number, top: number, width: number, height: number): void {
+      el.getBoundingClientRect = () =>
+        ({
+          x: left,
+          y: top,
+          left,
+          top,
+          width,
+          height,
+          right: left + width,
+          bottom: top + height,
+          toJSON: () => ({}),
+        });
+    }
+
+    it("skips a direct :disabled click, an aria-disabled click, and a disabled fieldset click while keeping consecutive seqs", () => {
+      document.body.innerHTML = `
+        <button id="before" type="button">Before</button>
+        <button id="dis-btn" type="button" disabled>Disabled</button>
+        <div id="dis-aria" role="button" aria-disabled="true"><span>Aria inner</span></div>
+        <fieldset id="dis-fs" disabled style="cursor:pointer"><button id="dis-fs-btn" type="button">Fieldset btn</button></fieldset>
+        <button id="after" type="button">After</button>
+      `;
+      recorder.start("r1");
+      fire(document.getElementById("before")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(document.getElementById("dis-btn")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(document.querySelector("#dis-aria span")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(document.getElementById("dis-fs")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(document.getElementById("dis-fs-btn")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(document.getElementById("after")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0]).toMatchObject({ seq: 0, line: 'click button "Before"' });
+      expect(s[1]).toMatchObject({ seq: 1, line: 'click button "After"' });
+    });
+
+    it("skips when elementFromPoint hits a disabled descendant inside tgt, and ignores a disabled overlay outside tgt", () => {
+      document.body.innerHTML = `
+        <div id="wrap" style="cursor:pointer"><button id="inner" type="button" disabled><span>Inner</span></button></div>
+        <button id="real" type="button">Go</button>
+        <button id="overlay" type="button" disabled>Overlay</button>
+      `;
+      const wrap = document.getElementById("wrap")!;
+      const innerSpan = wrap.querySelector("span")!;
+      const real = document.getElementById("real")!;
+      const overlay = document.getElementById("overlay")!;
+
+      recorder.start("r1");
+      (document as unknown as { elementFromPoint: (x: number, y: number) => Element | null }).elementFromPoint = () =>
+        innerSpan;
+      fire(wrap, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 20, clientY: 20 }));
+      expect(steps()).toHaveLength(0);
+
+      // An unrelated disabled element outside `real` must NOT mark the click on `real` as disabled.
+      (document as unknown as { elementFromPoint: (x: number, y: number) => Element | null }).elementFromPoint = () =>
+        overlay;
+      fire(real, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 20, clientY: 20 }));
+      expect(steps().map((s) => s.line)).toEqual(['click button "Go"']);
+    });
+
+    it("does not call elementFromPoint on a keyboard click (detail === 0)", () => {
+      document.body.innerHTML = '<button id="go" type="button">Go</button>';
+      const spy = vi.fn(() => null);
+      (document as unknown as { elementFromPoint: typeof spy }).elementFromPoint = spy;
+      recorder.start("r1");
+      fire(document.getElementById("go")!, new MouseEvent("click", { bubbles: true, composed: true, detail: 0 }));
+      expect(spy).not.toHaveBeenCalled();
+      expect(steps().map((s) => s.line)).toEqual(['click button "Go"']);
+    });
+
+    it("skips by descendant geometry when pointer-events:none makes elementFromPoint return the host or wrapper, and reserves no closed lookup", () => {
+      document.body.innerHTML = `
+        <wa-icon-button id="host"></wa-icon-button>
+        <div id="ptr-wrap" style="cursor:pointer">Wrap <button id="ptr-btn" type="button" disabled>Wrapped</button></div>
+      `;
+      const host = document.getElementById("host")!;
+      const md = document.createElement("md-icon-button");
+      const sr = md.attachShadow({ mode: "open" });
+      const innerBtn = document.createElement("button");
+      innerBtn.disabled = true;
+      innerBtn.setAttribute("aria-label", "Session history");
+      sr.appendChild(innerBtn);
+      host.appendChild(md);
+      box(innerBtn, 10, 10, 40, 40);
+
+      const ptrWrap = document.getElementById("ptr-wrap")!;
+      const ptrBtn = document.getElementById("ptr-btn") as HTMLButtonElement;
+      box(ptrBtn, 100, 10, 60, 30);
+
+      (document as unknown as { elementFromPoint: (x: number, y: number) => Element | null }).elementFromPoint = (x) =>
+        x < 80 ? host : ptrWrap;
+
+      recorder.start("r1");
+      // Click inside innerBtn's box on custom-element host -> skipped, zero pendingClosed messages.
+      fire(host, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 25, clientY: 25 }));
+      expect(calls).toHaveLength(0);
+
+      // Click inside ptrBtn's box on cursor:pointer wrapper -> skipped.
+      fire(ptrWrap, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 120, clientY: 20 }));
+      expect(calls).toHaveLength(0);
+
+      // Click on ptrWrap OUTSIDE ptrBtn's box -> records the wrapper click.
+      fire(ptrWrap, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 90, clientY: 20 }));
+      expect(steps().map((s) => s.line)).toEqual(['click div "Wrap Wrapped"']);
+
+      // Re-enable innerBtn and click it -> records `click button "Session history"`.
+      innerBtn.disabled = false;
+      fire(innerBtn, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 25, clientY: 25 }));
+      expect(steps().map((s) => s.line)).toEqual([
+        'click div "Wrap Wrapped"',
+        'click button "Session history"',
+      ]);
+    });
+
+    it("ignores a zero-size hidden disabled descendant at (0, 0)", () => {
+      document.body.innerHTML =
+        '<div id="card" style="cursor:pointer">Card<button type="button" disabled style="display:none">Hidden</button></div>';
+      recorder.start("r1");
+      fire(
+        document.getElementById("card")!,
+        new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: 0, clientY: 0 }),
+      );
+      expect(steps().map((s) => s.line)).toEqual(['click div "CardHidden"']);
+    });
+
+    it("skips double-clicks on disabled controls including custom-element hosts and pointer wrappers", () => {
+      document.body.innerHTML = `
+        <wa-icon-button id="host"><button id="host-btn" type="button" disabled>Host action</button></wa-icon-button>
+        <div id="wrap" style="cursor:pointer"><button id="wrap-btn" type="button" disabled>Wrapped action</button></div>
+        <div id="aria" role="button" aria-disabled="true">Aria action</div>
+      `;
+      const host = document.getElementById("host")!;
+      const wrap = document.getElementById("wrap")!;
+      const aria = document.getElementById("aria")!;
+      box(document.getElementById("host-btn")!, 10, 10, 40, 20);
+      box(document.getElementById("wrap-btn")!, 60, 10, 40, 20);
+
+      recorder.start("r1");
+      for (const [el, x, y] of [
+        [host, 20, 15],
+        [wrap, 70, 15],
+        [aria, 5, 5],
+      ] as const) {
+        fire(el, new MouseEvent("click", { bubbles: true, composed: true, detail: 1, clientX: x, clientY: y }));
+        fire(el, new MouseEvent("click", { bubbles: true, composed: true, detail: 2, clientX: x, clientY: y }));
+        fire(el, new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2, clientX: x, clientY: y }));
+      }
+      expect(calls).toHaveLength(0);
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("keeps openFill alive across a disabled click and still records right-click on a disabled button", () => {
+      document.body.innerHTML = `
+        <input id="q" aria-label="Query" />
+        <button id="dis" type="button" disabled>Save</button>
+      `;
+      const q = document.getElementById("q") as HTMLInputElement;
+      const dis = document.getElementById("dis")!;
+      recorder.start("r1");
+
+      q.value = "ca";
+      fire(q, new Event("input", { bubbles: true, composed: true }));
+      fire(dis, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      q.value = "cats";
+      fire(q, new Event("input", { bubbles: true, composed: true }));
+      fire(dis, new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
+
+      const s = steps();
+      // The disabled click split nothing: one fill step, updated in place to the final value.
+      expect(s).toHaveLength(2);
+      expect(s[0].seq).toBe(0);
+      expect(s[0].line.startsWith('fill textbox "Query"')).toBe(true);
+      expect(s[0].line).toContain('cats');
+      expect(s[1]).toMatchObject({ seq: 1, line: 'right-click button "Save"' });
+    });
+  });
 });

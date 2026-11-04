@@ -59,6 +59,63 @@ export function target(event: Event): Element | null {
   return null;
 }
 
+const DISABLED = ':disabled, [aria-disabled="true"]';
+
+function composedContains(ancestor: Element, node: Element): boolean {
+  for (let cur: Element | null = node; cur; cur = composedParent(cur)) {
+    if (cur === ancestor) return true;
+  }
+  return false;
+}
+
+function* composedDescendants(root: Element | ShadowRoot): Generator<Element> {
+  if (root instanceof Element && root.shadowRoot) {
+    yield* composedDescendants(root.shadowRoot);
+  }
+  for (const child of root.children) {
+    yield child;
+    yield* composedDescendants(child);
+  }
+}
+
+/** True when a click or double-click lands on a disabled control: on the
+ *  composed path, on the hit-tested node inside `tgt`, or inside the non-empty
+ *  box of a disabled composed descendant skipped by `pointer-events: none`. */
+export function isDisabledClick(event: MouseEvent, tgt: Element | null): boolean {
+  for (const el of eventElements(event)) {
+    if (el.matches(DISABLED)) return true;
+  }
+  if (event.detail < 1 || !tgt) return false;
+  const root = tgt.getRootNode();
+  if (root instanceof Document || root instanceof ShadowRoot) {
+    const hit =
+      typeof root.elementFromPoint === "function"
+        ? root.elementFromPoint(event.clientX, event.clientY)
+        : null;
+    if (hit && composedContains(tgt, hit)) {
+      for (let el: Element | null = hit; el; el = composedParent(el)) {
+        if (el.matches(DISABLED)) return true;
+        if (el === tgt) break;
+      }
+    }
+  }
+  for (const el of composedDescendants(tgt)) {
+    if (!el.matches(DISABLED)) continue;
+    const rect = el.getBoundingClientRect();
+    if (
+      rect.width > 0 &&
+      rect.height > 0 &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function describe(el: Element): string {
   const { role, name: full } = describeElementParts(el);
   const name = stableName(el, el.ownerDocument, role, full);
