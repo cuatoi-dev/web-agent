@@ -1013,6 +1013,9 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     expect(body).toContain("Recorded 1 step on localhost:10040:");
     expect(body).toContain('1. click columnheader "Date ▼"');
     expect(body).toContain('  role+name: columnheader "Date ▼" (matches 1)');
+    // The header text and its sort span sit on separate source lines; the
+    // recorded name must still be one line with single spaces.
+    expect(body).not.toMatch(/"Date\s{2,}▼"|"Date\n/);
 
     await context.close();
   });

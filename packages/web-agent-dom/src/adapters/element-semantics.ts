@@ -228,18 +228,26 @@ function ownRoot(el: Element): Document | ShadowRoot {
   return root instanceof ShadowRoot ? root : document;
 }
 
-/** Compute an accessible name (pragmatic §5.1 S1). */
+/** Collapse every whitespace run to one space, then trim. The accessible-name
+ *  computation does this, and so does Playwright's name matching, so a name
+ *  that keeps a newline or indentation never matches on replay. */
+function clean(text: string | null | undefined): string {
+  return (text ?? "").replace(/\s+/g, " ").trim();
+}
+
+/** Compute an accessible name (pragmatic §5.1 S1). Every text-derived source
+ *  goes through `clean`; the 120-character cut applies after the collapse. */
 export function getName(el: Element): string {
   // aria-label
-  const aLabel = el.getAttribute("aria-label");
-  if (aLabel?.trim()) return aLabel.trim();
+  const aLabel = clean(el.getAttribute("aria-label"));
+  if (aLabel) return aLabel;
 
   // aria-labelledby
   const aLabelledBy = el.getAttribute("aria-labelledby");
   if (aLabelledBy) {
     const texts = aLabelledBy
       .split(/\s+/)
-      .map((id) => (ownRoot(el).getElementById(id) ?? document.getElementById(id))?.textContent?.trim())
+      .map((id) => clean((ownRoot(el).getElementById(id) ?? document.getElementById(id))?.textContent))
       .filter(Boolean);
     if (texts.length > 0) return texts.join(" ");
   }
@@ -249,36 +257,36 @@ export function getName(el: Element): string {
   if (id) {
     const escaped = id.replace(/["\\]/g, "\\$&");
     const selector = `label[for="${escaped}"]`;
-    const label = ownRoot(el).querySelector(selector) ?? document.querySelector(selector);
-    if (label?.textContent?.trim()) return label.textContent.trim();
+    const label = clean((ownRoot(el).querySelector(selector) ?? document.querySelector(selector))?.textContent);
+    if (label) return label;
   }
 
   // wrapping <label>
-  const parentLabel = el.closest("label");
-  if (parentLabel?.textContent?.trim()) return parentLabel.textContent.trim();
+  const parentLabel = clean(el.closest("label")?.textContent);
+  if (parentLabel) return parentLabel;
 
   // alt
-  const alt = el.getAttribute("alt");
-  if (alt?.trim()) return alt.trim();
+  const alt = clean(el.getAttribute("alt"));
+  if (alt) return alt;
 
   // title
-  const title = el.getAttribute("title");
-  if (title?.trim()) return title.trim();
+  const title = clean(el.getAttribute("title"));
+  if (title) return title;
 
   // placeholder — the last name source for a text field (HTML-AAM: after title)
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-    const placeholder = el.placeholder.trim();
+    const placeholder = clean(el.placeholder);
     if (placeholder) return placeholder;
   }
 
   // button textContent
   if (tagLC(el) === "button") {
-    const t = getTextContentWithSlots(el).trim();
+    const t = clean(getTextContentWithSlots(el));
     if (t && t.length <= 120) return t;
   }
 
   // Generic fallback: short text content
-  const text = getTextContentWithSlots(el).trim();
+  const text = clean(getTextContentWithSlots(el));
   if (text.length > 0 && text.length <= 120) return text;
   if (text.length > 120) return text.slice(0, 120) + "…";
 

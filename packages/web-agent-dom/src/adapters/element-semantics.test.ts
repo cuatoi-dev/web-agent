@@ -148,3 +148,39 @@ describe("getRole table roles (001)", () => {
     expect(getRole(els[5])).toBe("");
   });
 });
+
+describe("getName whitespace collapse", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("a th whose text and sort span sit on separate lines is named `Date ▼`", () => {
+    document.body.innerHTML =
+      '<table><thead><tr><th class="sortable">\n        Date\n        <span class="sort-indicator">▼</span>\n      </th></tr></thead></table>';
+    expect(getName(document.querySelector("th") as Element)).toBe("Date ▼");
+  });
+
+  it("collapses a whitespace run in aria-label, aria-labelledby, label, alt, title and placeholder", () => {
+    document.body.innerHTML =
+      '<button aria-label="  Save \n  draft ">x</button>' +
+      '<span id="l">Full \n   name</span><input aria-labelledby="l">' +
+      '<label for="e">Work \n  email</label><input id="e">' +
+      '<img alt="A  \n cat">' +
+      '<a href="#" title="Go\t\n home">x</a>' +
+      '<input placeholder="Search \n   orders">';
+    const q = (sel: string): Element => document.querySelector(sel) as Element;
+    expect(getName(q("button"))).toBe("Save draft");
+    expect(getName(q("input[aria-labelledby]"))).toBe("Full name");
+    expect(getName(q("#e"))).toBe("Work email");
+    expect(getName(q("img"))).toBe("A cat");
+    expect(getName(q("a"))).toBe("Go home");
+    expect(getName(q("input[placeholder]"))).toBe("Search orders");
+  });
+
+  it("applies the 120-character cut after the collapse", () => {
+    const words = Array.from({ length: 60 }, () => "ab").join("   \n   ");
+    document.body.innerHTML = `<div>${words}</div>`;
+    const name = getName(document.querySelector("div") as Element);
+    expect(name).toBe(Array.from({ length: 60 }, () => "ab").join(" ").slice(0, 120) + "…");
+  });
+});
