@@ -7,6 +7,9 @@ import type { ElementTarget, LocatorSet } from "./element-target.types";
 /** What the user did. `check`/`uncheck` are a click on a checkbox or radio. */
 export type RecordedStepKind =
   | "click"
+  | "dblclick"
+  | "rightclick"
+  | "drag"
   | "fill"
   | "select"
   | "check"
@@ -46,6 +49,10 @@ export interface RecordedStep {
   /** 127/002 — the neutral locator set, built with `target`. Its `frames` is
    *  never set here: the panel adds the step's `frames` when it prints it. */
   locators?: LocatorSet;
+  /** 004 — for a `drag` step, the drop destination's role, name and label. */
+  dropTarget?: ElementTarget;
+  /** 004 — for a `drag` step, the drop destination's neutral locator set. */
+  dropLocators?: LocatorSet;
   /** 131/004 — the `<iframe>` selectors from the top page down to this
    *  step's frame, top-down. Absent for a top-frame step. Built by the
    *  helper world, the same way 131/003 builds them for the agent's own

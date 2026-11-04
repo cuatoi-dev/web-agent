@@ -46,15 +46,23 @@ function makeControllerHarness() {
   };
   return {
     controller,
-    step(seq: number, line: string, frameOrigin?: string, target?: RecordedStep["target"], locators?: RecordedStep["locators"]) {
+    step(
+      seq: number,
+      line: string,
+      frameOrigin?: string,
+      target?: RecordedStep["target"],
+      locators?: RecordedStep["locators"],
+      dropLocators?: RecordedStep["dropLocators"],
+    ) {
       stepListeners[0](TAB_INFO.tabId, {
         recordingId: recordingId(),
         seq,
-        kind: "click",
+        kind: dropLocators ? "drag" : "click",
         line,
         ...(frameOrigin !== undefined ? { frameOrigin } : {}),
         ...(target !== undefined ? { target } : {}),
         ...(locators !== undefined ? { locators } : {}),
+        ...(dropLocators !== undefined ? { dropLocators } : {}),
       });
     },
     closeTab() {
@@ -383,5 +391,44 @@ describe("watch-me-provider", () => {
     expect(root!.isConnected).toBe(false);
     await p.pick();
     expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("U-W18: onUserPrompt() prints drop target locator lines under a drag step while the slot list shows step.line", async () => {
+    const p = makeProvider();
+    await p.pick();
+    harness.step(
+      0,
+      'drag div "Drag me" to region "Drop zone"',
+      undefined,
+      undefined,
+      { role: "", name: "Drag me", roleMatches: 0, id: "drag", css: "#drag", xpath: "//*[@id='drag']" },
+      { role: "region", name: "Drop zone", roleMatches: 1, id: "drop", css: "#drop", xpath: "//*[@id='drop']" },
+    );
+    await p.pick();
+
+    const root = p.slot?.();
+    expect([...root!.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      'drag div "Drag me" to region "Drop zone"',
+    ]);
+
+    const payload = { parts: [{ type: "text", text: "Write a test" }] } as UserPromptPayload;
+    const result = p.onUserPrompt(payload) as { parts: { type: string; text: string }[] };
+    expect(result.parts[0].text).toBe(
+      `# Recorded steps on ${TAB_INFO.url}\n` +
+        '1. drag div "Drag me" to region "Drop zone"\n' +
+        '  role+name:  "Drag me" (matches 0)\n' +
+        "  id: drag\n" +
+        "  data-testid: —\n" +
+        "  name: —\n" +
+        "  css: #drag\n" +
+        "  xpath: //*[@id='drag']\n" +
+        "  drop target:\n" +
+        '  role+name: region "Drop zone" (matches 1)\n' +
+        "  id: drop\n" +
+        "  data-testid: —\n" +
+        "  name: —\n" +
+        "  css: #drop\n" +
+        "  xpath: //*[@id='drop']",
+    );
   });
 });

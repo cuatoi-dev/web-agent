@@ -743,4 +743,87 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     await context.close();
   });
+
+  test("M14 section 5 double-click, two single clicks, right-click, cancelled drag and drag-and-drop", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record section 5.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    // 1. Double-click "Double me": replaces the 1st click in place, leaving one dblclick step.
+    await sitePage.locator("#dbl").dblclick();
+    await sitePage.mouse.move(2, 2);
+
+    // 2-3. Two separate single clicks more than the double-click interval apart.
+    await sitePage.waitForTimeout(600);
+    await sitePage.locator("#dbl").click();
+    await sitePage.mouse.move(2, 2);
+    await sitePage.waitForTimeout(600);
+    await sitePage.locator("#dbl").click();
+    await sitePage.mouse.move(2, 2);
+
+    // 4. Right-click "Right me": records right-click and no hover.
+    await sitePage.locator("#ctx").click({ button: "right" });
+    await sitePage.mouse.move(2, 2);
+
+    // Cancelled drag (drag #drag across #keys onto <h1> and hold past REC_HOVER_REST_MS):
+    // records neither a drag step nor a stray hover step.
+    const dragBox = (await sitePage.locator("#drag").boundingBox())!;
+    const h1Box = (await sitePage.locator("h1").boundingBox())!;
+    await sitePage.mouse.move(dragBox.x + dragBox.width / 2, dragBox.y + dragBox.height / 2);
+    await sitePage.mouse.down();
+    await sitePage.mouse.move(h1Box.x + 20, h1Box.y + h1Box.height / 2, { steps: 5 });
+    await sitePage.waitForTimeout(600);
+    await sitePage.mouse.up();
+    await sitePage.mouse.move(2, 2);
+
+    // 5. Completed HTML5 drag from "Drag me" onto "Drop zone".
+    await sitePage.locator("#drag").dragTo(sitePage.locator("#drop"));
+    await sitePage.mouse.move(2, 2);
+
+    await expect(sitePage.locator("#log")).toHaveText("dblclick\ncontextmenu\ndropped\n");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results3 = await waitForResults(panelPage, 3);
+    const stopText = results3[2].text;
+    const lines = stopText.split("\n").filter((l) => !l.startsWith("  "));
+
+    expect(lines.slice(0, 6)).toEqual([
+      "Recorded 5 steps on localhost:10040:",
+      '1. dblclick button "Double me"',
+      '2. click button "Double me"',
+      '3. click button "Double me"',
+      '4. right-click button "Right me"',
+      '5. drag div "Drag me" to region "Drop zone"',
+    ]);
+    expect(lines.filter((l) => /^\d+\. /.test(l))).toHaveLength(5);
+
+    const dragBlock = stopText.slice(stopText.indexOf('5. drag div "Drag me" to region "Drop zone"'));
+    expect(dragBlock).toContain("  id: drag\n");
+    expect(dragBlock).toContain("  css: #drag\n");
+    expect(dragBlock).toContain("  drop target:\n");
+    const dropBlock = dragBlock.slice(dragBlock.indexOf("  drop target:\n"));
+    expect(dropBlock).toContain('  role+name: region "Drop zone" (matches ');
+    expect(dropBlock).toContain("  id: drop\n");
+    expect(dropBlock).toContain("  data-testid: —\n");
+    expect(dropBlock).toContain("  name: —\n");
+    expect(dropBlock).toContain("  css: #drop\n");
+    expect(dropBlock).toContain("  xpath: //*[@id='drop']");
+
+    await context.close();
+  });
 });

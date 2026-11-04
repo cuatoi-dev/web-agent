@@ -20,10 +20,21 @@ export function locatorLines(set: LocatorSet): string[] {
   return lines.map((l) => `  ${l}`);
 }
 
+function withFrames(set: LocatorSet, frames?: string[]): LocatorSet {
+  return frames !== undefined && frames.length > 0 ? { ...set, frames } : set;
+}
+
 /** The locator lines for one recorded step: its set plus the frame chain the
- *  panel added. Empty for a step without an element. */
-export function stepLocatorLines(step: { locators?: LocatorSet; frames?: string[] }): string[] {
-  if (step.locators === undefined) return [];
-  const set = step.frames !== undefined && step.frames.length > 0 ? { ...step.locators, frames: step.frames } : step.locators;
-  return locatorLines(set);
+ *  panel added, and for a `drag` step its `dropLocators` after `  drop target:`.
+ *  Empty for a step without an element. */
+export function stepLocatorLines(step: {
+  locators?: LocatorSet;
+  dropLocators?: LocatorSet;
+  frames?: string[];
+}): string[] {
+  const out = step.locators === undefined ? [] : locatorLines(withFrames(step.locators, step.frames));
+  if (step.dropLocators !== undefined) {
+    out.push("  drop target:", ...locatorLines(withFrames(step.dropLocators, step.frames)));
+  }
+  return out;
 }

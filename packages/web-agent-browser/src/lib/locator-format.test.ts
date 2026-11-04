@@ -94,4 +94,40 @@ describe("locator-format", () => {
     const lines = stepLocatorLines({ locators: set, frames: ["#payment"] });
     expect(lines).toContain("  frames: #payment");
   });
+
+  it('7. stepLocatorLines prints dropLocators after "  drop target:"', () => {
+    const src: LocatorSet = {
+      role: "",
+      name: "Drag me",
+      roleMatches: 0,
+      id: "drag",
+      css: "#drag",
+      xpath: "//*[@id='drag']",
+    };
+    const dest: LocatorSet = {
+      role: "region",
+      name: "Drop zone",
+      roleMatches: 1,
+      id: "drop",
+      css: "#drop",
+      xpath: "//*[@id='drop']",
+    };
+    expect(stepLocatorLines({ locators: src, dropLocators: dest, frames: ["#board"] })).toEqual([
+      '  role+name:  "Drag me" (matches 0)',
+      "  id: drag",
+      "  data-testid: —",
+      "  name: —",
+      "  css: #drag",
+      "  xpath: //*[@id='drag']",
+      "  frames: #board",
+      "  drop target:",
+      '  role+name: region "Drop zone" (matches 1)',
+      "  id: drop",
+      "  data-testid: —",
+      "  name: —",
+      "  css: #drop",
+      "  xpath: //*[@id='drop']",
+      "  frames: #board",
+    ]);
+  });
 });

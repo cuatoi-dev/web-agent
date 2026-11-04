@@ -14,6 +14,9 @@ beforeAll(() => {
 if (typeof PointerEvent === "undefined") {
   (globalThis as unknown as { PointerEvent: unknown }).PointerEvent = MouseEvent;
 }
+if (typeof DragEvent === "undefined") {
+  (globalThis as unknown as { DragEvent: unknown }).DragEvent = MouseEvent;
+}
 
 /** Every step the binding received, in order. */
 let calls: string[];
@@ -1338,6 +1341,269 @@ describe("page-recorder", () => {
       syntheticClick(btn, 0);
 
       expect(steps().map((x) => x.line)).toEqual(["press ArrowDown", 'click button "Double me"']);
+    });
+  });
+
+  describe("double-click, right-click and drag-and-drop (004)", () => {
+    function section5(): {
+      dbl: HTMLButtonElement;
+      ctx: HTMLButtonElement;
+      drag: HTMLDivElement;
+      drop: HTMLDivElement;
+    } {
+      document.body.innerHTML = `
+        <button id="dbl" type="button">Double me</button>
+        <button id="ctx" type="button">Right me</button>
+        <div class="chip" id="drag" draggable="true">Drag me</div>
+        <div id="drop" role="region" aria-label="Drop zone">Drop zone</div>
+      `;
+      return {
+        dbl: document.getElementById("dbl") as HTMLButtonElement,
+        ctx: document.getElementById("ctx") as HTMLButtonElement,
+        drag: document.getElementById("drag") as HTMLDivElement,
+        drop: document.getElementById("drop") as HTMLDivElement,
+      };
+    }
+
+    it("double-clicking Double me replaces the first click at the same seq with one dblclick step", () => {
+      const { dbl } = section5();
+      recorder.start("r1");
+
+      fire(dbl, new PointerEvent("pointerdown", { bubbles: true, composed: true, button: 0 }));
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(dbl, new PointerEvent("pointerdown", { bubbles: true, composed: true, button: 0 }));
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 2 }));
+      fire(dbl, new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2 }));
+
+      expect(calls).toHaveLength(2);
+      const first = JSON.parse(calls[0]) as RecordedStep;
+      const second = JSON.parse(calls[1]) as RecordedStep;
+      expect(first.kind).toBe("click");
+      expect(second.seq).toBe(first.seq);
+      expect(second.kind).toBe("dblclick");
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0]).toMatchObject({
+        kind: "dblclick",
+        line: 'dblclick button "Double me"',
+        target: { role: "button", name: "Double me", label: 'button "Double me"' },
+      });
+      expect(s[0].locators?.id).toBe("dbl");
+    });
+
+    it("two single clicks (detail 1) on Double me record two separate click steps", () => {
+      const { dbl } = section5();
+      recorder.start("r1");
+
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0].seq).not.toBe(s[1].seq);
+      expect(s.map((x) => x.line)).toEqual(['click button "Double me"', 'click button "Double me"']);
+    });
+
+    it("a standalone dblclick without an immediately preceding click on the same element emits a new dblclick step", () => {
+      const { dbl } = section5();
+      recorder.start("r1");
+
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(document.body, new KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true }));
+      fire(dbl, new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2 }));
+
+      const s = steps();
+      expect(s.map((x) => x.line)).toEqual([
+        'click button "Double me"',
+        "press Escape",
+        'dblclick button "Double me"',
+      ]);
+    });
+
+    it("checkbox clicks with detail 1 then detail 2 still record check and uncheck", () => {
+      document.body.innerHTML = '<label>Agree <input type="checkbox" id="agree"></label>';
+      const box = document.getElementById("agree") as HTMLInputElement;
+      recorder.start("r1");
+
+      fire(box, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(box, new MouseEvent("click", { bubbles: true, composed: true, detail: 2 }));
+
+      expect(steps().map((x) => x.line)).toEqual(['check checkbox "Agree"', 'uncheck checkbox "Agree"']);
+    });
+
+    it("task 003 detail 0 keyboard activation stays suppressed while detail >= 2 double-click works right after it", () => {
+      const { dbl } = section5();
+      recorder.start("r1");
+
+      fire(dbl, new KeyboardEvent("keydown", { key: " ", bubbles: true, composed: true }));
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 0 }));
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 2 }));
+      fire(dbl, new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2 }));
+
+      expect(steps().map((x) => x.line)).toEqual(["press Space", 'dblclick button "Double me"']);
+    });
+
+    it("right-clicking Right me records right-click button Right me and cancels any pending hover", () => {
+      vi.useFakeTimers();
+      const { ctx } = section5();
+      recorder.start("r1");
+
+      fire(ctx, new PointerEvent("pointermove", { bubbles: true, composed: true }));
+      fire(ctx, new PointerEvent("pointerdown", { bubbles: true, composed: true, button: 2 }));
+      fire(ctx, new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
+      vi.advanceTimersByTime(REC_HOVER_REST_MS * 2);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0]).toMatchObject({
+        kind: "rightclick",
+        line: 'right-click button "Right me"',
+        target: { role: "button", name: "Right me", label: 'button "Right me"' },
+      });
+      expect(s[0].locators?.id).toBe("ctx");
+    });
+
+    it("dragging Drag me onto Drop zone records one drag step with dropTarget and dropLocators", () => {
+      const { drag, drop } = section5();
+      recorder.start("r1");
+
+      fire(drag, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      fire(drop, new DragEvent("drop", { bubbles: true, composed: true }));
+      fire(drag, new DragEvent("dragend", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("drag");
+      expect(s[0].line).toBe('drag div "Drag me" to region "Drop zone"');
+      expect(s[0].target).toMatchObject({ role: "", name: "Drag me", label: 'div "Drag me"', isPassword: false });
+      expect(s[0].locators).toMatchObject({ role: "", name: "Drag me", id: "drag", css: "#drag", xpath: "//*[@id='drag']" });
+      expect(s[0].dropTarget).toMatchObject({
+        role: "region",
+        name: "Drop zone",
+        label: 'region "Drop zone"',
+        isPassword: false,
+      });
+      expect(s[0].dropLocators).toEqual({
+        role: "region",
+        name: "Drop zone",
+        roleMatches: 1,
+        id: "drop",
+        css: "#drop",
+        xpath: "//*[@id='drop']",
+      });
+    });
+
+    it("a drag released outside any drop target (dragend with no drop) records nothing and clears dragSource", () => {
+      const { drag, drop } = section5();
+      recorder.start("r1");
+
+      fire(drag, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      fire(drag, new DragEvent("dragend", { bubbles: true, composed: true }));
+      // A stray drop without a new dragstart must also record nothing.
+      fire(drop, new DragEvent("drop", { bubbles: true, composed: true }));
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("a slow drag that crosses an interactive element before dragstart records no stray hover step", () => {
+      vi.useFakeTimers();
+      const { ctx, drag, drop } = section5();
+      recorder.start("r1");
+
+      // Mirrors real Chromium: pointermove hits a neighbor control right before dragstart + pointercancel.
+      fire(ctx, new PointerEvent("pointermove", { bubbles: true, composed: true }));
+      fire(drag, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      // Even if a pointermove arrived mid-drag, dragSource suppresses it.
+      fire(ctx, new PointerEvent("pointermove", { bubbles: true, composed: true }));
+      vi.advanceTimersByTime(REC_HOVER_REST_MS * 2);
+      fire(drop, new DragEvent("drop", { bubbles: true, composed: true }));
+      fire(drag, new DragEvent("dragend", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("drag");
+    });
+
+    it("dblclick, contextmenu, and drop each close an open fill step", () => {
+      document.body.innerHTML = `
+        <label>Notes <input id="notes"></label>
+        <button id="dbl" type="button">Double me</button>
+        <button id="ctx" type="button">Right me</button>
+        <div id="drag" draggable="true">Drag me</div>
+        <div id="drop" role="region" aria-label="Drop zone">Drop zone</div>
+      `;
+      const notes = document.getElementById("notes") as HTMLInputElement;
+      const dbl = document.getElementById("dbl") as HTMLButtonElement;
+      const ctx = document.getElementById("ctx") as HTMLButtonElement;
+      const drag = document.getElementById("drag") as HTMLDivElement;
+      const drop = document.getElementById("drop") as HTMLDivElement;
+      recorder.start("r1");
+
+      notes.value = "a";
+      fire(notes, new Event("input", { bubbles: true, composed: true }));
+      fire(dbl, new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2 }));
+      notes.value = "ab";
+      fire(notes, new Event("input", { bubbles: true, composed: true }));
+      fire(ctx, new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
+      notes.value = "abc";
+      fire(notes, new Event("input", { bubbles: true, composed: true }));
+      fire(drag, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      fire(drop, new DragEvent("drop", { bubbles: true, composed: true }));
+      notes.value = "abcd";
+      fire(notes, new Event("input", { bubbles: true, composed: true }));
+
+      expect(steps().map((x) => x.kind)).toEqual(["fill", "dblclick", "fill", "rightclick", "fill", "drag", "fill"]);
+    });
+
+    it("untrusted gesture events and drags starting or ending in the extension UI record nothing", () => {
+      const { dbl, ctx, drag, drop } = section5();
+      const bubble = document.createElement("div");
+      bubble.setAttribute(EXTENSION_UI_ATTR, "true");
+      const bubbleItem = document.createElement("div");
+      bubbleItem.textContent = "Agent chip";
+      bubble.appendChild(bubbleItem);
+      document.body.appendChild(bubble);
+
+      recorder.start("r1");
+
+      // Untrusted events
+      dbl.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2 }));
+      ctx.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
+      drag.dispatchEvent(new DragEvent("dragstart", { bubbles: true, composed: true }));
+      drop.dispatchEvent(new DragEvent("drop", { bubbles: true, composed: true }));
+
+      // Drag source inside extension UI -> drop on page
+      fire(bubbleItem, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      fire(drop, new DragEvent("drop", { bubbles: true, composed: true }));
+
+      // Drag source on page -> drop inside extension UI
+      fire(drag, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      fire(bubbleItem, new DragEvent("drop", { bubbles: true, composed: true }));
+      fire(drag, new DragEvent("dragend", { bubbles: true, composed: true }));
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("resume() and stop() reset lastClick and dragSource and detach the new listeners", () => {
+      const { dbl, ctx, drag, drop } = section5();
+      recorder.start("r1");
+
+      fire(dbl, new MouseEvent("click", { bubbles: true, composed: true, detail: 1 }));
+      fire(drag, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      recorder.pause();
+      recorder.resume();
+
+      // After resume, dragSource was cleared so a drop alone records nothing,
+      // and lastClick was cleared so a standalone dblclick does not overwrite seq 0.
+      fire(drop, new DragEvent("drop", { bubbles: true, composed: true }));
+      fire(dbl, new MouseEvent("dblclick", { bubbles: true, composed: true, detail: 2 }));
+      expect(steps().map((x) => x.line)).toEqual(['click button "Double me"', 'dblclick button "Double me"']);
+
+      recorder.stop();
+      fire(ctx, new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
+      expect(steps()).toHaveLength(2);
     });
   });
 });

@@ -5,9 +5,20 @@
 //
 // It reaches the panel through the Runtime.addBinding function __waRecStep,
 // which takes exactly ONE string argument — so every step is JSON.
-import { describeElementParts } from "@cuatoi/web-agent-dom";
 import { EXTENSION_UI_SELECTOR, REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
 import { journalTarget, locatorSet } from "./locator-builder";
+import {
+  describe,
+  eventElements,
+  headings,
+  innermost,
+  isPrintable,
+  isTextEntry,
+  MODIFIER_KEYS,
+  named,
+  playwrightKey,
+  target,
+} from "./page-recorder-helpers";
 import { pwNormalizeWhiteSpace } from "./playwright-match";
 import type { RecordedStep, RecordedStepKind } from "./recorder.types";
 
@@ -15,19 +26,6 @@ import type { RecordedStep, RecordedStepKind } from "./recorder.types";
  *  user acting on the page. A site's own <web-agent-bubble> IS the page, so it
  *  is recorded like any other element. */
 const AGENT_UI = EXTENSION_UI_SELECTOR;
-
-const INTERACTIVE_ROLES = [
-  "button", "link", "checkbox", "radio", "tab", "menuitem", "option", "switch",
-  "combobox", "listbox", "slider", "spinbutton", "searchbox", "textbox",
-  "treeitem", "gridcell", "row", "menuitemcheckbox", "menuitemradio",
-];
-
-/** Semantic controls and ARIA widget roles matched first on the composed path. */
-const INTERACTIVE = [
-  "a", "button", "input", "select", "textarea", "summary", "label",
-  '[contenteditable="true"]', "[tabindex]",
-  ...INTERACTIVE_ROLES.map((r) => `[role="${r}"]`),
-].join(", ");
 
 let recordingId = "";
 let seq = 0;
@@ -47,48 +45,10 @@ let restedEl: Element | null = null;
  *  key on a button or link into a synthetic click; the click is the same user
  *  action, so it records nothing. */
 let lastActivationKey: { el: Element; seq: number } | null = null;
-
-/** Elements on the event's path, innermost first, across open shadow roots and slots. */
-function eventElements(event: Event): Element[] {
-  if (typeof event.composedPath !== "function") {
-    return event.target instanceof Element ? [event.target] : [];
-  }
-  return event.composedPath().filter((n): n is Element => n instanceof Element);
-}
-
-/** The real element that received the event, innermost first. Replaces event.target. */
-function innermost(event: Event): Element | null {
-  const path = eventElements(event);
-  return path.length > 0 ? path[0] : null;
-}
-
-function composedParent(el: Element): Element | null {
-  if (el.parentElement) return el.parentElement;
-  const root = el.parentNode;
-  return root instanceof ShadowRoot ? root.host : null;
-}
-
-function hasPointerCursor(el: Element): boolean {
-  return (el.ownerDocument.defaultView ?? window).getComputedStyle(el).cursor === "pointer";
-}
-
-/** The click or hover target on the composed path: closest INTERACTIVE match
- *  first, then an `onclick` attribute or the outermost `cursor: pointer` element. */
-function target(event: Event): Element | null {
-  const path = eventElements(event);
-  for (const el of path) {
-    if (el.matches(INTERACTIVE)) return el;
-  }
-  for (const el of path) {
-    if (el === document.documentElement || el === document.body) break;
-    if (el.hasAttribute("onclick")) return el;
-    if (hasPointerCursor(el)) {
-      const parent = composedParent(el);
-      if (!parent || !hasPointerCursor(parent)) return el;
-    }
-  }
-  return null;
-}
+/** The last emitted `click` step, replaced in place if a `dblclick` immediately follows on the same element. */
+let lastClick: { el: Element; step: RecordedStep } | null = null;
+/** The in-page HTML5 drag source between `dragstart` and `drop` / `dragend`. */
+let dragSource: Element | null = null;
 
 /** True when this event must not be recorded: not recording, paused, not a
  *  real user event, or inside the agent's own UI. */
@@ -127,27 +87,6 @@ function withTarget(el: Element, kind: RecordedStepKind, line: string, extra: Pa
   return nextStep(kind, line, { target, locators, ...extra });
 }
 
-function describe(el: Element): string {
-  const { role, name } = describeElementParts(el);
-  return name ? `${role} "${name}"` : role;
-}
-
-/** `button "Apply"` — the plan's readable-line element part. */
-function named(el: Element): string {
-  const { role, name } = describeElementParts(el);
-  return `${role} "${name}"`;
-}
-
-/** The text-entry test shared by the fill rule and the key rule: an <input>
- *  that fills, a <textarea>, or a contenteditable element. */
-function isTextEntry(el: Element): boolean {
-  return (
-    (el instanceof HTMLInputElement && !["checkbox", "radio", "file"].includes(el.type)) ||
-    el instanceof HTMLTextAreaElement ||
-    (el instanceof HTMLElement && el.isContentEditable)
-  );
-}
-
 /** Any step other than a wheel ends the open scroll and the open fill. */
 function closeOpen(): void {
   openScroll = null;
@@ -168,26 +107,96 @@ function onClick(event: MouseEvent): void {
     lastActivationKey = null;
     if (pressed === el || el.contains(pressed)) return;
   }
+  const isCheckable = el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio");
+  // The 2nd+ click of a double-click: `onDblClick` replaces the 1st click in place.
+  if (event.detail >= 2 && !isCheckable) return;
   // A field's own click is not a step: the fill step records what was typed.
   if (
     el instanceof HTMLSelectElement ||
     el instanceof HTMLOptionElement ||
     el instanceof HTMLTextAreaElement ||
     (el instanceof HTMLElement && el.isContentEditable) ||
-    (el instanceof HTMLInputElement && !["checkbox", "radio"].includes(el.type))
+    (el instanceof HTMLInputElement && !isCheckable)
   ) {
     return;
   }
   closeOpen();
-  if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) {
+  if (isCheckable) {
     // `checked` is already the state AFTER the click: the HTML standard runs
     // the pre-click activation steps before dispatching `click`, and reverts
     // them only if the event is canceled.
+    lastClick = null;
     const kind = el.checked ? "check" : "uncheck";
     emit(withTarget(el, kind, `${kind} ${named(el)}`));
     return;
   }
-  emit(withTarget(el, "click", `click ${named(el)}`));
+  const step = withTarget(el, "click", `click ${named(el)}`);
+  lastClick = { el, step };
+  emit(step);
+}
+
+function onDblClick(event: MouseEvent): void {
+  if (ignored(event)) return;
+  const el = target(event);
+  if (!el) return;
+  window.clearTimeout(hoverTimer);
+  restedEl = el;
+  closeOpen();
+  if (lastClick && lastClick.el === el && lastClick.step.seq === seq - 1) {
+    emit({ ...lastClick.step, kind: "dblclick", line: `dblclick ${named(el)}` });
+  } else {
+    emit(withTarget(el, "dblclick", `dblclick ${named(el)}`));
+  }
+  lastClick = null;
+}
+
+function onContextMenu(event: MouseEvent): void {
+  if (ignored(event)) return;
+  const el = target(event);
+  if (!el) return;
+  window.clearTimeout(hoverTimer);
+  restedEl = el;
+  lastClick = null;
+  closeOpen();
+  emit(withTarget(el, "rightclick", `right-click ${named(el)}`));
+}
+
+function onDragStart(event: DragEvent): void {
+  if (ignored(event)) {
+    dragSource = null;
+    return;
+  }
+  // Chromium can fire one `pointermove` across a neighbor control before crossing
+  // the drag threshold and firing `dragstart` + `pointercancel`. Cancel the hover
+  // timer here so a slow drag never emits a stray `hover` step mid-drag.
+  window.clearTimeout(hoverTimer);
+  pointerEl = null;
+  restedEl = null;
+  dragSource = target(event) ?? innermost(event);
+}
+
+function onDrop(event: DragEvent): void {
+  const src = dragSource;
+  dragSource = null;
+  if (ignored(event) || !src) return;
+  const dest = target(event) ?? innermost(event);
+  if (!dest) return;
+  window.clearTimeout(hoverTimer);
+  const hoverDest = target(event);
+  pointerEl = hoverDest;
+  restedEl = hoverDest;
+  lastClick = null;
+  closeOpen();
+  emit(
+    withTarget(src, "drag", `drag ${named(src)} to ${named(dest)}`, {
+      dropTarget: journalTarget(dest, document, describe(dest)),
+      dropLocators: locatorSet(dest, document),
+    }),
+  );
+}
+
+function onDragEnd(): void {
+  dragSource = null;
 }
 
 function onInput(event: Event): void {
@@ -238,30 +247,6 @@ function onInput(event: Event): void {
   emit(step);
 }
 
-/** Keys that are a state of the keyboard, not an action on the page. */
-const MODIFIER_KEYS = [
-  "Shift", "Control", "Alt", "Meta", "AltGraph", "CapsLock", "NumLock", "ScrollLock", "Fn", "OS",
-];
-
-/** True for a key whose value is a single character, space included. */
-function isPrintable(key: string): boolean {
-  return key.length === 1;
-}
-
-/** One key press as a Playwright `keyboard.press` string, for example
- *  "ArrowDown", "Space", "Control+a" or "Shift+Tab".
- *  `event.key` of a printable already carries the shift — Shift+a is "A" — so
- *  Shift is added only to a key that has no character of its own. */
-function playwrightKey(event: KeyboardEvent): string {
-  const parts: string[] = [];
-  if (event.ctrlKey) parts.push("Control");
-  if (event.altKey) parts.push("Alt");
-  if (event.metaKey) parts.push("Meta");
-  if (event.shiftKey && !isPrintable(event.key)) parts.push("Shift");
-  parts.push(event.key === " " ? "Space" : event.key);
-  return parts.join("+");
-}
-
 function onKeyDown(event: KeyboardEvent): void {
   if (ignored(event)) return;
   // A held key repeats: it is one action, not one per repeat.
@@ -309,16 +294,6 @@ function onWheel(event: WheelEvent): void {
   }, REC_SCROLL_QUIET_MS);
 }
 
-/** All headings in composed tree order, crossing open shadow roots and skipping AGENT_UI. */
-function* headings(root: ParentNode): Generator<Element> {
-  for (const el of root.children) {
-    if (el.matches(AGENT_UI)) continue;
-    if (el.matches("h1, h2, h3, h4, h5, h6")) yield el;
-    if (el.shadowRoot) yield* headings(el.shadowRoot);
-    yield* headings(el);
-  }
-}
-
 /** The first heading whose top is inside the viewport, else the raw delta. */
 function scrollLine(step: RecordedStep): string {
   let heading: Element | undefined;
@@ -343,7 +318,7 @@ function onPointerDown(event: PointerEvent): void {
 }
 
 function onPointerMove(event: PointerEvent): void {
-  if (ignored(event)) return;
+  if (ignored(event) || dragSource) return;
   const el = target(event);
   if (el === pointerEl) return;
   pointerEl = el;
@@ -366,6 +341,11 @@ function attach(): void {
     detachers.push(() => window.removeEventListener(type, fn as EventListener, true));
   };
   on("click", onClick);
+  on("dblclick", onDblClick);
+  on("contextmenu", onContextMenu);
+  on("dragstart", onDragStart);
+  on("drop", onDrop);
+  on("dragend", onDragEnd);
   on("input", onInput);
   on("keydown", onKeyDown);
   on("wheel", onWheel);
@@ -382,6 +362,8 @@ function detach(): void {
   hoverTimer = undefined;
   openFill = null;
   openScroll = null;
+  lastClick = null;
+  dragSource = null;
   pointerEl = null;
   restedEl = null;
   paused = false;
@@ -395,6 +377,8 @@ export function start(id: string): void {
   recordingId = id;
   seq = 0;
   lastActivationKey = null;
+  lastClick = null;
+  dragSource = null;
   paused = false;
   attach();
 }
@@ -416,6 +400,8 @@ export function resume(): void {
   restedEl = null;
   openFill = null;
   openScroll = null;
+  lastClick = null;
+  dragSource = null;
 }
 
 /** True while this document is recording. Read by the panel through

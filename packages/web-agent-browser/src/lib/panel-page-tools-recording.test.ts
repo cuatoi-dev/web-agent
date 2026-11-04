@@ -202,6 +202,47 @@ describe("panel-page-tools-recording", () => {
     expect(res.content).not.toMatch(/getBy|\.nth\(/);
   });
 
+  it("U-T6c: stop_recording prints drop target locator lines under a drag step, and start_recording names the new gestures", async () => {
+    const recordingResult: RecordingResult = {
+      host: "localhost:10040",
+      url: "http://localhost:10040/recorder-gaps.html",
+      steps: [
+        {
+          recordingId: "r",
+          seq: 0,
+          kind: "drag",
+          line: 'drag div "Drag me" to region "Drop zone"',
+          locators: { role: "", name: "Drag me", roleMatches: 0, id: "drag", css: "#drag", xpath: "//*[@id='drag']" },
+          dropLocators: { role: "region", name: "Drop zone", roleMatches: 1, id: "drop", css: "#drop", xpath: "//*[@id='drop']" },
+        },
+      ],
+    };
+    vi.mocked(controller.stop).mockResolvedValue(recordingResult);
+    const { startTool, stopTool } = getTools();
+
+    expect(startTool.description).toContain("double-clicks, right-clicks and drag-and-drop");
+
+    const res = await stopTool.execute({ tabId: 7 }, toolCtx());
+    const expected =
+      "Recorded 1 step on localhost:10040:\n" +
+      '1. drag div "Drag me" to region "Drop zone"\n' +
+      '  role+name:  "Drag me" (matches 0)\n' +
+      "  id: drag\n" +
+      "  data-testid: —\n" +
+      "  name: —\n" +
+      "  css: #drag\n" +
+      "  xpath: //*[@id='drag']\n" +
+      "  drop target:\n" +
+      '  role+name: region "Drop zone" (matches 1)\n' +
+      "  id: drop\n" +
+      "  data-testid: —\n" +
+      "  name: —\n" +
+      "  css: #drop\n" +
+      "  xpath: //*[@id='drop']";
+    expect(reportOf(res.content)).toBe(expected);
+    expect(await vfs.get(savedPathOf(res.content))).toMatchObject({ content: expected });
+  });
+
   it("U-T7: stop_recording with a note", async () => {
     const recordingResult: RecordingResult = {
       host: "localhost:10040",

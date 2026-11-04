@@ -37,7 +37,7 @@ export function createRecordingPageTools(options: PanelPageToolsOptions): Custom
   const startRecording: CustomToolDef = {
     name: "start_recording",
     description:
-      "Watch the user work in a tab you are already debugging (call start_debugging first) and record what they do: clicks, typing, selections, file uploads, key presses, scrolling, hovers and single-page-app route changes. The user is asked to confirm first. Call read_tabs first and pass the tab ID it reports. Call stop_recording to get the steps. Your own page tools are never recorded as the user's steps.",
+      "Watch the user work in a tab you are already debugging (call start_debugging first) and record what they do: clicks, typing, selections, file uploads, key presses, scrolling, hovers, single-page-app route changes, double-clicks, right-clicks and drag-and-drop. The user is asked to confirm first. Call read_tabs first and pass the tab ID it reports. Call stop_recording to get the steps. Your own page tools are never recorded as the user's steps.",
     inputSchema: z.object({
       tabId: z.number().describe("The ID of the tab to record. Call read_tabs first and pass the ID it reports."),
     }),
