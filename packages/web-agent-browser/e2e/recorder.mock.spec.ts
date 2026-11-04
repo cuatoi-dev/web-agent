@@ -981,4 +981,39 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     await context.close();
   });
+
+  test("M19 a click on a table header records columnheader with a one-match role+name", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const tableUrl = `${ORIGIN}/recorder-table.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(tableUrl);
+    const tabId = await getTabId(worker, tableUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record the table header click.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#sortth").click();
+    await expect(stepList(panelPage)).toHaveText(['click columnheader "Date ▼"']);
+    await expect(sitePage.locator("#log")).toContainText("sorted");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const body = bodyOf(results[2].text);
+
+    expect(body).toContain("Recorded 1 step on localhost:10040:");
+    expect(body).toContain('1. click columnheader "Date ▼"');
+    expect(body).toContain('  role+name: columnheader "Date ▼" (matches 1)');
+
+    await context.close();
+  });
 });

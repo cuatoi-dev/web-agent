@@ -92,6 +92,21 @@ export function getRole(el: Element): string {
     return INPUT_TYPE_ROLES[type] || "textbox";
   }
 
+  // 001 — table elements. Their role comes from the tag and, for a cell, from
+  // an attribute or an ancestor, so they cannot live in the single-tag
+  // TAG_ROLES map and are resolved before it. A `th` is a `columnheader`
+  // unless its `scope` names a row (user decision, 2026-11-04).
+  if (tag === "th") {
+    const scope = (el.getAttribute("scope") || "").toLowerCase();
+    return scope === "row" || scope === "rowgroup" ? "rowheader" : "columnheader";
+  }
+  if (tag === "td") {
+    const tableRole = el.closest("table")?.getAttribute("role");
+    return tableRole === "grid" || tableRole === "treegrid" ? "gridcell" : "cell";
+  }
+  if (tag === "tr") return "row";
+  if (tag === "thead" || tag === "tbody" || tag === "tfoot") return "rowgroup";
+
   return TAG_ROLES[tag] || "";
 }
 

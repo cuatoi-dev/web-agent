@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder table</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 12px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid currentColor; padding: 4px 8px; text-align: left; }
+    th.sortable { cursor: pointer; }
+    #log { font: 12px/1.35 monospace; white-space: pre-wrap; min-height: 20px; margin-top: 6px; padding: 4px 6px; border: 1px solid currentColor; }
+  </style>
+</head>
+<body>
+  <h1>Recorder table</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th class="sortable" id="sortth">Date ▼</th>
+        <th>Customer</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>o-1001</td><td>2026-10-01</td><td>Ada</td></tr>
+      <tr><td>o-1002</td><td>2026-10-02</td><td>Grace</td></tr>
+    </tbody>
+  </table>
+
+  <div id="log" aria-live="polite"></div>
+
+  <script>
+    document.getElementById("sortth").addEventListener("click", () => {
+      document.getElementById("log").textContent += "sorted\n";
+    });
+  </script>
+</body>
+</html>
