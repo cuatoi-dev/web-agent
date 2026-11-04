@@ -232,15 +232,18 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     // 127/002 — locator lines (two-space indent) sit under each step.
     const lines = stopText.split("\n").filter((l) => !l.startsWith("  "));
-    expect(lines[0]).toBe("Recorded 8 steps on localhost:10040:");
+    expect(lines[0]).toBe("Recorded 9 steps on localhost:10040:");
     expect(lines[1]).toBe("1. scroll down 400 px");
     expect(lines[2]).toBe('2. hover link "Cart (2)"');
     expect(lines[3]).toBe('3. click link "Cart (2)"');
     expect(lines[4]).toBe('4. fill textbox "Coupon" "SAVE10"');
     expect(lines[5]).toBe('5. fill textbox "Password" <password>');
-    expect(lines[6]).toBe('6. select combobox "Shipping" "Express"');
-    expect(lines[7]).toBe('7. check checkbox "Gift"');
-    expect(lines[8]).toBe("8. press Enter");
+    // ArrowDown on the focused <select>: the keydown is a press step of its
+    // own, and the selection it causes is the select step after it.
+    expect(lines[6]).toBe("6. press ArrowDown");
+    expect(lines[7]).toBe('7. select combobox "Shipping" "Express"');
+    expect(lines[8]).toBe('8. check checkbox "Gift"');
+    expect(lines[9]).toBe("9. press Enter");
 
     expect(stopText).toContain('4. fill textbox "Coupon" "SAVE10"\n  role+name: textbox "Coupon" (matches 1)\n  id: coupon\n');
     expect(stopText).not.toMatch(/getBy|\.nth\(/);
@@ -249,9 +252,9 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     // returned before its trailing "Saved <path>" line.
     const savedRecording = expectSavedRecording(stopText);
     const report = bodyOf(stopText);
-    expect(lines.length).toBe(9 + 1);            // the Saved line joins the numbered ones
-    expect(lines[9]).toBe(`Saved ${savedRecording}`);
-    expect(lines.slice(0, 9)).toEqual(report.split("\n").filter((l) => !l.startsWith("  ")));
+    expect(lines.length).toBe(10 + 1);           // the Saved line joins the numbered ones
+    expect(lines[10]).toBe(`Saved ${savedRecording}`);
+    expect(lines.slice(0, 10)).toEqual(report.split("\n").filter((l) => !l.startsWith("  ")));
     const storedReport = await readTmpFile(worker, savedRecording);
     expect(storedReport).toBe(report);
     expect(storedReport).toContain('5. fill textbox "Password" <password>');
@@ -674,6 +677,65 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
       '1. upload file "Upload" "a.txt"',
       '2. upload file "Upload" "a.txt", "b.txt"',
       '3. fill slider "Level" "9"',
+    ]);
+
+    await context.close();
+  });
+
+  test("M13 section 4 keys and shortcuts record press steps, and field typing stays one fill", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record section 4.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    // focus(), not click(): a click moves the pointer, which can arm the hover
+    // timer and add a hover step. focus() moves no pointer and records nothing.
+    await sitePage.locator("#keys").focus();
+    await sitePage.keyboard.press("ArrowLeft");
+    await sitePage.keyboard.press("Control+a");
+    await sitePage.keyboard.type("x");          // replaces the selection: one fill
+    await sitePage.keyboard.press("Backspace"); // empties it: the same fill, in place
+
+    // A click on a non-interactive heading records nothing, and returns the
+    // focus to the body, so the next keys have no target.
+    await sitePage.locator("#sec-keys h2").click();
+    await sitePage.keyboard.press("Shift");     // a modifier on its own
+    await sitePage.keyboard.press("Control");   // a modifier on its own
+    await sitePage.keyboard.press("j");
+    await sitePage.keyboard.press("ArrowDown");
+
+    // Space on a focused button: the press step, then the activation click
+    // Chrome fires on keyup.
+    await sitePage.locator("#dbl").focus();
+    await sitePage.keyboard.press("Space");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results3 = await waitForResults(panelPage, 3);
+    const lines = results3[2].text.split("\n").filter((l) => !l.startsWith("  "));
+
+    expect(lines.slice(0, 8)).toEqual([
+      "Recorded 7 steps on localhost:10040:",
+      "1. press ArrowLeft",
+      "2. press Control+a",
+      '3. fill textbox "Keys field" ""',
+      "4. press j",
+      "5. press ArrowDown",
+      "6. press Space",
+      '7. click button "Double me"',
     ]);
 
     await context.close();

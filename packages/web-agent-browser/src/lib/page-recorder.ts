@@ -134,6 +134,16 @@ function named(el: Element): string {
   return `${role} "${name}"`;
 }
 
+/** The text-entry test shared by the fill rule and the key rule: an <input>
+ *  that fills, a <textarea>, or a contenteditable element. */
+function isTextEntry(el: Element): boolean {
+  return (
+    (el instanceof HTMLInputElement && !["checkbox", "radio", "file"].includes(el.type)) ||
+    el instanceof HTMLTextAreaElement ||
+    (el instanceof HTMLElement && el.isContentEditable)
+  );
+}
+
 /** Any step other than a wheel ends the open scroll and the open fill. */
 function closeOpen(): void {
   openScroll = null;
@@ -187,11 +197,7 @@ function onInput(event: Event): void {
     emit(withTarget(el, "upload", `upload ${named(el)} ${chosen}`, { values: names }));
     return;
   }
-  const isText =
-    (el instanceof HTMLInputElement && !["checkbox", "radio", "file"].includes(el.type)) ||
-    el instanceof HTMLTextAreaElement ||
-    (el instanceof HTMLElement && el.isContentEditable);
-  if (!isText) return;
+  if (!isTextEntry(el)) return;
   // A range drag fires its click only on release. Without this, a hover timer
   // armed when the pointer reached the slider fires during the drag, closes
   // the open fill and splits one drag into two fill steps.
@@ -220,18 +226,54 @@ function onInput(event: Event): void {
   emit(step);
 }
 
+/** Keys that are a state of the keyboard, not an action on the page. */
+const MODIFIER_KEYS = [
+  "Shift", "Control", "Alt", "Meta", "AltGraph", "CapsLock", "NumLock", "ScrollLock", "Fn", "OS",
+];
+
+/** True for a key whose value is a single character, space included. */
+function isPrintable(key: string): boolean {
+  return key.length === 1;
+}
+
+/** One key press as a Playwright `keyboard.press` string, for example
+ *  "ArrowDown", "Space", "Control+a" or "Shift+Tab".
+ *  `event.key` of a printable already carries the shift — Shift+a is "A" — so
+ *  Shift is added only to a key that has no character of its own. */
+function playwrightKey(event: KeyboardEvent): string {
+  const parts: string[] = [];
+  if (event.ctrlKey) parts.push("Control");
+  if (event.altKey) parts.push("Alt");
+  if (event.metaKey) parts.push("Meta");
+  if (event.shiftKey && !isPrintable(event.key)) parts.push("Shift");
+  parts.push(event.key === " " ? "Space" : event.key);
+  return parts.join("+");
+}
+
 function onKeyDown(event: KeyboardEvent): void {
   if (ignored(event)) return;
-  if (!["Enter", "Escape", "Tab"].includes(event.key)) return;
-  closeOpen();
+  // A held key repeats: it is one action, not one per repeat.
+  if (event.repeat) return;
+  // A modifier on its own is a state, not an action on the page.
+  if (MODIFIER_KEYS.includes(event.key)) return;
+  // An IME composition is still being typed; the fill rule records its result.
+  if (event.isComposing || event.key === "Process" || event.key === "Dead") return;
   const el = innermost(event);
-  const line = `press ${event.key}`;
-  // A press on <body> has no target: the exported code uses page.keyboard.
-  if (!el || el === document.body || el === document.documentElement) {
-    emit(nextStep("press", line, { key: event.key }));
+  const combo = event.ctrlKey || event.altKey || event.metaKey;
+  // Typing in a text field is the fill step's job. A shortcut there is not
+  // text, so a combo is always recorded.
+  if (el && isTextEntry(el) && !combo && (isPrintable(event.key) || event.key === "Backspace" || event.key === "Delete")) {
     return;
   }
-  emit(withTarget(el, "press", line, { key: event.key }));
+  const key = playwrightKey(event);
+  closeOpen();
+  const line = `press ${key}`;
+  // A press on <body> has no target: the exported code uses page.keyboard.
+  if (!el || el === document.body || el === document.documentElement) {
+    emit(nextStep("press", line, { key }));
+    return;
+  }
+  emit(withTarget(el, "press", line, { key }));
 }
 
 function onWheel(event: WheelEvent): void {

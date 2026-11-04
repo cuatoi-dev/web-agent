@@ -334,7 +334,7 @@ describe("page-recorder", () => {
     expect(s[0].line).toBe('select combobox "Shipping" "Express"');
   });
 
-  it("U-R13: keydown Enter on <button>, Escape on <body>, and a on <button>", () => {
+  it("U-R13: keydown Enter on <button> and Escape on <body> still record", () => {
     const btn = document.createElement("button");
     btn.textContent = "OK";
     document.body.appendChild(btn);
@@ -343,7 +343,8 @@ describe("page-recorder", () => {
 
     fire(btn, new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     fire(document.body, new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    fire(btn, new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+    // A single printable key is recorded now — see "navigation keys and
+    // shortcuts (003)" below.
 
     const s = steps();
     expect(s).toHaveLength(2);
@@ -1098,6 +1099,196 @@ describe("page-recorder", () => {
       fire(fast, new Event("input", { bubbles: true, composed: true }));
 
       expect(steps().map((x) => x.kind)).toEqual(["check", "uncheck", "check"]);
+    });
+  });
+
+  describe("navigation keys and shortcuts (003)", () => {
+    function keysField(): HTMLInputElement {
+      document.body.innerHTML = '<label>Keys field <input id="keys" value="hello"></label>';
+      return document.getElementById("keys") as HTMLInputElement;
+    }
+
+    function key(target: EventTarget, init: KeyboardEventInit): void {
+      fire(target, new KeyboardEvent("keydown", { bubbles: true, composed: true, ...init }));
+    }
+
+    it("ArrowLeft in a text field records press ArrowLeft with the field as its target", () => {
+      const input = keysField();
+      recorder.start("r1");
+      key(input, { key: "ArrowLeft" });
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("press");
+      expect(s[0].line).toBe("press ArrowLeft");
+      expect(s[0].key).toBe("ArrowLeft");
+      expect(s[0].target).toMatchObject({ role: "textbox", name: "Keys field" });
+    });
+
+    it("Ctrl+a in a text field records press Control+a", () => {
+      const input = keysField();
+      recorder.start("r1");
+      key(input, { key: "a", ctrlKey: true });
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe("press Control+a");
+      expect(s[0].key).toBe("Control+a");
+    });
+
+    it("typing into a text field leaves the keys to the fill step", () => {
+      const input = keysField();
+      recorder.start("r1");
+      key(input, { key: "x" });
+      input.value = "hellox";
+      fire(input, new Event("input", { bubbles: true, composed: true }));
+      key(input, { key: "Backspace" });
+      input.value = "hello";
+      fire(input, new Event("input", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("fill");
+      expect(s[0].line).toBe('fill textbox "Keys field" "hello"');
+    });
+
+    it("a single printable key on the page body records press j with no target", () => {
+      keysField();
+      recorder.start("r1");
+      key(document.body, { key: "j" });
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("press");
+      expect(s[0].line).toBe("press j");
+      expect(s[0].target).toBeUndefined();
+    });
+
+    it("ArrowDown on the page body records press ArrowDown with no target", () => {
+      recorder.start("r1");
+      key(document.body, { key: "ArrowDown" });
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe("press ArrowDown");
+      expect(s[0].target).toBeUndefined();
+    });
+
+    it("Space on a button records press Space and targets the button", () => {
+      document.body.innerHTML = '<button id="dbl" type="button">Double me</button>';
+      const btn = document.getElementById("dbl") as HTMLButtonElement;
+      recorder.start("r1");
+      key(btn, { key: " " });
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe("press Space");
+      expect(s[0].key).toBe("Space");
+      expect(s[0].target).toMatchObject({ role: "button", name: "Double me" });
+    });
+
+    it("holding a key records it once: a repeat keydown records nothing", () => {
+      recorder.start("r1");
+      key(document.body, { key: "ArrowDown", repeat: true });
+      expect(steps()).toHaveLength(0);
+
+      key(document.body, { key: "ArrowDown" });
+      expect(steps()).toHaveLength(1);
+    });
+
+    it("a modifier on its own records nothing", () => {
+      recorder.start("r1");
+      key(document.body, { key: "Shift", shiftKey: true });
+      key(document.body, { key: "Control", ctrlKey: true });
+      key(document.body, { key: "Alt", altKey: true });
+      key(document.body, { key: "Meta", metaKey: true });
+      key(document.body, { key: "CapsLock" });
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("Shift+Tab records press Shift+Tab, and Tab alone still records press Tab", () => {
+      const btn = document.createElement("button");
+      btn.textContent = "OK";
+      document.body.appendChild(btn);
+      recorder.start("r1");
+      key(btn, { key: "Tab", shiftKey: true });
+      key(btn, { key: "Tab" });
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0].line).toBe("press Shift+Tab");
+      expect(s[0].key).toBe("Shift+Tab");
+      expect(s[1].line).toBe("press Tab");
+    });
+
+    it("Meta+k and Alt+ArrowLeft record their full shortcut", () => {
+      recorder.start("r1");
+      key(document.body, { key: "k", metaKey: true });
+      key(document.body, { key: "ArrowLeft", altKey: true });
+
+      expect(steps().map((x) => x.line)).toEqual(["press Meta+k", "press Alt+ArrowLeft"]);
+    });
+
+    it("IME composition keys record nothing", () => {
+      recorder.start("r1");
+      key(document.body, { key: "Process", isComposing: true });
+      key(document.body, { key: "Process" });
+      key(document.body, { key: "Dead" });
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("an untrusted keydown records nothing", () => {
+      recorder.start("r1");
+      document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("a keydown inside the extension's own UI records nothing", () => {
+      const wrapper = document.createElement("div");
+      wrapper.setAttribute(EXTENSION_UI_ATTR, "true");
+      const btn = document.createElement("button");
+      btn.textContent = "X";
+      wrapper.appendChild(btn);
+      document.body.appendChild(wrapper);
+      recorder.start("r1");
+      key(btn, { key: "ArrowDown" });
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("Enter in a textarea still records press Enter, and the fill step still records the text", () => {
+      document.body.innerHTML = '<textarea id="notes" aria-label="Notes"></textarea>';
+      const area = document.getElementById("notes") as HTMLTextAreaElement;
+      recorder.start("r1");
+      area.value = "a\n";
+      fire(area, new Event("input", { bubbles: true, composed: true }));
+      key(area, { key: "Enter" });
+
+      const s = steps();
+      expect(s.map((x) => x.kind)).toEqual(["fill", "press"]);
+      expect(s[1].line).toBe("press Enter");
+      expect(s[1].target).toBeDefined();
+    });
+
+    it("ArrowRight on a focused range input records press ArrowRight, then the fill step", () => {
+      document.body.innerHTML = '<label>Level <input type="range" id="range" min="0" max="10" value="2"></label>';
+      const range = document.getElementById("range") as HTMLInputElement;
+      recorder.start("r1");
+      // Browser order: keydown first, then the value change and its input event.
+      key(range, { key: "ArrowRight" });
+      range.value = "3";
+      fire(range, new Event("input", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0].kind).toBe("press");
+      expect(s[0].line).toBe("press ArrowRight");
+      expect(s[0].target).toMatchObject({ role: "slider", name: "Level" });
+      expect(s[1].kind).toBe("fill");
+      expect(s[1].line).toBe('fill slider "Level" "3"');
     });
   });
 });
