@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { test, expect, getTabId } from "./extension.fixture";
+import { watchPanel } from "./panel-ready";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
 const ORIGIN = "http://localhost:10040";
@@ -99,11 +100,12 @@ async function openPanel(
     };
   }, tabId);
 
+  const panelReady = watchPanel(panelPage);
   panelPage.on("console", (m) => console.log("PANEL LOG:", m.text()));
   panelPage.on("pageerror", (err) => console.error("PANEL ERROR:", err));
   await panelPage.setViewportSize({ width: 400, height: 700 });
   await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-  await expect(panelPage.locator("#agent-row")).toBeVisible();
+  await panelReady();
   await chooseAgent(panelPage, agent);
   await panelPage.evaluate((p: PlannedCall[]) => {
     window.__PLAN__ = p;

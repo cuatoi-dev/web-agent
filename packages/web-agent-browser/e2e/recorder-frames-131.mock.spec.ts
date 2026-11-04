@@ -4,6 +4,7 @@
 // start_debugging/start_recording/stop_recording while the USER
 // (not the agent) acts directly on the fixture page and its frames.
 import { test, expect, getTabId } from "./extension.fixture";
+import { watchPanel } from "./panel-ready";
 import { routeCrossSiteFrames } from "./cross-site-frames";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
@@ -73,11 +74,12 @@ async function openPanel(context: BrowserContext, extensionId: string, tabId: nu
       return { text: results.map((r) => r.text).join("\n") };
     };
   }, tabId);
+  const panelReady = watchPanel(panelPage);
   panelPage.on("console", (m) => console.log("PANEL LOG:", m.text()));
   panelPage.on("pageerror", (err) => console.error("PANEL ERROR:", err));
   await panelPage.setViewportSize({ width: 400, height: 700 });
   await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-  await expect(panelPage.locator("#agent-row")).toBeVisible();
+  await panelReady();
   await chooseAgent(panelPage, "tesagent");
   await panelPage.evaluate((p: PlannedCall[]) => {
     window.__PLAN__ = p;
