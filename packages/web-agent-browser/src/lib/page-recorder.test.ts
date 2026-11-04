@@ -757,5 +757,164 @@ describe("page-recorder", () => {
       expect(s[0].kind).toBe("hover");
       expect(s[0].line).toBe('hover link "Catalog"');
     });
+
+    it("click inside the extension's own bubble with onclick or cursor:pointer still records nothing", () => {
+      const { host: bubble, root } = host(
+        "web-agent-bubble",
+        "open",
+        '<div id="ext-div" onclick="" style="cursor:pointer">Dismiss</div>',
+      );
+      bubble.setAttribute(EXTENSION_UI_ATTR, "true");
+      recorder.start("r1");
+      fire(root.querySelector("#ext-div") as Element, new MouseEvent("click", composed));
+
+      expect(calls).toHaveLength(0);
+    });
+
+    it("pointer-cursor run crossing an open shadow boundary records the shadow host when host has cursor:pointer, else the inner element", () => {
+      const { host: ptrHost, root: r1 } = host(
+        "ptr-chip",
+        "open",
+        '<span id="inner1" style="cursor:pointer">Chip label</span>',
+      );
+      ptrHost.id = "chip-host";
+      ptrHost.style.cursor = "pointer";
+
+      const { root: r2 } = host(
+        "plain-panel",
+        "open",
+        '<span id="inner2" style="cursor:pointer">Inner action</span>',
+      );
+
+      recorder.start("r1");
+      fire(r1.querySelector("#inner1") as Element, new MouseEvent("click", composed));
+      fire(r2.querySelector("#inner2") as Element, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0].line).toBe('click ptr-chip "Chip label"');
+      expect(s[0].locators?.id).toBe("chip-host");
+      expect(s[1].line).toBe('click span "Inner action"');
+      expect(s[1].locators?.shadow).toEqual(["plain-panel:nth-of-type(1)", "#inner2"]);
+    });
+  });
+
+  describe("extended ARIA roles and pointer/onclick fallbacks (001)", () => {
+    it("trusted click on each added ARIA widget role without tabindex records one click step", () => {
+      const roles = [
+        "combobox", "listbox", "slider", "spinbutton", "searchbox", "textbox",
+        "treeitem", "gridcell", "row", "menuitemcheckbox", "menuitemradio",
+      ];
+      const els = roles.map((role) => {
+        const el = document.createElement("div");
+        el.setAttribute("role", role);
+        el.setAttribute("aria-label", `Item ${role}`);
+        document.body.appendChild(el);
+        return { role, el };
+      });
+
+      recorder.start("r1");
+      for (const { el } of els) {
+        fire(el, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      }
+
+      const s = steps();
+      expect(s).toHaveLength(roles.length);
+      roles.forEach((role, i) => {
+        expect(s[i].kind).toBe("click");
+        expect(s[i].line).toBe(`click ${role} "Item ${role}"`);
+      });
+    });
+
+    it("section 2 controls record one click each, and inner option/gridcell win over outer listbox/row", () => {
+      document.body.innerHTML = `
+        <div id="divclick" onclick="">Plain div onclick</div>
+        <div id="combobox" role="combobox" aria-label="Combobox">Combobox</div>
+        <div role="listbox" aria-label="Colours"><div id="opt-red" role="option">Red option</div></div>
+        <div id="slider" role="slider" aria-label="Volume">Slider</div>
+        <div role="tree"><div id="treeitem" role="treeitem">Tree item A</div></div>
+        <div role="grid"><div role="row"><div id="gridcell" role="gridcell">Cell B2</div></div></div>
+        <span id="ptrspan" style="cursor:pointer">Pointer span</span>
+      `;
+
+      recorder.start("r1");
+      for (const id of ["divclick", "combobox", "opt-red", "slider", "treeitem", "gridcell", "ptrspan"]) {
+        fire(document.getElementById(id) as Element, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      }
+
+      expect(calls).toHaveLength(7);
+      expect(steps().map((s) => s.line)).toEqual([
+        'click div "Plain div onclick"',
+        'click combobox "Combobox"',
+        'click option "Red option"',
+        'click slider "Volume"',
+        'click treeitem "Tree item A"',
+        'click gridcell "Cell B2"',
+        'click span "Pointer span"',
+      ]);
+    });
+
+    it("click on a child of a pointer-cursor run records the outermost element of that run, once", () => {
+      // jsdom 24 does not inherit cursor across elements, so set style="cursor:pointer"
+      // on every node in the run to exercise the parent-cursor check directly.
+      document.body.innerHTML = `
+        <div id="card" style="cursor:pointer">
+          <div id="mid" style="cursor:pointer">
+            <span id="leaf" style="cursor:pointer">Card title</span>
+          </div>
+        </div>
+      `;
+
+      recorder.start("r1");
+      fire(document.getElementById("leaf") as Element, new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+      expect(calls).toHaveLength(1);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click div "Card title"');
+      expect(s[0].locators?.id).toBe("card");
+    });
+
+    it("click on a section heading, plain block, body, or html records nothing", () => {
+      document.body.innerHTML = `<section><h2 id="hd">2 Not in INTERACTIVE</h2><p id="para">Copy</p></section>`;
+      document.body.setAttribute("onclick", "");
+      document.body.style.cursor = "pointer";
+      document.documentElement.setAttribute("onclick", "");
+      document.documentElement.style.cursor = "pointer";
+
+      recorder.start("r1");
+      fire(document.getElementById("hd") as Element, new MouseEvent("click", { bubbles: true }));
+      fire(document.getElementById("para") as Element, new MouseEvent("click", { bubbles: true }));
+      fire(document.body, new MouseEvent("click", { bubbles: true }));
+      fire(document.documentElement, new MouseEvent("click", { bubbles: true }));
+
+      expect(calls).toHaveLength(0);
+
+      document.body.removeAttribute("onclick");
+      document.body.style.cursor = "";
+      document.documentElement.removeAttribute("onclick");
+      document.documentElement.style.cursor = "";
+    });
+
+    it("resting the pointer on role=combobox or a pointer-cursor run records one hover step", () => {
+      vi.useFakeTimers();
+      document.body.innerHTML = `
+        <div id="combobox" role="combobox" aria-label="Combobox">Combobox</div>
+        <div id="card" style="cursor:pointer"><span id="leaf" style="cursor:pointer">Quick card</span></div>
+      `;
+
+      recorder.start("r1");
+      fire(document.getElementById("combobox") as Element, new PointerEvent("pointermove", { bubbles: true }));
+      vi.advanceTimersByTime(REC_HOVER_REST_MS);
+
+      fire(document.getElementById("leaf") as Element, new PointerEvent("pointermove", { bubbles: true }));
+      vi.advanceTimersByTime(REC_HOVER_REST_MS);
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0].line).toBe('hover combobox "Combobox"');
+      expect(s[1].line).toBe('hover div "Quick card"');
+      expect(s[1].locators?.id).toBe("card");
+    });
   });
 });

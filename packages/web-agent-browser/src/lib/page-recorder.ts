@@ -16,14 +16,18 @@ import type { RecordedStep, RecordedStepKind } from "./recorder.types";
  *  is recorded like any other element. */
 const AGENT_UI = EXTENSION_UI_SELECTOR;
 
-/** What "the closest interactive element" means for a click and for a hover.
- *  A click with no interactive ancestor records nothing: the plan's rule is
- *  "target = closest interactive element", and a click on page chrome is not a
- *  step a test would replay. */
-const INTERACTIVE =
-  'a, button, input, select, textarea, summary, label, [role="button"], [role="link"], ' +
-  '[role="checkbox"], [role="radio"], [role="tab"], [role="menuitem"], [role="option"], ' +
-  '[role="switch"], [contenteditable="true"], [tabindex]';
+const INTERACTIVE_ROLES = [
+  "button", "link", "checkbox", "radio", "tab", "menuitem", "option", "switch",
+  "combobox", "listbox", "slider", "spinbutton", "searchbox", "textbox",
+  "treeitem", "gridcell", "row", "menuitemcheckbox", "menuitemradio",
+];
+
+/** Semantic controls and ARIA widget roles matched first on the composed path. */
+const INTERACTIVE = [
+  "a", "button", "input", "select", "textarea", "summary", "label",
+  '[contenteditable="true"]', "[tabindex]",
+  ...INTERACTIVE_ROLES.map((r) => `[role="${r}"]`),
+].join(", ");
 
 let recordingId = "";
 let seq = 0;
@@ -54,10 +58,30 @@ function innermost(event: Event): Element | null {
   return path.length > 0 ? path[0] : null;
 }
 
-/** The closest interactive element on the composed path, innermost first. */
-function interactive(event: Event): Element | null {
-  for (const el of eventElements(event)) {
+function composedParent(el: Element): Element | null {
+  if (el.parentElement) return el.parentElement;
+  const root = el.parentNode;
+  return root instanceof ShadowRoot ? root.host : null;
+}
+
+function hasPointerCursor(el: Element): boolean {
+  return (el.ownerDocument.defaultView ?? window).getComputedStyle(el).cursor === "pointer";
+}
+
+/** The click or hover target on the composed path: closest INTERACTIVE match
+ *  first, then an `onclick` attribute or the outermost `cursor: pointer` element. */
+function target(event: Event): Element | null {
+  const path = eventElements(event);
+  for (const el of path) {
     if (el.matches(INTERACTIVE)) return el;
+  }
+  for (const el of path) {
+    if (el === document.documentElement || el === document.body) break;
+    if (el.hasAttribute("onclick")) return el;
+    if (hasPointerCursor(el)) {
+      const parent = composedParent(el);
+      if (!parent || !hasPointerCursor(parent)) return el;
+    }
   }
   return null;
 }
@@ -118,7 +142,7 @@ function closeOpen(): void {
 
 function onClick(event: MouseEvent): void {
   if (ignored(event)) return;
-  const el = interactive(event);
+  const el = target(event);
   if (!el) return;
   window.clearTimeout(hoverTimer);
   restedEl = el;
@@ -244,7 +268,7 @@ function scrollLine(step: RecordedStep): string {
 
 function onPointerMove(event: PointerEvent): void {
   if (ignored(event)) return;
-  const el = interactive(event);
+  const el = target(event);
   if (el === pointerEl) return;
   pointerEl = el;
   restedEl = null;

@@ -559,4 +559,66 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     }
     await context.close();
   });
+
+  test("M11 section 2 click targets, hover on combobox, pointer-cursor run and non-interactive chrome", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record section 2.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    // Heading and page background must record nothing.
+    await sitePage.locator("#sec-interactive h2").click();
+    await sitePage.mouse.click(2, 2);
+
+    // Rest on Combobox past REC_HOVER_REST_MS -> one hover step, then click it.
+    await sitePage.locator("#combobox").hover();
+    await sitePage.waitForTimeout(600);
+    await sitePage.locator("#combobox").click();
+
+    // Click every remaining section 2 target; click #ptrchild (<b> inside #ptrspan)
+    // to exercise real CSS cursor:pointer inheritance on a child of a pointer run.
+    await sitePage.locator("#divclick").click();
+    await sitePage.locator("#opt-red").click();
+    await sitePage.locator("#slider").click();
+    await sitePage.locator("#treeitem").click();
+    await sitePage.locator("#gridcell").click();
+    await sitePage.locator("#ptrchild").click();
+    await sitePage.mouse.move(2, 2);
+    await sitePage.waitForTimeout(200);
+
+    await expect(sitePage.locator("#log")).toContainText("div clicked");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results3 = await waitForResults(panelPage, 3);
+    const stopText = results3[2].text;
+    const lines = stopText.split("\n").filter((l) => !l.startsWith("  "));
+
+    expect(lines.slice(0, 9)).toEqual([
+      "Recorded 8 steps on localhost:10040:",
+      '1. hover combobox "Combobox"',
+      '2. click combobox "Combobox"',
+      '3. click div "Plain div onclick"',
+      '4. click option "Red option"',
+      '5. click slider "Volume"',
+      '6. click treeitem "Tree item A"',
+      '7. click gridcell "Cell B2"',
+      '8. click span "Pointer span"',
+    ]);
+
+    await context.close();
+  });
 });

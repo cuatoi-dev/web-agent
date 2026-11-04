@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder gaps</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 12px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    h2 { font-size: 14px; margin: 0 0 4px; }
+    section { border: 1px solid currentColor; margin: 6px 0; padding: 6px 8px; }
+    closed-host, .group { display: inline-block; margin: 2px 4px 2px 0; }
+    .chip { display: inline-block; padding: 4px 10px; border: 1px solid currentColor; margin: 2px 4px 2px 0; }
+    label { display: inline-block; margin: 2px 10px 2px 0; }
+    #drop { display: inline-block; padding: 4px 16px; border: 1px dashed currentColor; margin: 2px 4px 2px 0; }
+    #log { font: 12px/1.35 monospace; white-space: pre-wrap; min-height: 20px; margin-top: 6px; padding: 4px 6px; border: 1px solid currentColor; }
+  </style>
+</head>
+<body>
+  <h1>Recorder gaps</h1>
+
+  <section id="sec-closed">
+    <h2>1 Closed shadow root</h2>
+    <closed-host id="closed-host"></closed-host>
+  </section>
+
+  <section id="sec-interactive">
+    <h2>2 Not in INTERACTIVE</h2>
+    <div class="chip" id="divclick" onclick="log('div clicked')">Plain div onclick</div>
+    <div class="chip" id="combobox" role="combobox" aria-label="Combobox" aria-expanded="false">Combobox</div>
+    <div class="group" role="listbox" aria-label="Colours"><div class="chip" id="opt-red" role="option">Red option</div></div>
+    <div class="chip" id="slider" role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5">Slider</div>
+    <div class="group" role="tree" aria-label="Files"><div class="chip" id="treeitem" role="treeitem">Tree item A</div></div>
+    <div class="group" role="grid" aria-label="Sheet"><div class="row" role="row"><div class="chip" id="gridcell" role="gridcell">Cell B2</div></div></div>
+    <span class="chip" id="ptrspan" style="cursor:pointer">Pointer <b id="ptrchild">span</b></span>
+  </section>
+
+  <section id="sec-inputs">
+    <h2>3 File, range, color</h2>
+    <label>Upload <input type="file" id="file" multiple></label>
+    <label>Level <input type="range" id="range" min="0" max="10" value="2"></label>
+    <label>Tint <input type="color" id="color" value="#ff0000"></label>
+  </section>
+
+  <section id="sec-keys">
+    <h2>4 Keys</h2>
+    <label>Keys field <input id="keys" value="hello"></label>
+  </section>
+
+  <section id="sec-gestures">
+    <h2>5 Mouse gestures</h2>
+    <button id="dbl" type="button" ondblclick="log('dblclick')">Double me</button>
+    <button id="ctx" type="button" oncontextmenu="log('contextmenu'); return false">Right me</button>
+    <div class="chip" id="drag" draggable="true">Drag me</div>
+    <div id="drop" role="region" aria-label="Drop zone">Drop zone</div>
+  </section>
+
+  <div id="log" aria-live="polite"></div>
+
+  <script>
+    function log(m) {
+      document.getElementById("log").textContent += m + "\n";
+    }
+    customElements.define("closed-host", class extends HTMLElement {
+      constructor() {
+        super();
+        const r = this.attachShadow({ mode: "closed" });
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "Closed button";
+        btn.addEventListener("click", () => {
+          btn.textContent = "Clicked";
+          log("closed clicked");
+        });
+        r.appendChild(btn);
+      }
+    });
+    for (const [id, msg] of [
+      ["combobox", "combobox clicked"],
+      ["opt-red", "option clicked"],
+      ["slider", "slider clicked"],
+      ["treeitem", "treeitem clicked"],
+      ["gridcell", "gridcell clicked"],
+      ["ptrspan", "pointer clicked"],
+    ]) {
+      document.getElementById(id).addEventListener("click", () => log(msg));
+    }
+    document.getElementById("drag").addEventListener("dragstart", (e) => {
+      if (e.dataTransfer) e.dataTransfer.setData("text/plain", "drag");
+    });
+    const drop = document.getElementById("drop");
+    drop.addEventListener("dragover", (e) => e.preventDefault());
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      log("dropped");
+    });
+  </script>
+</body>
+</html>
