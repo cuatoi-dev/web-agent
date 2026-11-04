@@ -130,4 +130,21 @@ describe("locator-format", () => {
       "  frames: #board",
     ]);
   });
+
+  it("8. stepLocatorLines prints closed shadow root offset line", () => {
+    const set: LocatorSet = {
+      role: "button",
+      name: "Pay",
+      roleMatches: 1,
+      id: "pay",
+      css: "#pay",
+      xpath: "//*[@id='pay']",
+    };
+    const lines = stepLocatorLines({ locators: set, closedShadow: { offsetX: 12, offsetY: 7 } });
+    expect(lines.at(-1)).toBe("  closed shadow root: click the host at position (12, 7)");
+    expect(lines.slice(0, -1)).toEqual(stepLocatorLines({ locators: set }));
+    expect(stepLocatorLines({ closedShadow: { offsetX: 1, offsetY: 1 } })).toEqual([
+      "  closed shadow root: click the host at position (1, 1)",
+    ]);
+  });
 });

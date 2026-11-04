@@ -53,6 +53,11 @@ export interface RecordedStep {
   dropTarget?: ElementTarget;
   /** 004 — for a `drag` step, the drop destination's neutral locator set. */
   dropLocators?: LocatorSet;
+  /** 005 — the click was inside a closed shadow root. `target` and `locators`
+   *  are the HOST's, because a locator cannot enter a closed root. `inner` names
+   *  the element clicked. The offsets are from the host's padding box, which is
+   *  the origin of Playwright's `position`. */
+  closedShadow?: { inner: ElementTarget; offsetX: number; offsetY: number };
   /** 131/004 — the `<iframe>` selectors from the top page down to this
    *  step's frame, top-down. Absent for a top-frame step. Built by the
    *  helper world, the same way 131/003 builds them for the agent's own
@@ -61,6 +66,26 @@ export interface RecordedStep {
   /** 131/004 — the origin of the frame the step happened in, e.g.
    *  "http://pay.test". Absent for the top frame. */
   frameOrigin?: string;
+}
+
+/** 005 — the message that asks the panel to look up a closed-root click. It
+ *  uses the same binding as a step and never reaches the step list. `x` and `y`
+ *  are the event's client coordinates. */
+export interface PendingClosedMessage {
+  recordingId: string;
+  seq: number;
+  pendingClosed: { x: number; y: number };
+}
+
+/** 005 — a closed-root click waiting for the panel's lookup. `interactive` is
+ *  true when `target()` already found the host, so an ordinary click on it
+ *  records a step. */
+export interface PendingClosedClick {
+  host: Element;
+  interactive: boolean;
+  kind: "click" | "dblclick";
+  offsetX: number;
+  offsetY: number;
 }
 
 /** The controller's state. `stopped` holds one finished recording waiting to be

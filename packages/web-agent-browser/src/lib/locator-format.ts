@@ -25,16 +25,21 @@ function withFrames(set: LocatorSet, frames?: string[]): LocatorSet {
 }
 
 /** The locator lines for one recorded step: its set plus the frame chain the
- *  panel added, and for a `drag` step its `dropLocators` after `  drop target:`.
+ *  panel added, for a `drag` step its `dropLocators` after `  drop target:`, and
+ *  for a closed-root click the position to click the host at.
  *  Empty for a step without an element. */
 export function stepLocatorLines(step: {
   locators?: LocatorSet;
   dropLocators?: LocatorSet;
   frames?: string[];
+  closedShadow?: { offsetX: number; offsetY: number };
 }): string[] {
   const out = step.locators === undefined ? [] : locatorLines(withFrames(step.locators, step.frames));
   if (step.dropLocators !== undefined) {
     out.push("  drop target:", ...locatorLines(withFrames(step.dropLocators, step.frames)));
+  }
+  if (step.closedShadow !== undefined) {
+    out.push(`  closed shadow root: click the host at position (${step.closedShadow.offsetX}, ${step.closedShadow.offsetY})`);
   }
   return out;
 }

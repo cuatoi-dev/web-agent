@@ -10,7 +10,7 @@ const INTERACTIVE_ROLES = [
 ];
 
 /** Semantic controls and ARIA widget roles matched first on the composed path. */
-const INTERACTIVE = [
+export const INTERACTIVE = [
   "a", "button", "input", "select", "textarea", "summary", "label",
   '[contenteditable="true"]', "[tabindex]",
   ...INTERACTIVE_ROLES.map((r) => `[role="${r}"]`),
@@ -30,7 +30,7 @@ export function innermost(event: Event): Element | null {
   return path.length > 0 ? path[0] : null;
 }
 
-function composedParent(el: Element): Element | null {
+export function composedParent(el: Element): Element | null {
   if (el.parentElement) return el.parentElement;
   const root = el.parentNode;
   return root instanceof ShadowRoot ? root.host : null;

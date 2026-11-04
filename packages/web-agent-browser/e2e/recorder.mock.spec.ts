@@ -30,6 +30,10 @@ async function sendMessage(page: Page, text: string): Promise<void> {
   await page.keyboard.press("Enter");
 }
 
+function stepList(panelPage: Page) {
+  return panelPage.locator("agent-chat-panel:not([hidden]) .wa-watch-me-steps li");
+}
+
 interface PlannedCall {
   name: string;
   input: Record<string, unknown>;
@@ -823,6 +827,157 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     expect(dropBlock).toContain("  name: —\n");
     expect(dropBlock).toContain("  css: #drop\n");
     expect(dropBlock).toContain("  xpath: //*[@id='drop']");
+
+    await context.close();
+  });
+
+  test("M15 section 1 click in a closed root records the inner name, in order", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record section 1 closed.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#divclick").click();
+    await sitePage.locator("#closed-host").click();
+    await sitePage.locator("#opt-red").click();
+    await expect(stepList(panelPage)).toHaveText([
+      'click div "Plain div onclick"',
+      'click button "Closed button"',
+      'click option "Red option"',
+    ]);
+    await expect(sitePage.locator("#log")).toContainText("closed clicked");
+    await expect(sitePage.locator("#log")).toContainText("closed renamed to Clicked");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const stopText = results[2].text;
+
+    const block = stopText.slice(stopText.indexOf('2. click button "Closed button"'), stopText.indexOf('3. click option "Red option"'));
+    expect(block).toContain("  id: closed-host\n");
+    expect(block).toContain("  css: #closed-host\n");
+    expect(block).toMatch(/\n {2}closed shadow root: click the host at position \(\d+, \d+\)\n/);
+    expect(stopText.match(/closed shadow root:/g)).toHaveLength(1);
+
+    await context.close();
+  });
+
+  test("M16 a closed-root click on a scrolled page still finds the inner button", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    await sitePage.setViewportSize({ width: 800, height: 200 });
+    await sitePage.evaluate(() => {
+      document.body.style.minHeight = "2000px";
+      window.scrollTo(0, 30);
+    });
+    expect(await sitePage.evaluate(() => window.scrollY)).toBe(30);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record scrolled closed.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#closed-host").click();
+    await expect(stepList(panelPage)).toHaveText(['click button "Closed button"']);
+
+    await context.close();
+  });
+
+  test("M17 a custom element with no shadow root records as an ordinary click", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    await sitePage.evaluate(() => {
+      const note = document.createElement("plain-note");
+      note.id = "plain-note";
+      note.textContent = "Plain note";
+      const btn = document.createElement("plain-button");
+      btn.id = "plain-button";
+      btn.setAttribute("role", "button");
+      btn.textContent = "Plain button";
+      document.body.append(note, btn);
+    });
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record plain custom.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#plain-note").click();
+    await sitePage.locator("#plain-button").click();
+    await sitePage.locator("#divclick").click();
+    await expect(stepList(panelPage)).toHaveText(['click button "Plain button"', 'click div "Plain div onclick"']);
+    await sitePage.locator("#plain-button").dblclick();
+    await expect(stepList(panelPage)).toHaveText([
+      'click button "Plain button"',
+      'click div "Plain div onclick"',
+      'dblclick button "Plain button"',
+    ]);
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const stopText = results[2].text;
+    expect(stopText).not.toContain("closed shadow root:");
+
+    await context.close();
+  });
+
+  test("M18 a double-click inside a closed root leaves one dblclick step", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record closed dblclick.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#closed-host").dblclick();
+    await expect(stepList(panelPage)).toHaveText(['dblclick button "Closed button"']);
 
     await context.close();
   });

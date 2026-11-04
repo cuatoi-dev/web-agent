@@ -170,6 +170,24 @@ describe("recording-controller", () => {
     expect(res.steps.map((s) => s.seq)).toEqual([0, 2]);
   });
 
+  it("a late step takes its place, and an unused seq leaves no gap", async () => {
+    const stepListeners: ((tabId: number, step: RecordedStep) => void)[] = [];
+    const session = fakeSession({ gate: vi.fn(() => ({ ok: true, state: {} as never }) satisfies DebuggerGate) });
+    const recorder = fakeRecorder({ onStep: (l) => stepListeners.push(l) });
+    const c = createRecordingController({ api, session, recorder });
+    await c.start(7, { host: "x", url: "http://x" }, "tool");
+    const s = c.state();
+    if (s.kind !== "recording") throw new Error("expected recording state");
+    const recordingId = s.recordingId;
+
+    stepListeners[0](7, { recordingId, seq: 2, kind: "click", line: "two" });
+    stepListeners[0](7, { recordingId, seq: 0, kind: "click", line: "zero" });
+
+    const res = await c.stop();
+    if ("error" in res) throw new Error("expected recording result");
+    expect(res.steps.map((step) => step.seq)).toEqual([0, 2]);
+  });
+
   it("a full navigation produces no note and the state stays recording", async () => {
     const session = fakeSession({ gate: vi.fn(() => ({ ok: true, state: {} as never }) satisfies DebuggerGate) });
     const recorder = fakeRecorder();

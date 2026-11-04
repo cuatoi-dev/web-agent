@@ -11,6 +11,19 @@ import type { BrowserContext, Page, Worker } from "@playwright/test";
 const ORIGIN = "http://localhost:10040";
 const CHECKOUT_URL = `${ORIGIN}/checkout-frames.html`;
 
+const CLOSED_FRAME = `<!doctype html><html><head><meta charset="utf-8"><title>Closed</title></head><body>
+<closed-host id="closed-host"></closed-host>
+<script>
+customElements.define("closed-host", class extends HTMLElement {
+  constructor() {
+    super();
+    const button = document.createElement("button");
+    button.textContent = "Closed button";
+    this.attachShadow({ mode: "closed" }).appendChild(button);
+  }
+});
+</script></body></html>`;
+
 async function getWorker(context: BrowserContext): Promise<Worker> {
   let [worker] = context.serviceWorkers();
   if (!worker) worker = await context.waitForEvent("serviceworker");
@@ -225,6 +238,58 @@ test.describe("recorder in every frame — cross-site, same-site, nested (131/00
     const stopText = stopResults[3].text;
     expect(stopText).toContain("Recording stopped: debugging was canceled.");
     expect(stopText).toContain('click button "Top button"');
+
+    await context.close();
+  });
+
+  test("F7 a closed-root click in a cross-site frame names the inner button", async ({ context, extensionId }) => {
+    const { sitePage, tabId } = await openCheckout(context);
+    await context.route("http://closed.test/**", (route) =>
+      route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: CLOSED_FRAME }),
+    );
+    await sitePage.evaluate(() => {
+      const f = document.createElement("iframe");
+      f.id = "closed-frame";
+      f.src = "http://closed.test/";
+      document.body.prepend(f);
+    });
+    await sitePage.frameLocator("#closed-frame").locator("#closed-host").waitFor();
+    const panelPage = await startDebuggingAndRecording(context, extensionId, tabId);
+    await sitePage.frameLocator("#closed-frame").locator("#closed-host").click();
+    await expect(panelPage.locator("agent-chat-panel:not([hidden]) .wa-watch-me-steps li")).toHaveText([
+      '(frame http://closed.test) click button "Closed button"',
+    ]);
+    await context.close();
+  });
+
+  test("F8 a closed-root click in a same-site frame on a scrolled page names the inner button", async ({ context, extensionId }) => {
+    const { sitePage, tabId } = await openCheckout(context);
+    await sitePage.setViewportSize({ width: 900, height: 500 });
+    await sitePage.evaluate(() => {
+      document.body.style.minHeight = "2000px";
+    });
+    await sitePage.evaluate((origin) => {
+      const f = document.createElement("iframe");
+      f.id = "closed-frame";
+      f.src = `${origin}/recorder-gaps.html`;
+      f.style.height = "400px";
+      f.style.width = "800px";
+      document.body.prepend(f);
+    }, ORIGIN);
+    await sitePage.frameLocator("#closed-frame").locator("#closed-host").waitFor();
+    await sitePage.evaluate(() => window.scrollTo(0, 30));
+    expect(await sitePage.evaluate(() => window.scrollY)).toBe(30);
+
+    const panelPage = await startDebuggingAndRecording(context, extensionId, tabId);
+    await sitePage.frameLocator("#closed-frame").locator("#closed-host").click();
+    await expect(panelPage.locator("agent-chat-panel:not([hidden]) .wa-watch-me-steps li")).toHaveText([
+      '(frame http://localhost:10040) click button "Closed button"',
+    ]);
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    const results = await runPlan(panelPage, "Stop recording.", 3);
+    expect(results[2].text).toContain("\n  frames: #closed-frame");
+    expect(results[2].text).toContain("closed shadow root: click the host at position (");
 
     await context.close();
   });

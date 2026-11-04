@@ -26,6 +26,7 @@ function steps(): RecordedStep[] {
   const out: RecordedStep[] = [];
   for (const raw of calls) {
     const step = JSON.parse(raw) as RecordedStep;
+    if ("pendingClosed" in step) continue;
     const at = out.findIndex((s) => s.seq === step.seq);
     if (at >= 0) out[at] = step;
     else out.push(step);
@@ -742,14 +743,6 @@ describe("page-recorder", () => {
       expect(steps()[0].line).toBe('scroll to "Products Catalog"');
     });
 
-    it("click inside a closed shadow root records nothing when the host is not interactive", () => {
-      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
-      recorder.start("r1");
-      fire(root.querySelector("button") as Element, new MouseEvent("click", composed));
-
-      expect(steps()).toHaveLength(0);
-    });
-
     it("hover on an interactive element inside an open shadow root records a hover step", () => {
       vi.useFakeTimers();
       const { root } = host("custom-link", "open", '<a href="#/catalog">Catalog</a>');
@@ -800,6 +793,291 @@ describe("page-recorder", () => {
       expect(s[0].locators?.id).toBe("chip-host");
       expect(s[1].line).toBe('click span "Inner action"');
       expect(s[1].locators?.shadow).toEqual(["plain-panel:nth-of-type(1)", "#inner2"]);
+    });
+  });
+
+  describe("closed shadow roots (005)", () => {
+    const composed = { bubbles: true, composed: true };
+
+    function host(tag: string, mode: "open" | "closed", html: string): { host: HTMLElement; root: ShadowRoot } {
+      const h = document.createElement(tag);
+      const root = h.attachShadow({ mode });
+      root.innerHTML = html;
+      document.body.appendChild(h);
+      return { host: h, root };
+    }
+
+    const click = (extra = {}) => new MouseEvent("click", { ...composed, detail: 1, clientX: 30, clientY: 40, ...extra });
+
+    it("P1 & P1b a click sends a reservation and no step, then late step resolves", () => {
+      const { host: h, root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      vi.spyOn(h, "getBoundingClientRect").mockReturnValue({
+        left: 10,
+        top: 20,
+        right: 110,
+        bottom: 70,
+        width: 100,
+        height: 50,
+        x: 10,
+        y: 20,
+        toJSON: () => {},
+      });
+      Object.defineProperty(h, "clientLeft", { value: 3, configurable: true });
+      Object.defineProperty(h, "clientTop", { value: 3, configurable: true });
+
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+
+      expect(steps()).toHaveLength(0);
+      expect(calls).toHaveLength(1);
+      expect(JSON.parse(calls[0])).toEqual({ recordingId: "r1", seq: 0, pendingClosed: { x: 30, y: 40 } });
+
+      // P1b the late step
+      recorder.finishClosed(button, 0);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].seq).toBe(0);
+      expect(s[0].kind).toBe("click");
+      expect(s[0].line).toBe('click button "Internal Button"');
+      expect(s[0].target?.name).toBe("");
+      expect(s[0].locators?.role).not.toBe("button");
+      expect(s[0].closedShadow).toBeDefined();
+      expect(s[0].closedShadow?.inner.name).toBe("Internal Button");
+      expect(s[0].closedShadow?.offsetX).toBe(17);
+      expect(s[0].closedShadow?.offsetY).toBe(17);
+    });
+
+    it("P2 inner === host, non-interactive", () => {
+      const { host: h, root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.finishClosed(h, 0);
+
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next";
+      document.body.appendChild(nextBtn);
+      fire(nextBtn, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Next"');
+      expect(s[0].seq).toBe(1);
+    });
+
+    it("P3 inner === host, interactive, no shadow root", () => {
+      const el = document.createElement("plain-button");
+      el.setAttribute("role", "button");
+      el.textContent = "Go";
+      document.body.appendChild(el);
+
+      recorder.start("r1");
+      fire(el, click());
+      recorder.finishClosed(el, 0);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Go"');
+      expect(s[0].seq).toBe(0);
+      expect(s[0].closedShadow).toBeUndefined();
+    });
+
+    it("P4 failed lookup", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.finishClosed(null, 0);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click closed-card ""');
+      expect(s[0].closedShadow?.inner.label).toBe("closed-card");
+      expect(s[0].closedShadow?.offsetX).toBeDefined();
+      expect(s[0].closedShadow?.offsetY).toBeDefined();
+    });
+
+    it("P5 node outside the host", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.finishClosed(document.body, 0);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click closed-card ""');
+      expect(s[0].closedShadow?.inner.label).toBe("closed-card");
+      expect(s[0].closedShadow?.offsetX).toBeDefined();
+      expect(s[0].closedShadow?.offsetY).toBeDefined();
+    });
+
+    it("P6 stop during a lookup", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.stop();
+      expect(() => recorder.finishClosed(button, 0)).not.toThrow();
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("P6b unknown seq", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      recorder.finishClosed(button, 99);
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("P7 open root", () => {
+      const { root } = host("custom-button", "open", "<button>Open Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+
+      expect(calls.some((c) => c.includes("pendingClosed"))).toBe(false);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].closedShadow).toBeUndefined();
+    });
+
+    it("P8 keyboard click", () => {
+      const { host: h } = host("closed-card", "closed", "<button>Internal Button</button>");
+      h.setAttribute("tabindex", "0");
+      recorder.start("r1");
+      fire(h, new KeyboardEvent("keydown", { key: "Enter", ...composed }));
+      fire(h, new MouseEvent("click", { ...composed, detail: 0, clientX: 0, clientY: 0 }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("press");
+      expect(calls.some((c) => c.includes("pendingClosed"))).toBe(false);
+    });
+
+    it("P8b keyboard click with no press", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, new MouseEvent("click", { ...composed, detail: 0, clientX: 0, clientY: 0 }));
+
+      expect(steps()).toHaveLength(0);
+      expect(calls.some((c) => c.includes("pendingClosed"))).toBe(false);
+    });
+
+    it("P9 double-click, lookup pending", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      fire(button, click({ detail: 2 }));
+      fire(button, new MouseEvent("dblclick", { ...composed, detail: 2 }));
+      recorder.finishClosed(button, 0);
+
+      expect(calls.filter((c) => c.includes("pendingClosed"))).toHaveLength(1);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].seq).toBe(0);
+      expect(s[0].kind).toBe("dblclick");
+      expect(s[0].line).toBe('dblclick button "Internal Button"');
+      expect(s[0].closedShadow).toBeDefined();
+    });
+
+    it("P10 double-click, lookup finished", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.finishClosed(button, 0);
+      fire(button, click({ detail: 2 }));
+      fire(button, new MouseEvent("dblclick", { ...composed, detail: 2 }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].seq).toBe(0);
+      expect(s[0].kind).toBe("dblclick");
+      expect(s[0].line).toBe('dblclick button "Internal Button"');
+      expect(s[0].closedShadow).toBeDefined();
+    });
+
+    it("P10b double-click, non-interactive inner === host", () => {
+      const { host: h, root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.finishClosed(h, 0);
+      fire(button, click({ detail: 2 }));
+      fire(button, new MouseEvent("dblclick", { ...composed, detail: 2 }));
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("P11 a later step keeps its number", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next";
+      document.body.appendChild(nextBtn);
+
+      recorder.start("r1");
+      fire(button, click());
+      fire(nextBtn, new MouseEvent("click", composed));
+      recorder.finishClosed(button, 0);
+
+      const parsed = calls.map((c) => JSON.parse(c) as { seq: number; pendingClosed?: unknown }).filter((c) => !c.pendingClosed);
+      expect(parsed.map((c) => c.seq)).toEqual([1, 0]);
+    });
+
+    it("P12 dblclick rule still works after", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next";
+      document.body.appendChild(nextBtn);
+
+      recorder.start("r1");
+      fire(button, click());
+      recorder.finishClosed(button, 0);
+      fire(nextBtn, new MouseEvent("click", { ...composed, detail: 1 }));
+      fire(nextBtn, new MouseEvent("click", { ...composed, detail: 2 }));
+      fire(nextBtn, new MouseEvent("dblclick", { ...composed, detail: 2 }));
+
+      const s = steps();
+      expect(s).toHaveLength(2);
+      expect(s[0].line).toBe('click button "Internal Button"');
+      expect(s[1].kind).toBe("dblclick");
+      expect(s[1].line).toBe('dblclick button "Next"');
+    });
+
+    it("P13 ancestor interactive", () => {
+      const a = document.createElement("a");
+      a.href = "#x";
+      const { host: h, root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      a.appendChild(h);
+      document.body.appendChild(a);
+
+      recorder.start("r1");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      fire(button, click());
+
+      expect(calls.some((c) => c.includes("pendingClosed"))).toBe(false);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toMatch(/^click link/);
+    });
+
+    it("P14 pause does not drop the click", () => {
+      const { root } = host("closed-card", "closed", "<button>Internal Button</button>");
+      const button = root.querySelector("button") as HTMLButtonElement;
+      recorder.start("r1");
+      fire(button, click());
+      recorder.pause();
+      recorder.finishClosed(button, 0);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Internal Button"');
     });
   });
 

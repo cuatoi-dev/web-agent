@@ -243,6 +243,30 @@ describe("panel-page-tools-recording", () => {
     expect(await vfs.get(savedPathOf(res.content))).toMatchObject({ content: expected });
   });
 
+  it("U-T6d: stop_recording prints closed shadow root line under the host locator", async () => {
+    const recordingResult: RecordingResult = {
+      host: "localhost:10040",
+      url: "http://localhost:10040/recorder-gaps.html",
+      steps: [
+        {
+          recordingId: "r",
+          seq: 0,
+          kind: "click",
+          line: 'click button "Closed button"',
+          locators: { role: "", name: "", roleMatches: 0, id: "closed-host", css: "#closed-host", xpath: "//*[@id='closed-host']" },
+          closedShadow: { inner: { role: "button", name: "Closed button", label: 'button "Closed button"', isPassword: false }, offsetX: 57, offsetY: 18 },
+        },
+      ],
+    };
+    vi.mocked(controller.stop).mockResolvedValue(recordingResult);
+    const { stopTool } = getTools();
+
+    const res = await stopTool.execute({ tabId: 7 }, toolCtx());
+    expect(reportOf(res.content)).toContain(
+      "\n  xpath: //*[@id='closed-host']\n  closed shadow root: click the host at position (57, 18)",
+    );
+  });
+
   it("U-T7: stop_recording with a note", async () => {
     const recordingResult: RecordingResult = {
       host: "localhost:10040",

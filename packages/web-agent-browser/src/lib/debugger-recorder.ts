@@ -4,7 +4,8 @@
 import { errorMessage } from "./error-message";
 import type { DebuggerSession } from "./debugger-tools.types";
 import type { HelperWorlds } from "./debugger-helper-world.types";
-import type { RecordedStep } from "./recorder.types";
+import { finishClosedClick } from "./debugger-recorder-closed";
+import type { PendingClosedMessage, RecordedStep } from "./recorder.types";
 import type { DebuggerRecorder } from "./debugger-recorder.types";
 
 export const RECORDER_WORLD_NAME = "web-agent-recorder";
@@ -139,13 +140,13 @@ export function createDebuggerRecorder(
     if (name !== RECORDER_BINDING) return;
     const state = armed.get(tabId);
     if (!state) return;
-    let step: RecordedStep;
+    let message: RecordedStep | PendingClosedMessage;
     try {
-      step = JSON.parse(payload) as RecordedStep;
+      message = JSON.parse(payload) as RecordedStep | PendingClosedMessage;
     } catch {
       return;
     }
-    if (step.recordingId !== state.recordingId) return;
+    if (message.recordingId !== state.recordingId) return;
     // Rebase synchronously, in binding-call arrival order — never inside the
     // async frame-chain lookup below, which would let two steps race and
     // assign bases out of order.
@@ -156,8 +157,21 @@ export function createDebuggerRecorder(
       tabLocalSeqs = new Map();
       lastLocalSeq.set(tabId, tabLocalSeqs);
     }
-    tabLocalSeqs.set(key, step.seq);
-    routeCountSinceStep.get(tabId)?.set(key, 0);
+    // A closed-root step arrives after later steps (005). It must not move the
+    // highest seq back, or the next route step would sort before those steps.
+    const seen = tabLocalSeqs.get(key);
+    if (seen === undefined || message.seq >= seen) {
+      tabLocalSeqs.set(key, message.seq);
+      routeCountSinceStep.get(tabId)?.set(key, 0);
+    }
+    // A reservation is not a step: it never reaches the list. Its seq stays
+    // local, because the page's recorder knows only local numbers.
+    if ("pendingClosed" in message) {
+      const { recordingId } = message;
+      void finishClosedClick(session, tabId, sessionId, executionContextId, message, () => armed.get(tabId)?.recordingId === recordingId);
+      return;
+    }
+    const step = message;
     step.seq = base + step.seq;
     void (async () => {
       const at = frameOf(tabId, sessionId, executionContextId);

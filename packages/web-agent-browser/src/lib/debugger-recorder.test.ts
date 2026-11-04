@@ -367,4 +367,224 @@ describe("createDebuggerRecorder — onRoute", () => {
     const routeSeq = (onRoute.mock.calls[0] as [number, string, number])[2];
     expect(stepSeq).not.toBe(routeSeq);
   });
+
+  describe("createDebuggerRecorder — closed shadow click (005)", () => {
+    function pendingClosed(seq: number, x: number, y: number, recordingId = "r1") {
+      return JSON.stringify({ recordingId, seq, pendingClosed: { x, y } });
+    }
+
+    it("D1 top frame, scrolled", async () => {
+      const { api, session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": { cssLayoutViewport: { pageX: 0, pageY: 25 } },
+        "DOM.getNodeForLocation": { backendNodeId: 9 },
+        "DOM.resolveNode": { object: { objectId: "obj" } },
+      });
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      const onStep = vi.fn();
+      recorder.onStep(onStep);
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(4, 57.5, 33), executionContextId: 202 }, undefined);
+      await flush();
+
+      expect(onStep).not.toHaveBeenCalled();
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "DOM.getNodeForLocation", {
+        x: 57,
+        y: 58,
+        includeUserAgentShadowDOM: false,
+        ignorePointerEventsNone: true,
+      });
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "DOM.resolveNode", {
+        backendNodeId: 9,
+        executionContextId: 202,
+      });
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "Runtime.callFunctionOn", expect.objectContaining({
+        objectId: "obj",
+        functionDeclaration: expect.stringContaining("finishClosed(this, 4)"),
+      }));
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "DOM.getFrameOwner", expect.anything());
+    });
+
+    it("D2 same-process frame", async () => {
+      const { api, session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": { cssLayoutViewport: { pageX: 0, pageY: 25 } },
+        "DOM.getFrameOwner": { backendNodeId: 7 },
+        "DOM.getBoxModel": { model: { content: [309, 84, 0, 0, 0, 0, 0, 0] } },
+        "DOM.getNodeForLocation": { backendNodeId: 9 },
+        "DOM.resolveNode": { object: { objectId: "obj" } },
+      });
+      context(fireEvent, 1, undefined, 203, "F-ship", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(0, 57, 58), executionContextId: 203 }, undefined);
+      await flush();
+
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "DOM.getFrameOwner", { frameId: "F-ship" });
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "DOM.getNodeForLocation", {
+        x: 366,
+        y: 167,
+        includeUserAgentShadowDOM: false,
+        ignorePointerEventsNone: true,
+      });
+    });
+
+    it("D3 child session", async () => {
+      const { api, session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": { cssLayoutViewport: { pageX: 0, pageY: 0 } },
+        "DOM.getNodeForLocation": { backendNodeId: 9 },
+        "DOM.resolveNode": { object: { objectId: "obj" } },
+      });
+      attachChild(fireEvent, "S1", "F-pay", "http://pay.test/");
+      await flush();
+      context(fireEvent, 1, "S1", 302, "F-pay", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(0, 10, 10), executionContextId: 302 }, "S1");
+      await flush();
+
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "Page.getLayoutMetrics", undefined, "S1");
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "DOM.getNodeForLocation", expect.anything(), "S1");
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "DOM.resolveNode", expect.anything(), "S1");
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "Runtime.callFunctionOn", expect.anything(), "S1");
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "DOM.getFrameOwner", expect.anything(), expect.anything());
+    });
+
+    it("D4 lookup rejects", async () => {
+      const { api, session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": { cssLayoutViewport: { pageX: 0, pageY: 0 } },
+        "DOM.getNodeForLocation": () => { throw new Error("No node found at given location"); },
+      });
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(4, 10, 10), executionContextId: 202 }, undefined);
+      await expect(flush()).resolves.not.toThrow();
+
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "Runtime.evaluate", {
+        expression: expect.stringContaining("finishClosed(null, 4)"),
+        contextId: 202,
+      });
+    });
+
+    it("D4b Page.getLayoutMetrics rejects", async () => {
+      const { api, session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": () => { throw new Error("Metrics failed"); },
+      });
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(4, 10, 10), executionContextId: 202 }, undefined);
+      await expect(flush()).resolves.not.toThrow();
+
+      expect(api.sendCommand).toHaveBeenCalledWith(1, "Runtime.evaluate", {
+        expression: expect.stringContaining("finishClosed(null, 4)"),
+        contextId: 202,
+      });
+    });
+
+    it("D4c the fallback rejects too", async () => {
+      const { session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": () => { throw new Error("Metrics failed"); },
+        "Runtime.evaluate": (p?: Record<string, unknown>) => {
+          if (typeof p?.expression === "string" && p.expression.includes("finishClosed(null")) {
+            throw new Error("fallback failed");
+          }
+          return { result: { type: "string", value: "UA/1" } };
+        },
+      });
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(4, 10, 10), executionContextId: 202 }, undefined);
+      await expect(flush()).resolves.not.toThrow();
+    });
+
+    it("D5 uninstall during a lookup", async () => {
+      let resolveLookup!: (v: unknown) => void;
+      const lookupPromise = new Promise((resolve) => {
+        resolveLookup = resolve;
+      });
+      const { api, session, fireEvent } = await startedSession({
+        "Page.getLayoutMetrics": { cssLayoutViewport: { pageX: 0, pageY: 0 } },
+        "DOM.getNodeForLocation": () => lookupPromise,
+      });
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(4, 10, 10), executionContextId: 202 }, undefined);
+      await recorder.uninstall(1);
+      resolveLookup({ backendNodeId: 9 });
+      await flush();
+
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "DOM.resolveNode", expect.anything());
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "Runtime.callFunctionOn", expect.anything());
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "Runtime.evaluate", expect.objectContaining({
+        expression: expect.stringContaining("finishClosed"),
+      }));
+    });
+
+    it("D6 lateness and route", async () => {
+      const { session, fireEvent } = await startedSession({
+        "Page.addScriptToEvaluateOnNewDocument": { identifier: "1" },
+        "Page.getLayoutMetrics": { cssLayoutViewport: { pageX: 0, pageY: 0 } },
+        "DOM.getNodeForLocation": { backendNodeId: 9 },
+        "DOM.resolveNode": { object: { objectId: "obj" } },
+      });
+      context(fireEvent, 1, undefined, 201, "top-frame", "http://h", true, "");
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      const onStep = vi.fn();
+      const onRoute = vi.fn();
+      recorder.onStep(onStep);
+      recorder.onRoute(onRoute);
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(5, 1, 1), executionContextId: 202 }, undefined);
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: JSON.stringify(step({ seq: 6 })), executionContextId: 202 }, undefined);
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: JSON.stringify(step({ seq: 5 })), executionContextId: 202 }, undefined);
+      fireEvent(1, "Page.navigatedWithinDocument", { frameId: "top-frame", url: "http://h/cart" }, undefined);
+      await flush();
+
+      const step6Seq = (onStep.mock.calls[0] as [number, RecordedStep])[1].seq;
+      const step5Seq = (onStep.mock.calls[1] as [number, RecordedStep])[1].seq;
+      const routeSeq = (onRoute.mock.calls[0] as [number, string, number])[2];
+
+      const base = step6Seq - 6;
+      expect(step6Seq - step5Seq).toBe(1);
+      expect(routeSeq).toBeGreaterThan(base + 6);
+    });
+
+    it("D7 ordinary step", async () => {
+      const { api, session, fireEvent } = await startedSession();
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: JSON.stringify(step({ seq: 0 })), executionContextId: 202 }, undefined);
+      await flush();
+
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "DOM.getNodeForLocation", expect.anything());
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "Page.getLayoutMetrics", expect.anything());
+    });
+
+    it("D8 stale reservation", async () => {
+      const { api, session, fireEvent } = await startedSession();
+      context(fireEvent, 1, undefined, 202, "top-frame", "", false, RECORDER_WORLD_NAME);
+      const recorder = createDebuggerRecorder(session, fakeHelper(), () => Promise.resolve(""));
+      await recorder.install(1, "r1");
+
+      fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: pendingClosed(0, 1, 1, "stale"), executionContextId: 202 }, undefined);
+      await flush();
+
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "Page.getLayoutMetrics", expect.anything());
+      expect(api.sendCommand).not.toHaveBeenCalledWith(1, "DOM.getNodeForLocation", expect.anything());
+    });
+  });
 });

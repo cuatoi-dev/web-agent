@@ -68,8 +68,11 @@
         btn.type = "button";
         btn.textContent = "Closed button";
         btn.addEventListener("click", () => {
-          btn.textContent = "Clicked";
           log("closed clicked");
+          setTimeout(() => {
+            btn.textContent = "Clicked";
+            log("closed renamed to Clicked");
+          }, 1000);
         });
         r.appendChild(btn);
       }

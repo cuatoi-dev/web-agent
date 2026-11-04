@@ -19,8 +19,16 @@ import {
   playwrightKey,
   target,
 } from "./page-recorder-helpers";
+import {
+  clearClosedClicks,
+  closedDblClick,
+  closedHostOf,
+  forgetClosedDblClick,
+  reserveClosedClick,
+  resolveClosedClick,
+} from "./page-recorder-closed";
 import { pwNormalizeWhiteSpace } from "./playwright-match";
-import type { RecordedStep, RecordedStepKind } from "./recorder.types";
+import type { PendingClosedMessage, RecordedStep, RecordedStepKind } from "./recorder.types";
 
 /** The extension's own bubble (content.ts). An event inside it is never the
  *  user acting on the page. A site's own <web-agent-bubble> IS the page, so it
@@ -65,7 +73,7 @@ function nextStep(kind: RecordedStepKind, line: string, extra: Partial<RecordedS
 /** Hands one step to the panel through the CDP binding. A binding takes
  *  exactly one STRING argument, so the step is JSON. A later call with the
  *  SAME `seq` replaces it in the panel's list (the panel upserts by seq). */
-function emit(step: RecordedStep): void {
+function emit(step: RecordedStep | PendingClosedMessage): void {
   const send = (globalThis as unknown as { __waRecStep?: (s: string) => void }).__waRecStep;
   // The binding is installed before the script runs, but a document that
   // started loading first can reach here once without it. Dropping the step is
@@ -96,16 +104,18 @@ function closeOpen(): void {
 function onClick(event: MouseEvent): void {
   if (ignored(event)) return;
   const el = target(event);
-  if (!el) return;
+  const host = closedHostOf(event, el);
+  const clicked = el ?? host;
+  if (!clicked) return;
   window.clearTimeout(hoverTimer);
-  restedEl = el;
+  restedEl = clicked;
   // `detail` is 0 for a click the browser made from the keyboard. When the step
   // just emitted is the Enter or Space press on this element, that click is the
   // press itself, not a second action.
   if (event.detail === 0 && lastActivationKey?.seq === seq - 1) {
     const pressed = lastActivationKey.el;
     lastActivationKey = null;
-    if (pressed === el || el.contains(pressed)) return;
+    if (pressed === clicked || clicked.contains(pressed)) return;
   }
   const isCheckable = el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio");
   // The 2nd+ click of a double-click: `onDblClick` replaces the 1st click in place.
@@ -120,6 +130,15 @@ function onClick(event: MouseEvent): void {
   ) {
     return;
   }
+  // 005 — a keyboard click is at (0, 0), so a lookup would find the wrong node.
+  if (host && event.detail >= 1) {
+    const s = seq++;
+    lastClick = null;
+    closeOpen();
+    emit(reserveClosedClick(event, host, el !== null, s, recordingId));
+    return;
+  }
+  if (!el) return;
   closeOpen();
   if (isCheckable) {
     // `checked` is already the state AFTER the click: the HTML standard runs
@@ -137,6 +156,13 @@ function onClick(event: MouseEvent): void {
 
 function onDblClick(event: MouseEvent): void {
   if (ignored(event)) return;
+  const closed = closedDblClick(event, seq);
+  if (closed !== null) {
+    window.clearTimeout(hoverTimer);
+    restedEl = innermost(event);
+    if (closed !== "handled") emit(closed);
+    return;
+  }
   const el = target(event);
   if (!el) return;
   window.clearTimeout(hoverTimer);
@@ -363,6 +389,7 @@ function detach(): void {
   openFill = null;
   openScroll = null;
   lastClick = null;
+  clearClosedClicks();
   dragSource = null;
   pointerEl = null;
   restedEl = null;
@@ -378,6 +405,7 @@ export function start(id: string): void {
   seq = 0;
   lastActivationKey = null;
   lastClick = null;
+  clearClosedClicks();
   dragSource = null;
   paused = false;
   attach();
@@ -401,7 +429,15 @@ export function resume(): void {
   openFill = null;
   openScroll = null;
   lastClick = null;
+  forgetClosedDblClick();
   dragSource = null;
+}
+
+/** 005 — the panel calls this with the node its CDP lookup found, or null when
+ *  the lookup failed. A pause does not stop it: the click came first. */
+export function finishClosed(inner: Node | null, s: number): void {
+  const step = resolveClosedClick(inner, s, recordingId);
+  if (step) emit(step);
 }
 
 /** True while this document is recording. Read by the panel through
