@@ -5,7 +5,7 @@
 // Known limit: the lookup runs after the click event has finished. On a page
 // that renames a control during the click event, the step shows the new name.
 // The locator and the position come from the host, so replay is not affected.
-import { journalTarget, locatorSet } from "./locator-builder";
+import { journalTarget, stepLocatorSet } from "./locator-builder";
 import { composedParent, describe, innermost, INTERACTIVE, named } from "./page-recorder-helpers";
 import type { PendingClosedClick, PendingClosedMessage, RecordedStep } from "./recorder.types";
 
@@ -84,7 +84,7 @@ export function resolveClosedClick(inner: Node | null, seq: number, recordingId:
       kind: p.kind,
       line: `${p.kind} ${named(el)}`,
       target: journalTarget(host, document, describe(host)),
-      locators: locatorSet(host, document),
+      locators: stepLocatorSet(host, document),
       ...extra,
     };
     if (last?.seq === seq) last.step = step;

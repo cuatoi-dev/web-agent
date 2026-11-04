@@ -427,7 +427,7 @@ describe("page-recorder", () => {
     const s = steps();
     expect(s).toHaveLength(1);
     expect(s[0].kind).toBe("hover");
-    expect(s[0].line).toBe('hover link "Cart (2)"');
+    expect(s[0].line).toBe('hover link "Cart"');
   });
 
   it("U-R18: pointermove over the link, advance 200 ms, pointermove over a <p>, advance 600 ms", () => {
@@ -1882,6 +1882,93 @@ describe("page-recorder", () => {
       recorder.stop();
       fire(ctx, new MouseEvent("contextmenu", { bubbles: true, composed: true, button: 2 }));
       expect(steps()).toHaveLength(2);
+    });
+  });
+
+  describe("stable names (002)", () => {
+    it("link with a count", () => {
+      document.body.innerHTML = '<a href="#c">Cart <span>5</span></a>';
+      const a = document.querySelector("a")!;
+      recorder.start("r1");
+      fire(a, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click link "Cart"');
+      expect(s[0].locators).toMatchObject({ role: "link", name: "Cart", roleMatches: 1 });
+      expect(s[0].target).toMatchObject({ name: "Cart 5", label: 'link "Cart"' });
+    });
+
+    it("header with a glyph", () => {
+      document.body.innerHTML = '<table><tr><th onclick="">Date <span>▼</span></th></tr></table>';
+      const th = document.querySelector("th")!;
+      recorder.start("r1");
+      fire(th, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click columnheader "Date"');
+      expect(s[0].locators?.name).toBe("Date");
+    });
+
+    it("ambiguous", () => {
+      document.body.innerHTML = '<button id="t">Item 1</button><button>Item 2</button>';
+      const btn = document.querySelector<HTMLElement>("#t")!;
+      recorder.start("r1");
+      fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Item 1"');
+      expect(s[0].locators?.name).toBe("Item 1");
+    });
+
+    it("first token has no letter", () => {
+      document.body.innerHTML = "<button>5 items</button>";
+      const btn = document.querySelector("button")!;
+      recorder.start("r1");
+      fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "5 items"');
+      expect(s[0].locators?.name).toBe("5 items");
+    });
+
+    it("no changing token", () => {
+      document.body.innerHTML = "<button>Add to cart</button>";
+      const btn = document.querySelector("button")!;
+      recorder.start("r1");
+      fire(btn, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click button "Add to cart"');
+      expect(s[0].locators?.name).toBe("Add to cart");
+    });
+
+    it("no role", () => {
+      document.body.innerHTML = '<div onclick="">Total <span>5</span></div>';
+      const div = document.querySelector("div")!;
+      recorder.start("r1");
+      fire(div, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click div "Total 5"');
+      expect(s[0].locators?.role).toBe("");
+      expect(s[0].locators?.name).toBe("Total 5");
+    });
+
+    it("drag to a target with a count", () => {
+      document.body.innerHTML = `
+        <div id="src" draggable="true" role="button">Move</div>
+        <div id="dest" role="region" aria-label="Drop 3"></div>
+      `;
+      const src = document.getElementById("src")!;
+      const dest = document.getElementById("dest")!;
+      recorder.start("r1");
+      fire(src, new DragEvent("dragstart", { bubbles: true, composed: true }));
+      fire(dest, new DragEvent("drop", { bubbles: true, composed: true }));
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('drag button "Move" to region "Drop"');
+      expect(s[0].dropLocators?.name).toBe("Drop");
+      expect(s[0].dropTarget?.name).toBe("Drop 3");
     });
   });
 });

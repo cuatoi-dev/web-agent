@@ -144,6 +144,23 @@ export function matchByRole(doc: Document, role: string, name: string): Element[
   return queryAllPierce(doc).filter((e) => getRole(e) === role && !isHiddenForAria(e) && nameMatches(getName(e), name));
 }
 
+/** The name to record for `el`: the leading run of tokens that hold a letter,
+ *  when that shorter name still finds exactly `el`. Otherwise the full name.
+ *  A count or a sort arrow changes while the page is used, and getByRole
+ *  matches a substring, so the shorter name survives the change. */
+export function stableName(el: Element, doc: Document, role: string, name: string): string {
+  if (role === "" || name === "") return name;
+  const prefix: string[] = [];
+  for (const token of name.split(/\s+/)) {
+    if (!/\p{L}/u.test(token)) break;
+    prefix.push(token);
+  }
+  const short = prefix.join(" ");
+  if (short === "" || short === name) return name;
+  const hits = matchByRole(doc, role, short);
+  return hits.length === 1 && hits[0] === el ? short : name;
+}
+
 /** getByText(text) matches: "self" matches only. */
 export function matchByText(doc: Document, text: string): Element[] {
   return queryAllPierce(doc).filter((e) => {

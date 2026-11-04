@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from "vitest";
-import { locatorSet, journalTarget, cssSegment, xpathSegment, xpathLiteral } from "./locator-builder";
+import { locatorSet, stepLocatorSet, journalTarget, cssSegment, xpathSegment, xpathLiteral } from "./locator-builder";
 
 beforeAll(() => {
   // jsdom 24 has no CSS.escape. This minimal escape matches the spec for the
@@ -304,5 +304,25 @@ describe("locator-builder", () => {
     const email = document.getElementById("email")!;
     expect(journalTarget(password, document, "[1] textbox").isPassword).toBe(true);
     expect(journalTarget(email, document, "[2] textbox").isPassword).toBe(false);
+  });
+
+  describe("locatorSet and stepLocatorSet names (002)", () => {
+    it("stepLocatorSet uses the stable name; locatorSet keeps the full name", () => {
+      document.body.innerHTML = '<a href="#c">Cart <span>5</span></a>';
+      const a = document.querySelector("a")!;
+      expect(stepLocatorSet(a, document)).toMatchObject({ role: "link", name: "Cart", roleMatches: 1 });
+      expect(locatorSet(a, document)).toMatchObject({ role: "link", name: "Cart 5", roleMatches: 1 });
+    });
+
+    it("stepLocatorSet keeps the full name when the short name is ambiguous", () => {
+      document.body.innerHTML = "<button>Item 1</button><button>Item 2</button>";
+      const first = document.querySelector("button")!;
+      expect(stepLocatorSet(first, document)).toMatchObject({ role: "button", name: "Item 1", roleMatches: 1 });
+    });
+
+    it("journalTarget keeps the full name", () => {
+      document.body.innerHTML = '<a href="#c">Cart <span>5</span></a>';
+      expect(journalTarget(document.querySelector("a")!, document, "x").name).toBe("Cart 5");
+    });
   });
 });

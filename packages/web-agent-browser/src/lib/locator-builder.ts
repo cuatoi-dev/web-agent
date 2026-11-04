@@ -3,7 +3,7 @@
 // and XPath. A Selenium-based framework consumes it. Pure DOM: the helper world
 // and the recorder world both bundle it.
 import { getName, getRole } from "@cuatoi/web-agent-dom";
-import { matchByRole } from "./playwright-match";
+import { matchByRole, stableName } from "./playwright-match";
 import type { ElementTarget, LocatorSet } from "./types";
 import type { Scope } from "./locator-builder.types";
 
@@ -175,9 +175,8 @@ function shadowChain(doc: Document, el: Element, roots: ShadowRoot[]): string[] 
 
 /** The plan's locatorSet. `frames` is added by the panel, which knows the
  *  frame chain; this function runs inside one frame. */
-export function locatorSet(el: Element, doc: Document): LocatorSet {
+export function locatorSet(el: Element, doc: Document, name: string = getName(el)): LocatorSet {
   const role = getRole(el);
-  const name = getName(el);
   const out: LocatorSet = { role, name, roleMatches: matchByRole(doc, role, name).length };
   const { roots, closed } = shadowRoots(el);
   const scope: Scope = roots.length > 0 ? roots[roots.length - 1] : doc;
@@ -202,6 +201,12 @@ export function locatorSet(el: Element, doc: Document): LocatorSet {
   const xpath = xpathIn(doc, el);
   if (xpath !== undefined) out.xpath = xpath;
   return out;
+}
+
+/** The locator set the recorder stores for a step: role+name uses the stable
+ *  name. page_generate_locator calls locatorSet and keeps the full name. */
+export function stepLocatorSet(el: Element, doc: Document): LocatorSet {
+  return locatorSet(el, doc, stableName(el, doc, getRole(el), getName(el)));
 }
 
 /** What the page tools report about `el`: its role, name and `label`. */

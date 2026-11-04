@@ -2,6 +2,7 @@
 // page-recorder.ts. Split out to stay under eslint.config.mjs's 500-line cap.
 import { describeElementParts } from "@cuatoi/web-agent-dom";
 import { EXTENSION_UI_SELECTOR } from "./constants";
+import { stableName } from "./playwright-match";
 
 const INTERACTIVE_ROLES = [
   "button", "link", "checkbox", "radio", "tab", "menuitem", "option", "switch",
@@ -59,13 +60,15 @@ export function target(event: Event): Element | null {
 }
 
 export function describe(el: Element): string {
-  const { role, name } = describeElementParts(el);
+  const { role, name: full } = describeElementParts(el);
+  const name = stableName(el, el.ownerDocument, role, full);
   return name ? `${role} "${name}"` : role;
 }
 
 /** `button "Apply"` — the plan's readable-line element part. */
 export function named(el: Element): string {
-  const { role, name } = describeElementParts(el);
+  const { role, name: full } = describeElementParts(el);
+  const name = stableName(el, el.ownerDocument, role, full);
   return `${role} "${name}"`;
 }
 

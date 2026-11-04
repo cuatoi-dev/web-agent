@@ -6,7 +6,7 @@
 // It reaches the panel through the Runtime.addBinding function __waRecStep,
 // which takes exactly ONE string argument — so every step is JSON.
 import { EXTENSION_UI_SELECTOR, REC_HOVER_REST_MS, REC_SCROLL_QUIET_MS } from "./constants";
-import { journalTarget, locatorSet } from "./locator-builder";
+import { journalTarget, stepLocatorSet } from "./locator-builder";
 import {
   describe,
   eventElements,
@@ -91,7 +91,7 @@ function withTarget(el: Element, kind: RecordedStepKind, line: string, extra: Pa
   // 131/004 — no ref: the panel DomAdapter and its RefTable are gone with the
   // page script, and an isolated world cannot reach the MAIN world's one.
   const target = journalTarget(el, document, describe(el));
-  const locators = locatorSet(el, document);
+  const locators = stepLocatorSet(el, document);
   return nextStep(kind, line, { target, locators, ...extra });
 }
 
@@ -216,7 +216,7 @@ function onDrop(event: DragEvent): void {
   emit(
     withTarget(src, "drag", `drag ${named(src)} to ${named(dest)}`, {
       dropTarget: journalTarget(dest, document, describe(dest)),
-      dropLocators: locatorSet(dest, document),
+      dropLocators: stepLocatorSet(dest, document),
     }),
   );
 }

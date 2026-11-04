@@ -84,7 +84,9 @@ async function openPanel(
       function refFor(label: string): string {
         const snap = [...results].reverse().find((r) => r.tool === "page_snapshot");
         const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const m = snap?.text.match(new RegExp(`\\[(\\d+)\\][^\\n]*"${escaped}"`));
+        const m =
+          snap?.text.match(new RegExp(`"${escaped}"[^\\n]*\\[ref=(\\d+)\\]`)) ??
+          snap?.text.match(new RegExp(`\\[(\\d+)\\][^\\n]*"${escaped}"`));
         return m ? m[1] : "missing";
       }
 
@@ -240,8 +242,8 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     const lines = stopText.split("\n").filter((l) => !l.startsWith("  "));
     expect(lines[0]).toBe("Recorded 9 steps on localhost:10040:");
     expect(lines[1]).toBe("1. scroll down 400 px");
-    expect(lines[2]).toBe('2. hover link "Cart (2)"');
-    expect(lines[3]).toBe('3. click link "Cart (2)"');
+    expect(lines[2]).toBe('2. hover link "Cart"');
+    expect(lines[3]).toBe('3. click link "Cart"');
     expect(lines[4]).toBe('4. fill textbox "Coupon" "SAVE10"');
     expect(lines[5]).toBe('5. fill textbox "Password" <password>');
     // ArrowDown on the focused <select>: the keydown is a press step of its
@@ -1002,7 +1004,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     await waitForResults(panelPage, 2);
 
     await sitePage.locator("#sortth").click();
-    await expect(stepList(panelPage)).toHaveText(['click columnheader "Date ▼"']);
+    await expect(stepList(panelPage)).toHaveText(['click columnheader "Date"']);
     await expect(sitePage.locator("#log")).toContainText("sorted");
 
     await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
@@ -1011,11 +1013,69 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     const body = bodyOf(results[2].text);
 
     expect(body).toContain("Recorded 1 step on localhost:10040:");
-    expect(body).toContain('1. click columnheader "Date ▼"');
-    expect(body).toContain('  role+name: columnheader "Date ▼" (matches 1)');
+    expect(body).toContain('1. click columnheader "Date"');
+    expect(body).toContain('  role+name: columnheader "Date" (matches 1)');
     // The header text and its sort span sit on separate source lines; the
     // recorded name must still be one line with single spaces.
     expect(body).not.toMatch(/"Date\s{2,}▼"|"Date\n/);
+
+    await context.close();
+  });
+
+  test("M20 changing counts and glyphs drop from the step line and role+name, and page_generate_locator keeps the full name", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const url = `${ORIGIN}/recorder-stable-names.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(url);
+    const tabId = await getTabId(worker, url);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record the clicks.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#cart-link").click();
+    await sitePage.locator("#sortth").click();
+    await sitePage.locator("#item-1").click();
+    await sitePage.locator("#five-items").click();
+    await sitePage.locator("#add").click();
+    await expect(stepList(panelPage)).toHaveText([
+      'click link "Cart"',
+      'click columnheader "Date"',
+      'click button "Item 1"',
+      'click button "5 items"',
+      'click button "Add to cart"',
+    ]);
+
+    await nextPlan(panelPage, [
+      { name: "stop_recording", input: {} },
+      { name: "page_snapshot", input: {} },
+      { name: "page_generate_locator", input: { ref: "@Cart 6" } },
+    ]);
+    await sendMessage(panelPage, "Stop, then generate a locator for the cart link.");
+    const results = await waitForResults(panelPage, 5);
+    const body = bodyOf(results[2].text);
+
+    expect(body).toContain("Recorded 5 steps on localhost:10040:");
+    expect(body).toContain('  role+name: link "Cart" (matches 1)');
+    expect(body).toContain('  role+name: columnheader "Date" (matches 1)');
+    expect(body).toContain('  role+name: button "Item 1" (matches 1)');
+    expect(body).toContain('  role+name: button "5 items" (matches 1)');
+    expect(body).toContain('  role+name: button "Add to cart" (matches 1)');
+
+    // A page tool still reports the full name (decision 1).
+    expect(results[4].tool).toBe("page_generate_locator");
+    expect(results[4].text).toMatch(/^\[\d+\] link "Cart 6"\n {2}role\+name: link "Cart 6" \(matches 1\)\n/);
+
+    // The badge changed from 5 to 6, and the recorded name still finds the link.
+    await expect(sitePage.getByRole("link", { name: "Cart" })).toHaveText("Cart 6");
 
     await context.close();
   });

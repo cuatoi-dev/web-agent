@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder stable names</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 12px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    table { border-collapse: collapse; margin: 8px 0; }
+    th, td { border: 1px solid currentColor; padding: 4px 8px; text-align: left; }
+    th.sortable { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Recorder stable names</h1>
+
+  <nav><a href="#cart" id="cart-link">Cart <span id="badge">5</span></a></nav>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th class="sortable" id="sortth">
+            Date
+            <span class="sort-indicator">▼</span>
+          </th>
+        <th>Customer</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>o-1001</td><td>2026-10-01</td><td>Ada</td></tr>
+    </tbody>
+  </table>
+
+  <button type="button" id="item-1">Item 1</button>
+  <button type="button" id="item-2">Item 2</button>
+  <button type="button" id="five-items">5 items</button>
+  <button type="button" id="add">Add to cart</button>
+
+  <script>
+    document.getElementById("cart-link").addEventListener("click", (e) => {
+      e.preventDefault();
+    });
+    document.getElementById("add").addEventListener("click", () => {
+      const badge = document.getElementById("badge");
+      badge.textContent = String(Number(badge.textContent) + 1);
+    });
+  </script>
+</body>
+</html>

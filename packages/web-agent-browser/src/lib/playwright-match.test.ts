@@ -10,6 +10,7 @@ import {
   matchByAttribute,
   matchByTestId,
   matchByRole,
+  stableName,
 } from "./playwright-match";
 
 describe("playwright-match", () => {
@@ -115,5 +116,88 @@ describe("playwright-match", () => {
     const matches = matchByRole(document, "button", "Apply");
     expect(matches).toHaveLength(1);
     expect(matches[0].id).toBe("visible-btn");
+  });
+
+  describe("stableName (002)", () => {
+    const named = (html: string, selector: string, role: string): string => {
+      document.body.innerHTML = html;
+      const el = document.querySelector(selector)!;
+      return stableName(el, document, role, el.textContent.replace(/\s+/g, " ").trim());
+    };
+
+    it("count", () => {
+      expect(named('<a href="#c">Cart <span>5</span></a>', "a", "link")).toBe("Cart");
+    });
+
+    it("glyph", () => {
+      expect(named("<table><tr><th>Date <span>▼</span></th></tr></table>", "th", "columnheader")).toBe("Date");
+    });
+
+    it("hash token", () => {
+      expect(named('<a href="#c">Order #1234</a>', "a", "link")).toBe("Order");
+    });
+
+    it("hash token, ambiguous", () => {
+      expect(named('<a href="#c" id="t">Order #1234</a><a href="#d">Order #1235</a>', "#t", "link")).toBe("Order #1234");
+    });
+
+    it("stops at the first token with no letter", () => {
+      expect(named('<a href="#c">Page 2 of 5</a>', "a", "link")).toBe("Page");
+    });
+
+    it("ambiguous, same role", () => {
+      expect(named('<button id="t">Item 1</button><button>Item 2</button>', "#t", "button")).toBe("Item 1");
+    });
+
+    it("case-insensitive clash", () => {
+      expect(named('<a href="#c" id="t">Cart 5</a><a href="#d">cart page</a>', "#t", "link")).toBe("Cart 5");
+    });
+
+    it("other role does not clash", () => {
+      expect(named('<a href="#c">Cart 5</a><button>Cart</button>', "a", "link")).toBe("Cart");
+    });
+
+    it("first token has no letter", () => {
+      expect(named("<button>5 items</button>", "button", "button")).toBe("5 items");
+    });
+
+    it("no changing token", () => {
+      expect(named("<button>Add to cart</button>", "button", "button")).toBe("Add to cart");
+    });
+
+    it("non-Latin letters", () => {
+      expect(named('<a href="#c">Заказ №5</a>', "a", "link")).toBe("Заказ");
+    });
+
+    it("hidden element", () => {
+      expect(named('<a href="#c" hidden>Cart 5</a>', "a", "link")).toBe("Cart 5");
+    });
+
+    it("empty role and empty name", () => {
+      document.body.innerHTML = "<button>Cart 5</button>";
+      const btn = document.querySelector("button")!;
+      expect(stableName(btn, document, "", "Cart 5")).toBe("Cart 5");
+      expect(stableName(btn, document, "button", "")).toBe("");
+    });
+
+    it("open shadow root", () => {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const root = host.attachShadow({ mode: "open" });
+      const btn = document.createElement("button");
+      btn.textContent = "Buy 5";
+      root.appendChild(btn);
+      expect(stableName(btn, document, "button", "Buy 5")).toBe("Buy");
+    });
+
+    it("closed shadow root", () => {
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      const root = host.attachShadow({ mode: "closed" });
+      const btn = document.createElement("button");
+      btn.textContent = "Buy 5";
+      root.appendChild(btn);
+      expect(stableName(btn, document, "button", "Buy 5")).toBe("Buy 5");
+    });
   });
 });
