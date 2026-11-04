@@ -43,6 +43,10 @@ let hoverTimer: number | undefined;
  *  on — so one rest records one hover until the pointer leaves. */
 let pointerEl: Element | null = null;
 let restedEl: Element | null = null;
+/** The last Enter or Space press and the step it became. The browser turns that
+ *  key on a button or link into a synthetic click; the click is the same user
+ *  action, so it records nothing. */
+let lastActivationKey: { el: Element; seq: number } | null = null;
 
 /** Elements on the event's path, innermost first, across open shadow roots and slots. */
 function eventElements(event: Event): Element[] {
@@ -156,6 +160,14 @@ function onClick(event: MouseEvent): void {
   if (!el) return;
   window.clearTimeout(hoverTimer);
   restedEl = el;
+  // `detail` is 0 for a click the browser made from the keyboard. When the step
+  // just emitted is the Enter or Space press on this element, that click is the
+  // press itself, not a second action.
+  if (event.detail === 0 && lastActivationKey?.seq === seq - 1) {
+    const pressed = lastActivationKey.el;
+    lastActivationKey = null;
+    if (pressed === el || el.contains(pressed)) return;
+  }
   // A field's own click is not a step: the fill step records what was typed.
   if (
     el instanceof HTMLSelectElement ||
@@ -273,7 +285,9 @@ function onKeyDown(event: KeyboardEvent): void {
     emit(nextStep("press", line, { key }));
     return;
   }
-  emit(withTarget(el, "press", line, { key }));
+  const step = withTarget(el, "press", line, { key });
+  lastActivationKey = key === "Enter" || key === "Space" ? { el, seq: step.seq } : null;
+  emit(step);
 }
 
 function onWheel(event: WheelEvent): void {
@@ -380,6 +394,7 @@ export function start(id: string): void {
   if (recordingId !== "") detach();
   recordingId = id;
   seq = 0;
+  lastActivationKey = null;
   paused = false;
   attach();
 }
@@ -414,4 +429,5 @@ export function isRecording(): boolean {
 export function __resetRecorderForTest(): void {
   detach();
   seq = 0;
+  lastActivationKey = null;
 }

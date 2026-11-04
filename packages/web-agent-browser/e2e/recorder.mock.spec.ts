@@ -717,8 +717,8 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     await sitePage.keyboard.press("j");
     await sitePage.keyboard.press("ArrowDown");
 
-    // Space on a focused button: the press step, then the activation click
-    // Chrome fires on keyup.
+    // Space on a focused button: one press step. The activation click Chrome
+    // fires on keyup is the same action and records nothing.
     await sitePage.locator("#dbl").focus();
     await sitePage.keyboard.press("Space");
 
@@ -727,16 +727,17 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     const results3 = await waitForResults(panelPage, 3);
     const lines = results3[2].text.split("\n").filter((l) => !l.startsWith("  "));
 
-    expect(lines.slice(0, 8)).toEqual([
-      "Recorded 7 steps on localhost:10040:",
+    expect(lines.slice(0, 7)).toEqual([
+      "Recorded 6 steps on localhost:10040:",
       "1. press ArrowLeft",
       "2. press Control+a",
       '3. fill textbox "Keys field" ""',
       "4. press j",
       "5. press ArrowDown",
       "6. press Space",
-      '7. click button "Double me"',
     ]);
+    // No click step: Chrome's keyboard click is the Space press itself.
+    expect(lines.filter((l) => /^\d+\. /.test(l))).toHaveLength(6);
 
     await context.close();
   });

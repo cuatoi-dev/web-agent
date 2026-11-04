@@ -1290,5 +1290,54 @@ describe("page-recorder", () => {
       expect(s[1].kind).toBe("fill");
       expect(s[1].line).toBe('fill slider "Level" "3"');
     });
+
+    function button(): HTMLButtonElement {
+      document.body.innerHTML = '<button id="dbl" type="button">Double me</button>';
+      return document.getElementById("dbl") as HTMLButtonElement;
+    }
+
+    function syntheticClick(target: EventTarget, detail: number): void {
+      fire(target, new MouseEvent("click", { bubbles: true, composed: true, detail }));
+    }
+
+    it("Space on a button records one step: the click the browser makes from it is the same action", () => {
+      const btn = button();
+      recorder.start("r1");
+      key(btn, { key: " " });
+      syntheticClick(btn, 0);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe("press Space");
+    });
+
+    it("Enter on a button records one step: the click the browser makes from it is the same action", () => {
+      const btn = button();
+      recorder.start("r1");
+      key(btn, { key: "Enter" });
+      syntheticClick(btn, 0);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe("press Enter");
+    });
+
+    it("a real mouse click (detail 1) right after a Space press on the same button is still recorded", () => {
+      const btn = button();
+      recorder.start("r1");
+      key(btn, { key: " " });
+      syntheticClick(btn, 1);
+
+      expect(steps().map((x) => x.line)).toEqual(["press Space", 'click button "Double me"']);
+    });
+
+    it("a keyboard click that follows some other step is still recorded", () => {
+      const btn = button();
+      recorder.start("r1");
+      key(btn, { key: "ArrowDown" });
+      syntheticClick(btn, 0);
+
+      expect(steps().map((x) => x.line)).toEqual(["press ArrowDown", 'click button "Double me"']);
+    });
   });
 });
