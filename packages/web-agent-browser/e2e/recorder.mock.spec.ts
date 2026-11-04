@@ -621,4 +621,61 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     await context.close();
   });
+
+  test("M12 section 3 file upload and a slow range drag record one step each", async ({ context, extensionId }) => {
+    const worker = await getWorker(context);
+    const gapsUrl = `${ORIGIN}/recorder-gaps.html`;
+
+    // Paths, not buffers: only a path upload fires a trusted input.
+    const fileA = test.info().outputPath("a.txt");
+    const fileB = test.info().outputPath("b.txt");
+    await fs.writeFile(fileA, "a");
+    await fs.writeFile(fileB, "b");
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(gapsUrl);
+    const tabId = await getTabId(worker, gapsUrl);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record section 3.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    await sitePage.locator("#file").setInputFiles([fileA]);
+    await sitePage.locator("#file").setInputFiles([fileA, fileB]);
+
+    // A real mouse drag: locator.fill() on a range fires an untrusted input.
+    // The pause runs past REC_HOVER_REST_MS while the button is down, and must
+    // not split the drag into two fill steps.
+    const box = await sitePage.locator("#range").boundingBox();
+    if (!box) throw new Error("#range has no box");
+    const x = (v: number): number => box.x + 8 + ((box.width - 16) * v) / 10;
+    const y = box.y + box.height / 2;
+    await sitePage.mouse.move(x(2), y);
+    await sitePage.mouse.down();
+    await sitePage.mouse.move(x(3), y, { steps: 3 });
+    await sitePage.waitForTimeout(600);
+    await sitePage.mouse.move(x(9), y, { steps: 3 });
+    await sitePage.mouse.up();
+    await sitePage.mouse.move(2, 2);
+    await sitePage.waitForTimeout(200);
+    await expect(sitePage.locator("#range")).toHaveValue("9");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results3 = await waitForResults(panelPage, 3);
+    const lines = results3[2].text.split("\n").filter((l) => !l.startsWith("  "));
+
+    expect(lines.slice(0, 4)).toEqual([
+      "Recorded 3 steps on localhost:10040:",
+      '1. upload file "Upload" "a.txt"',
+      '2. upload file "Upload" "a.txt", "b.txt"',
+      '3. fill slider "Level" "9"',
+    ]);
+
+    await context.close();
+  });
 });

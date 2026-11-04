@@ -179,11 +179,23 @@ function onInput(event: Event): void {
     emit(withTarget(el, "select", line, { values }));
     return;
   }
+  if (el instanceof HTMLInputElement && el.type === "file") {
+    closeOpen();
+    // A page sees File.name only, never a local path.
+    const names = [...(el.files ?? [])].map((f) => f.name);
+    const chosen = names.length > 0 ? names.map((n) => `"${n}"`).join(", ") : "(none)";
+    emit(withTarget(el, "upload", `upload ${named(el)} ${chosen}`, { values: names }));
+    return;
+  }
   const isText =
-    (el instanceof HTMLInputElement && !["checkbox", "radio", "file", "range", "color"].includes(el.type)) ||
+    (el instanceof HTMLInputElement && !["checkbox", "radio", "file"].includes(el.type)) ||
     el instanceof HTMLTextAreaElement ||
     (el instanceof HTMLElement && el.isContentEditable);
   if (!isText) return;
+  // A range drag fires its click only on release. Without this, a hover timer
+  // armed when the pointer reached the slider fires during the drag, closes
+  // the open fill and splits one drag into two fill steps.
+  if (el instanceof HTMLInputElement && el.type === "range") window.clearTimeout(hoverTimer);
 
   const masked = el instanceof HTMLInputElement && el.type === "password";
   // A password's text is never read, so it can reach neither the step, the

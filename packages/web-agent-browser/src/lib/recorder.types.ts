@@ -14,7 +14,8 @@ export type RecordedStepKind =
   | "press"
   | "scroll"
   | "hover"
-  | "route";
+  | "route"
+  | "upload";
 
 /** One recorded action. Built in the MAIN world, where the element still
  *  exists; only this flat, structured-clonable shape crosses to the panel.
@@ -25,7 +26,8 @@ export type RecordedStepKind =
  *
  *  `value` carries a `fill`'s text; `values` carries a `select`'s chosen option
  *  labels (the plan's "value = selected option labels", as a list so
- *  `selectOption` gets one argument per label). A password's text is never
+ *  `selectOption` gets one argument per label), or an `upload`'s file names
+ *  (names only: a page cannot read local paths). A password's text is never
  *  read: `masked` is true and `value` is absent. */
 export interface RecordedStep {
   recordingId: string;

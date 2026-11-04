@@ -917,4 +917,167 @@ describe("page-recorder", () => {
       expect(s[1].locators?.id).toBe("card");
     });
   });
+
+  describe("file, range and color inputs (002)", () => {
+    /** jsdom cannot open a file chooser, so `files` is defined on the element. */
+    function chooseFiles(input: HTMLInputElement, names: string[]): void {
+      Object.defineProperty(input, "files", {
+        value: names.map((n) => new File(["x"], n)),
+        configurable: true,
+      });
+      fire(input, new Event("input", { bubbles: true, composed: true }));
+    }
+
+    function section3(): { file: HTMLInputElement; range: HTMLInputElement; color: HTMLInputElement } {
+      document.body.innerHTML = `
+        <label>Upload <input type="file" id="file" multiple></label>
+        <label>Level <input type="range" id="range" min="0" max="10" value="2"></label>
+        <label>Tint <input type="color" id="color" value="#ff0000"></label>
+      `;
+      return {
+        file: document.getElementById("file") as HTMLInputElement,
+        range: document.getElementById("range") as HTMLInputElement,
+        color: document.getElementById("color") as HTMLInputElement,
+      };
+    }
+
+    it("choosing one file records one upload step with its name", () => {
+      const { file } = section3();
+      recorder.start("r1");
+      chooseFiles(file, ["a.txt"]);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("upload");
+      expect(s[0].line).toBe('upload file "Upload" "a.txt"');
+      expect(s[0].values).toEqual(["a.txt"]);
+      expect(s[0].target).toMatchObject({ role: "file", name: "Upload" });
+      expect(s[0].locators?.id).toBe("file");
+    });
+
+    it("choosing two files lists both names", () => {
+      const { file } = section3();
+      recorder.start("r1");
+      chooseFiles(file, ["a.txt", "b.txt"]);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('upload file "Upload" "a.txt", "b.txt"');
+      expect(s[0].values).toEqual(["a.txt", "b.txt"]);
+    });
+
+    it("clearing the files records upload (none) with no values", () => {
+      const { file } = section3();
+      recorder.start("r1");
+      chooseFiles(file, []);
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('upload file "Upload" (none)');
+      expect(s[0].values).toEqual([]);
+    });
+
+    it("a click on a file input, then input and change, records one upload step", () => {
+      const { file } = section3();
+      recorder.start("r1");
+      fire(file, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      expect(calls).toHaveLength(0);
+      chooseFiles(file, ["a.txt"]);
+      fire(file, new Event("change", { bubbles: true }));
+
+      expect(calls).toHaveLength(1);
+      expect(steps()[0].kind).toBe("upload");
+    });
+
+    it("an upload closes the open fill", () => {
+      const { file, range } = section3();
+      recorder.start("r1");
+      range.value = "3";
+      fire(range, new Event("input", { bubbles: true, composed: true }));
+      chooseFiles(file, ["a.txt"]);
+      range.value = "4";
+      fire(range, new Event("input", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s.map((x) => x.kind)).toEqual(["fill", "upload", "fill"]);
+      expect(s[2].seq).not.toBe(s[0].seq);
+    });
+
+    it("an untrusted input on a file input records nothing", () => {
+      const { file } = section3();
+      recorder.start("r1");
+      file.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+
+      expect(calls).toHaveLength(0);
+    });
+
+    it("moving a range updates one fill step in place", () => {
+      const { range } = section3();
+      recorder.start("r1");
+      for (const v of ["3", "6", "9"]) {
+        range.value = v;
+        fire(range, new Event("input", { bubbles: true, composed: true }));
+      }
+
+      expect(calls).toHaveLength(3);
+      const seqs = calls.map((c) => (JSON.parse(c) as RecordedStep).seq);
+      expect(new Set(seqs).size).toBe(1);
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("fill");
+      expect(s[0].value).toBe("9");
+      expect(s[0].line).toBe('fill slider "Level" "9"');
+    });
+
+    it("a hover timer armed before a range drag does not split the fill or record a hover", () => {
+      vi.useFakeTimers();
+      const { range } = section3();
+      recorder.start("r1");
+      fire(range, new PointerEvent("pointermove", { bubbles: true }));
+      range.value = "3";
+      fire(range, new Event("input", { bubbles: true, composed: true }));
+      vi.advanceTimersByTime(REC_HOVER_REST_MS);
+      range.value = "9";
+      fire(range, new Event("input", { bubbles: true, composed: true }));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("fill");
+      expect(s[0].value).toBe("9");
+    });
+
+    it("picking a color records one fill step with the #rrggbb value", () => {
+      const { color } = section3();
+      recorder.start("r1");
+      fire(color, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      for (const v of ["#00ff00", "#00ffff"]) {
+        color.value = v;
+        fire(color, new Event("input", { bubbles: true, composed: true }));
+      }
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].kind).toBe("fill");
+      expect(s[0].value).toBe("#00ffff");
+      expect(s[0].line).toBe('fill colorpicker "Tint" "#00ffff"');
+    });
+
+    it("a checkbox and a radio record check and uncheck, not fill, even with an input event", () => {
+      document.body.innerHTML = `
+        <label>Gift <input type="checkbox" id="gift"></label>
+        <label>Fast <input type="radio" id="fast"></label>
+      `;
+      const gift = document.getElementById("gift") as HTMLInputElement;
+      const fast = document.getElementById("fast") as HTMLInputElement;
+      recorder.start("r1");
+      fire(gift, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      fire(gift, new Event("input", { bubbles: true, composed: true }));
+      fire(gift, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      fire(gift, new Event("input", { bubbles: true, composed: true }));
+      fire(fast, new MouseEvent("click", { bubbles: true, cancelable: true }));
+      fire(fast, new Event("input", { bubbles: true, composed: true }));
+
+      expect(steps().map((x) => x.kind)).toEqual(["check", "uncheck", "check"]);
+    });
+  });
 });
