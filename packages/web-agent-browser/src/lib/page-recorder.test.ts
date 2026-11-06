@@ -347,8 +347,8 @@ describe("page-recorder", () => {
 
     fire(btn, new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     fire(document.body, new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    // A single printable key is recorded now — see "navigation keys and
-    // shortcuts (003)" below.
+    // A single printable key outside a text field records nothing — see
+    // "lone printable keys (rec 003)" below.
 
     const s = steps();
     expect(s).toHaveLength(2);
@@ -1433,16 +1433,12 @@ describe("page-recorder", () => {
       expect(s[0].line).toBe('fill textbox "Keys field" "hello"');
     });
 
-    it("a single printable key on the page body records press j with no target", () => {
+    it("a single printable key on the page body records nothing", () => {
       keysField();
       recorder.start("r1");
       key(document.body, { key: "j" });
 
-      const s = steps();
-      expect(s).toHaveLength(1);
-      expect(s[0].kind).toBe("press");
-      expect(s[0].line).toBe("press j");
-      expect(s[0].target).toBeUndefined();
+      expect(steps()).toHaveLength(0);
     });
 
     it("ArrowDown on the page body records press ArrowDown with no target", () => {
@@ -2226,6 +2222,92 @@ describe("page-recorder", () => {
       expect(s[0].locators).toMatchObject({ role: "", name: "", id: "tile" });
       expect(s[0].locators).not.toHaveProperty("text");
       expect(typeof s[0].locators?.roleMatches).toBe("number");
+    });
+  });
+
+  describe("lone printable keys (rec 003)", () => {
+    function key(target: EventTarget, init: KeyboardEventInit): void {
+      fire(target, new KeyboardEvent("keydown", { bubbles: true, composed: true, ...init }));
+    }
+
+    function goButton(): HTMLButtonElement {
+      document.body.innerHTML = '<button id="go" type="button">Go</button>';
+      return document.getElementById("go") as HTMLButtonElement;
+    }
+
+    it("letters on the page body record nothing; Escape still records", () => {
+      recorder.start("r1");
+      key(document.body, { key: "a" });
+      key(document.body, { key: "b" });
+      key(document.body, { key: "c" });
+      key(document.body, { key: "Escape" });
+
+      const s = steps();
+      expect(s.map((x) => x.line)).toEqual(["press Escape"]);
+      expect(s[0].target).toBeUndefined();
+    });
+
+    it("letters on a button record nothing; Space records one press and the keyboard click adds nothing", () => {
+      const btn = goButton();
+      recorder.start("r1");
+      key(btn, { key: "a" });
+      key(btn, { key: "b" });
+      key(btn, { key: "c" });
+      expect(steps()).toHaveLength(0);
+
+      key(btn, { key: " " });
+      fire(btn, new MouseEvent("click", { bubbles: true, composed: true, detail: 0 }));
+
+      const s = steps();
+      expect(s.map((x) => x.line)).toEqual(["press Space"]);
+      expect(s[0].target).toMatchObject({ role: "button", name: "Go" });
+    });
+
+    it("Control+a and Alt+x on the body still record", () => {
+      recorder.start("r1");
+      key(document.body, { key: "a", ctrlKey: true });
+      key(document.body, { key: "x", altKey: true });
+
+      expect(steps().map((x) => x.line)).toEqual(["press Control+a", "press Alt+x"]);
+    });
+
+    it("Shift with a letter on the body records nothing", () => {
+      recorder.start("r1");
+      key(document.body, { key: "A", shiftKey: true });
+      key(document.body, { key: "a", shiftKey: true });
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("a letter on any other element that is not a text field records nothing", () => {
+      document.body.innerHTML =
+        '<label>Agree <input type="checkbox" id="cb"></label><a href="#x" id="lnk">Link</a><div id="d">Div</div>';
+      const cb = document.getElementById("cb")!;
+      const lnk = document.getElementById("lnk")!;
+      const div = document.getElementById("d")!;
+      recorder.start("r1");
+      key(cb, { key: "k" });
+      key(lnk, { key: "k" });
+      key(div, { key: "k" });
+      key(document.body, { key: "1" });
+      key(document.body, { key: "/" });
+
+      expect(steps()).toHaveLength(0);
+    });
+
+    it("non-printable keys outside a text field still record", () => {
+      recorder.start("r1");
+      key(document.body, { key: "Backspace" });
+      key(document.body, { key: "Delete" });
+      key(document.body, { key: "F2" });
+      key(document.body, { key: "Enter" });
+
+      expect(steps().map((x) => x.line)).toEqual([
+        "press Backspace",
+        "press Delete",
+        "press F2",
+        "press Enter",
+      ]);
     });
   });
 });

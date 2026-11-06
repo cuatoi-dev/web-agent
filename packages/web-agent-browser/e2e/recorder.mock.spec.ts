@@ -722,7 +722,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     await sitePage.locator("#sec-keys h2").click();
     await sitePage.keyboard.press("Shift");     // a modifier on its own
     await sitePage.keyboard.press("Control");   // a modifier on its own
-    await sitePage.keyboard.press("j");
+    await sitePage.keyboard.press("j");         // a lone letter on the body: no step
     await sitePage.keyboard.press("ArrowDown");
 
     // Space on a focused button: one press step. The activation click Chrome
@@ -735,17 +735,18 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     const results3 = await waitForResults(panelPage, 3);
     const lines = results3[2].text.split("\n").filter((l) => !l.startsWith("  "));
 
-    expect(lines.slice(0, 7)).toEqual([
-      "Recorded 6 steps on localhost:10040:",
+    expect(lines.slice(0, 6)).toEqual([
+      "Recorded 5 steps on localhost:10040:",
       "1. press ArrowLeft",
       "2. press Control+a",
       '3. fill textbox "Keys field" ""',
-      "4. press j",
-      "5. press ArrowDown",
-      "6. press Space",
+      "4. press ArrowDown",
+      "5. press Space",
     ]);
     // No click step: Chrome's keyboard click is the Space press itself.
-    expect(lines.filter((l) => /^\d+\. /.test(l))).toHaveLength(6);
+    // No "press j": a lone letter on the body is not recorded.
+    expect(lines.filter((l) => /^\d+\. /.test(l))).toHaveLength(5);
+    expect(lines.some((l) => / press j$/.test(l))).toBe(false);
 
     await context.close();
   });
@@ -1279,6 +1280,71 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     await expect(sitePage.getByText("Past 1 month")).toHaveCount(1);
     await expect(sitePage.getByRole("combobox", { name: "Country" })).toHaveCount(1);
     await expect(sitePage.getByRole("button", { name: "LOGIN" })).toHaveCount(1);
+
+    await context.close();
+  });
+
+  test("M24 a lone printable key outside a text field records nothing", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const url = `${ORIGIN}/recorder-shadow-names.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(url);
+    const tabId = await getTabId(worker, url);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record the keys on this page.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    // 1. Click the empty area: no step, and the focus is on the body.
+    await sitePage.locator("#key-blank").click();
+    await sitePage.mouse.move(2, 2);
+    await sitePage.keyboard.type("abc");        // lone letters: no step
+    await sitePage.keyboard.press("Shift+a");   // Shift is not a combo: no step
+    await sitePage.keyboard.press("Escape");
+    await sitePage.keyboard.press("Control+a");
+    await sitePage.keyboard.press("Alt+x");
+
+    // 2. Letters on a focused button record nothing; Space records one press
+    // and the click Chrome makes from it records nothing.
+    await sitePage.locator("#key-go").focus();
+    await sitePage.keyboard.type("abc");
+    await sitePage.keyboard.press("Space");
+    await expect(sitePage.locator("#go-count")).toHaveText("1");
+
+    // 3. Typing in a text field is still one fill step.
+    await sitePage.locator("#key-field").focus();
+    await sitePage.keyboard.type("abc");
+
+    await expect(stepList(panelPage)).toHaveText([
+      "press Escape",
+      "press Control+a",
+      "press Alt+x",
+      "press Space",
+      'fill textbox "Key field" "abc"',
+    ]);
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const body = bodyOf(results[2].text);
+
+    expect(body).toContain("Recorded 5 steps on localhost:10040:");
+    expect(body).toContain("1. press Escape");
+    expect(body).toContain("2. press Control+a");
+    expect(body).toContain("3. press Alt+x");
+    expect(body).toContain("4. press Space");
+    expect(body).toContain('  role+name: button "Go" (matches 1)');
+    expect(body).toContain('5. fill textbox "Key field" "abc"');
+    expect(body).not.toMatch(/\d+\. press [abcAx]$/m);
+    expect(body).not.toContain('click button "Go"');
 
     await context.close();
   });

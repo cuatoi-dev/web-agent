@@ -299,6 +299,12 @@ function onKeyDown(event: KeyboardEvent): void {
   if (el && isTextEntry(el) && !combo && (isPrintable(event.key) || event.key === "Backspace" || event.key === "Delete")) {
     return;
   }
+  // A lone character anywhere else is not recorded: it is usually text typed
+  // where a click missed the field, and it can be a password. Shift does not
+  // make it a shortcut. Space stays, because it activates a focused button.
+  if (!(el && isTextEntry(el)) && !combo && isPrintable(event.key) && event.key !== " ") {
+    return;
+  }
   const key = playwrightKey(event);
   closeOpen();
   const line = `press ${key}`;

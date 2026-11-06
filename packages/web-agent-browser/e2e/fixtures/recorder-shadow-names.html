@@ -16,6 +16,7 @@
     #range-menu { width: 200px; border: 1px solid currentColor; }
     .item { padding: 4px 6px; cursor: pointer; }
     #docs-section { margin-top: 8px; padding: 8px; border: 1px solid currentColor; cursor: pointer; font-weight: 600; }
+    #key-blank { padding: 8px; border: 1px dashed currentColor; }
   </style>
 </head>
 <body>
@@ -54,6 +55,21 @@
     <div id="docs-section" onclick="bumpDocs()">
       <span>ALL MATCHED DOCUMENTS <span id="doc-count">8</span></span>
     </div>
+  </section>
+
+  <!-- Task 003: keys pressed outside a text field. -->
+  <section id="sec-keys">
+    <h2>Keys outside a text field</h2>
+
+    <!-- 1. An empty area: a click here records nothing and leaves focus on the body. -->
+    <p id="key-blank">Empty area</p>
+
+    <!-- 2. A button: letters on it record nothing; Space records one press. -->
+    <button id="key-go" type="button" onclick="bumpGo()">Go</button>
+    <span>Go pressed <span id="go-count">0</span> times</span>
+
+    <!-- 3. A text field: typing still records one fill step. -->
+    <p><label>Key field <input id="key-field"></label></p>
   </section>
 
   <script>
@@ -100,6 +116,11 @@
 
     function bumpDocs() {
       const count = document.getElementById("doc-count");
+      count.textContent = String(Number(count.textContent) + 1);
+    }
+
+    function bumpGo() {
+      const count = document.getElementById("go-count");
       count.textContent = String(Number(count.textContent) + 1);
     }
   </script>
