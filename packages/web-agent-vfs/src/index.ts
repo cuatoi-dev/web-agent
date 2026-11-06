@@ -20,8 +20,9 @@ import { attachFolderProvider } from "./attach-folder-provider.js";
 import { saveToolResult, TOOL_RESULT_DIR } from "./tool-results.js";
 import { memoryBlocks, MEMORY_PROMPT_SNIPPET, resolveMemoryOptions } from "./user-memory.js";
 
-export type { MemoryOptions, VfsBackend, VfsEntry, VfsFile, VfsHandle, VfsMountInfo, VfsOptions, VfsResolvedEntry, VfsToolProvider } from "./types.js";
+export type { MemoryOptions, ResolvedMemory, VfsBackend, VfsEntry, VfsFile, VfsHandle, VfsMountInfo, VfsOptions, VfsResolvedEntry, VfsToolProvider } from "./types.js";
 export type { FolderStore, SavedFolder } from "./attach-folder-provider.types.js";
+export { memorySkills } from "./memory-skills.js";
 export { MemoryBackend } from "./backends/memory.js";
 export { StorageBackend } from "./backends/storage.js";
 export { DirectoryBackend } from "./backends/directory-handle.js";
@@ -144,6 +145,9 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
     name: "vfs",
     required: false,
     vfs,
+    // 104/002 — `memorySkills(vfs)` reads this back, so the skill text names
+    // the configured paths and limits. Null when memory is off.
+    memory,
     attachmentProviders: [folderProvider],
     hooks: {
       onUserPrompt: async ({ parts, sessionId, firstInChat, displayText }) => {

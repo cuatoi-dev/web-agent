@@ -15,7 +15,7 @@ import { chartingTools, chartingSkills } from "@cuatoi/web-agent-charting";
 import { chartingRenderers } from "@cuatoi/web-agent-charting/lit";
 import { mcpToolProviders } from "@cuatoi/web-agent-mcp";
 import { openApiToolProviders } from "@cuatoi/web-agent-openapi";
-import { vfsTools, type VfsBackend, type VfsEntry, type VfsFile } from "@cuatoi/web-agent-vfs";
+import { memorySkills, vfsTools, type VfsBackend, type VfsEntry, type VfsFile } from "@cuatoi/web-agent-vfs";
 import { filesScreen } from "@cuatoi/web-agent-vfs/lit";
 
 const PROMO_CONTENT =
@@ -210,6 +210,20 @@ function buildPanelProps(
   ];
   const schedulerEnabled = panel.config?.scheduler?.enabled !== false;
   const todoEnabled = panel.config?.todo?.enabled !== false;
+  // 069 — the agent's virtual file system (ten tools), default layout:
+  // /tmp on sessionStorage, /home/agent and /home/shared on localStorage.
+  // 125/001: read-only host mount at /store for store promotions.
+  // 104/001: memory (USER.md, MEMORY.md) only when the caller turns it on —
+  // the Agent page does, the bubble does not.
+  // 104/002: created here, above panel.skills, because memorySkills() reads the
+  // provider's resolved memory options. It is added to toolProviders below.
+  const vfs = vfsTools({
+    mounts: {
+      "/store": storeBackend,
+    },
+    ...(memory ? { memory: true } : {}),
+  });
+  panel.screens = [filesScreen(vfs.vfs)];
   panel.skills = [
     ...coreSkills(),
     ...chartingSkills(),
@@ -221,6 +235,8 @@ function buildPanelProps(
     panelChartSkill,
     shopManagerReportSkill,
     ...(schedulerEnabled ? [stockMonitorSkill] : []),
+    // 104/002 — [] when memory is off, so the bubble has neither skill.
+    ...memorySkills(vfs),
   ];
   // Async skill seam (idea 102 task 001): skills the user stored in this
   // browser. The namespace matches sessionNamespace below, so cat-store's
@@ -267,21 +283,8 @@ function buildPanelProps(
         required: true,
       },
     ]),
-    // 069 — the agent's virtual file system (ten tools), default layout:
-    // /tmp on sessionStorage, /home/agent and /home/shared on localStorage.
-    // 125/001: read-only host mount at /store for store promotions.
-    // 104/001: memory (USER.md, MEMORY.md) only when the caller turns it on —
-    // the Agent page does, the bubble does not.
-    ...(() => {
-      const vfs = vfsTools({
-        mounts: {
-          "/store": storeBackend,
-        },
-        ...(memory ? { memory: true } : {}),
-      });
-      panel.screens = [filesScreen(vfs.vfs)];
-      return [vfs];
-    })(),
+    // 104/002 — the same provider that panel.skills read, created above.
+    vfs,
   ];
   panel.config = {
     persist: true,

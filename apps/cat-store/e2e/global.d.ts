@@ -34,5 +34,8 @@ declare global {
     /** attach-folder.mock.spec.ts and memory-loader.mock.spec.ts: the text of
      *  every user message the model received, in order. */
     __USER_TEXTS__?: string[];
+    /** memory-skills.mock.spec.ts: the system prompt of every model call, in
+     *  order. */
+    __SYSTEM_PROMPTS__?: string[];
   }
 }

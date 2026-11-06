@@ -530,3 +530,36 @@ describe("memory option (104/001)", () => {
     expect(defs.some((d) => (d.promptSnippet ?? "").startsWith("You have two memory files"))).toBe(false);
   });
 });
+
+describe("memory skills (104/002)", () => {
+  const names = (panel: AgentChatPanel) => panel.skills!.map((s) => s.name);
+  const rememberSkill = (panel: AgentChatPanel) => panel.skills!.find((s) => s.name === "remember")!;
+
+  it("CS1: memory: true adds both skills, and remember names the configured paths", () => {
+    const panel = makePanelStub();
+    configureAgentPanel(panel, { domAccess: false, memory: true });
+    expect(names(panel)).toContain("remember");
+    expect(names(panel)).toContain("onboarding");
+    expect(rememberSkill(panel).definition).toContain("/home/shared/USER.md");
+    expect(rememberSkill(panel).definition).toContain("/home/agent/MEMORY.md");
+  });
+
+  it("CS2: memory off adds neither skill", () => {
+    const a = makePanelStub();
+    const b = makePanelStub();
+    configureAgentPanel(a, { domAccess: false });
+    configureAgentPanel(b, { domAccess: true, memory: false });
+    for (const panel of [a, b]) {
+      expect(names(panel)).not.toContain("remember");
+      expect(names(panel)).not.toContain("onboarding");
+    }
+  });
+
+  it("CS3: the two skills are appended after every existing skill", () => {
+    const panel = makePanelStub();
+    configureAgentPanel(panel, { domAccess: false, memory: true });
+    expect(names(panel).slice(-2)).toEqual(["remember", "onboarding"]);
+    expect(names(panel)).toContain("panel-chart");
+    expect(names(panel)).toContain("shop-manager-report");
+  });
+});

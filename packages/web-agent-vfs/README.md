@@ -109,6 +109,30 @@ When memory is on:
 - The files are read once per chat. A change made during a chat appears in the
   next chat.
 
+### Memory skills
+
+The package also ships two skills that tell the agent how to change the files.
+Add them to the host's skills only when memory is on:
+
+```ts
+import { memorySkills, vfsTools } from "@cuatoi/web-agent-vfs";
+
+const vfs = vfsTools({ memory: true });
+const skills = [...hostSkills, ...memorySkills(vfs)];
+```
+
+`memorySkills(vfs)` returns `remember` and `onboarding` when memory is on. It
+returns an empty array when memory is off, so the host needs no extra check.
+The text of each skill names the configured paths and limits, so the agent
+writes to the files the host configured.
+
+| Skill | What it does |
+|---|---|
+| `remember` | Saves, changes or forgets one entry in the user file or the memory file. Stamps each entry with the local date and time. |
+| `onboarding` | Builds the user file in a short conversation, when the file does not exist yet. Offers once per chat. |
+
+Both skills are model-invoked. Neither adds a slash command.
+
 ## The tools
 
 - **`read_file(file_path, offset?, limit?)`** — returns numbered text lines, or

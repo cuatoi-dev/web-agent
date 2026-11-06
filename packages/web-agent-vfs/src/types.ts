@@ -128,8 +128,11 @@ export interface VfsHandle {
   subscribe(listener: () => void): () => void;
 }
 
-/** ToolProvider returned by vfsTools() carrying the extra vfs handle. */
+/** ToolProvider returned by vfsTools() carrying the extra vfs handle and the
+ *  resolved memory options. `memory` is null when the host did not turn memory
+ *  on (104/002 builds the memory skills from it). */
 export type VfsToolProvider = import("@cuatoi/web-agent-core").ToolProvider & {
   vfs: VfsHandle;
+  memory: ResolvedMemory | null;
 };
 
