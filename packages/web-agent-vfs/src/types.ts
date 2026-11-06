@@ -57,6 +57,23 @@ export interface VfsResolution {
   rel?: string;
 }
 
+/** 104/001 — agent memory files loaded into the first message of a chat.
+ *  `memory: true` is the same as `memory: {}`: every default applies. */
+export interface MemoryOptions {
+  /** Default "/home/shared/USER.md". */
+  userPath?: string;
+  /** Default "/home/agent/MEMORY.md". */
+  memoryPath?: string;
+  /** Default 2000. Longer content is cut, with a note. */
+  userMaxChars?: number;
+  /** Default 4000. Longer content is cut, with a note. */
+  memoryMaxChars?: number;
+  /** Default true. When USER.md is missing, add a hint to offer onboarding. */
+  onboarding?: boolean;
+}
+
+export type ResolvedMemory = Required<MemoryOptions>;
+
 /** `vfsTools(options)`. Each of the three defaults can be replaced, and
  *  `mounts` adds host mounts at any free path. */
 export interface VfsOptions {
@@ -69,6 +86,8 @@ export interface VfsOptions {
   home?: VfsBackend;
   shared?: VfsBackend;
   mounts?: Record<string, VfsBackend>;
+  /** Absent or false = memory off. */
+  memory?: boolean | MemoryOptions;
 }
 
 /** The per-chat record of which files were read. Keyed by

@@ -31,8 +31,8 @@ declare global {
     /** create-skill-no-owner.mock.spec.ts (120/004): the create_skill
      *  input_schema from the first model call's tool list. */
     __CAT_CREATE_SKILL_SCHEMA__?: Record<string, unknown> | null;
-    /** attach-folder.mock.spec.ts: the text of every user message the model
-     *  received, in order. */
+    /** attach-folder.mock.spec.ts and memory-loader.mock.spec.ts: the text of
+     *  every user message the model received, in order. */
     __USER_TEXTS__?: string[];
   }
 }

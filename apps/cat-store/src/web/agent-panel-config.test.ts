@@ -21,6 +21,7 @@ import {
   DEFAULT_PROVIDER_ENTRY_INDEX,
 } from "./agent-panel-config";
 import { defaultBaseURLFor, LocalStorageSkillRegistry, type ToolContext } from "@cuatoi/web-agent-core";
+import type { VfsToolProvider } from "@cuatoi/web-agent-vfs";
 import { chartingSkills } from "@cuatoi/web-agent-charting";
 import { ANY_MODEL_ENDPOINT_TYPE, ANY_MODEL_CHAIN } from "./any-model-chain";
 import type { AgentChatPanel, AgentHooks } from "@cuatoi/web-agent-lit";
@@ -488,5 +489,44 @@ describe("PROVIDER_ENTRIES", () => {
       endpointType: ANY_MODEL_ENDPOINT_TYPE,
     });
     expect(typeof model.generate).toBe("function");
+  });
+});
+
+describe("memory option (104/001)", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  function vfsOf(panel: AgentChatPanel): VfsToolProvider {
+    return panel.toolProviders!.find((p) => p.name === "vfs") as VfsToolProvider;
+  }
+  const first = { parts: [] as { type: "text"; text: string }[], sessionId: "s1", firstInChat: true, displayText: "hi" };
+
+  it("C1: memory: true — the vfs provider loads USER.md and MEMORY.md and carries the guideline", async () => {
+    const panel = makePanelStub();
+    configureAgentPanel(panel, { domAccess: false, memory: true });
+    const vfs = vfsOf(panel);
+    await vfs.vfs.write("/home/shared/USER.md", "Name: Alex");
+    await vfs.vfs.write("/home/agent/MEMORY.md", "Likes cats");
+    const r = await vfs.hooks!.onUserPrompt!(first);
+    expect(r?.parts?.[0]?.type).toBe("text");
+    const text = (r!.parts![0] as { text: string }).text;
+    expect(text).toContain('<memory path="/home/shared/USER.md">\nName: Alex\n</memory>');
+    expect(text).toContain('<memory path="/home/agent/MEMORY.md">\nLikes cats\n</memory>');
+    const defs = await vfs.load();
+    expect(defs.some((d) => (d.promptSnippet ?? "").startsWith("You have two memory files"))).toBe(true);
+  });
+
+  it("C2: memory: false — the same files are not loaded and no guideline", async () => {
+    const panel = makePanelStub();
+    configureAgentPanel(panel, { domAccess: true, memory: false });
+    const vfs = vfsOf(panel);
+    await vfs.vfs.write("/home/shared/USER.md", "Name: Alex");
+    await vfs.vfs.write("/home/agent/MEMORY.md", "Likes cats");
+    const r = await vfs.hooks!.onUserPrompt!(first);
+    const text = r?.parts?.[0] && "text" in r.parts[0] ? (r.parts[0] as { text: string }).text : "";
+    expect(text).not.toContain("<memory");
+    const defs = await vfs.load();
+    expect(defs.some((d) => (d.promptSnippet ?? "").startsWith("You have two memory files"))).toBe(false);
   });
 });

@@ -73,6 +73,42 @@ A mount that overlaps an existing one (equal, or nested inside it) makes
 `load()` reject, and the session runs with no file tools rather than a broken
 tree.
 
+## Memory
+
+Turn on memory to give the agent two files it sees at the start of every chat:
+
+- `/home/shared/USER.md` — about the user. Every agent on the origin shares it.
+- `/home/agent/MEMORY.md` — what this agent learned.
+
+```ts
+vfsTools({ memory: true });
+```
+
+Memory is off when you leave out `memory` or pass `false`. `memory: true` is the
+same as `memory: {}` and uses every default:
+
+| Option | Default | What it does |
+|---|---|---|
+| `userPath` | `/home/shared/USER.md` | The user file. |
+| `memoryPath` | `/home/agent/MEMORY.md` | The agent's memory file. |
+| `userMaxChars` | `2000` | The most characters of the user file the agent sees. |
+| `memoryMaxChars` | `4000` | The most characters of the memory file the agent sees. |
+| `onboarding` | `true` | When the user file is missing, tell the agent to offer onboarding. |
+
+When memory is on:
+
+- The first message of a chat carries each file in a `<memory path="…">`
+  block, after any `<agents-md>` blocks. Later messages do not.
+- A file longer than its limit is cut. A note at the cut tells the agent to
+  merge or remove entries. The file itself does not change.
+- When the user file is missing and `onboarding` is on, the first message
+  carries `<memory path="…" missing="true">`. A missing memory file adds
+  nothing.
+- The system prompt gains one line that tells the agent to change the files
+  only when the user asks, or agrees when the agent offers.
+- The files are read once per chat. A change made during a chat appears in the
+  next chat.
+
 ## The tools
 
 - **`read_file(file_path, offset?, limit?)`** — returns numbered text lines, or

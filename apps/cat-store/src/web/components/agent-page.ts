@@ -118,7 +118,7 @@ export class AgentPage extends LitElement {
 
   constructor() {
     super();
-    this._props = panelProps({ domAccess: false, genui: this });
+    this._props = panelProps({ domAccess: false, memory: true, genui: this });
     const baseHooks: AgentHooks = this._props.hooks ?? {};
     const prior = baseHooks.onSessionStart;
     this._hooks = {

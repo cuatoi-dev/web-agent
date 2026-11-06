@@ -39,8 +39,12 @@ export interface ProviderEntry {
 export interface AgentPanelOptions {
   /** true → the agent can see and drive the page (bubble mode).
    *  false → no DOM tools, no DOM skill, no action cue, no confirm scrim
-   *  (full-page mode). This flag is the ONLY difference between the two. */
+   *  (full-page mode). */
   domAccess: boolean;
+  /** 104/001 — true → USER.md and MEMORY.md load into the first message of a
+   *  chat, and the prompt carries the memory guideline (Agent page).
+   *  false or absent → neither (bubble). The file tools see the files either way. */
+  memory?: boolean;
   /** Supplied only by <agent-page>, which owns the generative UI frame. When
    *  it is absent — bubble mode — render_agent_ui is not registered, which is
    *  what keeps the bubble out of scope for task 008. */

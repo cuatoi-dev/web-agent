@@ -18,8 +18,9 @@ import { jsonEditTool } from "./tools/json-edit.js";
 import { bundleHtmlTool } from "./tools/bundle-html.js";
 import { attachFolderProvider } from "./attach-folder-provider.js";
 import { saveToolResult, TOOL_RESULT_DIR } from "./tool-results.js";
+import { memoryBlocks, MEMORY_PROMPT_SNIPPET, resolveMemoryOptions } from "./user-memory.js";
 
-export type { VfsBackend, VfsEntry, VfsFile, VfsHandle, VfsMountInfo, VfsOptions, VfsResolvedEntry, VfsToolProvider } from "./types.js";
+export type { MemoryOptions, VfsBackend, VfsEntry, VfsFile, VfsHandle, VfsMountInfo, VfsOptions, VfsResolvedEntry, VfsToolProvider } from "./types.js";
 export type { FolderStore, SavedFolder } from "./attach-folder-provider.types.js";
 export { MemoryBackend } from "./backends/memory.js";
 export { StorageBackend } from "./backends/storage.js";
@@ -43,6 +44,8 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
   const listeners = new Set<() => void>();
   const maxChars = options?.toolResults?.maxChars ?? 12_000;
   const previewChars = options?.toolResults?.previewChars ?? 2_000;
+  // 104/001 — null when the host did not turn memory on.
+  const memory = resolveMemoryOptions(options?.memory);
 
   function getMounts(): VfsMount[] {
     if (mountError) throw mountError;
@@ -176,6 +179,11 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
           agentsMdTracker.record(sessionId, path, f.mtimeMs);
           blocks.push(`<agents-md path="${path}">\n${f.content}\n</agents-md>`);
         }
+        // 104/001 — memory blocks go after every AGENTS.md block, in the same
+        // prepended text part. getMounts() already succeeded in the loop above:
+        // "/home/agent/AGENTS.md" is always in `paths`, and a mount error
+        // returned from the hook there.
+        if (memory) blocks.push(...(await memoryBlocks(getMounts(), memory)));
         if (blocks.length === 0) return;
         return {
           parts: [{ type: "text", text: blocks.join("\n\n") + "\n\n" }, ...parts],
@@ -189,7 +197,12 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
       const mounts = getMounts();
       return [
         readFileTool(mounts, tracker, agentsMdTracker, maxChars),
-        writeFileTool(mounts, tracker, agentsMdTracker),
+        // 104/001 — one memory guideline line, only when memory is on.
+        // write_file carries it because read_file already carries the
+        // <agents-md> snippet and a tool def holds one snippet.
+        memory
+          ? { ...writeFileTool(mounts, tracker, agentsMdTracker), promptSnippet: MEMORY_PROMPT_SNIPPET }
+          : writeFileTool(mounts, tracker, agentsMdTracker),
         editFileTool(mounts, tracker, agentsMdTracker),
         globFilesTool(mounts),
         searchFilesTool(mounts),

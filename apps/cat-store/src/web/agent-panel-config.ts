@@ -146,7 +146,7 @@ const CUE_SPEED: "slow" | "fast" = "slow";
 const HOOK_LOG = "[cat-store hooks]";
 
 function buildPanelProps(
-  { domAccess, genui }: AgentPanelOptions,
+  { domAccess, memory, genui }: AgentPanelOptions,
   target?: AgentChatPanel,
 ): PanelProps {
   const panel = {} as AgentChatPanel;
@@ -270,11 +270,14 @@ function buildPanelProps(
     // 069 — the agent's virtual file system (ten tools), default layout:
     // /tmp on sessionStorage, /home/agent and /home/shared on localStorage.
     // 125/001: read-only host mount at /store for store promotions.
+    // 104/001: memory (USER.md, MEMORY.md) only when the caller turns it on —
+    // the Agent page does, the bubble does not.
     ...(() => {
       const vfs = vfsTools({
         mounts: {
           "/store": storeBackend,
         },
+        ...(memory ? { memory: true } : {}),
       });
       panel.screens = [filesScreen(vfs.vfs)];
       return [vfs];

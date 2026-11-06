@@ -49,7 +49,7 @@ if (agentUi) {
   // <agent-chat-panel> agent-page.ts builds — it forwards every property
   // configureAgentPanel writes onto its own internal panel, which is what
   // lets one function configure either host.
-  configureAgentPanel(panel as unknown as AgentChatPanel, { domAccess: true });
+  configureAgentPanel(panel as unknown as AgentChatPanel, { domAccess: true, memory: false });
   window.addEventListener(THEME_CHANGE_EVENT, () => {
     if (panel.appContext) {
       panel.appContext = composeAppContext(panel.appContext, loadCustomPromptConfig());
