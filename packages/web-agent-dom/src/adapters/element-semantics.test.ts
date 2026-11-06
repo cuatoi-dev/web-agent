@@ -1,6 +1,6 @@
 // element-semantics.test.ts — vitest + jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { getRole, getName } from "./element-semantics.js";
+import { describeElementParts, getRole, getName } from "./element-semantics.js";
 
 function shadowHost(html: string): ShadowRoot {
   const host = document.createElement("custom-field");
@@ -182,5 +182,92 @@ describe("getName whitespace collapse", () => {
     document.body.innerHTML = `<div>${words}</div>`;
     const name = getName(document.querySelector("div") as Element);
     expect(name).toBe(Array.from({ length: 60 }, () => "ab").join(" ").slice(0, 120) + "…");
+  });
+});
+
+describe("getName skips style, script and hidden text (rec 001)", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  const OPTION_SHADOW =
+    "<style>:host { display: block; } :host([hidden]) { display: none; }</style>" +
+    '<input type="checkbox"><span part="label"><slot></slot></span>';
+
+  function optionList(): Element[] {
+    document.body.innerHTML =
+      '<div role="listbox" aria-label="Country">' +
+      '<x-option role="option">US</x-option>' +
+      '<x-option role="option">HK</x-option>' +
+      '<x-option role="option">EU</x-option>' +
+      "</div>";
+    const opts = Array.from(document.querySelectorAll("x-option"));
+    for (const o of opts) o.attachShadow({ mode: "open" }).innerHTML = OPTION_SHADOW;
+    return opts;
+  }
+
+  it("names a shadow-root option by its slotted text, without the CSS", () => {
+    const opts = optionList();
+    expect(describeElementParts(opts[1])).toEqual({ role: "option", name: "HK" });
+    expect(getName(opts[0])).toBe("US");
+    expect(getName(opts[2])).toBe("EU");
+  });
+
+  it("adds no text from script, template or noscript children of a button or a div", () => {
+    for (const tag of ["button", "div"]) {
+      const el = document.createElement(tag);
+      el.innerHTML = "<script>var a = 1;</script><noscript>Enable JavaScript</noscript>";
+      // innerHTML puts template children into .content; append directly so the
+      // <template> element has a real child text node, as a live page can.
+      const tpl = document.createElement("template");
+      tpl.appendChild(document.createTextNode("Template text"));
+      el.appendChild(tpl);
+      el.appendChild(document.createTextNode("Save"));
+      document.body.appendChild(el);
+      expect(getName(el)).toBe("Save");
+    }
+  });
+
+  it("adds no text from hidden or aria-hidden=true descendants, but keeps aria-hidden=false", () => {
+    document.body.innerHTML =
+      '<button id="b1"><span hidden>Secret</span><span aria-hidden="true">★</span>Apply</button>' +
+      '<button id="b2"><span aria-hidden="false">Go</span></button>';
+    expect(getName(document.getElementById("b1") as Element)).toBe("Apply");
+    expect(getName(document.getElementById("b2") as Element)).toBe("Go");
+  });
+
+  it("skips an aria-hidden=true element slotted into a shadow root", () => {
+    document.body.innerHTML = '<x-option role="option"><span aria-hidden="true">✓</span>HK</x-option>';
+    const host = document.querySelector("x-option") as Element;
+    host.attachShadow({ mode: "open" }).innerHTML = OPTION_SHADOW;
+    expect(getName(host)).toBe("HK");
+  });
+
+  it("still names an element that is itself aria-hidden=true or hidden", () => {
+    document.body.innerHTML = '<button aria-hidden="true">Close</button><div hidden>Panel</div>';
+    expect(getName(document.querySelector("button") as Element)).toBe("Close");
+    expect(getName(document.querySelector("div") as Element)).toBe("Panel");
+  });
+
+  it("uses a slot's fallback content when nothing is assigned, and the assigned text otherwise", () => {
+    const empty = document.createElement("x-label");
+    empty.attachShadow({ mode: "open" }).innerHTML = "<span><slot>Default label</slot></span>";
+    const filled = document.createElement("x-label");
+    filled.textContent = "Custom";
+    filled.attachShadow({ mode: "open" }).innerHTML = "<span><slot>Default label</slot></span>";
+    document.body.append(empty, filled);
+    expect(getName(empty)).toBe("Default label");
+    expect(getName(filled)).toBe("Custom");
+  });
+
+  it("skips a style element inside a role=button custom element's shadow root", () => {
+    // A native <button> cannot have a shadow root (jsdom throws NotSupportedError),
+    // so this uses a custom element with role="button".
+    const host = document.createElement("x-button");
+    host.setAttribute("role", "button");
+    host.attachShadow({ mode: "open" }).innerHTML = "<style>:host { color: red; }</style><slot></slot>";
+    host.textContent = "Buy";
+    document.body.appendChild(host);
+    expect(getName(host)).toBe("Buy");
   });
 });

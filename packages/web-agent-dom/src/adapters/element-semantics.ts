@@ -1,5 +1,5 @@
 // element-semantics.ts — role, accessible name and interactivity derivation for
-// a DOM element. Split out of dom-adapter.ts; the code is unchanged.
+// a DOM element. Split out of dom-adapter.ts.
 
 import type { InteractiveCache } from "./types.js";
 
@@ -52,30 +52,35 @@ const INPUT_TYPE_ROLES: Record<string, string> = {
   color: "colorpicker",
 };
 
-/** Traverse children recursively, resolving open shadow roots and slot elements. */
-function getTextContentWithSlots(node: Node): string {
+/** Descendant tags whose text is never part of a name. */
+const NAME_SKIP_TAGS = new Set(["style", "script", "template", "noscript"]);
+
+/** Text of `node` for a name. Walks open shadow roots and slots (a slot with
+ *  nothing assigned gives its fallback content). Skips descendants that are
+ *  `style`, `script`, `template` or `noscript`, carry the `hidden` attribute,
+ *  or have `aria-hidden="true"`. `isRoot` is true only for the element being
+ *  named, which is always read, even when it is hidden itself. */
+function getTextContentWithSlots(node: Node, isRoot: boolean): string {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent || "";
   }
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    const el = node as Element;
-    if (tagLC(el) === "slot") {
-      const assigned = (el as HTMLSlotElement).assignedNodes({ flatten: true });
-      return assigned.map(getTextContentWithSlots).join("");
-    }
-    let text = "";
-    if (el.shadowRoot) {
-      for (let i = 0; i < el.shadowRoot.childNodes.length; i++) {
-        text += getTextContentWithSlots(el.shadowRoot.childNodes[i]);
-      }
-    } else {
-      for (let i = 0; i < el.childNodes.length; i++) {
-        text += getTextContentWithSlots(el.childNodes[i]);
-      }
-    }
-    return text;
+  if (node.nodeType !== Node.ELEMENT_NODE) return "";
+  const el = node as Element;
+  if (!isRoot) {
+    if (NAME_SKIP_TAGS.has(tagLC(el))) return "";
+    if (el.hasAttribute("hidden")) return "";
+    if (el.getAttribute("aria-hidden") === "true") return "";
   }
-  return "";
+  if (tagLC(el) === "slot") {
+    const assigned = (el as HTMLSlotElement).assignedNodes({ flatten: true });
+    return assigned.map((n) => getTextContentWithSlots(n, false)).join("");
+  }
+  const kids = el.shadowRoot ? el.shadowRoot.childNodes : el.childNodes;
+  let text = "";
+  for (let i = 0; i < kids.length; i++) {
+    text += getTextContentWithSlots(kids[i], false);
+  }
+  return text;
 }
 
 /** Determine ARIA role for an element. */
@@ -281,12 +286,12 @@ export function getName(el: Element): string {
 
   // button textContent
   if (tagLC(el) === "button") {
-    const t = clean(getTextContentWithSlots(el));
+    const t = clean(getTextContentWithSlots(el, true));
     if (t && t.length <= 120) return t;
   }
 
   // Generic fallback: short text content
-  const text = clean(getTextContentWithSlots(el));
+  const text = clean(getTextContentWithSlots(el, true));
   if (text.length > 0 && text.length <= 120) return text;
   if (text.length > 120) return text.slice(0, 120) + "…";
 

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder shadow names</title>
+  <style>
+    body { font: 15px/1.4 system-ui, sans-serif; margin: 12px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    h2 { font-size: 16px; margin: 12px 0 6px; }
+    [role="listbox"] { width: 240px; border: 1px solid currentColor; }
+    x-option { width: 240px; padding: 4px 6px; box-sizing: border-box; cursor: default; }
+  </style>
+</head>
+<body>
+  <h1>Recorder shadow names</h1>
+
+  <!-- Task 001: an option whose open shadow root starts with a <style>. -->
+  <section id="sec-options">
+    <h2>Options in shadow roots</h2>
+    <div role="listbox" aria-label="Country">
+      <x-option role="option" id="opt-us">US</x-option>
+      <x-option role="option" id="opt-hk">HK</x-option>
+      <x-option role="option" id="opt-eu">EU</x-option>
+    </div>
+  </section>
+
+  <script>
+    const OPTION_SHADOW =
+      '<style>:host { display: block; } :host([hidden]) { display: none; }</style>' +
+      '<input type="checkbox"><span part="label"><slot></slot></span>';
+
+    class XOption extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML = OPTION_SHADOW;
+      }
+    }
+    customElements.define("x-option", XOption);
+
+    for (const opt of document.querySelectorAll("x-option")) {
+      opt.addEventListener("click", () => {
+        for (const o of document.querySelectorAll("x-option")) o.setAttribute("aria-selected", "false");
+        opt.setAttribute("aria-selected", "true");
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1169,4 +1169,47 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     await context.close();
   });
+
+  test("M22 an option whose shadow root starts with a style element records its text name only", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const url = `${ORIGIN}/recorder-shadow-names.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(url);
+    const tabId = await getTabId(worker, url);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record the option click.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    // Click the centre of the host. The host is 240px wide, so the centre is
+    // past the checkbox and the label: composedPath()[0] is the x-option
+    // itself, which matches [role="option"].
+    await sitePage.locator("#opt-hk").click();
+    await sitePage.mouse.move(2, 2);
+    await expect(stepList(panelPage)).toHaveText(['click option "HK"']);
+    await expect(sitePage.locator("#opt-hk")).toHaveAttribute("aria-selected", "true");
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const body = bodyOf(results[2].text);
+
+    expect(body).toContain("Recorded 1 step on localhost:10040:");
+    expect(body).toContain('1. click option "HK"');
+    expect(body).toContain('  role+name: option "HK" (matches 1)');
+    expect(body).not.toContain(":host");
+
+    // Real Playwright agrees: the recorded role and name find one element.
+    await expect(sitePage.getByRole("option", { name: "HK" })).toHaveCount(1);
+
+    await context.close();
+  });
 });
