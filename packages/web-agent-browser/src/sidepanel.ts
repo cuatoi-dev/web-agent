@@ -16,7 +16,18 @@ import {
 import { createRecordingController, hostOf } from "./lib/recording-controller";
 import { createWatchMeProvider } from "./lib/watch-me-provider";
 
-import { getLastAgentId, getSettings, setLastAgentId } from "./lib/settings";
+import {
+  getLastAgentId,
+  getSettings,
+  parseMemoryEnabled,
+  setLastAgentId,
+  SETTINGS_KEY,
+} from "./lib/settings";
+import {
+  createPanelMemorySync,
+  isAgentMemoryOn,
+  type PanelMemorySync,
+} from "./lib/panel-memory";
 import { requestBrand } from "./lib/brand-request";
 import { readAgentStore, chromeAgentStorage, mergedBrand } from "./lib/agent-store";
 import { applyTheme, registerBrandThemes } from "./lib/theme";
@@ -48,7 +59,7 @@ import { panelPageTools } from "./lib/panel-page-tools";
 import { createDebuggerSession } from "./lib/debugger-session";
 import { createHelperWorlds } from "./lib/debugger-helper-world";
 import { createDebuggerRecorder } from "./lib/debugger-recorder";
-import { DirectoryBackend, vfsTools } from "@cuatoi/web-agent-vfs";
+import { DirectoryBackend, memorySkills, vfsTools } from "@cuatoi/web-agent-vfs";
 import { filesScreen } from "@cuatoi/web-agent-vfs/lit";
 import { indexedDbFolderStore } from "./lib/folder-store";
 import { seedHomeAgentsMd } from "./lib/seed-home-agents-md";
@@ -99,6 +110,8 @@ function buildAgentPanel(
   brand: AgentBrand,
   models: ModelContext,
   refreshTabState: () => Promise<void>,
+  getMemoryEnabled: () => Record<string, boolean>,
+  registerSync: (id: string, sync: PanelMemorySync) => void,
 ): AgentChatPanel {
   const panel = document.createElement("agent-chat-panel");
   // Every property is set BEFORE the element is connected — the panel builds
@@ -169,18 +182,25 @@ function buildAgentPanel(
       })
     : undefined;
 
-  const vfs = vfsTools({
-    tmp: ChromeStorageBackend(chrome.storage.session, `tmp:${agent.id}`),
-    home: ChromeStorageBackend(chrome.storage.local, `home:${agent.id}`),
-    shared: ChromeStorageBackend(chrome.storage.local, "shared"),
-    ...(canReadFiles ? { folderStore: indexedDbFolderStore(agent.id) } : {}),
-    seedAgentsMd: agent.homeAgentsMd,
-  });
-  if (window.__WA_ENABLE_VFS_PROOF__ === true) {
-    (window.__WA_VFS_PROOF__ ??= {})[agent.id] = {
-      provider: vfs, panel, directoryBackend: DirectoryBackend,
-    };
-  }
+  const initialMemoryOn = isAgentMemoryOn(agent, getMemoryEnabled());
+  const createVfs = (on: boolean) =>
+    vfsTools({
+      tmp: ChromeStorageBackend(chrome.storage.session, `tmp:${agent.id}`),
+      home: ChromeStorageBackend(chrome.storage.local, `home:${agent.id}`),
+      shared: ChromeStorageBackend(chrome.storage.local, "shared"),
+      ...(canReadFiles ? { folderStore: indexedDbFolderStore(agent.id) } : {}),
+      seedAgentsMd: agent.homeAgentsMd,
+      ...(on ? { memory: true } : {}),
+    });
+  let vfs = createVfs(initialMemoryOn);
+  const exposeVfsProof = (): void => {
+    if (window.__WA_ENABLE_VFS_PROOF__ === true) {
+      (window.__WA_VFS_PROOF__ ??= {})[agent.id] = {
+        provider: vfs, panel, directoryBackend: DirectoryBackend,
+      };
+    }
+  };
+  exposeVfsProof();
   // 127/004 — the brand's starter /home/agent/AGENTS.md, written once when the
   // file is missing. The promise is awaited in the vfs provider's load() below,
   // so the first prompt of a fresh install already has the file for the
@@ -261,7 +281,7 @@ function buildAgentPanel(
   // 120/005 — `testing` is its own group too. The group switch runs
   // first, so a group switched off removes the skill even from an agent
   // whose `skills` list names it.
-  panel.skills = mergeBrandSkills(
+  const baseSkills = mergeBrandSkills(
     {
       tab: tabSkills(),
       websiteEdit: [websiteEditSkill],
@@ -269,6 +289,26 @@ function buildAgentPanel(
     },
     brand,
   ).filter((s) => agentAllows(agent.skills, agent.excludeSkills, s.name));
+  panel.skills = [...baseSkills, ...memorySkills(vfs)];
+
+  const memorySync = createPanelMemorySync({
+    initialOn: initialMemoryOn,
+    isCurrentChatFresh: () => {
+      const s = panel.session?.getState();
+      return Boolean(s?.activeSessionId) && !panel.running && panel.messages.length === 0;
+    },
+    apply: (on) => {
+      vfs = createVfs(on);
+      exposeVfsProof();
+      panel.screens = [filesScreen(vfs.vfs)];
+      panel.skills = [...baseSkills, ...memorySkills(vfs)];
+      panel.toolProviders = buildProviders(Boolean(panel.imageInput));
+    },
+  });
+  registerSync(agent.id, memorySync);
+  queueMicrotask(() => {
+    panel.session?.subscribe((s) => memorySync.onSessionState(s));
+  });
 
   // Same store the in-page agents reach through bridge.js — an extension page
   // calls chrome.storage.local directly. 120/004 — the registry belongs to
@@ -345,10 +385,42 @@ async function main(): Promise<void> {
         void switcher.select(id);
       },
     });
+    let memoryEnabled = settings.memoryEnabled;
+    const panelSyncs = new Map<string, PanelMemorySync>();
+    const onStorageChanged = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      area: string,
+    ): void => {
+      if (area !== "local" || !(SETTINGS_KEY in changes)) return;
+      const nextRaw: unknown = changes[SETTINGS_KEY].newValue;
+      const nextObj: { memoryEnabled?: unknown } = nextRaw !== null && typeof nextRaw === "object"
+        ? nextRaw
+        : {};
+      memoryEnabled = parseMemoryEnabled(nextObj.memoryEnabled);
+      for (const [id, sync] of panelSyncs) {
+        const target = merged.agents.find((x) => x.id === id);
+        if (target) sync.setDesired(isAgentMemoryOn(target, memoryEnabled));
+      }
+    };
+    chrome.storage.onChanged.addListener(onStorageChanged);
+    window.addEventListener("pagehide", () => {
+      chrome.storage.onChanged.removeListener(onStorageChanged);
+    });
+
     const switcher = createAgentSwitcher({
       brand: merged,
       container: chat,
-      buildPanel: (a) => buildAgentPanel(a, merged, models, refreshTabState),
+      buildPanel: (a) =>
+        buildAgentPanel(
+          a,
+          merged,
+          models,
+          refreshTabState,
+          () => memoryEnabled,
+          (id, sync) => {
+            panelSyncs.set(id, sync);
+          },
+        ),
       confirm: (panel, detail) => createConfirmScrim(panel)(detail),
       onShow: (a) => combo.paint(a),
       saveLastId: (id) => {

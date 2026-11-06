@@ -204,9 +204,12 @@ declare global {
     /** attach-folder.mock.spec.ts and attach-folder.demo.spec.ts: the text of
      *  every user message the model received, in order. */
     __USER_TEXTS__?: string[];
+    /** memory-opt-in.mock.spec.ts: the system prompt of every model call that
+     *  carried a user message, in the same order as __USER_TEXTS__. */
+    __SYSTEM_PROMPTS__?: string[];
     /** Mock-model hook the side panel reads in E2E_ENV=mock: a function the
      *  spec installs to script the model's turns. */
-    __WA_MOCK_SCRIPT__?: (opts: { messages: { content: unknown }[]; tools?: { name: string }[] }) => unknown;
+    __WA_MOCK_SCRIPT__?: (opts: { messages: { content: unknown }[]; systemPrompt?: string; tools?: { name: string }[] }) => unknown;
     /** theme.mock.spec.ts: a marker set after the theme is first applied,
      *  read back after a media-query flip to prove no reload happened. */
     __WA_NO_RELOAD__?: boolean;

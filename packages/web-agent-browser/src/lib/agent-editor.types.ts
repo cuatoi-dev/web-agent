@@ -51,12 +51,16 @@ export interface EditForm {
   showErrors(errors: AgentDraftErrors): void;
 }
 
-/** Passed to renderAgents to switch a card into edit mode. */
+/** Passed to renderAgents to switch a card into edit mode and wire per-card switches. */
 export interface CardView {
   editingId: string | null;
   onEdit(agent: ListedAgent): void;
   /** Called once, for the card whose id is editingId. */
   editBody(agent: ListedAgent): HTMLElement;
+  /** 104/003 — current user switches (`settings.memoryEnabled`). */
+  memoryEnabled?: Record<string, boolean>;
+  /** 104/003 — called when the user flips an agent's Memory switch. */
+  onMemoryToggle?: (agentId: string, on: boolean) => void;
 }
 
 export interface AgentEditorDeps {
@@ -74,6 +78,10 @@ export interface AgentEditorDeps {
   /** 136/005 — the stored model store, read by the options page. Absent in
    *  unit tests that do not care; the empty store is used then. */
   modelStore?: ModelStore;
+  /** 104/003 — initial `settings.memoryEnabled` map. Defaults to `{}`. */
+  memoryEnabled?: Record<string, boolean>;
+  /** 104/003 — persists `settings.memoryEnabled[agentId]`. */
+  onMemoryToggle?: (agentId: string, on: boolean) => void;
 }
 
 /** The open Delete agent dialog, as `openDeleteDialog` resolves it. */

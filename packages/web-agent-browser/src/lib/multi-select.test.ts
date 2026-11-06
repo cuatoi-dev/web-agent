@@ -250,14 +250,14 @@ describe("multi-select", () => {
     expect(ms.isOpen()).toBe(true);
   });
 
-  it("MS15 outside mousedown", () => {
+  it("MS15 outside click closes the list; a click inside it does not (104/003)", () => {
     const { ms, row } = mount();
     ms.open();
-    document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(ms.isOpen()).toBe(false);
 
     ms.open();
-    row("wait").dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    row("wait").dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(ms.isOpen()).toBe(true);
   });
 

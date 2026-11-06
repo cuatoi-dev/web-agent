@@ -182,6 +182,21 @@ describe("listAgents", () => {
     const out = listAgents(brand(), { gone: TESAGENT_EDIT }, []);
     expect(out).toEqual(listAgents(brand(), {}, []));
   });
+
+  it("U12: keeps memory on unedited and edited brand agents, and never on user agents (104/003)", () => {
+    const b = brand();
+    const withMemory = {
+      ...b,
+      agents: [{ ...b.agents[0], memory: true }, { ...b.agents[1], memory: true }],
+    };
+    const unedited = listAgents(withMemory, {}, []);
+    expect(unedited.map((a) => a.memory)).toEqual([true, true]);
+
+    const edited = listAgents(withMemory, { tesagent: TESAGENT_EDIT }, [USER_AGENT]);
+    expect(edited.find((a) => a.id === "chromagent")?.memory).toBe(true);
+    expect(edited.find((a) => a.id === "tesagent")?.memory).toBe(true);
+    expect(edited.find((a) => a.id === "analyst")?.memory).toBeUndefined();
+  });
 });
 
 describe("mergedBrand", () => {

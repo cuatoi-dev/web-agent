@@ -7,3 +7,4 @@ instructions: |
   short.
 tools: "*"
 skills: "*"
+memory: true

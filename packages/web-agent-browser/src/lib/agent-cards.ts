@@ -16,6 +16,10 @@ export const NEW_AGENT_NOTE = "Fill in the fields, then save.";
 /** 136/005 — the card's Model fact when the agent's model is off or gone. */
 export const MODEL_FELL_BACK_LABEL = "Options page model (its model is off or deleted)";
 
+/** 104/003 — help copy shown next to the per-agent Memory switch. */
+export const MEMORY_HELP_TEXT =
+  "Remember things about you and this agent between chats. Saved in this browser.";
+
 /** "All", "All except N" or "N selected" — the same rule for tools and
  *  skills. `exclude` matters only when `list` is `"*"`. */
 export function summary(list: "*" | string[], exclude?: string[]): string {
@@ -37,6 +41,44 @@ function newAgentPlaceholder(): ListedAgent {
     origin: "user",
     edited: false,
   };
+}
+
+function buildMemoryRow(a: ListedAgent, view: CardView | undefined): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = "card-memory";
+
+  const sw = document.createElement("label");
+  sw.className = "sw";
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.className = "agent-memory-toggle";
+  toggle.id = `agent-memory-${a.id}`;
+  toggle.setAttribute("role", "switch");
+  toggle.setAttribute("aria-describedby", `agent-memory-help-${a.id}`);
+  toggle.checked = view?.memoryEnabled?.[a.id] === true;
+  toggle.disabled = view !== undefined && view.editingId !== null;
+  toggle.addEventListener("change", () => {
+    view?.onMemoryToggle?.(a.id, toggle.checked);
+  });
+  const track = document.createElement("span");
+  track.className = "track";
+  track.setAttribute("aria-hidden", "true");
+  sw.append(toggle, track);
+
+  const text = document.createElement("div");
+  text.className = "card-memory-text";
+  const label = document.createElement("label");
+  label.className = "card-memory-label";
+  label.htmlFor = toggle.id;
+  label.textContent = "Memory";
+  const help = document.createElement("p");
+  help.className = "card-memory-help";
+  help.id = `agent-memory-help-${a.id}`;
+  help.textContent = MEMORY_HELP_TEXT;
+  text.append(label, help);
+
+  row.append(sw, text);
+  return row;
 }
 
 function buildCard(
@@ -129,6 +171,9 @@ function buildCard(
     } else {
       if (view !== undefined && view.editingId !== null) card.classList.add("dim");
       card.append(head, facts);
+      if (a.memory === true) {
+        card.append(buildMemoryRow(a, view));
+      }
     }
     return card;
 }

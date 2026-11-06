@@ -193,6 +193,7 @@ skills: "*"
 | `excludeTools` | No | A list of tool names to remove from an otherwise-allowed set. |
 | `skills` | Yes | `"*"` for every side panel skill, or a list of skill names. |
 | `excludeSkills` | No | A list of skill names to remove from an otherwise-allowed set. |
+| `memory` | No | `true` or `false`. When `true`, the agent card on the options page shows a **Memory** switch (off by default). |
 
 If an agent leaves out or excludes `start_debugging` while retaining tools that require an active debugger session (such as `page_snapshot` or `page_click`), the build prints a warning.
 
@@ -585,6 +586,7 @@ Source: `tool/compile-brand.cjs:compileAgents`.
 | `brand/agents/<file> file name must use lowercase letters, digits, - and _, starting with a letter` | Rename the file. The name without `.yml` becomes the agent's id. |
 | `brand/agents/<file> <key> must be a non-empty string` | Write a non-empty `displayName`, `description` or `instructions`. |
 | `brand/agents/<file> model "<x>" is not an id in model.yml; expected <ids>` | Fix the id, or add that entry to `model.yml`. |
+| `brand/agents/<file> memory must be true or false` | Write `memory: true` or `memory: false`, without quotes, or remove the key. |
 | `brand/agents/<file> <key> must be "*" or a list of names` | Write `tools` and `skills` as `"*"` or a YAML list. |
 | `brand/agents/<file> <key> must be a list of names` | Write `excludeTools` and `excludeSkills` as a YAML list. |
 | `brand/agents/<file> <key> lists "<name>", which is not a side panel tool; expected "*" or names such as read_tabs, page_eval, page_screenshot` | Use a real side panel tool name. |

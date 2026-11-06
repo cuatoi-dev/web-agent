@@ -81,6 +81,13 @@ export interface RelayHandlerDeps {
 export interface AgentSettings {
   /** How the bubble looks on a site that supplies no --wa-* tokens. */
   theme: ThemePreference;
+  /** 104/003 — per-agent user opt-in for side-panel memory (default `{}`). */
+  memoryEnabled: Record<string, boolean>;
+}
+
+export interface AgentSettingsInput {
+  theme: ThemePreference;
+  memoryEnabled?: Record<string, boolean>;
 }
 
 /** What the bridge posts to the MAIN world with wa-bridge-enable and
@@ -154,6 +161,8 @@ export interface BrandAgent {
   /** An id from `model.yml` in brand.json. `listAgents` turns it into the
    *  ModelRef `"brand:" + id` (136/005). Absent means the default model. */
   model?: string;
+  /** 104/003 — true when `brand/agents/<id>.yml` allows memory opt-in. */
+  memory?: boolean;
   tools: "*" | string[];
   excludeTools?: string[];
   skills: "*" | string[];

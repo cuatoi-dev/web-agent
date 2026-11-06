@@ -79,6 +79,7 @@ skills: "*"
 | `excludeTools` | No | A list of tool names removed from an otherwise-allowed set. |
 | `skills` | Yes | `"*"`, or a list of side panel skill names. |
 | `excludeSkills` | No | A list of skill names removed from an otherwise-allowed set. |
+| `memory` | No | `true` or `false`. When `true`, the agent card on the options page shows a **Memory** switch (off by default). |
 
 At least one file is required. The default brand ships `chromagent.yml`, the
 default agent, and `tesagent.yml`. Chromagent has every tool and skill.
@@ -93,6 +94,7 @@ The build fails, and writes no `dist/`, when:
 - `displayName`, `description` or `instructions` is missing, not a string, or
   empty
 - `model` names an id not in `model.yml`
+- `memory` is set, and is not `true` or `false`
 - `tools` or `skills` is not `"*"` or a list of strings
 - `excludeTools` or `excludeSkills` is set but is not a list of strings
 - `tools` or `excludeTools` names a tool that is not a real side panel tool

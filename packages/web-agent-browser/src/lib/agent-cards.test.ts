@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { summary, renderAgents, BRAND_LOCKED_NOTE, NEW_AGENT_ID, NEW_AGENT_TITLE, NEW_AGENT_NOTE } from "./agent-cards";
+import { summary, renderAgents, BRAND_LOCKED_NOTE, MEMORY_HELP_TEXT, NEW_AGENT_ID, NEW_AGENT_TITLE, NEW_AGENT_NOTE } from "./agent-cards";
 import { listModels } from "./model-store";
 import type { AgentStore } from "./agent-store.types";
 import type { AgentBrand } from "./types";
@@ -276,5 +276,92 @@ describe("renderAgents", () => {
     expect(c2.classList.contains("dim")).toBe(true);
     expect(c2.querySelector<HTMLButtonElement>(".card-edit-btn")!.disabled).toBe(true);
     expect(c2.querySelector(".facts")).not.toBeNull();
+  });
+
+  describe("Memory switch (104/003)", () => {
+    function brandWithMemory(memory: boolean | undefined, other: boolean | undefined): AgentBrand {
+      const b = brand();
+      return {
+        ...b,
+        agents: [
+          { ...b.agents[0], ...(memory === undefined ? {} : { memory }) },
+          { ...b.agents[1], ...(other === undefined ? {} : { memory: other }) },
+        ],
+      };
+    }
+
+    const noop = (): HTMLElement => document.createElement("div");
+    const USER_AGENT = {
+      id: "analyst",
+      displayName: "Data Analyst",
+      description: "Added by the user",
+      instructions: "Analyse data.",
+      model: null,
+      tools: "*" as const,
+      excludeTools: [] as string[],
+      skills: "*" as const,
+      excludeSkills: [] as string[],
+    };
+
+    it("C13: renders the switch and help text only for an agent with memory: true", () => {
+      const el = container();
+      renderAgents(el, brandWithMemory(true, undefined), EMPTY_STORE, {
+        editingId: null, onEdit: vi.fn(), editBody: noop,
+      });
+      const [withSwitch, withoutSwitch] = cards(el);
+      expect(withSwitch.querySelector(".card-memory")).not.toBeNull();
+      expect(withSwitch.querySelector(".card-memory-label")!.textContent).toBe("Memory");
+      expect(withSwitch.querySelector(".card-memory-help")!.textContent).toBe(MEMORY_HELP_TEXT);
+      const toggle = withSwitch.querySelector<HTMLInputElement>(".agent-memory-toggle")!;
+      expect(toggle.getAttribute("role")).toBe("switch");
+      expect(toggle.id).toBe("agent-memory-chromagent");
+      expect(toggle.getAttribute("aria-describedby")).toBe("agent-memory-help-chromagent");
+      expect(withSwitch.querySelector(".card-memory-label")!.getAttribute("for")).toBe(toggle.id);
+      expect(withoutSwitch.querySelector(".card-memory")).toBeNull();
+    });
+
+    it("C14: memory false or absent renders no switch, and neither does a user agent", () => {
+      const offEl = container();
+      renderAgents(offEl, brandWithMemory(false, false), EMPTY_STORE, {
+        editingId: null, onEdit: vi.fn(), editBody: noop,
+      });
+      expect(offEl.querySelector(".card-memory")).toBeNull();
+
+      const userEl = container();
+      renderAgents(userEl, brand(), { edits: {}, users: [USER_AGENT] }, {
+        editingId: null, onEdit: vi.fn(), editBody: noop,
+      });
+      const userCard = cards(userEl).find((c) => c.getAttribute("data-agent-id") === "analyst")!;
+      expect(userCard.querySelector(".card-memory")).toBeNull();
+    });
+
+    it("C15: shows the stored state, disables while a card is open, and reports a change", () => {
+      const el = container();
+      const onMemoryToggle = vi.fn();
+      renderAgents(el, brandWithMemory(true, true), EMPTY_STORE, {
+        editingId: null,
+        onEdit: vi.fn(),
+        editBody: noop,
+        memoryEnabled: { tesagent: true },
+        onMemoryToggle,
+      });
+      const [chromagentCard, tesagentCard] = cards(el);
+      const chromagentToggle = chromagentCard.querySelector<HTMLInputElement>(".agent-memory-toggle")!;
+      const tesagentToggle = tesagentCard.querySelector<HTMLInputElement>(".agent-memory-toggle")!;
+      expect(chromagentToggle.checked).toBe(false);
+      expect(tesagentToggle.checked).toBe(true);
+      expect(chromagentToggle.disabled).toBe(false);
+      chromagentToggle.checked = true;
+      chromagentToggle.dispatchEvent(new Event("change"));
+      expect(onMemoryToggle).toHaveBeenCalledWith("chromagent", true);
+
+      const editingEl = container();
+      renderAgents(editingEl, brandWithMemory(true, false), EMPTY_STORE, {
+        editingId: "tesagent", onEdit: vi.fn(), editBody: noop,
+      });
+      const openToggle = editingEl.querySelector<HTMLInputElement>("#agent-memory-chromagent")!;
+      expect(openToggle.disabled).toBe(true);
+      expect(openToggle.closest(".card")!.classList.contains("dim")).toBe(true);
+    });
   });
 });

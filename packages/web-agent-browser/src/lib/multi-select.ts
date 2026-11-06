@@ -220,6 +220,12 @@ export function mountMultiSelect(o: MultiSelectOptions): MultiSelect {
     if (typeof rowEl.scrollIntoView === "function") rowEl.scrollIntoView({ block: "nearest" });
   }
 
+  /** 104/003 — closes on the click, in the bubble phase, not on mousedown.
+   *  The list is in flow, so closing it moves the fields below up. On
+   *  mousedown that move lands between the press and the release, and the
+   *  browser then reports the click on a common ancestor: the button under
+   *  the pointer never hears its own click. On click the button has already
+   *  acted. */
   const onOutside = (e: MouseEvent): void => {
     if (!root.contains(e.target as Node)) closeList(false);
   };
@@ -233,7 +239,7 @@ export function mountMultiSelect(o: MultiSelectOptions): MultiSelect {
     applyFilter();
     setActive(0);
     focusHolder().focus();
-    document.addEventListener("mousedown", onOutside, true);
+    document.addEventListener("click", onOutside);
   }
 
   function closeList(returnFocus: boolean): void {
@@ -243,7 +249,7 @@ export function mountMultiSelect(o: MultiSelectOptions): MultiSelect {
     box.setAttribute("aria-expanded", "false");
     box.classList.remove("open");
     focusHolder().removeAttribute("aria-activedescendant");
-    document.removeEventListener("mousedown", onOutside, true);
+    document.removeEventListener("click", onOutside);
     if (returnFocus) box.focus();
   }
 

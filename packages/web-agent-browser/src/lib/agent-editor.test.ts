@@ -95,6 +95,8 @@ async function setupEditor(overrides?: {
   initialStore?: Record<string, unknown>;
   brandOptions?: { lockModel?: boolean };
   modelStore?: any;
+  memoryEnabled?: Record<string, boolean>;
+  onMemoryToggle?: (agentId: string, on: boolean) => void;
 }) {
   const el = document.createElement("div");
   const addButton = document.createElement("button");
@@ -113,6 +115,8 @@ async function setupEditor(overrides?: {
     deleteDatabase,
     onAgentDeleted,
     modelStore: overrides?.modelStore,
+    memoryEnabled: overrides?.memoryEnabled,
+    onMemoryToggle: overrides?.onMemoryToggle,
   });
   const card = (id: string) => el.querySelector<HTMLElement>(`[data-agent-id="${id}"]`)!;
   const byId = (id: string) => document.getElementById(id);
@@ -636,5 +640,74 @@ describe("agent-editor", () => {
     expect(deleteDatabase).toHaveBeenCalledWith("web-agent-web-agent-extension-panel-checkout-tester");
     expect(onAgentDeleted).toHaveBeenCalledTimes(1);
     expect(addButton.disabled).toBe(false);
+  });
+
+  describe("Memory switch (104/003)", () => {
+    async function setupWithMemory() {
+      const b = brand();
+      const withMemory: AgentBrand = {
+        ...b,
+        agents: b.agents.map((a) => ({ ...a, memory: true })),
+      };
+      // setupEditor builds its own brand, so mount directly here.
+      const el = document.createElement("div");
+      const addButton = document.createElement("button");
+      document.body.textContent = "";
+      document.body.append(addButton, el);
+      const { store, storage } = fakeStorage();
+      const onMemoryToggle = vi.fn();
+      await mountAgentEditor({
+        container: el,
+        brand: withMemory,
+        storage,
+        addButton,
+        deleteDatabase: vi.fn(),
+        onAgentDeleted: () => Promise.resolve(),
+        memoryEnabled: { tesagent: true },
+        onMemoryToggle,
+      });
+      const card = (id: string) => el.querySelector<HTMLElement>(`[data-agent-id="${id}"]`)!;
+      const toggle = (id: string) => el.querySelector<HTMLInputElement>(`#agent-memory-${id}`)!;
+      return { el, store, card, toggle, onMemoryToggle };
+    }
+
+    it("E23 seeds the switch from settings and reports a flip", async () => {
+      const { toggle, onMemoryToggle } = await setupWithMemory();
+      expect(toggle("tesagent").checked).toBe(true);
+      expect(toggle("chromagent").checked).toBe(false);
+      toggle("chromagent").checked = true;
+      toggle("chromagent").dispatchEvent(new Event("change"));
+      expect(onMemoryToggle).toHaveBeenCalledWith("chromagent", true);
+    });
+
+    it("E24 keeps a toggled switch across an Edit then Cancel repaint", async () => {
+      const { card, toggle } = await setupWithMemory();
+      toggle("chromagent").checked = true;
+      toggle("chromagent").dispatchEvent(new Event("change"));
+      card("tesagent").querySelector<HTMLButtonElement>(".card-edit-btn")!.click();
+      expect(toggle("chromagent").disabled).toBe(true);
+      card("tesagent").querySelector<HTMLButtonElement>(".actions button:nth-child(2)")!.click();
+      await flush();
+      expect(toggle("chromagent").checked).toBe(true);
+      expect(toggle("chromagent").disabled).toBe(false);
+    });
+
+    it("E25 keeps a toggled switch across an Edit then Save repaint", async () => {
+      const { card, toggle, store } = await setupWithMemory();
+      toggle("chromagent").checked = true;
+      toggle("chromagent").dispatchEvent(new Event("change"));
+      card("tesagent").querySelector<HTMLButtonElement>(".card-edit-btn")!.click();
+      const desc = document.getElementById("edit-tesagent-description") as HTMLInputElement;
+      desc.value = "Edited description";
+      desc.dispatchEvent(new Event("input", { bubbles: true }));
+      card("tesagent")
+        .querySelectorAll<HTMLButtonElement>(".actions button")[2]
+        .click();
+      await flush();
+      await flush();
+      expect(store[AGENT_EDITS_KEY]).toBeTruthy();
+      expect(toggle("chromagent").checked).toBe(true);
+      expect(toggle("tesagent").checked).toBe(true);
+    });
   });
 });

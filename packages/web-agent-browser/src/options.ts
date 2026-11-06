@@ -4,7 +4,7 @@ import { mountTabs } from "./lib/options-tabs";
 import { chromeSkillStorage } from "./lib/skill-registry";
 import { readAgentStore, chromeAgentStorage, listAgents } from "./lib/agent-store";
 import { mountAgentEditor } from "./lib/agent-editor";
-import { getSettings, setSettings } from "./lib/settings";
+import { getSettings, setMemoryEnabled, setSettings } from "./lib/settings";
 import { resolveModels } from "./lib/brand-models";
 import { registerBrandThemes, applyTheme, listThemes, type ThemeBinding } from "./lib/theme";
 import {
@@ -233,10 +233,11 @@ void init();
 mountTabs([tabGeneral, tabModels, tabSkills, tabAgents], [panelGeneral, panelModels, panelSkills, panelAgents]);
 
 void (async () => {
-  const [brand, store, modelStore] = await Promise.all([
+  const [brand, store, modelStore, settings] = await Promise.all([
     brandForThisContext(),
     readAgentStore(chromeAgentStorage),
     readModelStore(),
+    getSettings(),
   ]);
   const mergedAgents = listAgents(brand, store.edits, store.users);
   await renderSkills(skillList, chromeSkillStorage, mergedAgents);
@@ -246,6 +247,10 @@ void (async () => {
     storage: chromeAgentStorage,
     addButton: addAgentBtn,
     modelStore,
+    memoryEnabled: settings.memoryEnabled,
+    onMemoryToggle: (agentId, on) => {
+      void setMemoryEnabled(agentId, on);
+    },
     // Not awaited: an open side panel holds a connection, and the delete
     // stays pending until it closes (121/004 design).
     deleteDatabase: (name) => {

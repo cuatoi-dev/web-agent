@@ -29,12 +29,24 @@ export async function mountAgentEditor(deps: AgentEditorDeps): Promise<void> {
   const models: ModelContext = { entries: listModels(brand, modelStore), store: modelStore };
   const lists = { tools: toolGroups(brand), skills: skillNames(brand), models: modelOptions(models.entries) };
   let store = await readAgentStore(storage);
+  const memoryEnabled: Record<string, boolean> = { ...(deps.memoryEnabled ?? {}) };
   let editingId: string | null = null;
   let draft: AgentDraft | null = null;
   let form: EditForm | null = null;
 
+  const onMemoryToggle = (agentId: string, on: boolean): void => {
+    memoryEnabled[agentId] = on;
+    deps.onMemoryToggle?.(agentId, on);
+  };
+
   const paint = (): void => {
-    renderAgents(container, brand, store, { editingId, onEdit, editBody }, models);
+    renderAgents(
+      container,
+      brand,
+      store,
+      { editingId, onEdit, editBody, memoryEnabled, onMemoryToggle },
+      models,
+    );
     // Add agent is disabled while a card is open (task 003).
     addButton.disabled = editingId !== null;
   };

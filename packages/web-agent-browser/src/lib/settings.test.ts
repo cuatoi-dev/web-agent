@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getEnabledOrigins, getLastAgentId, getSettings, isOriginEnabled, setLastAgentId, setOriginEnabled, setSettings } from "./settings";
+import { getEnabledOrigins, getLastAgentId, getSettings, isOriginEnabled, parseMemoryEnabled, setLastAgentId, setMemoryEnabled, setOriginEnabled, setSettings } from "./settings";
 import { resolveAgent } from "./brand-capabilities";
 import { EMPTY_BRAND } from "./brand";
 import type { AgentBrand, BrandAgent } from "./types";
@@ -60,18 +60,18 @@ describe("settings", () => {
   });
 
   it("returns every default when nothing is stored", async () => {
-    expect(await getSettings()).toEqual({ theme: "auto" });
+    expect(await getSettings()).toEqual({ theme: "auto", memoryEnabled: {} });
   });
 
   it("extracts only theme from a stored settings object", async () => {
     const settings = { endpoint: "https://x/v1", wireFormat: "gemini", model: "m", apiKey: "k", theme: "wa2-light" };
     await chrome.storage.local.set({ agentSettings: settings });
-    expect(await getSettings()).toEqual({ theme: "wa2-light" });
+    expect(await getSettings()).toEqual({ theme: "wa2-light", memoryEnabled: {} });
   });
 
   it("round-trips a saved settings object", async () => {
     await setSettings({ theme: "wa2-light" });
-    expect(await getSettings()).toEqual({ theme: "wa2-light" });
+    expect(await getSettings()).toEqual({ theme: "wa2-light", memoryEnabled: {} });
   });
 
   it("rejects an unknown theme and defaults to auto", async () => {
@@ -103,13 +103,13 @@ describe("settings", () => {
 
   it("ignores a non-object stored under the settings key", async () => {
     await chrome.storage.local.set({ agentSettings: "garbage" });
-    expect(await getSettings()).toEqual({ theme: "auto" });
+    expect(await getSettings()).toEqual({ theme: "auto", memoryEnabled: {} });
   });
 
   it("a brand that fails to answer degrades to default theme", async () => {
     (globalThis as unknown as { chrome: { runtime: { sendMessage: unknown }; storage: unknown } }).chrome.runtime.sendMessage = vi.fn(() => Promise.reject(new Error("refused")));
     const result = await getSettings();
-    expect(result).toEqual({ theme: "auto" });
+    expect(result).toEqual({ theme: "auto", memoryEnabled: {} });
   });
 
   it("getLastAgentId is undefined when nothing, an empty string or a non-string is stored (120/002)", async () => {
@@ -134,5 +134,45 @@ describe("settings", () => {
     expect(resolveAgent(withAgents, await getLastAgentId())).toBe(chromagent);
     store["sidePanelAgent"] = "tesagent";
     expect(resolveAgent(withAgents, await getLastAgentId())).toBe(tesagent);
+  });
+
+  it("parseMemoryEnabled keeps booleans and drops anything else (104/003)", () => {
+    expect(parseMemoryEnabled({ tesagent: true, chromagent: false })).toEqual({
+      tesagent: true,
+      chromagent: false,
+    });
+    expect(parseMemoryEnabled({ tesagent: "true", chromagent: 1, other: null })).toEqual({});
+    expect(parseMemoryEnabled([true])).toEqual({});
+    expect(parseMemoryEnabled(undefined)).toEqual({});
+  });
+
+  it("getSettings reads the boolean memory switches and drops the rest (104/003)", async () => {
+    await chrome.storage.local.set({
+      agentSettings: { theme: "wa2-light", memoryEnabled: { tesagent: true, chromagent: "yes" } },
+    });
+    expect(await getSettings()).toEqual({ theme: "wa2-light", memoryEnabled: { tesagent: true } });
+  });
+
+  it("setMemoryEnabled writes one agent and keeps the theme and the others (104/003)", async () => {
+    await chrome.storage.local.set({
+      agentSettings: { theme: "wa2-dark", memoryEnabled: { chromagent: true } },
+    });
+    await setMemoryEnabled("tesagent", true);
+    expect(store["agentSettings"]).toEqual({
+      theme: "wa2-dark",
+      memoryEnabled: { chromagent: true, tesagent: true },
+    });
+
+    await setMemoryEnabled("chromagent", false);
+    expect(await getSettings()).toEqual({
+      theme: "wa2-dark",
+      memoryEnabled: { chromagent: false, tesagent: true },
+    });
+  });
+
+  it("saving the Theme alone keeps the stored memory switches (104/003)", async () => {
+    await setMemoryEnabled("tesagent", true);
+    await setSettings({ theme: "wa2-light" });
+    expect(await getSettings()).toEqual({ theme: "wa2-light", memoryEnabled: { tesagent: true } });
   });
 });

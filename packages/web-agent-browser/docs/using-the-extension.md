@@ -212,6 +212,15 @@ The list shows the default agent first, then the other agents by display name.
   when a brand agent has stored changes.
 - The summary line lists the assigned model (or `Options page model`, or `Options page model (its model is off or deleted)` when the agent's model is off or gone), tools,
   and skills.
+- When a brand agent sets `memory: true` in its
+  `brand/agents/<id>.yml`, its card shows a **Memory** switch, off by default.
+  The help text reads "Remember things about you and this agent between chats.
+  Saved in this browser." Turning the switch on or off applies from the next
+  chat; the current chat keeps the files and skills it started with. With the
+  switch on, each chat starts with `/home/shared/USER.md`, which every side
+  panel agent shares, and `/home/agent/MEMORY.md`, which belongs to that agent
+  alone. The agent also gets the `remember` and `onboarding` skills. The agent
+  inside a visited website never loads memory.
 - The toolbar indicates the agents appear in the side panel's agent list in
   this order.
 

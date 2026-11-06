@@ -337,6 +337,45 @@ describe("compileBrand", () => {
       expect("homeAgentsMd" in (brand.agents.find((a) => a.id === "chromagent") ?? {})).toBe(false);
     });
 
+    it("memory: true and memory: false are copied onto the agent", () => {
+      const onDir = makeTempDir();
+      writeAgent(onDir, "chromagent.yml", `${VALID_AGENT_YAML}memory: true\n`);
+      writePlugin(onDir, "defaultAgent: chromagent\n");
+      const onBrand = compileBrand(onDir) as { agents: { memory?: boolean }[] };
+      expect(onBrand.agents[0].memory).toBe(true);
+
+      const offDir = makeTempDir();
+      writeAgent(offDir, "chromagent.yml", `${VALID_AGENT_YAML}memory: false\n`);
+      writePlugin(offDir, "defaultAgent: chromagent\n");
+      const offBrand = compileBrand(offDir) as { agents: { memory?: boolean }[] };
+      expect(offBrand.agents[0].memory).toBe(false);
+    });
+
+    it("an agent without memory has no memory key", () => {
+      const tempDir = makeTempDir();
+      writeDefaultAgent(tempDir);
+      writePlugin(tempDir, "defaultAgent: chromagent\n");
+      const brand = compileBrand(tempDir) as { agents: object[] };
+      expect("memory" in brand.agents[0]).toBe(false);
+    });
+
+    it("a memory value that is not true or false fails the build", () => {
+      for (const value of ['"yes"', "1", "null"]) {
+        const tempDir = makeTempDir();
+        writeAgent(tempDir, "chromagent.yml", `${VALID_AGENT_YAML}memory: ${value}\n`);
+        writePlugin(tempDir, "defaultAgent: chromagent\n");
+        expect(() => compileBrand(tempDir)).toThrow(
+          "brand/agents/chromagent.yml memory must be true or false",
+        );
+      }
+    });
+
+    it("the default brand lets chromagent and tesagent use memory", () => {
+      const brand = compileBrand(BRAND_DIR) as { agents: { id: string; memory?: boolean }[] };
+      expect(brand.agents.find((a) => a.id === "chromagent")?.memory).toBe(true);
+      expect(brand.agents.find((a) => a.id === "tesagent")?.memory).toBe(true);
+    });
+
     it("an agent naming a removed skill fails the build", () => {
       const tempDir = makeTempDir();
       writeAgent(

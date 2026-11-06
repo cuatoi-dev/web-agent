@@ -474,6 +474,10 @@ function compileAgents(brandDir, modelIds, skillNames, toolNames) {
       }
     }
 
+    if (doc.memory !== undefined && typeof doc.memory !== "boolean") {
+      throw new Error(`brand/agents/${file} memory must be true or false`);
+    }
+
     for (const key of ["tools", "skills"]) {
       const val = doc[key];
       const isStringList = Array.isArray(val) && val.every((item) => typeof item === "string");
@@ -543,6 +547,7 @@ function compileAgents(brandDir, modelIds, skillNames, toolNames) {
       skills: doc.skills,
     };
     if (doc.model !== undefined) agent.model = doc.model;
+    if (doc.memory !== undefined) agent.memory = doc.memory;
     if (doc.excludeTools !== undefined) agent.excludeTools = doc.excludeTools;
     if (doc.excludeSkills !== undefined) agent.excludeSkills = doc.excludeSkills;
 
