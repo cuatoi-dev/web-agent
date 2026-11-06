@@ -8,7 +8,7 @@ import { DEFAULT_NETWORK_REQ_BODY_CHARS, DEFAULT_NETWORK_RES_BODY_CHARS } from "
 import { base64ByteLength, cap, formatHeaders, networkLine, originOf } from "./debugger-network";
 import { createDebuggerSession } from "./debugger-session";
 import { createHelperWorlds, STALE_REF } from "./debugger-helper-world";
-import { checkFileSpecs, formatSize } from "./upload-files";
+import { basename, formatSize, resolveFiles } from "./upload-files";
 import type { HelperDescribe } from "./helper-api";
 import type { ElementTarget, PanelPageToolsOptions } from "./types";
 
@@ -114,34 +114,52 @@ export function createNetworkDialogPageTools(options: PanelPageToolsOptions): Cu
   const pageUploadFile: CustomToolDef = {
     name: "page_upload_file",
     description:
-      "Set files on a file input in a browser tab by its ref from page_snapshot, then fire its input and change events. You write each file's content yourself: text, base64, or a size in bytes with a one-character fill. At most 10 MB in total per call. Call read_tabs first and pass the tab ID it reports. Needs start_debugging on the tab first.",
+      "Set files on a file input in a browser tab by its ref from page_snapshot, then fire its input and change events. You write each file's content yourself: text, base64, or a size in bytes with a one-character fill. Or pass path to upload a file from your file system, such as a screenshot saved by page_screenshot; name and mimeType then default from the path. At most 10 MB in total per call. Call read_tabs first and pass the tab ID it reports. Needs start_debugging on the tab first.",
     inputSchema: z.object({
       tabId: z.number().describe("The ID of the tab. Call read_tabs first and pass the ID it reports."),
       ref: z.string().describe('The ref of an <input type="file"> from a page_snapshot call, e.g. "14".'),
       files: z
         .array(
           z.object({
-            name: z.string().describe('File name, e.g. "orders.csv".'),
-            mimeType: z.string().describe('MIME type, e.g. "text/csv".'),
+            path: z
+              .string()
+              .optional()
+              .describe(
+                "An absolute path in your file system, e.g. the path page_screenshot reports. Pass instead of text, base64, or size and fill.",
+              ),
+            name: z
+              .string()
+              .optional()
+              .describe('File name, e.g. "orders.csv". Optional with path (defaults from path); required otherwise.'),
+            mimeType: z
+              .string()
+              .optional()
+              .describe('MIME type, e.g. "text/csv". Optional with path (defaults from path); required otherwise.'),
             text: z.string().optional().describe("The file content as text (stored as UTF-8)."),
             base64: z.string().optional().describe("The file content as base64."),
             size: z.number().optional().describe("A generated file's size in bytes; pass with fill."),
             fill: z.string().optional().describe("One character repeated to fill a generated file; pass with size."),
           }),
         )
-        .describe("The files. Each file passes exactly one of: text, base64, or size and fill."),
+        .describe("The files. Each file passes exactly one of: text, base64, size and fill, or path."),
     }),
     summarize: (input) => {
       const ref = typeof input.ref === "string" ? input.ref : "";
-      const n = Array.isArray(input.files) ? input.files.length : 0;
+      const files = Array.isArray(input.files) ? input.files : [];
+      const n = files.length;
+      if (n === 1 && isRecord(files[0]) && typeof files[0].path === "string" && files[0].path !== "") {
+        const p = files[0].path;
+        const name = typeof files[0].name === "string" && files[0].name !== "" ? files[0].name : basename(p);
+        return `Upload ${name} from ${p} to [${ref}] in tab #${tabIdText(input)}`;
+      }
       return `Upload ${n} ${n === 1 ? "file" : "files"} to [${ref}] in tab #${tabIdText(input)}`;
     },
     execute: async (input) => {
       const tabId = Number(input.tabId);
       const g = session.gate(tabId);
       if (!g.ok) return { content: g.error, isError: true };
-      const checked = checkFileSpecs(input.files);
-      if (!checked.ok) return { content: checked.error, isError: true };
+      const resolved = await resolveFiles(input.files, options.vfs);
+      if (!resolved.ok) return { content: resolved.error, isError: true };
       const ref = typeof input.ref === "string" ? input.ref : "";
 
       const d = await helper.call<HelperDescribe>(tabId, ref, "describe", [ref]);
@@ -151,13 +169,19 @@ export function createNetworkDialogPageTools(options: PanelPageToolsOptions): Cu
 
       const set = await helper.call<
         { ok: true; desc: string; sizes: number[]; target: ElementTarget } | { ok: false; message: string }
-      >(tabId, ref, "setFiles", [ref, checked.files]);
+      >(tabId, ref, "setFiles", [ref, resolved.files]);
       if (!set.ok) return { content: set.error, isError: true };
       const result = set.value;
       if (!result.ok) return { content: result.message, isError: true };
 
-      const n = checked.files.length;
-      const list = checked.files.map((f, i) => `${f.name} (${formatSize(result.sizes[i] ?? 0)})`).join(", ");
+      const n = resolved.files.length;
+      const list = resolved.files
+        .map((f, i) => {
+          const sizeText = formatSize(result.sizes[i] ?? 0);
+          const src = resolved.sources[i];
+          return src ? `${f.name} (${sizeText}, from ${src})` : `${f.name} (${sizeText})`;
+        })
+        .join(", ");
       const content = `Uploaded ${n} ${n === 1 ? "file" : "files"} to [${ref}] ${result.desc}: ${list}.`;
       return { content };
     },

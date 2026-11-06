@@ -14,7 +14,9 @@ export interface FileSpec {
   fill?: string;
 }
 
-export type FileSpecCheck = { ok: true; files: FileSpec[] } | { ok: false; error: string };
+export type ResolvedFiles =
+  | { ok: true; files: FileSpec[]; sources: (string | undefined)[] }
+  | { ok: false; error: string };
 
 /** bridge.ts's own `askMainWorld` signature. */
 export type AskMainWorld = <T>(

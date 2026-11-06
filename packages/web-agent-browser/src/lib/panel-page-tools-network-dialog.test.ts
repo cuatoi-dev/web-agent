@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ToolContext } from "@cuatoi/web-agent-core";
+import { buildTools, type ToolContext } from "@cuatoi/web-agent-core";
 import { testVfs } from "./test-vfs";
 import { createDebuggerSession } from "./debugger-session";
 import { createNetworkDialogPageTools } from "./panel-page-tools-network-dialog";
@@ -56,14 +56,14 @@ function fakeHelper(overrides: Partial<HelperWorlds> = {}): HelperWorlds {
   };
 }
 
-function setup(helper: HelperWorlds = fakeHelper()) {
+function setup(helper: HelperWorlds = fakeHelper(), vfs = testVfs()) {
   const debuggerEnv = fakeDebuggerApi();
   const session = createDebuggerSession(debuggerEnv.api);
-  const tools = createNetworkDialogPageTools({ vfs: testVfs(), helper, debuggerSession: session });
+  const tools = createNetworkDialogPageTools({ vfs, helper, debuggerSession: session });
   const pageNetwork = tools.find((t) => t.name === "page_network")!;
   const pageDialog = tools.find((t) => t.name === "page_dialog")!;
   const pageUploadFile = tools.find((t) => t.name === "page_upload_file")!;
-  return { session, debuggerEnv, tools, pageNetwork, pageDialog, pageUploadFile, helper };
+  return { session, debuggerEnv, tools, pageNetwork, pageDialog, pageUploadFile, helper, vfs };
 }
 
 describe("panel-page-tools-network-dialog (124/003)", () => {
@@ -434,5 +434,146 @@ describe("panel-page-tools-network-dialog (124/003)", () => {
         files: [{ name: "a.txt", mimeType: "text/plain", text: "a" }],
       }),
     ).toBe("Upload 1 file to [5] in tab #1");
+    expect(
+      pageUploadFile.summarize?.({
+        tabId: 42,
+        ref: "14",
+        files: [{ path: "/tmp/screenshots/2026-11-06-1203-tab42.png" }],
+      }),
+    ).toBe("Upload 2026-11-06-1203-tab42.png from /tmp/screenshots/2026-11-06-1203-tab42.png to [14] in tab #42");
+    expect(
+      pageUploadFile.summarize?.({
+        tabId: 42,
+        ref: "14",
+        files: [{ path: "/tmp/screenshots/2026-11-06-1203-tab42.png", name: "hero.png" }],
+      }),
+    ).toBe("Upload hero.png from /tmp/screenshots/2026-11-06-1203-tab42.png to [14] in tab #42");
+    expect(
+      pageUploadFile.summarize?.({
+        tabId: 42,
+        ref: "14",
+        files: [{ path: "/home/agent/a.md" }, { path: "/home/agent/b.md" }],
+      }),
+    ).toBe("Upload 2 files to [14] in tab #42");
+  });
+
+  it("U4.19: page_upload_file resolves VFS path files and formats 'from <path>' only on path items", async () => {
+    const target = { role: "button", name: "Attachments", label: '[5] file "Attachments"', isPassword: false };
+    const vfs = testVfs();
+    const pngBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const shotPath = "/tmp/screenshots/2026-11-06-1203-tab42.png";
+    await vfs.write(shotPath, new Blob([pngBytes], { type: "image/png" }));
+    await vfs.write("/home/agent/notes.md", "hello\n");
+
+    const call = vi.fn((_tabId: number, _ref: string, fn: string, args: unknown[]) => {
+      if (fn === "describe") {
+        return Promise.resolve({
+          ok: true,
+          value: { connected: true, name: "Attachments", desc: 'file "Attachments"', permission: "allow", disabled: false },
+        });
+      }
+      if (fn === "setFiles") {
+        const specs = args[1] as { name: string }[];
+        const sizes = specs.length === 1 ? [8] : [6, 8];
+        return Promise.resolve({ ok: true, value: { ok: true, desc: 'file "Attachments"', sizes, target } });
+      }
+      throw new Error(`unexpected helper call: ${fn}`);
+    });
+
+    const { session, pageUploadFile } = setup(fakeHelper({ call }), vfs);
+    await session.start(1);
+
+    const single = await pageUploadFile.execute({ tabId: 1, ref: "5", files: [{ path: shotPath }] }, toolCtx());
+    expect(single).toEqual({
+      content:
+        'Uploaded 1 file to [5] file "Attachments": 2026-11-06-1203-tab42.png (8 B, from /tmp/screenshots/2026-11-06-1203-tab42.png).',
+    });
+    expect(call).toHaveBeenCalledWith(1, "5", "setFiles", [
+      "5",
+      [
+        {
+          name: "2026-11-06-1203-tab42.png",
+          mimeType: "image/png",
+          base64: btoa(String.fromCharCode(...pngBytes)),
+        },
+      ],
+    ]);
+
+    const mixed = await pageUploadFile.execute(
+      {
+        tabId: 1,
+        ref: "5",
+        files: [{ path: "/home/agent/notes.md" }, { name: "orders.csv", mimeType: "text/csv", text: "a,b\n1,2\n" }],
+      },
+      toolCtx(),
+    );
+    expect(mixed).toEqual({
+      content:
+        'Uploaded 2 files to [5] file "Attachments": notes.md (6 B, from /home/agent/notes.md), orders.csv (8 B).',
+    });
+  });
+
+  it("U4.20: page_upload_file missing or folder path returns error without calling helper", async () => {
+    const vfs = testVfs();
+    await vfs.write("/tmp/screenshots/a.png", new Blob([new Uint8Array([1, 2])], { type: "image/png" }));
+    const call = vi.fn();
+    const { session, pageUploadFile } = setup(fakeHelper({ call }), vfs);
+    await session.start(1);
+
+    const missing = await pageUploadFile.execute(
+      { tabId: 1, ref: "5", files: [{ path: "/home/agent/missing.md" }] },
+      toolCtx(),
+    );
+    expect(missing).toEqual({
+      content: "No file at /home/agent/missing.md. Use glob_files to find it.",
+      isError: true,
+    });
+
+    const folder = await pageUploadFile.execute(
+      { tabId: 1, ref: "5", files: [{ path: "/tmp/screenshots" }] },
+      toolCtx(),
+    );
+    expect(folder).toEqual({
+      content: "No file at /tmp/screenshots. Use glob_files to find it.",
+      isError: true,
+    });
+    expect(call).not.toHaveBeenCalled();
+  });
+
+  it("U4.21: page_upload_file description and buildTools executor accept path without name/mimeType", async () => {
+    const target = { role: "button", name: "Attachments", label: '[5] file "Attachments"', isPassword: false };
+    const vfs = testVfs();
+    await vfs.write("/home/agent/notes.md", "hi");
+    const call = vi.fn((_tabId: number, _ref: string, fn: string) => {
+      if (fn === "describe") {
+        return Promise.resolve({
+          ok: true,
+          value: { connected: true, name: "Attachments", desc: 'file "Attachments"', permission: "allow", disabled: false },
+        });
+      }
+      if (fn === "setFiles") {
+        return Promise.resolve({ ok: true, value: { ok: true, desc: 'file "Attachments"', sizes: [2], target } });
+      }
+      throw new Error(`unexpected helper call: ${fn}`);
+    });
+    const { session, pageUploadFile } = setup(fakeHelper({ call }), vfs);
+    await session.start(1);
+
+    expect(pageUploadFile.description).toContain(
+      "Or pass path to upload a file from your file system, such as a screenshot saved by page_screenshot; name and mimeType then default from the path.",
+    );
+
+    const built = buildTools(toolCtx(), [pageUploadFile]);
+    const exec = built.executors.page_upload_file;
+    const okOut = await exec({ tabId: 1, ref: "5", files: [{ path: "/home/agent/notes.md" }] }, { toolCallId: "tc1" });
+    expect(okOut).toEqual({
+      content: 'Uploaded 1 file to [5] file "Attachments": notes.md (2 B, from /home/agent/notes.md).',
+    });
+
+    const missingMeta = await exec({ tabId: 1, ref: "5", files: [{ text: "hi" }] }, { toolCallId: "tc2" });
+    expect(missingMeta).toEqual({
+      content: 'File "": pass name and mimeType.',
+      isError: true,
+    });
   });
 });
