@@ -1949,9 +1949,9 @@ describe("page-recorder", () => {
       fire(div, new MouseEvent("click", { bubbles: true, cancelable: true }));
       const s = steps();
       expect(s).toHaveLength(1);
-      expect(s[0].line).toBe('click div "Total 5"');
+      expect(s[0].line).toBe('click div "Total"');
       expect(s[0].locators?.role).toBe("");
-      expect(s[0].locators?.name).toBe("Total 5");
+      expect(s[0].locators?.name).toBe("Total");
     });
 
     it("drag to a target with a count", () => {
@@ -2152,6 +2152,80 @@ describe("page-recorder", () => {
       expect(s[0].line.startsWith('fill textbox "Query"')).toBe(true);
       expect(s[0].line).toContain('cats');
       expect(s[1]).toMatchObject({ seq: 1, line: 'right-click button "Save"' });
+    });
+  });
+
+  describe("unnamed and generic targets (rec 002)", () => {
+    const composed = { bubbles: true, composed: true };
+
+    it("records the named combobox host for a click on its icon-only button", () => {
+      document.body.innerHTML = "";
+      const host = document.createElement("x-combo");
+      host.setAttribute("role", "combobox");
+      host.setAttribute("aria-label", "Country");
+      const root = host.attachShadow({ mode: "open" });
+      root.innerHTML = '<button><svg aria-hidden="true"></svg></button>';
+      document.body.appendChild(host);
+
+      recorder.start("r1");
+      fire(root.querySelector("button")!, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s).toHaveLength(1);
+      expect(s[0].line).toBe('click combobox "Country"');
+      expect(s[0].locators).toMatchObject({ role: "combobox", name: "Country", roleMatches: 1 });
+      expect(s[0].locators).not.toHaveProperty("text");
+    });
+
+    it("records the generic menu item with a text locator", () => {
+      document.body.innerHTML =
+        '<div role="menu" aria-label="Range">' +
+        '<div id="week" onclick="void 0">Past 1 week</div>' +
+        '<div id="month" onclick="void 0">Past 1 month</div>' +
+        "</div>";
+
+      recorder.start("r1");
+      fire(document.getElementById("month")!, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s[0].line).toBe('click div "Past 1 month"');
+      expect(s[0].locators).toMatchObject({
+        role: "",
+        name: "Past 1 month",
+        text: "Past 1 month",
+        textMatches: 1,
+        id: "month",
+      });
+    });
+
+    it("drops the trailing count from a generic name and keeps one text match", () => {
+      document.body.innerHTML =
+        '<div id="docs" onclick="void 0"><span>ALL MATCHED DOCUMENTS <span>8</span></span></div>';
+
+      recorder.start("r1");
+      fire(document.getElementById("docs")!, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s[0].line).toBe('click div "ALL MATCHED DOCUMENTS"');
+      expect(s[0].locators).toMatchObject({
+        role: "",
+        name: "ALL MATCHED DOCUMENTS",
+        text: "ALL MATCHED DOCUMENTS",
+        textMatches: 1,
+      });
+    });
+
+    it("keeps a nameless element's own role, with no text locator", () => {
+      document.body.innerHTML = '<div id="tile" onclick="void 0"><svg aria-hidden="true"></svg></div>';
+
+      recorder.start("r1");
+      fire(document.getElementById("tile")!, new MouseEvent("click", composed));
+
+      const s = steps();
+      expect(s[0].line).toBe('click div ""');
+      expect(s[0].locators).toMatchObject({ role: "", name: "", id: "tile" });
+      expect(s[0].locators).not.toHaveProperty("text");
+      expect(typeof s[0].locators?.roleMatches).toBe("number");
     });
   });
 });

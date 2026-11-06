@@ -226,7 +226,7 @@ describe("panel-page-tools-recording", () => {
     const expected =
       "Recorded 1 step on localhost:10040:\n" +
       '1. drag div "Drag me" to region "Drop zone"\n' +
-      '  role+name:  "Drag me" (matches 0)\n' +
+      "  role+name: —\n" +
       "  id: drag\n" +
       "  data-testid: —\n" +
       "  name: —\n" +

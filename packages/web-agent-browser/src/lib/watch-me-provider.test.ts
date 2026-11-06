@@ -416,7 +416,7 @@ describe("watch-me-provider", () => {
     expect(result.parts[0].text).toBe(
       `# Recorded steps on ${TAB_INFO.url}\n` +
         '1. drag div "Drag me" to region "Drop zone"\n' +
-        '  role+name:  "Drag me" (matches 0)\n' +
+        "  role+name: —\n" +
         "  id: drag\n" +
         "  data-testid: —\n" +
         "  name: —\n" +

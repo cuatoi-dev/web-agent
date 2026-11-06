@@ -9,6 +9,13 @@
     h2 { font-size: 16px; margin: 12px 0 6px; }
     [role="listbox"] { width: 240px; border: 1px solid currentColor; }
     x-option { width: 240px; padding: 4px 6px; box-sizing: border-box; cursor: default; }
+    x-combo { display: block; }
+    #login { position: relative; }
+    #login-cover { position: absolute; inset: 0; }
+    #tile { width: 32px; height: 32px; padding: 6px; cursor: pointer; }
+    #range-menu { width: 200px; border: 1px solid currentColor; }
+    .item { padding: 4px 6px; cursor: pointer; }
+    #docs-section { margin-top: 8px; padding: 8px; border: 1px solid currentColor; cursor: pointer; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -21,6 +28,31 @@
       <x-option role="option" id="opt-us">US</x-option>
       <x-option role="option" id="opt-hk">HK</x-option>
       <x-option role="option" id="opt-eu">EU</x-option>
+    </div>
+  </section>
+
+  <!-- Task 002: unnamed clicks, generic targets and a changing count. -->
+  <section id="sec-targets">
+    <h2>Unnamed and generic targets</h2>
+
+    <!-- 1. An icon-only button in the shadow root of a named combobox host. -->
+    <x-combo id="country" role="combobox" aria-label="Country"></x-combo>
+
+    <!-- 2. A button whose label sits under an empty presentation overlay. -->
+    <button id="login" type="button">LOGIN<span id="login-cover" role="presentation"></span></button>
+
+    <!-- 3. A clickable icon tile: no role, no name, no named interactive ancestor. -->
+    <div id="tile" onclick="toggleTile()"><svg width="18" height="18" aria-hidden="true"><circle cx="9" cy="9" r="8" /></svg></div>
+
+    <!-- 4. Two generic menu items: the clicked one gets a text locator. -->
+    <div id="range-menu" role="menu" aria-label="Range">
+      <div class="item" id="past-week" onclick="markItem(this)">Past 1 week</div>
+      <div class="item" id="past-month" onclick="markItem(this)">Past 1 month</div>
+    </div>
+
+    <!-- 5. A generic section whose trailing count grows on every click. -->
+    <div id="docs-section" onclick="bumpDocs()">
+      <span>ALL MATCHED DOCUMENTS <span id="doc-count">8</span></span>
     </div>
   </section>
 
@@ -42,6 +74,33 @@
         for (const o of document.querySelectorAll("x-option")) o.setAttribute("aria-selected", "false");
         opt.setAttribute("aria-selected", "true");
       });
+    }
+
+    const COMBO_SHADOW =
+      '<style>button { width: 40px; height: 30px; padding: 0; }</style>' +
+      '<button type="button" part="trigger"><svg width="14" height="14" aria-hidden="true" focusable="false">' +
+      '<path d="M2 5l5 5 5-5" fill="none" stroke="currentColor" /></svg></button>';
+
+    class XCombo extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML = COMBO_SHADOW;
+      }
+    }
+    customElements.define("x-combo", XCombo);
+
+    function toggleTile() {
+      document.getElementById("tile").classList.toggle("on");
+    }
+
+    function markItem(el) {
+      for (const item of document.querySelectorAll("#range-menu .item")) item.removeAttribute("aria-current");
+      el.setAttribute("aria-current", "true");
+    }
+
+    function bumpDocs() {
+      const count = document.getElementById("doc-count");
+      count.textContent = String(Number(count.textContent) + 1);
     }
   </script>
 </body>

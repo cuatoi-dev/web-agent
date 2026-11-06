@@ -1212,4 +1212,74 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
 
     await context.close();
   });
+
+  test("M23 an unnamed click records the named ancestor, and a generic target gets a text locator", async ({
+    context,
+    extensionId,
+  }) => {
+    const worker = await getWorker(context);
+    const url = `${ORIGIN}/recorder-shadow-names.html`;
+
+    const sitePage = await context.newPage();
+    await sitePage.goto(url);
+    const tabId = await getTabId(worker, url);
+
+    const panelPage = await openPanel(context, extensionId, tabId, [
+      { name: "start_debugging", input: {} },
+      { name: "start_recording", input: {} },
+    ]);
+    await sendMessage(panelPage, "Record the clicks on this page.");
+    await allow(panelPage);
+    await waitForResults(panelPage, 2);
+
+    // 1. The icon-only button inside the combobox host's shadow root.
+    await sitePage.locator("#country").locator("button").click();
+    // 2. The empty presentation overlay that covers the LOGIN label.
+    await sitePage.locator("#login-cover").click();
+    // 3. A clickable tile with no role, no name and no named ancestor.
+    await sitePage.locator("#tile").click();
+    // 4. A generic menu item.
+    await sitePage.locator("#past-month").click();
+    // 5. A generic section whose trailing count is 8 when the click lands.
+    await sitePage.locator("#docs-section").click();
+    await sitePage.mouse.move(2, 2);
+
+    await expect(stepList(panelPage)).toHaveText([
+      'click combobox "Country"',
+      'click button "LOGIN"',
+      'click div ""',
+      'click div "Past 1 month"',
+      'click div "ALL MATCHED DOCUMENTS"',
+    ]);
+
+    await nextPlan(panelPage, [{ name: "stop_recording", input: {} }]);
+    await sendMessage(panelPage, "Stop.");
+    const results = await waitForResults(panelPage, 3);
+    const body = bodyOf(results[2].text);
+
+    expect(body).toContain("Recorded 5 steps on localhost:10040:");
+    expect(body).toContain('1. click combobox "Country"');
+    expect(body).toContain('  role+name: combobox "Country" (matches 1)');
+    expect(body).toContain('2. click button "LOGIN"');
+    expect(body).toContain('  role+name: button "LOGIN" (matches 1)');
+    expect(body).toContain('3. click div ""');
+    expect(body).toContain("  role+name: —");
+    expect(body).toContain("  css: #tile");
+    expect(body).toContain('4. click div "Past 1 month"');
+    expect(body).toContain('  text: "Past 1 month" (matches 1)');
+    expect(body).not.toContain('role+name:  "');
+    expect(body).toContain('5. click div "ALL MATCHED DOCUMENTS"');
+    expect(body).toContain('  text: "ALL MATCHED DOCUMENTS" (matches 1)');
+    expect(body).not.toContain("ALL MATCHED DOCUMENTS 8");
+    expect(body).not.toContain("ALL MATCHED DOCUMENTS 9");
+
+    // The count is 9 now, and real Playwright still finds one element by text.
+    await expect(sitePage.locator("#doc-count")).toHaveText("9");
+    await expect(sitePage.getByText("ALL MATCHED DOCUMENTS")).toHaveCount(1);
+    await expect(sitePage.getByText("Past 1 month")).toHaveCount(1);
+    await expect(sitePage.getByRole("combobox", { name: "Country" })).toHaveCount(1);
+    await expect(sitePage.getByRole("button", { name: "LOGIN" })).toHaveCount(1);
+
+    await context.close();
+  });
 });

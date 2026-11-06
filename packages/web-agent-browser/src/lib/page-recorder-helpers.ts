@@ -1,6 +1,6 @@
 // Stateless DOM, element-naming, key-formatting and heading helpers used by
 // page-recorder.ts. Split out to stay under eslint.config.mjs's 500-line cap.
-import { describeElementParts } from "@cuatoi/web-agent-dom";
+import { describeElementParts, getName, getRole } from "@cuatoi/web-agent-dom";
 import { EXTENSION_UI_SELECTOR } from "./constants";
 import { stableName } from "./playwright-match";
 
@@ -57,6 +57,22 @@ export function target(event: Event): Element | null {
     }
   }
   return null;
+}
+
+/** The element a click-style event records: `target(event)`, walked up to the
+ *  nearest named interactive ancestor when that element has no name of its own.
+ *  An icon-only button and an empty presentation overlay both name nothing, so
+ *  the step would otherwise record an unnamed control. `base` is the caller's
+ *  own `target(event)` result, so the closed-root lookup at the call site keeps
+ *  reading the same element it read before. */
+export function recordTarget(event: Event, base?: Element | null): Element | null {
+  const el = base === undefined ? target(event) : base;
+  if (el === null || getName(el) !== "") return el;
+  for (let a = composedParent(el); a; a = composedParent(a)) {
+    if (a === document.body || a === document.documentElement) break;
+    if (INTERACTIVE_ROLES.includes(getRole(a)) && getName(a) !== "") return a;
+  }
+  return el;
 }
 
 const DISABLED = ':disabled, [aria-disabled="true"]';
@@ -118,14 +134,18 @@ export function isDisabledClick(event: MouseEvent, tgt: Element | null): boolean
 
 export function describe(el: Element): string {
   const { role, name: full } = describeElementParts(el);
-  const name = stableName(el, el.ownerDocument, role, full);
+  // describeElementParts falls back to the tag name; stableName needs the real
+  // ARIA role, which is "" for a generic element.
+  const name = stableName(el, el.ownerDocument, getRole(el), full);
   return name ? `${role} "${name}"` : role;
 }
 
 /** `button "Apply"` — the plan's readable-line element part. */
 export function named(el: Element): string {
   const { role, name: full } = describeElementParts(el);
-  const name = stableName(el, el.ownerDocument, role, full);
+  // describeElementParts falls back to the tag name; stableName needs the real
+  // ARIA role, which is "" for a generic element.
+  const name = stableName(el, el.ownerDocument, getRole(el), full);
   return `${role} "${name}"`;
 }
 

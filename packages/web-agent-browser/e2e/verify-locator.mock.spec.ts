@@ -549,7 +549,7 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
       "  xpath: //*[@id='coupon']",
     ]);
     // Two buttons share data-testid="icon-action", so it is not shown.
-    expect(body(results[2])[0]).toMatch(/^ {2}role\+name: button "" \(matches \d+\)$/);
+    expect(body(results[2])[0]).toMatch(/^ {2}role\+name: —$/);
     expect(body(results[2]).slice(1)).toEqual([
       "  id: icon-action-2",
       "  data-testid: —",

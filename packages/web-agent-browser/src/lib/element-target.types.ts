@@ -18,6 +18,11 @@ export interface LocatorSet {
   testId?: string;
   /** The name attribute. */
   nameAttr?: string;
+  /** For an element with no usable role: the text to find it by, and how many
+   *  elements `getByText` matches with it. Set together, and only when `role`
+   *  is empty. */
+  text?: string;
+  textMatches?: number;
   css?: string;
   xpath?: string;
   /** CSS of each enclosing `<iframe>`, from the top page down. */

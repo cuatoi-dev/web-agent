@@ -325,4 +325,45 @@ describe("locator-builder", () => {
       expect(journalTarget(document.querySelector("a")!, document, "x").name).toBe("Cart 5");
     });
   });
+
+  describe("text locator for a generic element (rec 002)", () => {
+    const SECTION = '<div id="docs" onclick="void 0"><span>ALL MATCHED DOCUMENTS <span>8</span></span></div>';
+
+    it("locatorSet fills text and textMatches for a role-less element", () => {
+      document.body.innerHTML = SECTION;
+      const set = locatorSet(document.getElementById("docs")!, document);
+      expect(set).toMatchObject({
+        role: "",
+        name: "ALL MATCHED DOCUMENTS 8",
+        text: "ALL MATCHED DOCUMENTS 8",
+        textMatches: 1,
+        id: "docs",
+      });
+    });
+
+    it("stepLocatorSet uses the stable name for both name and text", () => {
+      document.body.innerHTML = SECTION;
+      const set = stepLocatorSet(document.getElementById("docs")!, document);
+      expect(set).toMatchObject({
+        role: "",
+        name: "ALL MATCHED DOCUMENTS",
+        text: "ALL MATCHED DOCUMENTS",
+        textMatches: 1,
+      });
+    });
+
+    it("a named element gets no text fields", () => {
+      document.body.innerHTML = '<button id="go">Apply</button>';
+      const set = locatorSet(document.getElementById("go")!, document);
+      expect(set).not.toHaveProperty("text");
+      expect(set).not.toHaveProperty("textMatches");
+    });
+
+    it("a nameless role-less element gets no text fields", () => {
+      document.body.innerHTML = '<div id="tile"></div>';
+      const set = locatorSet(document.getElementById("tile")!, document);
+      expect(set).not.toHaveProperty("text");
+      expect(set).toMatchObject({ role: "", name: "" });
+    });
+  });
 });

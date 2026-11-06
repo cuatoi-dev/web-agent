@@ -18,6 +18,7 @@ import {
   MODIFIER_KEYS,
   named,
   playwrightKey,
+  recordTarget,
   target,
 } from "./page-recorder-helpers";
 import {
@@ -104,8 +105,9 @@ function closeOpen(): void {
 
 function onClick(event: MouseEvent): void {
   if (ignored(event)) return;
-  const el = target(event);
-  const host = closedHostOf(event, el);
+  const raw = target(event);
+  const host = closedHostOf(event, raw);
+  const el = recordTarget(event, raw);
   const clicked = el ?? host;
   if (!clicked) return;
   window.clearTimeout(hoverTimer);
@@ -158,8 +160,9 @@ function onClick(event: MouseEvent): void {
 
 function onDblClick(event: MouseEvent): void {
   if (ignored(event)) return;
-  const el = target(event);
-  const tgt = el ?? closedHostOf(event, el);
+  const raw = target(event);
+  const el = recordTarget(event, raw);
+  const tgt = el ?? closedHostOf(event, raw);
   if (isDisabledClick(event, tgt)) {
     window.clearTimeout(hoverTimer);
     restedEl = tgt;
@@ -186,7 +189,7 @@ function onDblClick(event: MouseEvent): void {
 
 function onContextMenu(event: MouseEvent): void {
   if (ignored(event)) return;
-  const el = target(event);
+  const el = recordTarget(event);
   if (!el) return;
   window.clearTimeout(hoverTimer);
   restedEl = el;
@@ -353,7 +356,7 @@ function onPointerDown(event: PointerEvent): void {
 
 function onPointerMove(event: PointerEvent): void {
   if (ignored(event) || dragSource) return;
-  const el = target(event);
+  const el = recordTarget(event);
   if (el === pointerEl) return;
   pointerEl = el;
   restedEl = null;

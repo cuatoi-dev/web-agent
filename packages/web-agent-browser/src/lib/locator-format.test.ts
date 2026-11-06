@@ -113,7 +113,7 @@ describe("locator-format", () => {
       xpath: "//*[@id='drop']",
     };
     expect(stepLocatorLines({ locators: src, dropLocators: dest, frames: ["#board"] })).toEqual([
-      '  role+name:  "Drag me" (matches 0)',
+      "  role+name: —",
       "  id: drag",
       "  data-testid: —",
       "  name: —",
@@ -146,5 +146,33 @@ describe("locator-format", () => {
     expect(stepLocatorLines({ closedShadow: { offsetX: 1, offsetY: 1 } })).toEqual([
       "  closed shadow root: click the host at position (1, 1)",
     ]);
+  });
+
+  it("9. A role-less named set prints — and a text line after it", () => {
+    const lines = locatorLines({
+      role: "",
+      name: "Past 1 month",
+      roleMatches: 0,
+      text: "Past 1 month",
+      textMatches: 1,
+      css: "div:nth-of-type(1)",
+      xpath: "/html/body[1]/div[1]",
+    });
+    expect(lines.slice(0, 3)).toEqual([
+      "  role+name: —",
+      '  text: "Past 1 month" (matches 1)',
+      "  id: —",
+    ]);
+  });
+
+  it("10. An empty role or an empty name prints — on its own line", () => {
+    expect(locatorLines({ role: "", name: "", roleMatches: 0 })[0]).toBe("  role+name: —");
+    expect(locatorLines({ role: "button", name: "", roleMatches: 2 })[0]).toBe("  role+name: —");
+  });
+
+  it("11. A set with no text field prints no text line", () => {
+    const lines = locatorLines({ role: "button", name: "Submit", roleMatches: 1 });
+    expect(lines.some((l) => l.startsWith("  text:"))).toBe(false);
+    expect(lines[0]).toBe('  role+name: button "Submit" (matches 1)');
   });
 });

@@ -3,7 +3,7 @@
 // and XPath. A Selenium-based framework consumes it. Pure DOM: the helper world
 // and the recorder world both bundle it.
 import { getName, getRole } from "@cuatoi/web-agent-dom";
-import { matchByRole, stableName } from "./playwright-match";
+import { matchByRole, matchByText, stableName } from "./playwright-match";
 import type { ElementTarget, LocatorSet } from "./types";
 import type { Scope } from "./locator-builder.types";
 
@@ -178,6 +178,10 @@ function shadowChain(doc: Document, el: Element, roots: ShadowRoot[]): string[] 
 export function locatorSet(el: Element, doc: Document, name: string = getName(el)): LocatorSet {
   const role = getRole(el);
   const out: LocatorSet = { role, name, roleMatches: matchByRole(doc, role, name).length };
+  if (role === "" && name !== "") {
+    out.text = name;
+    out.textMatches = matchByText(doc, name).length;
+  }
   const { roots, closed } = shadowRoots(el);
   const scope: Scope = roots.length > 0 ? roots[roots.length - 1] : doc;
 

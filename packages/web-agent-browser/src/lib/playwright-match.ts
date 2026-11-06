@@ -144,12 +144,22 @@ export function matchByRole(doc: Document, role: string, name: string): Element[
   return queryAllPierce(doc).filter((e) => getRole(e) === role && !isHiddenForAria(e) && nameMatches(getName(e), name));
 }
 
+/** True when `ancestor` is `node` itself or a composed ancestor of it. */
+function composedContains(ancestor: Element, node: Element): boolean {
+  for (let cur: Element | null = node; cur; cur = parentOrShadowHost(cur)) {
+    if (cur === ancestor) return true;
+  }
+  return false;
+}
+
 /** The name to record for `el`: the leading run of tokens that hold a letter,
  *  when that shorter name still finds exactly `el`. Otherwise the full name.
  *  A count or a sort arrow changes while the page is used, and getByRole
- *  matches a substring, so the shorter name survives the change. */
+ *  matches a substring, so the shorter name survives the change. An element
+ *  with no role is found by its text instead, so its shorter name must match
+ *  one element that `el` is or contains. */
 export function stableName(el: Element, doc: Document, role: string, name: string): string {
-  if (role === "" || name === "") return name;
+  if (name === "") return name;
   const prefix: string[] = [];
   for (const token of name.split(/\s+/)) {
     if (!/\p{L}/u.test(token)) break;
@@ -157,6 +167,10 @@ export function stableName(el: Element, doc: Document, role: string, name: strin
   }
   const short = prefix.join(" ");
   if (short === "" || short === name) return name;
+  if (role === "") {
+    const textHits = matchByText(doc, short);
+    return textHits.length === 1 && composedContains(el, textHits[0]) ? short : name;
+  }
   const hits = matchByRole(doc, role, short);
   return hits.length === 1 && hits[0] === el ? short : name;
 }

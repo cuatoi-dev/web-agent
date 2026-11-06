@@ -7,12 +7,19 @@ const NONE = "—";
 
 /** The plan's locator lines for `set`, each indented by two spaces. */
 export function locatorLines(set: LocatorSet): string[] {
+  const roleName =
+    set.role === "" || set.name === ""
+      ? `role+name: ${NONE}`
+      : `role+name: ${set.role} "${set.name}" (matches ${set.roleMatches})`;
   const lines = [
-    `role+name: ${set.role} "${set.name}" (matches ${set.roleMatches})`,
+    roleName,
     `id: ${set.id ?? NONE}`,
     `data-testid: ${set.testId ?? NONE}`,
     `name: ${set.nameAttr ?? NONE}`,
   ];
+  // A role-less element is found by its text, so the line sits right after
+  // role+name, before the id forms.
+  if (set.text !== undefined) lines.splice(1, 0, `text: "${set.text}" (matches ${set.textMatches ?? 0})`);
   // A shadow chain replaces the css and xpath lines.
   if (set.shadow === undefined) lines.push(`css: ${set.css ?? NONE}`, `xpath: ${set.xpath ?? NONE}`);
   if (set.frames !== undefined && set.frames.length > 0) lines.push(`frames: ${set.frames.join(" >> ")}`);

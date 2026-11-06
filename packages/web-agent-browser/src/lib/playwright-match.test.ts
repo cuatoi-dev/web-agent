@@ -173,10 +173,10 @@ describe("playwright-match", () => {
       expect(named('<a href="#c" hidden>Cart 5</a>', "a", "link")).toBe("Cart 5");
     });
 
-    it("empty role and empty name", () => {
+    it("empty name keeps the name; an empty role drops the count", () => {
       document.body.innerHTML = "<button>Cart 5</button>";
       const btn = document.querySelector("button")!;
-      expect(stableName(btn, document, "", "Cart 5")).toBe("Cart 5");
+      expect(stableName(btn, document, "", "Cart 5")).toBe("Cart");
       expect(stableName(btn, document, "button", "")).toBe("");
     });
 
@@ -198,6 +198,37 @@ describe("playwright-match", () => {
       btn.textContent = "Buy 5";
       root.appendChild(btn);
       expect(stableName(btn, document, "button", "Buy 5")).toBe("Buy 5");
+    });
+  });
+
+  describe("stableName generic role (rec 002)", () => {
+    it("drops a trailing count when the shorter text finds one element", () => {
+      document.body.innerHTML =
+        '<div id="docs"><span>ALL MATCHED DOCUMENTS <span>8</span></span></div>';
+      const el = document.getElementById("docs")!;
+      expect(stableName(el, document, "", "ALL MATCHED DOCUMENTS 8")).toBe("ALL MATCHED DOCUMENTS");
+    });
+
+    it("keeps the full name when two elements carry the shorter text", () => {
+      document.body.innerHTML =
+        '<div id="a"><span>TOTAL <span>8</span></span></div>' +
+        '<div id="b"><span>TOTAL <span>9</span></span></div>';
+      const el = document.getElementById("a")!;
+      expect(stableName(el, document, "", "TOTAL 8")).toBe("TOTAL 8");
+    });
+
+    it("finds the matching text across an open shadow root", () => {
+      document.body.innerHTML = "";
+      const host = document.createElement("x-row");
+      const root = host.attachShadow({ mode: "open" });
+      root.innerHTML = "<span>REPORT 8</span>";
+      document.body.appendChild(host);
+      expect(stableName(host, document, "", "REPORT 8")).toBe("REPORT");
+    });
+
+    it("keeps a name whose first token has no letter", () => {
+      document.body.innerHTML = '<div id="docs"><span>8 MATCHED</span></div>';
+      expect(stableName(document.getElementById("docs")!, document, "", "8 MATCHED")).toBe("8 MATCHED");
     });
   });
 });
