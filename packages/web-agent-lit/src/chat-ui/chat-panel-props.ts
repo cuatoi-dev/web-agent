@@ -31,7 +31,7 @@ export abstract class ChatPanelProps extends ChatPanelFields {
    *  `_ensureSession()` calls it too, so a property written just before
    *  `send()` or `createSession()` in the same task reaches core first. The
    *  session update runs BEFORE `_syncAttachmentProviders()`, because that
-   *  re-reads `session.getAttachmentProviders()` (002). */
+   *  re-reads `session.getAttachmentProviders()`. */
   protected _flushConfigSync(): void {
     if (!this._configSyncQueued) return;
     this._configSyncQueued = false;
@@ -176,7 +176,7 @@ export abstract class ChatPanelProps extends ChatPanelFields {
     if (sameValue(val, this._imageInput)) return;
     this._imageInput = val;
     this._resolvedProviders = undefined;
-    // 002: the session must hold the new own-list BEFORE
+    // The session must hold the new own-list BEFORE
     // `_syncAttachmentProviders()` re-resolves against
     // `session.getAttachmentProviders()`, or the removed provider comes back.
     // `_flushConfigSync()` runs the update, then the sync, in that order.
@@ -236,7 +236,7 @@ export abstract class ChatPanelProps extends ChatPanelFields {
   set sources(val: SourceEntry[] | undefined) {
     if (sameValue(val, this._sources)) return;
     this._sources = val;
-    // 003b: the read-only provider handed to rendered blocks is built from
+    // The read-only provider handed to rendered blocks is built from
     // `sources` (see _ensureReadOnlyDataSource). Drop it so the next render
     // rebuilds it; otherwise a host that assigns `sources` after connect keeps
     // a provider built from an empty list, and charts fail with
@@ -292,7 +292,7 @@ export abstract class ChatPanelProps extends ChatPanelFields {
     if (sameValue(val, this._attachmentProviders)) return;
     this._attachmentProviders = val;
     this._resolvedProviders = undefined;
-    // 002: same ordering rule as the imageInput setter above.
+    // Same ordering rule as the imageInput setter above.
     this._attachmentSyncPending = true;
     this._scheduleConfigSync();
     this.requestUpdate();

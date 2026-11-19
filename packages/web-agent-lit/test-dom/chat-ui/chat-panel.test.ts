@@ -355,7 +355,7 @@ describe("AgentChatPanel", () => {
     expect(mockSession.compact).toHaveBeenCalled();
   });
 
-  it("renders the context gauge in the composer controls row, immediately before send (002)", async () => {
+  it("renders the context gauge in the composer controls row, immediately before send", async () => {
     await element.updateComplete;
 
     const gauge = element.querySelector("agent-context-gauge");
@@ -376,7 +376,7 @@ describe("AgentChatPanel", () => {
     expect(gauge!.disabled).toBe(true);
   });
 
-  it("falls back to core's 0.75 fraction for warnAt when config.context is unset (008)", async () => {
+  it("falls back to core's 0.75 fraction for warnAt when config.context is unset", async () => {
     expect(element.config?.context).toBeUndefined();
     mockState.contextWindow = { used: 102_400, total: 128_000, percent: 0.8 };
     triggerStateUpdate();
@@ -394,7 +394,7 @@ describe("AgentChatPanel", () => {
     expect(fg.classList.contains("color-green")).toBe(false);
   });
 
-  it("still prefers a host-supplied autoCompactPercent over the fallback (008)", async () => {
+  it("still prefers a host-supplied autoCompactPercent over the fallback", async () => {
     element.config = { context: { autoCompactPercent: 0.5 } };
     mockState.contextWindow = { used: 51_200, total: 128_000, percent: 0.4 };
     triggerStateUpdate();
@@ -574,7 +574,7 @@ describe("AgentChatPanel", () => {
     expect(document.activeElement).toBe(expectedInput);
   });
 
-  // 003410-005 round 2: Stage A found this broken live in cat-store, whose
+  // Regression found live in cat-store, whose
   // Acme <wa-text-input> keeps its real <input> in a Material field's shadow
   // DOM (no light-DOM input to find) — the old lookup then fell back to
   // focusing the non-focusable <wa-text-input> wrapper itself. This case
@@ -677,7 +677,7 @@ describe("AgentChatPanel", () => {
     expect(mockSession.autoTitle).not.toHaveBeenCalled();
   });
 
-  it("switching to a session whose first turn already completed still gets auto-titled once (120/002)", async () => {
+  it("switching to a session whose first turn already completed still gets auto-titled once", async () => {
     // A fast turn (a mock reply, or a quick real one) can finish before this
     // element ever observes the session's pre-turn state — this element's
     // FIRST render for that session already shows turnCount 1. Gating solely
@@ -711,7 +711,7 @@ describe("AgentChatPanel", () => {
     expect(mockSession.autoTitle).toHaveBeenCalledTimes(1);
   });
 
-  it("switching to an already-titled session is not re-auto-titled, even with turnCount 1 (120/002)", async () => {
+  it("switching to an already-titled session is not re-auto-titled, even with turnCount 1", async () => {
     mockState.sessions.push({
       id: "session-titled",
       title: "Already titled",
@@ -734,7 +734,7 @@ describe("AgentChatPanel", () => {
     expect(mockSession.autoTitle).not.toHaveBeenCalled();
   });
 
-  // 007: buildSessionConfig() no longer derives actionCue/typingPaceMs from
+  // buildSessionConfig() no longer derives actionCue/typingPaceMs from
   // `cues` — the host wires them into `domTools({ actionCue, typingPaceMs })`
   // instead, using `createActionCue` (covered by cue-actions.test.ts) and
   // `this._cues` (still kept here for the agent-cursor.clear() calls).
@@ -893,7 +893,7 @@ describe("AgentChatPanel", () => {
     expect(notice?.querySelectorAll(".wa-notice-dot").length).toBe(5);
     expect(notice?.querySelectorAll(".wa-notice-dot[data-filled]").length).toBe(2);
     expect(notice?.querySelector(".wa-notice-dots")?.getAttribute("aria-hidden")).toBe("true");
-    // 008: the separate element is gone for good.
+    // The separate element is gone for good.
     expect(element.querySelector(".wa-retrying")).toBeNull();
   });
 
@@ -1071,7 +1071,7 @@ describe("AgentChatPanel", () => {
     expect(notice?.querySelector(".wa-notice-dismiss")).not.toBeNull();
   });
 
-  // 006: the notice must track the NEWEST turn, not "any turn that ever failed".
+  // The notice must track the NEWEST turn, not "any turn that ever failed".
   it("hides the failed notice once a later turn succeeds", async () => {
     mockState.messages = [
       { role: 'user', text: 'first', failed: { message: 'Boom', retryable: true } },
@@ -1131,7 +1131,7 @@ describe("AgentChatPanel", () => {
     expect(element.querySelector(".wa-notice")).toBeNull();
   });
 
-  // 006/007 knock-on: a stale failed turn used to suppress a legitimate
+  // Regression: a stale failed turn used to suppress a legitimate
   // provider error notice for the rest of the session; _renderFailedTurnAffordance()
   // now chooses one of the two explicitly instead of gating on `!this._lastFailed()`.
   it("shows the provider error notice when only an OLDER turn failed", async () => {
@@ -1276,12 +1276,12 @@ describe("AgentChatPanel", () => {
     expect(mockSession.send).toHaveBeenCalledWith([{ type: "text", text: "queued via click" }]);
   });
 
-  // ── Generative-UI block submission race (006) ───────────────────────
+  // ── Generative-UI block submission race ───────────────────────
   //
   // Fail-first regression: `this.running` only reflects an in-flight turn
   // once `session.send()`'s `onUserPrompt` hook has resolved and the panel
   // has re-rendered from a `notifyListeners()` call — a real, measured
-  // window (task 006 Phase A, live probe against the deployed app: two
+  // window (measured in a live probe against the deployed app: two
   // `panel.send()` calls issued in the same tick both logged `running=
   // false`, and the duplicate queued as a second independent turn with a
   // second, different model answer). `_handleBlockButton`/`_handleBlockSubmit`
@@ -1341,7 +1341,7 @@ describe("AgentChatPanel", () => {
     expect(element.querySelector('button[aria-label="Send"]')).not.toBeNull();
   });
 
-  // ── Compaction (009) ──────────────────────────────────────────────────
+  // ── Compaction ──────────────────────────────────────────────────
 
   it("the stop button replaces send while compacting, with an empty composer", async () => {
     mockState.compacting = true;
@@ -1686,7 +1686,7 @@ describe("AgentChatPanel", () => {
     expect(element.querySelector(".audit-item")).toBeNull();
   });
 
-  it("regression: inline .tool-step rows still render (062a intact)", async () => {
+  it("regression: inline .tool-step rows still render", async () => {
     mockState.messages = [
       {
         role: "assistant",
@@ -1734,7 +1734,7 @@ describe("AgentChatPanel", () => {
     expect(css).toContain("padding: var(--wa-padding-l, 0.75rem)");
   });
 
-  it("extends the compact scale to header / input / config+debug (066b)", async () => {
+  it("extends the compact scale to header / input / config+debug", async () => {
     await element.updateComplete;
     const css = element.querySelector("style")!.textContent;
     expect(css).toContain("padding: var(--wa-padding-m, 0.5rem) var(--wa-padding-l, 0.75rem)");
@@ -1742,7 +1742,7 @@ describe("AgentChatPanel", () => {
     expect(css).toContain("padding: var(--wa-padding-m, 0.5rem)");
   });
 
-  it("themes the panel chrome from theme surface tokens (009)", async () => {
+  it("themes the panel chrome from theme surface tokens", async () => {
     await element.updateComplete;
     const css = element.querySelector("style")!.textContent;
     expect(css).toContain("background: var(--wa-background-color-900, #6200ee)");
@@ -1779,7 +1779,7 @@ describe("AgentChatPanel", () => {
     expect(element.querySelector("style")!.textContent).toContain("agent-context-gauge .fg-circle");
   });
 
-  it("renders the message row stylesheet once for the whole thread (011)", async () => {
+  it("renders the message row stylesheet once for the whole thread", async () => {
     mockState.messages = [
       { role: "user", text: "one" },
       { role: "assistant", text: "two" },
@@ -1799,7 +1799,7 @@ describe("AgentChatPanel", () => {
     expect(rowSheets).toHaveLength(1);
   });
 
-  it("a menu toggle or a title change re-renders nothing and re-pins no scroll (011)", async () => {
+  it("a menu toggle or a title change re-renders nothing and re-pins no scroll", async () => {
     mockState.messages = [
       { role: "user", text: "hello" },
       { role: "assistant", text: "hi there" },
@@ -1840,7 +1840,7 @@ describe("AgentChatPanel", () => {
     expect(element.querySelector(".header-title")?.textContent).toBe("Renamed Session");
   });
 
-  // ── Choose model menu tests (067-ui) ─────────────────────────────────
+  // ── Choose model menu tests ─────────────────────────────────
 
   describe("choose model menu", () => {
     beforeEach(() => {
@@ -1930,7 +1930,7 @@ describe("AgentChatPanel", () => {
     });
 
     it("renders one icon button per registered attachment provider, set after connect", async () => {
-      // 007: attachmentProviders/imageInput setters re-sync composer icons
+      // attachmentProviders/imageInput setters re-sync composer icons
       // even when set AFTER the panel is already connected — this is what a
       // toolProvider's (e.g. domTools()'s picker) asynchronously-loaded
       // attachmentProviders needs, surfaced via session.getAttachmentProviders().
@@ -1970,7 +1970,7 @@ describe("AgentChatPanel", () => {
       expect(buttons[0].getAttribute("data-attachment-provider")).toBe("picker");
     });
 
-    // 002: an echo mock that behaves like core — updateConfig() stores the
+    // An echo mock that behaves like core — updateConfig() stores the
     // patch, getAttachmentProviders() returns the toolProvider-loaded providers
     // followed by config.attachmentProviders, mirroring
     // controller-state.ts effectiveAttachmentProviders() and controller.ts
@@ -2117,14 +2117,14 @@ describe("AgentChatPanel", () => {
       expect(element.querySelector(".input-area > #input")).toBeNull();
     });
 
-    it("fills its container and never places or sizes itself (002)", async () => {
+    it("fills its container and never places or sizes itself", async () => {
       await element.updateComplete;
       const css = element.querySelector("style")!.textContent;
       const rule = css.match(/agent-chat-panel\s*\{([^}]*)\}/)![1];
 
       // The host owns placement and size. Nothing in the panel's own rule may
-      // pin it to the viewport or fix its pixel size — tasks 003 / ideas 083
-      // and 085 all depend on this staying true.
+      // pin it to the viewport or fix its pixel size — host-owned sizing
+      // and shadow-DOM embedding depend on this staying true.
       expect(rule).not.toMatch(/position:\s*fixed/);
       expect(rule).not.toMatch(/\b(top|right|bottom|left|inset)\s*:/);
       expect(rule).not.toMatch(/(width|height)\s*:\s*\d+(px|rem|em|vh|vw)/);
@@ -2135,13 +2135,13 @@ describe("AgentChatPanel", () => {
       expect(rule).toMatch(/height:\s*100%/);
       expect(rule).toMatch(/box-sizing:\s*border-box/);
 
-      // 015: no mobile breakpoint anywhere in the panel's CSS.
+      // No mobile breakpoint anywhere in the panel's CSS.
       expect(css).not.toContain("max-width: 600px");
       expect(css).not.toMatch(/@media[^{]*(max-width|min-width)/);
     });
   });
 
-  describe("composer keystrokes stay cheap (003410-005)", () => {
+  describe("composer keystrokes stay cheap", () => {
     const textarea = () =>
       element.querySelector("#input")?.querySelector("textarea") as HTMLTextAreaElement;
 
@@ -2279,9 +2279,9 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  // ── Host-driven header API (083 task 001) ─────────────────────────────────
+  // ── Host-driven header API ─────────────────────────────────
 
-  describe("host-driven header API (083)", () => {
+  describe("host-driven header API", () => {
     it("renameSession writes the title through core", async () => {
       await element.renameSession("session-1", "Renamed");
       expect(mockSession.setTitle).toHaveBeenCalledWith("session-1", "Renamed");
@@ -2414,9 +2414,9 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  // ── setModel takes the in-place path (083) ─────────────────────────────────
+  // ── setModel takes the in-place path ─────────────────────────────────
 
-  describe("setModel takes the in-place path (083)", () => {
+  describe("setModel takes the in-place path", () => {
     async function mountWithRealSession() {
       setMockScript([{ text: "A1" }, { text: "A2" }]);
       const panel = document.createElement("agent-chat-panel");
@@ -2462,9 +2462,9 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  // ── gemini union widening (002) ─────────────────────────────────────────
+  // ── gemini union widening ─────────────────────────────────────────
 
-  describe("gemini union widening (002)", () => {
+  describe("gemini union widening", () => {
     it("accepts 'gemini' as type and forwards it through updateConfig", async () => {
       element.type = "gemini";
       expect(element.type).toBe("gemini");
@@ -2475,9 +2475,9 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  // ── fetch injection (086-005) ─────────────────────────────────────────────
+  // ── fetch injection ─────────────────────────────────────────────
 
-  describe("fetch injection (086-005)", () => {
+  describe("fetch injection", () => {
     function mkTextResp(text: string) {
       return {
         id: "msg_x",
@@ -2652,8 +2652,8 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  // 007: running-change event and cursor destroy on run end
-  describe("running-change event and cursor cleanup (007)", () => {
+  // Running-change event and cursor destroy on run end
+  describe("running-change event and cursor cleanup", () => {
     it("emits agent-running-change when a turn starts and when it ends", async () => {
       const events: CustomEvent<{ running: boolean }>[] = [];
       element.addEventListener("agent-running-change", (e) => events.push(e as CustomEvent<{ running: boolean }>));
@@ -2703,8 +2703,8 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  // Task 002: Stop panel key events reaching the host app
-  describe("Panel key event containment (task 002)", () => {
+  // Stop panel key events reaching the host app
+  describe("Panel key event containment", () => {
     it("stops keydown, keyup, and keypress from bubbling out of the panel", () => {
       const hostKeydown = vi.fn();
       const hostKeyup = vi.fn();
@@ -2923,7 +2923,7 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  describe("scroll coalesced to one animation frame per redraw (009)", () => {
+  describe("scroll coalesced to one animation frame per redraw", () => {
     let rafCallbacks: FrameRequestCallback[];
     let rafSpy: ReturnType<typeof vi.spyOn>;
     let cafSpy: ReturnType<typeof vi.spyOn>;
@@ -3054,7 +3054,7 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  describe("slash commands (105/001)", () => {
+  describe("slash commands", () => {
     const compactEntry = {
       name: "compact",
       displayName: "compact",
@@ -3171,7 +3171,7 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  describe("programmatic send routes through the parser (113/002)", () => {
+  describe("programmatic send routes through the parser", () => {
     const compactEntry = {
       name: "compact",
       displayName: "compact",
@@ -3209,7 +3209,7 @@ describe("AgentChatPanel", () => {
       expect(mockSession.resolveCommand).toHaveBeenCalledWith("compact");
       expect(mockSession.runCommand).toHaveBeenCalledWith(compactEntry, "");
       expect(mockSession.send).not.toHaveBeenCalled();
-      // 001/113 — send() reports which command it ran.
+      // send() reports which command it ran.
       expect(out).toEqual({ ran: "command", command: "compact" });
     });
 
@@ -3325,7 +3325,7 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  describe("slash-command menu (105/003)", () => {
+  describe("slash-command menu", () => {
     const demo = {
       name: "demo",
       displayName: "demo",
@@ -3625,7 +3625,7 @@ describe("AgentChatPanel", () => {
 
     it("navigating the open slash menu triggers no extra render beyond the composer's own hasContent flip", () => {
       // Typing the first "/" flips the composer from empty to non-empty, which
-      // renders once to enable the Send button (003410-005) — that render is
+      // renders once to enable the Send button — that render is
       // deliberately not spied on here. The slash menu itself repaints
       // imperatively (_paintSlashMenu()) and must add no further renders.
       typeInComposer(element, "/");
@@ -3653,7 +3653,7 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  describe("schedule clock (109/003)", () => {
+  describe("schedule clock", () => {
     it("is absent when the flag is unset", async () => {
       const before = element.querySelector(".composer-controls")!.children.length;
       mockSession.pendingCounts.mockReturnValue({ schedules: 3, reminders: 1, total: 4 });
@@ -3746,7 +3746,7 @@ describe("AgentChatPanel", () => {
     });
   });
 
-  describe("todo indicator (068/003)", () => {
+  describe("todo indicator", () => {
     const sampleTodos: TodoItem[] = [
       { id: "1", text: "Task 1", status: "done" },
       { id: "2", text: "Task 2", status: "pending" },

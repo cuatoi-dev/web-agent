@@ -92,7 +92,7 @@ export function createConfirmScrim(panelEl: HTMLElement): (detail: ConfirmScrimD
         return el;
       };
       if (detail.message !== undefined) {
-        // 120/002 — a host-written body, set as text like every other string here.
+        // A host-written body, set as text like every other string here.
         desc.textContent = detail.message;
       } else if (detail.summary) {
         desc.append("Agent wants to: ", strong(detail.summary), ".");

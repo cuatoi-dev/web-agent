@@ -187,7 +187,7 @@ erases at compile time).
 
 ## Why the binding lives here
 
-`projects/web-agent/AGENTS.md` states the architecture rule: **the binding
+`AGENTS.md` at the repository root states the architecture rule: **the binding
 belongs with the feature it binds.** If the chart binding lived in
 `web-agent-lit`, every Lit host would carry `chart.js`. With N frameworks ×
 M features, each framework package would accumulate every binding. Adding

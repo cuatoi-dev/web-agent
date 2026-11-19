@@ -16,7 +16,7 @@
 
 [data-theme="wa1-dark"], :where([data-theme-base="wa1-dark"]) {
   /* Action colours */
-  /* 009: --wa-action-color-error is light in this theme (task 008 raised
+  /* --wa-action-color-error is light in this theme (raised
      it to 68% lightness for the foreground role), so the paired on-colour must
      be dark. White measured 2.91:1 against the surface. This value is the
      theme's own deepest surface colour and measures 6.57:1 at rest, 5.62:1

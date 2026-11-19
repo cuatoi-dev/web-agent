@@ -151,14 +151,14 @@ export abstract class ChatPanelScreens extends ChatPanelHistory {
     return this._session?.availableTools() ?? [];
   }
 
-  /** 124/007 — the phrase map the thread renders step lines from. Built from
+  /** The phrase map the thread renders step lines from. Built from
    *  `availableTools()`, NOT from `panel.tools`: a tool loaded through
    *  `toolProviders` never appears in `tools`, and the extension's page tools
    *  all arrive that way. Only tools that carry at least one of the two
    *  functions are listed, so an empty map means "nothing overrides the
    *  built-in list" and the thread renders exactly as before.
    *
-   *  069/001: `resolvedTools` is seeded by `initAgent()` at session
+   *  `resolvedTools` is seeded by `initAgent()` at session
    *  construction/restore (controller-config.ts) and re-snapshotted at turn
    *  start (controller-turn.ts), so this is populated before the first turn
    *  too — a restored (page-reload) history line resolves its tool's own

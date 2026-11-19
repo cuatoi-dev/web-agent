@@ -1,6 +1,6 @@
 import type { WaterfallBar, WaterfallStep } from "./types.js";
 
-// ── Waterfall / P&L bridge (072-5) ──
+// ── Waterfall / P&L bridge ──
 
 /** Compute per-bar base/delta/color inputs for a waterfall from signed step
  *  deltas. Rising step → base=prev, delta=value; falling step → base=prev+value,

@@ -263,7 +263,7 @@ export function fromEsResponses(
     };
     // A response with `aggregations` present but no "g" key crashed this code
     // with "Cannot read properties of undefined (reading 'buckets')" — observed
-    // once during review (task 004, 2026-08-19). The trigger is not identified:
+    // once during review (2026-08-19). The trigger is not identified:
     // a live ES 8.15.3 probe (empty index, and a composite agg matching zero
     // groups) always returned `aggregations: {g: {buckets: []}}` with "g"
     // present, so the commit message's "empty index" explanation does not

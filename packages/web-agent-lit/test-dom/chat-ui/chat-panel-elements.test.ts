@@ -1,4 +1,4 @@
-// 124/006 — the composer's dynamic `AttachmentProviderView` seam:
+// The composer's dynamic `AttachmentProviderView` seam:
 // `_updateProviderButton` re-evaluates a provider's `view()` on mount and on
 // every `subscribe` notification, updating the cached button's icon,
 // aria-label, disabled state and tooltip in place. Split out of the giant
@@ -171,7 +171,7 @@ describe("AgentChatPanel — attachment provider view()", () => {
   });
 });
 
-describe("AgentChatPanel — attachment provider choices menu (128/003)", () => {
+describe("AgentChatPanel — attachment provider choices menu", () => {
   let element: AgentChatPanel;
 
   beforeEach(() => {

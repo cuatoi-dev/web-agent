@@ -2,8 +2,8 @@
  * Normalization that the pre-migration zod schemas performed through
  * `z.preprocess`. JSON Schema validates but never transforms, so the same
  * coercion now runs as an explicit step BEFORE validation; show-chart.ts
- * validates the normalized value. Core's normalizeBlockOutput (task 006,
- * web-agent-core/src/ui-blocks/schema.ts) runs its step after validation.
+ * validates the normalized value. Core's normalizeBlockOutput
+ * (web-agent-core/src/ui-blocks/schema.ts) runs its step after validation.
  */
 
 export function unwrapXmlText(val: unknown): unknown {

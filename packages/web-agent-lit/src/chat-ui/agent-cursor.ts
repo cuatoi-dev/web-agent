@@ -83,7 +83,7 @@ function createCursor(): AgentCursor {
       // The rules live inside the layer, not in `document.head`, so they reach
       // the cursor wherever the layer is placed. No `id`: an id in the light DOM
       // would still answer `document.getElementById`, which is the global scope
-      // this task removes (chat-panel-fields.ts:163-167, task 001).
+      // that shadow-DOM hosting must avoid.
       _styleEl = document.createElement("style");
       _styleEl.setAttribute("data-wa-styles", "agent-cursor");
       _styleEl.textContent = CSS;

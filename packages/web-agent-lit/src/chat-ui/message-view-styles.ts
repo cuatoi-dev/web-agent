@@ -83,7 +83,7 @@ export const messageViewStyles = html`
         agent-message-view .user .content a:visited,
         agent-message-view .user .content a:hover,
         agent-message-view .user .content a:active {
-          /* Fix — review round 1: the shared link tokens above measured
+          /* The shared link tokens above measured
              1.21:1 on the user bubble's rgb(131,82,255) background. Reuse the
              bubble's own text token, which already measures 4.55:1 there in
              every theme, and underline so a link still reads apart from
@@ -98,7 +98,7 @@ export const messageViewStyles = html`
           border-radius: var(--wa-border-radius-m, 4px);
           overflow-x: auto;
         }
-        /* 005: faint table borders so tabular data reads on the card surface */
+        /* Faint table borders so tabular data reads on the card surface */
         agent-message-view .content table {
           border-collapse: collapse;
           display: block;                 /* let wide tables scroll inside the card */
@@ -113,7 +113,7 @@ export const messageViewStyles = html`
           padding: var(--wa-padding-s, 0.25rem) var(--wa-padding-m, 0.5rem);  /* 4px 8px */
           text-align: left;
           vertical-align: top;
-          /* 131/003 review — the inherited .content word-break: break-word
+          /* The inherited .content word-break: break-word
              behaves like overflow-wrap: anywhere and lets the browser's auto
              table layout shrink a short column (e.g. "Level") to a min-content
              width of one character, breaking words like "log" mid-letter.
@@ -191,7 +191,7 @@ export const messageViewStyles = html`
           line-height: var(--wa-line-height-s, 18px);
           /* --wa-label-color alone measures 4.44:1 on wa2-light — just
              under the 4.5:1 floor. Blending it toward --wa-text-color
-             (task 017) keeps the caption visually secondary while landing
+             keeps the caption visually secondary while landing
              at ~9:1 in every theme. */
           color: color-mix(in oklab, var(--wa-text-color, #202124) 60%, var(--wa-label-color, #80868b) 40%);
           background: var(--wa-background-color-300, rgba(0, 0, 0, 0.04));  /* faint recess */
@@ -208,7 +208,7 @@ export const messageViewStyles = html`
         agent-message-view .tool-step-phrase {
           /* No opacity dimming here — it multiplies down the already-muted
              --wa-label-color and drops light-theme contrast below the
-             4.5:1 floor (measured 2.70:1, task 017). Font-size/color alone
+             4.5:1 floor (measured 2.70:1). Font-size/color alone
              already read as secondary against the assistant's main text. */
           overflow: hidden;
           min-width: 0;

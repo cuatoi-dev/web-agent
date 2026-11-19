@@ -36,7 +36,7 @@ export function measureFieldInfo(schema: EsSchema, name: string): EsFieldInfo {
 
 /** At most this many alternative field names go into the error message. The
  *  cap exists so a 300-column source does not print 290 names; it is not a
- *  token budget. Result truncation belongs to tasks 006-009. */
+ *  token budget. Result truncation is handled separately in response decoding. */
 const MAX_SUGGESTED_FIELDS = 10;
 
 export function requireTermPath(schema: EsSchema, name: string, info: EsFieldInfo): string {

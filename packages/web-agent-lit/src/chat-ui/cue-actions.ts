@@ -32,12 +32,12 @@ export function createActionCue(deps: CueActionDeps): ActionCueFn {
         }
       }
 
-      // 007: `moveTo`'s animation is not interruptible mid-flight, so a run
+      // `moveTo`'s animation is not interruptible mid-flight, so a run
       // can be stopped while it is still resolving. The step AFTER it
       // (clickPulse/flash/focus) is skipped once that happens — each of
       // those calls `ensureElements()` too, and running it on a straggler
       // whose owning run already ended would resurrect the cursor layer
-      // right after `destroy()` removed it (measured 2026-08-18, task 007).
+      // right after `destroy()` removed it (measured 2026-08-18).
       // `signal` is undefined for the `see` tool, which is unaffected.
       switch (kind) {
         case "click":

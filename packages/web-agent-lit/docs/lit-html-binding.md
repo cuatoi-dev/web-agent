@@ -224,7 +224,7 @@ Two things in this repo exercise lit-html 1.x, and both are checkable:
 - **The package's own lit-1 conformance suite.** `pnpm --filter
   @cuatoi/web-agent-lit test:lit1` runs `vitest.config.lit1.ts`, which
   aliases `lit-html` to `lit-html-v1` (`npm:lit-html@1.4.1`) and executes
-  `src/**/*.lit1-compat.test.ts`.
+  `test-dom/**/*.lit1-compat.test.ts`.
 - **The docs-site host.** It declares `"lit-html": "^1.4.1"` as a dependency
   and pins the alias in `webpack.config.cjs`:
   `"lit-html": <packages/web-agent-lit/node_modules/lit-html-v1>`. The comment

@@ -90,7 +90,7 @@ export interface PayoffSeries {
   maxY: number;
 }
 
-// ── Waterfall / P&L bridge (072-5) ──
+// ── Waterfall / P&L bridge ──
 
 export interface WaterfallStep {
   label: string;

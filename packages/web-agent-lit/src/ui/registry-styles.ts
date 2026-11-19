@@ -187,7 +187,7 @@ export const REGISTRY_STYLES = `
 .wa-working-dots span {
   /* Foreground token, not the border token: --wa-border-color is a line
      colour and sits within 1.25:1-1.82:1 of --wa-background-color in every
-     shipped theme, which made the dots invisible (task 017). */
+     shipped theme, which made the dots invisible. */
   width: 6px; height: 6px; border-radius: 50%; background: var(--wa-text-color, #c4c7c5); will-change: transform;
 }
 @keyframes wa-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }

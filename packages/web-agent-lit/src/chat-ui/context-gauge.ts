@@ -28,7 +28,7 @@ export const CONTEXT_GAUGE_CSS = `        agent-context-gauge {
           cursor: pointer;
         }
         agent-context-gauge .gauge-wrapper.disabled .bg-circle {
-          /* 005: the disabled gauge is distinguished by a DASHED track, not by
+          /* The disabled gauge is distinguished by a DASHED track, not by
              dimming. Opacity was measured and rejected: at 0.45 the ring falls
              to 1.84:1 in wa2-light and 2.74:1 in wa2-dark, below the 3:1 AA
              floor for a graphical object, and the opacity that does pass (0.75)
@@ -51,7 +51,7 @@ export const CONTEXT_GAUGE_CSS = `        agent-context-gauge {
         }
         agent-context-gauge .bg-circle {
           fill: none;
-          /* 002: the gauge now sits on --wa-input-background-color (white in
+          /* The gauge now sits on --wa-input-background-color (white in
              wa2-light), where the raw tokens measure 1.55–2.53:1. Mixing 60% of
              the token with the theme text colour darkens it on the light surface
              and brightens it on the dark one: 5.12:1 light / 9.04:1 dark. */

@@ -94,7 +94,7 @@ export function createEsSourceEntry(options: EsSourceOptions): SourceEntry {
         // Still degrades rather than throwing — a source whose describe()
         // throws is dropped by createDataSourceProvider (provider.ts:24-32)
         // and disappears from list_data_sources entirely, which is the very
-        // silence this task removes. The error travels in the SourceInfo
+        // silent failure we want to avoid. The error travels in the SourceInfo
         // instead, where the agent reads it. The empty answer is never
         // cached, so the source comes alive as soon as the index is created.
         return {

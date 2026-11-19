@@ -2,15 +2,15 @@ import { html, nothing } from "../ui/template.js";
 import type { SessionMessage } from "@cuatoi/web-agent-core";
 import { ChatPanelComposer } from "./chat-panel-composer.js";
 
-/** 008 — how many rendered rows the panel keeps when the host sets no
+/** How many rendered rows the panel keeps when the host sets no
  *  `config.messageWindow`. */
 const DEFAULT_MESSAGE_WINDOW = 200;
 
-/** 009 — a scroll position this close to the top (px) loads the next window of
+/** A scroll position this close to the top (px) loads the next window of
  *  older messages. */
 const TOP_THRESHOLD_PX = 80;
 
-/** 009 — the older-window loader is held at least this long, so an in-memory
+/** The older-window loader is held at least this long, so an in-memory
  *  load that resolves in the same frame is still visible.
  *
  *  900 ms, not the 300 ms of an earlier draft: `.wa-working-dots` fades in from
@@ -19,7 +19,7 @@ const TOP_THRESHOLD_PX = 80;
  *  400 ms, so 900 leaves 500 ms of visible loader. */
 const LOADER_MIN_MS = 900;
 
-/** The failure notices, the scroll pin and the 008/009 message window —
+/** The failure notices, the scroll pin and the message window —
  *  everything that decides which slice of the transcript is on screen. Moved
  *  verbatim out of chat-panel.ts. */
 export abstract class ChatPanelWindow extends ChatPanelComposer {
@@ -34,16 +34,16 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
    *
    *  It must not reverse-scan the whole transcript. That returned a truthy
    *  value for the rest of the session once any turn had failed, so the
-   *  notice stayed on screen under every later successful reply (task 006).
+   *  notice stayed on screen under every later successful reply.
    *  `_renderFailedTurnAffordance()` no longer gates `this.error` on this —
-   *  the two notices take explicit precedence instead (task 007). */
+   *  the two notices take explicit precedence instead. */
   protected _lastFailed() {
     const msgs = this.messages;
     if (msgs.length === 0) return undefined;
     return msgs[msgs.length - 1].failed;
   }
 
-  /** 003: the `notice` marker of the NEWEST turn, or `undefined`. Reads only
+  /** The `notice` marker of the NEWEST turn, or `undefined`. Reads only
    *  the LAST message, for the same reason `_lastFailed()` does: a reverse
    *  scan would keep the notice on screen under every later reply. */
   protected _lastNotice() {
@@ -59,7 +59,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
    *  terminal error, not present-and-disabled. Both actions are real
    *  `<button>`s: accessible name, keyboard reachable, visible focus ring.
    *
-   *  008: `tone` also selects the ARIA contract, because the same element is
+   *  `tone` also selects the ARIA contract, because the same element is
    *  reused as a turn progresses from retrying to failed. `status`/`polite`
    *  while it is still working — an `alert` on every retry attempt is too
    *  loud — and `alert` once the attempts are gone. The element is never
@@ -73,7 +73,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     onDismiss?: () => void;
   }) {
     const progress = spec.tone === "progress";
-    // 003: `info` is a completed turn that carried no reply. It is not an
+    // `info` is a completed turn that carried no reply. It is not an
     // alert, and it carries no icon — every candidate glyph risks an
     // emoji-presentation or tofu render in a host font, and the sentence
     // already carries the whole meaning, so nothing depends on the icon or
@@ -135,9 +135,9 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
    *  the messages. A failed turn takes precedence over `this.error` so the two
    *  never suppress each other — dismissing or superseding the failure lets a
    *  real provider-unavailable message through, instead of the old gate hiding
-   *  it (task 006 note).
+   *  it.
    *
-   *  008: retrying joins that exclusive slot at the top, so the retry line and
+   *  Retrying joins that exclusive slot at the top, so the retry line and
    *  the failure it becomes are the SAME element and the transcript does not
    *  shift when the attempts run out. A transient warning is deliberately NOT
    *  in the slot — it is about the action the user just took, so an unrelated
@@ -173,7 +173,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
           })
         );
       } else if (notice) {
-        // 003: nothing failed — the model ended the turn with no reply.
+        // Nothing failed — the model ended the turn with no reply.
         // Neutral tone, Retry offered, and deliberately NO Dismiss: the
         // next turn replaces it, exactly like the failure notice.
         out.push(
@@ -227,7 +227,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     });
   }
 
-  /** 008 — rows this one message draws: its own bubble, plus one chip per tool
+  /** Rows this one message draws: its own bubble, plus one chip per tool
    *  part. Matches what `message-view.ts` renders (`message-view.ts:312`). */
   protected _rowsIn(msg: SessionMessage): number {
     let tools = 0;
@@ -237,12 +237,12 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     return 1 + tools;
   }
 
-  /** 008 — the window size in rows: the host's setting, or the default. */
+  /** The window size in rows: the host's setting, or the default. */
   protected _messageWindowSize(): number {
     return this._config?.messageWindow ?? DEFAULT_MESSAGE_WINDOW;
   }
 
-  /** 008 — walk back from `endIndex` until the rows counted reach `size` AND
+  /** Walk back from `endIndex` until the rows counted reach `size` AND
    *  the message reached is a user message, so a window never starts mid-turn.
    *  Two consequences, both intended: a window can exceed `size` when the cut
    *  lands inside a turn, and a single turn longer than `size` is shown whole.
@@ -260,12 +260,12 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     return 0;
   }
 
-  /** 008 — what the template maps, instead of the whole transcript. */
+  /** What the template maps, instead of the whole transcript. */
   protected _visibleMessages(): SessionMessage[] {
     return this.messages.slice(this._windowStart);
   }
 
-  /** 008 — re-cut the window for the current message list.
+  /** Re-cut the window for the current message list.
    *
    *  Scrolled off the bottom, the window is left alone: scrolling up must never
    *  take messages away. The one exception is an index that is no longer an
@@ -283,7 +283,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     );
   }
 
-  /** 008 — the list scrolled. Records where it is, and trims back to the newest
+  /** The list scrolled. Records where it is, and trims back to the newest
    *  window when it reaches the bottom. Trimming happens here and nowhere else.
    *
    *  The pin uses the existing `_forceScrollToBottom` + `_scrollToBottomQueue()`
@@ -302,7 +302,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
   protected _handleListScroll(listEl?: HTMLElement | null) {
     const list = listEl ?? this.querySelector(".messages-list");
     if (!list) return;
-    // 010 — the jump button's visibility is `!_atBottom`, so a change in this
+    // The jump button's visibility is `!_atBottom`, so a change in this
     // flag is on its own a reason to redraw. Before 010 only the at-bottom
     // trim branch below asked for a render, so scrolling off the bottom
     // changed the flag and nothing on screen. `requestUpdate()` is idempotent
@@ -312,11 +312,10 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     this._atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 30;
     if (this._atBottom !== wasAtBottom) this.requestUpdate();
     if (!this._atBottom) {
-      // 009 — the plan's "after the bottom handling from task 008". Scrolled
-      // off the bottom is the only state a scroll-up load can happen in, so
-      // the check lives in 008's early-return branch. Putting it here rather
-      // than above the `_atBottom` line also means a scroll-up load and 008's
-      // bottom trim can never both fire from one scroll event.
+      // Scrolled off the bottom is the only state a scroll-up load can happen in,
+      // so the check lives in the not-at-bottom early-return branch. Putting it
+      // here rather than above the `_atBottom` line also means a scroll-up load
+      // and the bottom trim can never both fire from one scroll event.
       if (
         list.scrollTop < TOP_THRESHOLD_PX &&
         this._windowStart > 0 &&
@@ -343,11 +342,11 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     this.requestUpdate();
   }
 
-  /** 009 — the next window of older messages.
+  /** The next window of older messages.
    *
    *  Async from day one even though it resolves from memory today. The whole
    *  history is already in `this.messages`, so the next window is a slice —
-   *  but the arguments are `readRange`'s from task 007, a before-cursor and a
+   *  but the arguments match `readRange`, a before-cursor and a
    *  count, so moving sessions to a server changes this one method and nothing
    *  else in the panel. `before` is an index into `this.messages` today and a
    *  store cursor later; the caller treats it as opaque.
@@ -379,7 +378,7 @@ export abstract class ChatPanelWindow extends ChatPanelComposer {
     return this._computeWindowStart(msgs, end, limit);
   }
 
-  /** 009 — prepend the next window of older messages, holding the reader's row.
+  /** Prepend the next window of older messages, holding the reader's row.
    *
    *  The scroll correction is applied at the very END — right as the loader
    *  clears, not right after the prepend — and that timing is load-bearing,

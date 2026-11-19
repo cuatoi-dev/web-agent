@@ -160,23 +160,23 @@ describe("AgentFormBlock", () => {
     expect(css).toContain("--wa-input-border-color");
     expect(css).toContain("--wa-input-background-color");
     expect(css).toContain("--wa-input-text-color");
-    // --wa-text-color-disabled was rejected on measurement (task 008,
-    // task 011): it is tuned to sit near-invisible against a component's own
+    // --wa-text-color-disabled was rejected on measurement: it is tuned
+    // to sit near-invisible against a component's own
     // disabled fill, not against this form's neutral background.
     expect(css).not.toContain("--wa-text-color-disabled");
     expect(css).toContain("--wa-text-color");
     // cat-store aliases the registry to Material Web, so the submit control
     // there is <md-filled-button>, not a plain <button> — its own disabled
-    // token names need an explicit override too (task 011).
+    // token names need an explicit override too.
     expect(css).toContain("md-filled-button[disabled]");
     expect(css).toContain("--md-filled-button-disabled-label-text-color");
     expect(css).toContain("--md-filled-button-disabled-container-opacity");
     // docs-site's vendored Beer CSS fades a disabled checkbox's label span to
-    // opacity: 0.5 (1.53:1 measured) — out-specify it explicitly (task 011).
+    // opacity: 0.5 (1.53:1 measured) — out-specify it explicitly.
     expect(css).toContain("input:disabled + span");
   });
 
-  it("disabled form styles do not apply a blanket opacity fade (form-block contrast fix, task 011)", async () => {
+  it("disabled form styles do not apply a blanket opacity fade (form-block contrast fix)", async () => {
     const el = document.createElement("agent-form-block");
     el.block = { type: "form", id: "form-tok", fields: [] };
     document.body.appendChild(el);
@@ -186,7 +186,7 @@ describe("AgentFormBlock", () => {
     const css = styleEl!.textContent ?? "";
     expect(css).not.toContain("opacity: 0.6");
     // The disabled button/select colours are chosen explicitly instead —
-    // same pattern as buttons-block.ts (task 008).
+    // same pattern as buttons-block.ts.
     expect(css).toContain("color-mix(in oklab");
   });
 
@@ -202,7 +202,7 @@ describe("AgentFormBlock", () => {
     expect(document.getElementById("agent-form-block-styles")).toBeNull();
   });
 
-  // 014: pins the ordering constraint the eslint fix pass came closest to
+  // Pins the ordering constraint the eslint fix pass came closest to
   // breaking — the `type`/`min`/`max` mutations must land on the input
   // BEFORE it is placed in the template, or a number field renders as plain
   // text.
@@ -223,7 +223,7 @@ describe("AgentFormBlock", () => {
     expect(input!.max).toBe("9");
   });
 
-  // 014: pins the `|| wrapper` → `?? wrapper` rewrite — data-name and type
+  // Pins the `|| wrapper` → `?? wrapper` rewrite — data-name and type
   // must still land whether or not the registry's wrapper contains a real
   // <input> descendant.
   it("a date field's input carries data-name and type=date", async () => {
@@ -243,7 +243,7 @@ describe("AgentFormBlock", () => {
     expect(input!.type).toBe("date");
   });
 
-  // 007: reproduces the review-rejection defect on task 005. In the real app,
+  // Regression for post-submit re-render. In the real app,
   // `generative-ui-renderer.ts:14` creates a BRAND-NEW `<agent-form-block>`
   // element on every re-render (which happens right after submit, when
   // `controller-messages.ts:404` disables every earlier block) — but the
@@ -251,7 +251,7 @@ describe("AgentFormBlock", () => {
   // comes from core's `toolBlocks` map. Before the fix, `set block()`
   // unconditionally reset to field defaults, so the fresh disabled instance
   // showed defaults while the transcript recorded the real submission.
-  it("a re-rendered disabled form shows the submitted values, not the field defaults (task 007)", async () => {
+  it("a re-rendered disabled form shows the submitted values, not the field defaults", async () => {
     const block = {
       type: "form" as const,
       id: "form-submitted",
@@ -303,7 +303,7 @@ describe("AgentFormBlock", () => {
 
   // 007, AC-2: a field the user never touched must still show its default,
   // not just whatever the submit snapshot happened to hold.
-  it("a field left untouched keeps its default in a re-rendered disabled form (task 007)", async () => {
+  it("a field left untouched keeps its default in a re-rendered disabled form", async () => {
     const block = {
       type: "form" as const,
       id: "form-untouched",

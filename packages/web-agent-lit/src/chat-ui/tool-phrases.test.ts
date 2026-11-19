@@ -128,7 +128,7 @@ describe("toolStepPhrase", () => {
     expect(phrase).not.toContain("tried to");
   });
 
-  // 014: friendly phrases for the 9 previously-uncovered core/library tools
+  // Friendly phrases for the 9 previously-uncovered core/library tools
   it("snapshot_page: completed", () =>
     expect(toolStepPhrase(entry("snapshot_page", {}, "Snapshot: 12 nodes."))).toBe("Agent looked at the page"));
   it("query_state: completed", () =>
@@ -314,7 +314,7 @@ describe("toolStepPhrase", () => {
       ),
     ).toBe("Agent is checking the time…"));
 
-  // todo_write / todo_read (task 001). The outcome strings below are the real
+  // todo_write / todo_read. The outcome strings below are the real
   // ones: a committed plan is todo.ts renderList() output, and the rejections
   // are verbatim from todo.ts and todo-tools.ts.
   const PLAN_RENDER = "1. [ ] Pick a bed  (id: t1)\n2. [ ] Check the price  (id: t2)\n3. [ ] Add it to the cart  (id: t3)";
@@ -340,7 +340,7 @@ describe("toolStepPhrase", () => {
   // toolStepPhrase routes an empty summary to the in-progress phrase before
   // any builder runs (a known limitation the plan records). The entry below is
   // therefore synthetic on purpose: it pins the builder's own branch, which is
-  // the layer this task owns.
+  // the phrase-builder layer.
   it("todo_write: an empty items array reads as cleared", () =>
     expect(
       toolStepPhrase(entry("todo_write", { items: [] }, PLAN_RENDER), "Whiskers"),
@@ -424,7 +424,7 @@ describe("toolStepPhrase", () => {
   });
 });
 
-describe("toolStepPhrase with a tool's own phrase (124/007)", () => {
+describe("toolStepPhrase with a tool's own phrase", () => {
   it("a tool's own phrase renders", () => {
     const map = new Map<string, ToolPhraseDef>([
       ["acme_x", { phrase: (s, a) => `${a} did ${String(s.input.a)}` }],
@@ -530,8 +530,8 @@ describe("toolStepPhrase with a tool's own phrase (124/007)", () => {
   });
 });
 
-// 002: a saved result appends its path to whatever phrase was chosen.
-describe("toolStepPhrase saved-output suffix (002)", () => {
+// A saved result appends its path to whatever phrase was chosen.
+describe("toolStepPhrase saved-output suffix", () => {
   const saved = (path: string) => `<saved-output path="${path}" chars="48210">\nOutput too large…`;
 
   it("appends the path after a built-in phrase", () => {

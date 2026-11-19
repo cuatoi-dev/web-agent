@@ -20,7 +20,7 @@ import type { HostStore, SendOutcome } from "./types.js";
  *  reacting to its state and events, the session CRUD calls and the
  *  host-driven header API. Moved verbatim out of chat-panel.ts. */
 export abstract class ChatPanelSession extends ChatPanelElements {
-  /** 109/003 — the counts behind the composer clock.
+  /** The counts behind the composer clock.
    *  Returns zeros unless the host opted in AND the session exposes the
    *  method. The optional call matters: several test doubles and host fake
    *  sessions predate `pendingCounts()` (chat-panel.datasource-ordering.test.ts:59-108),
@@ -31,7 +31,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
     return { schedules: counts?.schedules ?? 0, reminders: counts?.reminders ?? 0 };
   }
 
-  /** 068/003 — the todo items behind the composer indicator.
+  /** The todo items behind the composer indicator.
    *  Returns an empty list unless the host opted in AND the session exposes
    *  the method. The optional call matters for the same reason it does on
    *  `_pendingCounts()` above: several test doubles and host fake sessions
@@ -84,14 +84,14 @@ export abstract class ChatPanelSession extends ChatPanelElements {
       const cuesEnabled = this._cues?.enabled ?? false;
       if (cuesEnabled) {
         try {
-          // 007: take the layer off the page, not just its transients, so a
+          // Take the layer off the page, not just its transients, so a
           // stopped run leaves no .wa-agent-cursor-layer behind.
           getAgentCursor().destroy();
         } catch { /* the cursor layer may already be gone; nothing to clean up */ }
       }
     }
 
-    // 007: the bubble hides the panel — and with it the only Stop button —
+    // The bubble hides the panel — and with it the only Stop button —
     // when the user collapses it mid-run. Tell it when a run starts and ends
     // so it can offer its own Stop control. Same event shape as `agent-toast`
     // (`_showToast()` below).
@@ -113,7 +113,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
       const newMeta = s.sessions.find(x => x.id === s.activeSessionId);
       this._manualTitle = newMeta?.titleManual ?? false;
       const turnCount = s.messages ? s.messages.filter(m => m.role === "assistant").length : 0;
-      // 120/002 — a session can reach this component's FIRST render already
+      // A session can reach this component's FIRST render already
       // past its first (or third) turn: a fast turn (a mock response, or a
       // quick real one) can complete before this element's initial state
       // subscription fires, especially under load. Gating on turnCount alone
@@ -136,7 +136,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
       }
     }
 
-    // 007: a toolProvider's attachmentProviders (e.g. domTools()'s picker)
+    // A toolProvider's attachmentProviders (e.g. domTools()'s picker)
     // load asynchronously and only become visible via
     // session.getAttachmentProviders() — re-resolve + re-sync composer icons
     // on every state notification so they appear once loaded, not just once
@@ -158,7 +158,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
     if (!this._unsub) {
       this._subscribeSession(this._session);
     }
-    // A property written earlier in this task must reach core before the
+    // A property written earlier in this turn must reach core before the
     // caller (send, createSession, …) uses the session.
     this._flushConfigSync();
   }
@@ -180,7 +180,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
 
   /** The provider handed to rendered blocks. Rebuilt on demand after the
    *  `sources` setter drops it, so a host that assigns `sources` after the
-   *  element connects still gets a provider that knows those sources (003b). */
+   *  element connects still gets a provider that knows those sources. */
   protected _readOnlyDataSourceForBlocks() {
     this._ensureReadOnlyDataSource();
     return this._readOnlyDataSource;
@@ -222,7 +222,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
           composed: true,
         })
       );
-      // 008: with no host callback the message used to vanish — the event had
+      // With no host callback the message used to vanish — the event had
       // no listener in a bare panel. Render it in the panel's one notice
       // instead. A host that sets `notify` is unchanged: it renders its own
       // toast, gets no event, and sees no panel notice.
@@ -239,7 +239,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
     this._ensureSession();
     if (!this._session) return { ran: "none" };
     const text = typeof input === "string" ? input : input.text;
-    // 113/002 — a programmatic send is parsed exactly like a typed one, so the
+    // A programmatic send is parsed exactly like a typed one, so the
     // side panel's `send_to_page_agent` can run `/compact` and `/new` in the
     // in-page agent with no new tool and no new bridge message. `_handleSend`
     // does the same check for the composer at chat-panel-composer.ts:185, and cannot run a command
@@ -287,7 +287,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
     }
   }
 
-  // --- Host-driven header API (083 task 001) ---
+  // --- Host-driven header API ---
   // Everything the built-in header offers, as plain method calls, so a host can
   // hide the header and build its own.
 

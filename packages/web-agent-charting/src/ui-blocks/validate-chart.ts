@@ -181,9 +181,9 @@ export async function validateChartSchema(
     }
     validate = compiledFn;
   } catch (err) {
-    // Mirrors build-tools.ts's wrapExecutor (task 004): a bundler-side
+    // Mirrors build-tools.ts's wrapExecutor: a bundler-side
     // failure loading or compiling ajv — e.g. the webpack module-id
-    // collision documented in docs/tests/0167 — is not the caller's fault.
+    // collision — is not the caller's fault.
     // Before JSON Schema validation existed here, these tools ran
     // unvalidated, so degrading to "run unvalidated" is no worse than
     // pre-migration behavior; failing closed would be a new regression for

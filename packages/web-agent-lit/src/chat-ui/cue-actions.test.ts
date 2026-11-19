@@ -135,7 +135,7 @@ describe("cue-actions", () => {
     expect(cursor.moveTo).toHaveBeenCalledWith({ x: 500, y: 600 }, "slow");
   });
 
-  // 007: moveTo()'s animation is not interruptible, so a stop can land while
+  // moveTo()'s animation is not interruptible, so a stop can land while
   // it is still resolving. clickPulse/flash/focus each call ensureElements()
   // too, and running one on a straggler whose owning run already ended would
   // resurrect the cursor layer right after destroy() removed it (measured

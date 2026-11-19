@@ -54,8 +54,8 @@ describe("charting datasource entry", () => {
     expect(await bareImportsOf("./index.ts")).toEqual([]);
   });
 
-  // Positive control, re-measured 2026-09-03 (task 007 — charting dropped zod
-  // for hand-written JSON Schema, so this walk no longer reaches `zod`). The
+  // Positive control, re-measured 2026-09-03 (charting uses hand-written JSON
+  // Schema instead of zod, so this walk no longer reaches `zod`). The
   // `.` entry now reaches `ajv/dist/2020.js` as a dynamic import, from
   // validate-chart.ts's ajv wrapper (D6) — and it still does NOT reach
   // chart.js. Without this control a green first assertion would prove

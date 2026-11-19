@@ -320,7 +320,7 @@ export class AgentMessageView extends Component {
               // kind === "tool" — compact inline step row (self-contained, no data-part-idx)
               const a = part.audit;
               // Precedence: custom renderer HTML (defined, call completed, non-empty
-              // after sanitize) > 062a friendly phrase > default. In-progress steps
+              // after sanitize) > built-in friendly phrase > default. In-progress steps
               // (empty outcomeSummary) skip the renderer and use the phrase.
               let customHtml = "";
               if (a && a.outcomeSummary) {

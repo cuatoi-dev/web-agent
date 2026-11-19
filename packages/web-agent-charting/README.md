@@ -7,6 +7,8 @@ browser agent. The agent uses them to render charts in its replies.
 
 ```bash
 pnpm add @cuatoi/web-agent-charting
+# or
+npm install @cuatoi/web-agent-charting
 ```
 
 The `.` entry is framework-agnostic — the `show_chart` and `show_live_chart`
@@ -19,6 +21,8 @@ peer dependency. Install it only if you use the Lit binding:
 
 ```bash
 pnpm add @cuatoi/web-agent-lit
+# or
+npm install @cuatoi/web-agent-lit
 ```
 
 ## Usage
@@ -52,4 +56,4 @@ the API reference.
 
 ## License
 
-Apache-2.0
+Apache-2.0 — see [LICENSE](./LICENSE).

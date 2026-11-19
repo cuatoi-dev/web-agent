@@ -186,8 +186,7 @@ describe("wa-tokens.css", () => {
 
   // 11. Action error/success/warn tokens meet the WCAG AA body-text floor
   // (4.5:1) against both panel backgrounds in every theme. `info` is excluded:
-  // it is used as an accent/border colour, not body text (see
-  // docs/tests/0171-action-error-token-contrast.md), and stays below the floor
+  // it is used as an accent/border colour, not body text, and stays below the floor
   // by design.
   it("action error/success/warn tokens meet WCAG AA contrast against theme backgrounds", () => {
     const backgroundNames = [
@@ -241,7 +240,7 @@ describe("wa-tokens.css", () => {
 
   // 12. The error action token used as a SURFACE: its paired on-colour must
   // clear the AA body-text floor against it in every theme. Case 11 above
-  // measures the same token as a FOREGROUND, which is why task 008 could raise
+  // measures the same token as a FOREGROUND, so raising
   // its lightness for the text role and silently break every error-coloured
   // button, badge and #stop-run at the same time (2.84:1 in wa2-dark, caught
   // only by the end-of-loop mock e2e). `info`, `success` and `warn` are not
@@ -270,7 +269,7 @@ describe("wa-tokens.css", () => {
 
   // 13. The info action token used as a SURFACE: white text sits on it in the
   // cat-store top bar, the .wa-btn primary button, the embed chrome, the chat
-  // bubble and the chart-block header. Task 005 lowered the wa2 accent from
+  // bubble and the chart-block header. The wa2 accent was lowered from
   // hsl(257deg 100% 67%) (4.36:1) to hsl(257deg 100% 66%) (4.55:1) to clear
   // the floor. Case 14 pins the opposite direction, which is what stopped the
   // value going lower still.
@@ -299,7 +298,7 @@ describe("wa-tokens.css", () => {
   // in wa1-dark and wa2-light (wa2-dark has its own value, see 14b), and
   // the ring rules in cat-store's agent-page.styles.ts and
   // agent-page-panels.styles.ts read --wa-outline-color. WCAG SC 1.4.11 sets a 3:1 floor for non-text contrast. This case
-  // is why task 005 chose hsl(257deg 100% 66%) and not the darker 62% first
+  // is why the wa2 accent uses hsl(257deg 100% 66%) and not the darker 62%
   // proposed: 62% reaches 5.45:1 against white but falls to 2.59:1 here.
   // Case 13 holds the other side: white text on the same token needs 4.5:1,
   // so the value has to sit between the two floors.

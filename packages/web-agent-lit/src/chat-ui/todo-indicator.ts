@@ -64,7 +64,7 @@ export const TODO_INDICATOR_CSS = `        agent-todo-indicator {
           font-weight: 600;
           line-height: 1;
           font-variant-numeric: tabular-nums;
-          /* 068/003 — measured 2026-09-07, do not substitute a raw accent token.
+          /* Measured 2026-09-07, do not substitute a raw accent token.
              Same rule and same reason as schedule-clock.ts:82-104: the pill must clear
              4.5:1 for its numeral AND 3:1 as a shape against the composer surface
              (--wa-input-background-color) in all three themes, and every plain

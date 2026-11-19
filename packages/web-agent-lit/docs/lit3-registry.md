@@ -12,7 +12,7 @@ reference.
 
 ## 1. Why the seam exists
 
-**Background (ADR-001):** The web-agent is designed to be dropped into an
+**Background:** The web-agent is designed to be dropped into an
 airgapped internal repo that already has its own design system. The host team
 must not need to fork or patch the binding. The element seam makes that
 possible: the chat UI never imports vendor widgets (`md-*` and similar)
@@ -131,7 +131,7 @@ variant change swaps the inner Material tag and re-focuses it if it had focus.
 Danger sets Material's container CSS custom properties **token-first** —
 `var(--wa-action-color-error, #d93025)` and
 `var(--wa-action-text-color-error, #ffffff)` — the literals are only
-fallbacks. The `disabled` guard on click is required (see §5).
+fallbacks. The `disabled` guard on click is required (see section 5).
 
 ### Icon button (`AcmeIconButton`)
 
@@ -149,7 +149,7 @@ export class AcmeIconButton extends AcmeElement {
 ```
 
 The icon comes from `iconNode()` (`apps/cat-store/src/acme-icon-svgs.ts`),
-which returns inline SVG for the names the chat UI uses (see §5c) and falls
+which returns inline SVG for the names the chat UI uses (see section 5c) and falls
 back to a `<span>` holding the raw name for anything else — the button shows
 the name as text but stays clickable.
 
@@ -276,7 +276,7 @@ tag:
 
 ## 3. Wiring the Webpack alias
 
-File: `apps/cat-store/webpack.config.js:96-99`
+File: `apps/cat-store/webpack.config.js:100-103`
 
 ```js
 const webpack = require("webpack");
@@ -325,7 +325,7 @@ Material-backed classes above.
 File: `apps/cat-store/src/web/index.ts` (the mount block is lines 34-93;
 lines 1-22 are the import list). The snippet below is simplified. The real mount
 hosts the bubble in a wrapper element and sets its properties through
-`configureAgentPanel()` (`apps/cat-store/src/web/agent-panel-config.ts:139-326`).
+`configureAgentPanel()` (`apps/cat-store/src/web/agent-panel-config.ts:360`).
 
 The programmatic mount is identical whether you use the default element set
 or a swapped Lit 3 one — the swap is invisible at this level.

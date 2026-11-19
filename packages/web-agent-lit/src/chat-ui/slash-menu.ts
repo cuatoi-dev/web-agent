@@ -1,7 +1,7 @@
 import type { CommandEntry } from "@cuatoi/web-agent-core";
 import type { SlashMenuModel } from "./types.js";
 
-/** 105/003 — the two row glyphs, inlined as SVG.
+/** The two row glyphs, inlined as SVG.
  *
  *  They are deliberately NOT routed through `<wa-icon-button>`. Both element
  *  sets fall back to rendering the icon NAME as literal text for a name they

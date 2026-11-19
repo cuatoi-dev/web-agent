@@ -237,7 +237,7 @@ export class WebAgentBubble extends HTMLElement {
     if (this.panelEl) this.panelEl.debug = val;
   }
 
-  /** 007: forwards to the inner panel's built-in "ask"-tier confirm dialog.
+  /** Forwards to the inner panel's built-in "ask"-tier confirm dialog.
    *  Called lazily at confirm time (not wiring time), so it works even
    *  though `panelEl` may not exist yet when a host builds `domTools({
    *  confirmInteraction: bubble.confirmInteraction.bind(bubble) })`. */
@@ -245,7 +245,7 @@ export class WebAgentBubble extends HTMLElement {
     return this.panelEl ? this.panelEl.confirmInteraction(detail) : Promise.resolve(true);
   }
 
-  /** 101: forwards to the inner panel's `send()` (chat-panel-session.ts:221), so a
+  /** Forwards to the inner panel's `send()` (chat-panel-session.ts:221), so a
    *  host outside the shadow root can put a message into the conversation as
    *  if the user had typed it. The guard asks whether the bubble is OPEN, not
    *  whether a panel was ever built: `toggle()` assigns `panelEl` and never
@@ -263,14 +263,14 @@ export class WebAgentBubble extends HTMLElement {
     return (await this.panelEl?.send(input, opts)) ?? { ran: "none" };
   }
 
-  /** 101: forwards to the inner panel's `messages` (chat-panel-state.ts:140).
+  /** Forwards to the inner panel's `messages` (chat-panel-state.ts:140).
    *  Empty before the bubble has ever been opened, never undefined. Getter
    *  only — nothing assigns the bubble's messages. */
   get messages(): SessionMessage[] {
     return this.panelEl ? this.panelEl.messages : [];
   }
 
-  /** 101: forwards to the inner panel's `running` (chat-panel-state.ts:149) — true
+  /** Forwards to the inner panel's `running` (chat-panel-state.ts:149) — true
    *  while a turn is in flight. This is NOT the private `_running` field
    *  above, which also counts compaction and drives the collapsed-state Stop
    *  button. */

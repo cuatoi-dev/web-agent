@@ -65,7 +65,7 @@ describe("WebAgentBubble launcher", () => {
   });
 });
 
-// 007: a Stop control inside the bubble so the user can stop the agent
+// A Stop control inside the bubble so the user can stop the agent
 // even after collapsing the panel mid-run.
 describe("WebAgentBubble stop control", () => {
   let el: WebAgentBubble;
@@ -175,7 +175,7 @@ describe("WebAgentBubble property forwarding", () => {
     }
   });
 
-  // 014: pins the eslint fix's `panelEl: AgentChatPanel | null` typing —
+  // Pins the eslint fix's `panelEl: AgentChatPanel | null` typing —
   // proves a property set before the panel is ever created still reaches it
   // once toggle() lazily builds it.
   it("forwards a property set before the panel exists", () => {
@@ -236,7 +236,7 @@ describe("WebAgentBubble property forwarding", () => {
     }
   });
 
-  // 001: fetch passthrough — the web-agent-browser extension (task 002) will
+  // Fetch passthrough — the web-agent-browser extension will
   // need a way to inject the token-gate header into every outbound request.
   it("forwards custom fetch function to panel created after fetch is set", () => {
     const customFetch = (() => Promise.resolve(new Response("ok"))) as unknown as typeof fetch;
@@ -278,7 +278,7 @@ describe("WebAgentBubble property forwarding", () => {
   });
 });
 
-describe("101: send, messages and running passthroughs", () => {
+describe("send, messages and running passthroughs", () => {
   let el: WebAgentBubble;
   let sendSpy: ReturnType<typeof vi.spyOn> | undefined;
 
@@ -361,14 +361,14 @@ describe("101: send, messages and running passthroughs", () => {
     await expect(lone.send("x")).resolves.toEqual({ ran: "none" });
   });
 
-  it("001/113 — send on a connected bubble returns { ran: 'none' } when panel.send is never reached", async () => {
+  it("send on a connected bubble returns { ran: 'none' } when panel.send is never reached", async () => {
     const lone = document.createElement("web-agent-bubble") as WebAgentBubble;
     // Not appended — containerEl is undefined, toggle() never runs, panelEl stays null
     const result = await lone.send("/new");
     expect(result).toEqual({ ran: "none" });
   });
 
-  it("001/113 — send forwards the panel's SendOutcome to the caller", async () => {
+  it("send forwards the panel's SendOutcome to the caller", async () => {
     sendSpy!.mockResolvedValue({ ran: "command", command: "new" });
     const result = await el.send("/new");
     expect(result).toEqual({ ran: "command", command: "new" });
@@ -392,7 +392,7 @@ describe("101: send, messages and running passthroughs", () => {
   });
 });
 
-describe("gemini union widening (002)", () => {
+describe("gemini union widening", () => {
   let el: WebAgentBubble;
   beforeEach(() => { el = document.createElement("web-agent-bubble") as WebAgentBubble; el.model = "test-model"; document.body.appendChild(el); });
   afterEach(() => { el.remove(); });
@@ -436,7 +436,7 @@ describe("model is required", () => {
   });
 });
 
-describe("002: the host owns the panel box", () => {
+describe("the host owns the panel box", () => {
   let el: WebAgentBubble;
   beforeEach(() => {
     el = document.createElement("web-agent-bubble") as WebAgentBubble;
@@ -455,7 +455,7 @@ describe("002: the host owns the panel box", () => {
 
   it("sizes its own container from --web-agent-panel-width/--web-agent-panel-height", () => {
     const css = el.shadowRoot!.querySelector("style")!.textContent;
-    // The seam ideas 083/085 and task 003 build on: two inherited properties,
+    // Sizing contract: two inherited properties,
     // today's values as fallbacks, and the 80vh cap left in place.
     expect(css).toMatch(/width:\s*var\(--web-agent-panel-width,\s*480px\)/);
     expect(css).toMatch(/height:\s*var\(--web-agent-panel-height,\s*660px\)/);
@@ -463,7 +463,7 @@ describe("002: the host owns the panel box", () => {
   });
 });
 
-describe("003: the bubble is a shadow element", () => {
+describe("the bubble is a shadow element", () => {
   let el: WebAgentBubble;
   beforeEach(() => {
     el = document.createElement("web-agent-bubble") as WebAgentBubble;
@@ -477,7 +477,7 @@ describe("003: the bubble is a shadow element", () => {
     expect(el.shadowRoot!.mode).toBe("open");
     expect(el.shadowRoot!.querySelector("button#launcher")).not.toBeNull();
     expect(el.shadowRoot!.querySelector("#panel-container")).not.toBeNull();
-    // Light DOM stays empty — that is the encapsulation this task buys.
+    // Light DOM stays empty — the bubble encapsulates its DOM in shadow DOM.
     expect(el.querySelector("#launcher")).toBeNull();
     expect(el.querySelector("#panel-container")).toBeNull();
 

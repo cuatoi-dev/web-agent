@@ -46,9 +46,8 @@ export async function runShowLiveChart(
 
   // A genuine `{ ok: false }` verdict rejects the call; a THROW from
   // validateDataQuery is a bundler-side ajv load/compile failure — the
-  // webpack module-id collision documented in docs/tests/0167 — not a bad
-  // query. Pre-existing (this call was unguarded before this task too); own
-  // it here rather than let it crash the tool call, matching the same
+  // webpack module-id collision — not a bad
+  // query. Guard it here rather than let it crash the tool call, matching the same
   // non-fatal design build-tools.ts already uses for that failure mode.
   try {
     const queryCheck = await validateDataQuery(query);

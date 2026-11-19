@@ -28,14 +28,14 @@ describe("AgentContextGauge Component Tests", () => {
     expect(title).toBe("42% · 54,200 / 128,000 tokens");
   });
 
-  it("strokes the gauge from theme gauge tokens (009)", async () => {
+  it("strokes the gauge from theme gauge tokens", async () => {
     await element.updateComplete;
     const css = element.querySelector("style")!.textContent;
     expect(css).toContain("var(--wa-gauge-green-color, #10b981)");
     expect(css).toContain("var(--wa-gauge-orange-color, #f59e0b)");
     expect(css).toContain("var(--wa-gauge-red-color, #ef4444)");
     expect(css).toContain("var(--wa-text-color-disabled, rgba(255, 255, 255, 0.25))");
-    // 002: every stroke resolves through a --wa-* token, mixed with the
+    // Every stroke resolves through a --wa-* token, mixed with the
     // theme text colour so it reads on the composer surface in both themes.
     for (const stroke of css.match(/stroke:[^;]+;/g) ?? []) {
       if (stroke.includes("stroke-width") || stroke.includes("stroke-linecap")) continue;
@@ -140,7 +140,7 @@ describe("AgentContextGauge Component Tests", () => {
     expect(wrapper?.classList.contains("disabled")).toBe(true);
   });
 
-  it("the disabled state applies a dashed track treatment (005)", async () => {
+  it("the disabled state applies a dashed track treatment", async () => {
     element.disabled = true;
     await element.updateComplete;
     const css = element.querySelector("style")!.textContent;
@@ -163,7 +163,7 @@ describe("AgentContextGauge Component Tests", () => {
     expect(fgRule).not.toContain("transition");
   });
 
-  it("busy adds the spin class to the gauge SVG; the ring and arc stay (009)", async () => {
+  it("busy adds the spin class to the gauge SVG; the ring and arc stay", async () => {
     element.busy = true;
     await element.updateComplete;
 
@@ -176,7 +176,7 @@ describe("AgentContextGauge Component Tests", () => {
     expect(element.querySelector(".busy-dot")).toBeNull();
   });
 
-  it("clearing busy removes the spin class; ring and arc are unaffected (009)", async () => {
+  it("clearing busy removes the spin class; ring and arc are unaffected", async () => {
     element.busy = true;
     await element.updateComplete;
     element.busy = false;
@@ -188,7 +188,7 @@ describe("AgentContextGauge Component Tests", () => {
     expect(element.querySelector(".fg-circle")).not.toBeNull();
   });
 
-  it("the busy spin is CSS-driven — no dot markup or per-dot styling (009)", async () => {
+  it("the busy spin is CSS-driven — no dot markup or per-dot styling", async () => {
     await element.updateComplete;
     const css = element.querySelector("style")!.textContent;
     expect(css).toContain(".gauge-svg.busy");
@@ -196,7 +196,7 @@ describe("AgentContextGauge Component Tests", () => {
     expect(css).not.toContain("busy-dot");
   });
 
-  it("a busy gauge with disabled=true does not emit compact-request (009)", async () => {
+  it("a busy gauge with disabled=true does not emit compact-request", async () => {
     element.busy = true;
     element.disabled = true;
     await element.updateComplete;
@@ -210,7 +210,7 @@ describe("AgentContextGauge Component Tests", () => {
     expect(fired).toBe(0);
   });
 
-  it("the busy tooltip says compacting (009)", async () => {
+  it("the busy tooltip says compacting", async () => {
     element.busy = true;
     element.percent = 0.5;
     element.tokens = 64000;

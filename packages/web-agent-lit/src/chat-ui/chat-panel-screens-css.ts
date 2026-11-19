@@ -149,13 +149,13 @@ export const PANEL_SCREENS_CSS = `        agent-chat-panel .wa-title-edit-row {
         agent-chat-panel .wa-notice-sep {
           opacity: 0.45;
         }
-        /* 008: the progress tone. Muted, not red — a retry in flight is
+        /* The progress tone. Muted, not red — a retry in flight is
            progress, not yet a failure. The raw --wa-label-color the old
            .wa-retrying line used measures 3.54:1 on wa1-dark and 4.29:1 on
            wa2-light against --wa-background-color, both under the WCAG AA
            4.5:1 floor. Mixing 60% of the theme text colour into it measures
            8.61:1 / 8.77:1 / 8.82:1 on wa1-dark / wa2-dark / wa2-light. */
-        /* 003: the info tone. A completed turn that carried no reply is not
+        /* The info tone. A completed turn that carried no reply is not
            a failure, so it must not read as one. Same muted mix as the
            progress tone, whose measurement is recorded in the comment above
            (8.61:1 wa1-dark / 8.77:1 wa2-dark / 8.82:1 wa2-light against

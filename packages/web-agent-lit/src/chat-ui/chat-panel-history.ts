@@ -42,7 +42,7 @@ export abstract class ChatPanelHistory extends ChatPanelSession {
     // Remove any prior pair first (idempotent — never double-attach)
     this._detachHistoryListeners();
     this._historyOutsideHandler = (e: MouseEvent) => {
-      // 003: document.getElementById does not search into shadow trees, and
+      // Document.getElementById does not search into shadow trees, and
       // this panel can now render inside <web-agent-bubble>'s shadow root.
       // this.querySelector reaches #history-anchor regardless — it is a
       // normal light-DOM descendant of the panel itself either way.

@@ -416,7 +416,7 @@ describe("having", () => {
   });
 });
 
-describe("select push-down — task 009 regression", () => {
+describe("select push-down regression", () => {
   it("select produces _source.includes with exactly the selected fields' source paths", () => {
     const body = toEsSearchBody({ source: "x", select: ["customer", "total"] }, SCHEMA).body;
     expect(body._source).toEqual({ includes: ["customer", "total"] });
@@ -459,7 +459,7 @@ describe("nextEsCompositeBody", () => {
   });
 });
 
-describe("top-level sort/select on an aggregate (task 002)", () => {
+describe("top-level sort/select on an aggregate", () => {
   // The guard throws before either engine touches the data, so empty rows
   // are enough for the in-memory half.
   const queries: Record<string, DataQuery> = {

@@ -126,7 +126,7 @@ describe("createConfirmScrim", () => {
     expect(card2?.innerHTML).toContain("#sel-1");
   });
 
-  it("prefers `summary` over action/name wording when present (004)", () => {
+  it("prefers `summary` over action/name wording when present", () => {
     void hook({
       ref: "#btn-1",
       name: "Remove item",
@@ -157,7 +157,7 @@ describe("createConfirmScrim", () => {
     expect(Array.from(card2.querySelectorAll("strong")).map((el) => el.textContent)).toEqual(["click", "<b>Pay</b>"]);
   });
 
-  it("themes the scrim and card from theme tokens (009)", () => {
+  it("themes the scrim and card from theme tokens", () => {
     void hook({
       ref: "#btn-1",
       name: "Submit Button",
@@ -222,7 +222,7 @@ describe("createConfirmScrim", () => {
     expect(container.querySelector("style")).toBeNull();
   });
 
-  it("renders title, message and button labels when the caller passes them (120/002)", async () => {
+  it("renders title, message and button labels when the caller passes them", async () => {
     const pending = hook({
       action: "switch_agent",
       title: "Switch to tesagent?",
@@ -250,7 +250,7 @@ describe("createConfirmScrim", () => {
     await expect(pending).resolves.toBe(true);
   });
 
-  it("renders label text containing <b> as literal text (120/002)", () => {
+  it("renders label text containing <b> as literal text", () => {
     void hook({
       action: "switch_agent",
       title: "<b>T</b>",
@@ -269,7 +269,7 @@ describe("createConfirmScrim", () => {
     ]);
   });
 
-  it("an unlabelled call still renders today's title, body and buttons (120/002)", () => {
+  it("an unlabelled call still renders today's title, body and buttons", () => {
     void hook({ action: "click", summary: "Click Pay" });
 
     const card = container.querySelector(".wa-confirm-card")!;

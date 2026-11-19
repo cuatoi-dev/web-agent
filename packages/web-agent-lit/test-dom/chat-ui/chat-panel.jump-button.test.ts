@@ -1,4 +1,4 @@
-// 010 — the scroll-to-bottom button. Visibility follows `_atBottom`, and the
+// The scroll-to-bottom button. Visibility follows `_atBottom`, and the
 // press reuses `_forceScrollToBottom` + `_scrollToBottomQueue()`.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { AgentChatPanel } from "../../src/chat-ui/chat-panel.js";
@@ -90,7 +90,7 @@ function makeMockSession(): { session: AgentSession; push(next: Partial<SessionS
   };
 }
 
-// --- New for 009 ---
+// --- Scroll-up loading helpers ---
 
 /** jsdom has no layout. Probed on jsdom 24.0.0 in this tree (2026-09-09):
  *  `scrollTop` IS a real writable property and reads back what you set, but
@@ -109,7 +109,7 @@ function stubListMetrics(el: AgentChatPanel) {
   // `advanceTimersByTimeAsync`, setting `scrollTop = scrollHeight` well after
   // this stub is installed and stomping any scrollTop this file asserts on.
   // Same leftover-frame problem `chat-panel.test.ts`'s
-  // "scroll coalesced to one animation frame per redraw (009)" block cancels
+  // "scroll coalesced to one animation frame per redraw" block cancels
   // in its own `beforeEach`; do the same here.
   const priv = el as unknown as Record<string, unknown>;
   const pendingRaf = priv["_scrollRafId"] as number | null;
@@ -145,7 +145,7 @@ function spyOnLoadWindow(el: AgentChatPanel) {
   return calls;
 }
 
-// --- New for 010 ---
+// --- Jump-button helpers ---
 
 /** Park the list off the bottom and fire a real scroll event. jsdom does not
  *  fire `scroll` on a scrollTop assignment, so the event is explicit. */

@@ -10,8 +10,8 @@ import type { FormBlock } from "@cuatoi/web-agent-core";
  * core's `toolBlocks` map keeps it (`controller-messages.ts:84-87`). Stashing
  * the submitted values there, not on the element, is what survives.
  *
- * Kept local to `web-agent-lit` (not added to core's `FormBlock`) — task 007
- * scopes the fix to the renderer, and core's submit path already works.
+ * Kept local to `web-agent-lit` (not added to core's `FormBlock`) — this
+ * state belongs to the renderer, and core's submit path already works.
  */
 export type FormBlockWithSubmission = FormBlock & {
   __submittedValues?: Record<string, string | number | boolean | null>;

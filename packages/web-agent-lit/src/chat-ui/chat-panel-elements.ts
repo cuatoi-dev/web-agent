@@ -21,7 +21,7 @@ export abstract class ChatPanelElements extends ChatPanelState {
     this._registryStyleEl.setAttribute("data-wa-styles", "registry");
     this._registryStyleEl.textContent = REGISTRY_STYLES;
 
-    // 105/003 — the "/" menu, built once. The anchor is a zero-height block
+    // The "/" menu, built once. The anchor is a zero-height block
     // rendered above `.composer` inside `.input-area`; the menu is absolutely
     // positioned against it with `bottom: 100%`, so it sits directly above the
     // composer and is clipped by `agent-chat-panel { overflow: hidden }`
@@ -48,7 +48,7 @@ export abstract class ChatPanelElements extends ChatPanelState {
    *  what `buildSessionConfig()` sends to core. It must never include a
    *  provider read back from the session, or removing a provider becomes
    *  impossible: the panel would keep re-seeding the session with the list it
-   *  previously resolved from that same session (002). Returns a fresh array on
+   *  previously resolved from that same session. Returns a fresh array on
    *  every call, and is never cached, so a removal takes effect at once. */
   protected _ownProviders(): AttachmentProvider[] {
     const list: AttachmentProvider[] = [];
@@ -65,7 +65,7 @@ export abstract class ChatPanelElements extends ChatPanelState {
 
   /** Registry contents for RENDERING: this panel's own providers, then the
    *  providers a `toolProviders` entry (e.g. domTools()'s picker) registered on
-   *  the SESSION (007) — core only learns of those once they load
+   *  the SESSION — core only learns of those once they load
    *  asynchronously, so they reach this seam via
    *  `session.getAttachmentProviders()` rather than the `attachmentProviders`
    *  property. Deduped by id, so an own provider that shares an id with a
@@ -105,7 +105,7 @@ export abstract class ChatPanelElements extends ChatPanelState {
     ></wa-icon-button>`;
   }
 
-  /** 128/003 — a provider with `choices()` opens a menu; any other provider
+  /** A provider with `choices()` opens a menu; any other provider
    *  is picked at once, exactly as before. A second press closes the menu. */
   protected _onProviderPress(p: AttachmentProvider): void {
     const choices = p.choices?.() ?? [];
@@ -199,7 +199,7 @@ export abstract class ChatPanelElements extends ChatPanelState {
   protected _onComposerInput(value: string): void {
     this._composerValue = value;
     this._syncComposerControls();
-    // 105/003 P10 — the "/" menu tracks what is typed. It writes into its own
+    // The "/" menu tracks what is typed. It writes into its own
     // element and never calls requestUpdate(), so the rule above holds.
     this._updateSlashMenu();
   }

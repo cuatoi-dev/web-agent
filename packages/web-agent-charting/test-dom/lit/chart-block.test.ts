@@ -1434,12 +1434,12 @@ describe("AgentChartBlock", () => {
     expect(chartCallConfig().options.animation).toEqual({ duration: 300 });
   });
 
-  // 003: chart-block.ts installs a ResizeObserver on itself so Chart.js
+  // Chart-block.ts installs a ResizeObserver on itself so Chart.js
   // resizes across a shadow boundary (Chart.js 2.x's own resize detection is
   // a legacy hidden-iframe trick that does not fire there). Same shape as the
   // U4 theme-observer coverage above: assert the real behaviour an observer
   // produces, not that a field exists.
-  describe("003: ResizeObserver drives Chart.js's resize() across the shadow boundary", () => {
+  describe("ResizeObserver drives Chart.js's resize() across the shadow boundary", () => {
     beforeEach(() => {
       resizeObserverCallback = null;
       resizeObserveTarget = null;

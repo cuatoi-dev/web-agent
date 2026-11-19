@@ -11,7 +11,7 @@ describe("Charting Package Entrypoint", () => {
     const showChart = tools.find((t) => t.name === "show_chart")!;
     expect(showChart.promptSnippet).toBeUndefined();
     expect(showChart.description).toContain('load_skill("chart")');
-    // 005: the description must warn that the config is a snapshot and point
+    // The description must warn that the config is a snapshot and point
     // at a live chart tool for data-source data.
     expect(showChart.description).toMatch(/never refreshes/i);
     expect(showChart.description).toMatch(/live chart tool/i);

@@ -43,13 +43,13 @@ export class AgentChartBlock extends Component {
   private _inView = false;
   private _boundVisibilityHandler = () => this._syncTimer();
   private _lastRenderedBlock: ChartBlock | null = null;
-  // 004: setInterval does not wait for the previous callback, so without this
+  // setInterval does not wait for the previous callback, so without this
   // flag every tick started another query and they piled up against a slow
   // source. True while a data source query started by this block is still
   // running. Both the render query and the refresh tick set it; both clear it
   // in a `finally`, so a rejected or aborted query releases it too.
   private _queryInFlight = false;
-  // 004: bumped for every query started, and again on teardown. A query whose
+  // Bumped for every query started, and again on teardown. A query whose
   // token is no longer current has been superseded or cancelled, so its
   // `finally` must not clear the flag that belongs to the query which replaced
   // it. This is what keeps the flag from getting stuck in either direction.
@@ -112,7 +112,7 @@ export class AgentChartBlock extends Component {
       this._initRefresh();
     }
     document.addEventListener("visibilitychange", this._boundVisibilityHandler);
-    // 003: Chart.js 2.x's own `responsive: true` resize detection is a legacy
+    // Chart.js 2.x's own `responsive: true` resize detection is a legacy
     // hidden-iframe trick, which does not reliably fire when the canvas sits
     // inside a shadow root (as it now does whenever this block renders inside
     // <web-agent-bubble>). A native ResizeObserver on the host is DOM-source-
@@ -188,7 +188,7 @@ export class AgentChartBlock extends Component {
   }
 
   private _cleanupRefresh() {
-    // 004: the element is being disconnected or the block swapped, so any query
+    // The element is being disconnected or the block swapped, so any query
     // still running is cancelled as far as this block is concerned. Bump the
     // token so that query's `finally` cannot clear a newer query's flag, and
     // release the flag now so the next cycle is not blocked by a result nobody
@@ -242,7 +242,7 @@ export class AgentChartBlock extends Component {
 
     if (!this.block?.query || !this.dataSource) return;
 
-    // 004: the previous query has not finished. Skip this tick rather than
+    // The previous query has not finished. Skip this tick rather than
     // start a second query. The interval keeps running, so the next tick tries
     // again — nothing is queued and the timer is not paused.
     if (this._queryInFlight) return;
@@ -371,7 +371,7 @@ export class AgentChartBlock extends Component {
     // Datasource path: block.query + block.encoding
     if (this.block.query && this.block.encoding && this.dataSource) {
       this.loading = true;
-      // 004: mark the render query too, so a tick cannot start a second query
+      // Mark the render query too, so a tick cannot start a second query
       // while this one is still running. This path is marked but never skipped
       // — a manual Refresh or a theme re-render must always run.
       const token = ++this._queryToken;

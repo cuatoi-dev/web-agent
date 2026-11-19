@@ -14,7 +14,7 @@ defineUiElements();
  *  send path and the queued-message list. Moved verbatim out of
  *  chat-panel.ts. */
 export abstract class ChatPanelComposer extends ChatPanelScreens {
-  // --- Slash-command menu (105/003) ---
+  // --- Slash-command menu ---
 
   /** The element that carries `aria-activedescendant`, and the one whose caret
    *  `pick` moves. The default registry's `<wa-text-area>` keeps a light-DOM
@@ -148,7 +148,7 @@ export abstract class ChatPanelComposer extends ChatPanelScreens {
   }
 
   protected _handleKeyDown(e: KeyboardEvent) {
-    // 105/003 P10 — while the menu is open it owns the arrows, Tab, Enter and
+    // While the menu is open it owns the arrows, Tab, Enter and
     // Escape. Every other key types as usual. An empty list is impossible here
     // (_updateSlashMenu closes on no match), and the length guard keeps the
     // modulo arithmetic safe anyway.
@@ -191,7 +191,7 @@ export abstract class ChatPanelComposer extends ChatPanelScreens {
     const composerEl: (HTMLElement & { resetHeight: () => void }) | null = this.querySelector("#input");
     composerEl?.resetHeight();
     this._syncComposerControls();
-    // 105/001 P4 — a slash command is intercepted HERE, before session.send().
+    // A slash command is intercepted HERE, before session.send().
     // It cannot live in controller.send(): that queues rather than throws when
     // a turn is running, so a command reaching it would be swallowed into the
     // prompt queue as literal text.
@@ -203,7 +203,7 @@ export abstract class ChatPanelComposer extends ChatPanelScreens {
    *  it must be sent on as ordinary text — an unresolved `/foo`, and a genuine
    *  sentence with a slash in it, are never hijacked. The name is returned
    *  rather than a bare `true` so `send()` can report WHICH command ran
-   *  (001/113); `_handleSend` keeps reading it as a truthy value. */
+   *; `_handleSend` keeps reading it as a truthy value. */
   protected _runSlashCommand(text: string): string | null {
     const parsed = parseSlashInput(text);
     if (!parsed) return null;

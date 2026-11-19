@@ -39,7 +39,7 @@ describe("AgentCursor", () => {
     expect(layer()!.querySelector(".wa-agent-cursor")).not.toBeNull();
   });
 
-  it("themes the cursor stroke and flash from theme tokens (009)", () => {
+  it("themes the cursor stroke and flash from theme tokens", () => {
     agentCursor.show();
     const sheet = layer()!.querySelector('style[data-wa-styles="agent-cursor"]');
     expect(sheet).not.toBeNull();
@@ -187,7 +187,7 @@ describe("AgentCursor", () => {
     }
   });
 
-  // 007: destroy() removes the layer; clear() still leaves it.
+  // destroy() removes the layer; clear() still leaves it.
   describe("destroy()", () => {
     it("removes the layer from the document", () => {
       agentCursor.show();

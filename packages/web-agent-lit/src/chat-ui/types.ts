@@ -37,7 +37,7 @@ export interface AgentCursor {
 
 /** Await-able hook fired before a synthetic DOM action. Structurally
  *  identical to `@cuatoi/web-agent-dom`'s `ActionCueFn`; declared here so
- *  this framework package does not depend on the feature package (007). */
+ *  this framework package does not depend on the feature package. */
 export type ActionCueFn = (
   el: Element | undefined,
   kind: CueKind,
@@ -127,8 +127,8 @@ export type DisableableControl = HTMLElement & { disabled?: boolean };
 /** One panel menu entry and the action it runs. */
 export interface PanelMenuItemDef extends WaMenuItem { run: () => void; }
 
-/** 010 — demo/gallery-only: the message-window state a scripted gallery tile
- *  needs, so `gallery.html` can render the 008/009/010 window states as static
+/** Demo/gallery-only: the message-window state a scripted gallery tile
+ *  needs, so `gallery.html` can render the message-window states as static
  *  tiles with no live session. `scrollTop` is applied to the real
  *  `.messages-list`, so `_atBottom` — and therefore the jump button — follows
  *  from real geometry rather than from a forced flag. */
@@ -154,12 +154,12 @@ export interface SlashMenuModel {
 /** Turns one audit entry into the human phrase shown on a tool step row. */
 export type PhraseBuilder = (entry: AuditEntry, agent: string) => string;
 
-/** 124/007: what the thread reads off `session.availableTools()` to render a
+/** What the thread reads off `session.availableTools()` to render a
  *  tool's own step line. Structurally the two optional fields of
  *  `AvailableTool`, so a host can hand one straight in. */
 export type ToolPhraseDef = Pick<AvailableTool, "phrase" | "inProgressPhrase">;
 
-/** 001/113 — what `AgentChatPanel.send()` actually did with the input, so a
+/** What `AgentChatPanel.send()` actually did with the input, so a
  *  host outside the panel can report the truth instead of assuming a message
  *  was posted. `"command"` means a slash command was resolved and handled;
  *  `"message"` means the text went to the model; `"none"` means there was no

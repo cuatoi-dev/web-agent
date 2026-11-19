@@ -21,7 +21,7 @@ import { createConfirmScrim } from "./confirm-scrim.js";
 import type { HostStore, PanelAppContext, PanelMenuItemDef, SendOutcome, ToolPhraseDef } from "./types.js";
 import type { WaMenuItem } from "../ui/types.js";
 
-/** 128/003 — numbers each panel, so its attachment buttons get ids that are
+/** Numbers each panel, so its attachment buttons get ids that are
  *  unique in a document holding several panels (the side panel holds one
  *  per agent). */
 let attachAnchorSeq = 0;
@@ -45,7 +45,7 @@ export abstract class ChatPanelFields extends Component {
   protected _userAvatar?: string;
   protected _agentAvatar?: string;
   protected _debug?: boolean;
-  /** 007: the built-in "ask"-tier confirm dialog. Core no longer resolves
+  /** The built-in "ask"-tier confirm dialog. Core no longer resolves
    *  DOM permissions itself (no `ctx.domAdapter`), so this is no longer
    *  auto-wired into `onPreTool` — instead a host passes `confirmInteraction`
    *  (the panel's own method) into `domTools({ confirmInteraction: ... })`, and the DOM
@@ -87,7 +87,7 @@ export abstract class ChatPanelFields extends Component {
   protected _unsub?: () => void;
   protected _eventsUnsub?: () => void;
   protected _retryAttempt?: { attempt: number; maxRetries: number; reason: string };
-  /** 008: a one-off warning (an attachment hint, a validation message) shown
+  /** A one-off warning (an attachment hint, a validation message) shown
    *  by the panel itself when the host wires no `notify` callback. Independent
    *  of the exclusive failure slot, so an error never swallows it. Cleared by
    *  its own Dismiss. */
@@ -122,7 +122,7 @@ export abstract class ChatPanelFields extends Component {
   /** The phrase map `_toolPhrases()` returns while `_cachedPhraseSource` still
    *  matches the session's tool list. */
   protected _cachedToolPhrases: Map<string, ToolPhraseDef> | undefined = undefined;
-  /** 128/003 — id of the provider whose `choices()` menu is open, or null. */
+  /** Id of the provider whose `choices()` menu is open, or null. */
   protected _attachMenuFor: string | null = null;
   /** The open menu's rows, built once per open so `<wa-menu>` keeps them. */
   protected _attachMenuItems: WaMenuItem[] = [];
@@ -139,7 +139,7 @@ export abstract class ChatPanelFields extends Component {
     e.stopPropagation();
   };
 
-  // --- Slash-command menu (105/003) ---
+  // --- Slash-command menu ---
   /** Zero-height positioning parent, rendered as the first child of
    *  `.input-area`; the menu is absolutely positioned against it. */
   protected _slashAnchorEl!: HTMLElement;
@@ -160,7 +160,7 @@ export abstract class ChatPanelFields extends Component {
   /** Which debug Copy button is showing "Copied!" feedback, or null. */
   protected _debugCopied: "log" | "tools" | null = null;
 
-  // --- Screen seam (125/001) ---
+  // --- Screen seam ---
   protected _screens: import("./types.js").PanelScreen[] = [];
   protected _openScreen: string | null = null;
   protected _renderedScreenId: string | null = null;
@@ -190,7 +190,7 @@ export abstract class ChatPanelFields extends Component {
   /** The default registry's stylesheet, rendered as a child of this panel so
    *  the rules live in the panel's own tree — the document, or a host's shadow
    *  root. It carries no `id`: an id in the light DOM would still answer
-   *  `document.getElementById`, which is the global scope this task removes. */
+   *  `document.getElementById`, which leaks across shadow-DOM hosts. */
   protected _registryStyleEl!: HTMLStyleElement;
 
   // --- Scroll behavior ---
@@ -207,7 +207,7 @@ export abstract class ChatPanelFields extends Component {
   // --- 009: scroll-up window loading ---
   /** True while an older window is being loaded. Renders the top loader. */
   protected _loadingOlder = false;
-  /** 010 round 2 — demo/gallery-only: the inline styles stashed by
+  /** Demo/gallery-only: the inline styles stashed by
    *  `_freezeOlderDots()` so unfreezing restores the exact animation the
    *  registry factory set. Null when the dots run normally. */
   protected _frozenDots: Array<{ el: HTMLElement; animation: string; transform: string }> | null = null;
@@ -215,7 +215,7 @@ export abstract class ChatPanelFields extends Component {
   protected _loadOlderTimer: ReturnType<typeof setTimeout> | null = null;
   protected _loadOlderResolve: (() => void) | null = null;
 
-  // --- Tool image overlay (004) ---
+  // --- Tool image overlay ---
   /** The dataUrl shown full-size in the panel image overlay, or null when
    *  closed. */
   protected _overlaySrc: string | null = null;
@@ -229,7 +229,7 @@ export abstract class ChatPanelFields extends Component {
   /** True from the moment a block submission is accepted until its `send()`
    *  call has fully settled. `this.running` alone cannot guard a fast repeat
    *  click/tap: it lags behind by the `onUserPrompt` hook's await window
-   *  (task 006), so two activations in that window both see `running ===
+   *, so two activations in that window both see `running ===
    *  false`. This flag is scoped to the block handlers only — the composer's
    *  `_handleSend()` needs no such guard (it is protected incidentally by
    *  synchronously clearing the input before `send()` is called), and must

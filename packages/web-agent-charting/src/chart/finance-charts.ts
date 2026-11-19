@@ -55,7 +55,7 @@ export const financePlugin = {
       });
     });
 
-    // ── 2. reference lines / boxes (shared 072-3/072-4 enabler) ──
+    // ── 2. reference lines / boxes ──
     const ann = chart.options?.annotation;
     if (ann && area && xScale && yScale) {
       const pix = (axis: string, v: unknown) => (axis === "x" ? xScale : yScale).getPixelForValue(v);

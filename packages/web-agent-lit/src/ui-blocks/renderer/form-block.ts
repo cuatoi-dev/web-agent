@@ -25,7 +25,7 @@ const FORM_BLOCK_STYLES = html`
     }
     /* The disabled state must stay legible, so it is dimmed by choosing
        colours rather than by fading the whole box — same root cause and same
-       fix pattern as buttons-block.ts (task 008). The old blanket opacity
+       fix pattern as buttons-block.ts. The old blanket opacity
        fade plus a darker background measured 1.04:1 in wa2-dark. */
     agent-form-block .form-container.disabled {
       pointer-events: none;
@@ -68,7 +68,7 @@ const FORM_BLOCK_STYLES = html`
       /* --wa-action-color-info-300 is a bright accent tuned for dark
          surfaces; on wa2-light it measures 3.20:1 against this panel's
          background — below the 4.5:1 floor. --wa-text-color is the
-         accessible choice in every theme (task 017). */
+         accessible choice in every theme. */
       color: var(--wa-text-color, #1a73e8);
       font-weight: 600;
     }
@@ -82,7 +82,7 @@ const FORM_BLOCK_STYLES = html`
       font-size: 0.85em;
       font-weight: 500;
       /* --wa-label-color alone measures 4.44:1 on wa2-light — just
-         under the 4.5:1 floor (task 017). Blending it toward
+         under the 4.5:1 floor. Blending it toward
          --wa-text-color keeps the label visually secondary to the
          field value while landing at ~9:1 in every theme. */
       color: color-mix(in oklab, var(--wa-text-color, #202124) 60%, var(--wa-label-color, #5f6368) 40%);

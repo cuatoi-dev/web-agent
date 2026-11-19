@@ -88,7 +88,7 @@ export class AgentChatPanel extends ChatPanelWindow {
     this.removeEventListener("drop", this._onDrop);
     this._detachHistoryListeners();
     this._historyPopupShown = false;
-    // 105/003 — drops the document-level outside-click listener.
+    // Drops the document-level outside-click listener.
     this._closeSlashMenu();
     try {
       getAgentCursor().clear();
@@ -282,7 +282,7 @@ export class AgentChatPanel extends ChatPanelWindow {
     const activeSession = this._state?.sessions.find(
       (s) => s.id === this._state?.activeSessionId
     );
-    // 124/007 — built once per render, not once per message.
+    // Built once per render, not once per message.
     const toolPhrases = this._toolPhrases();
     const headerTitle = activeSession?.title?.trim()
       ? activeSession.title
@@ -452,7 +452,7 @@ ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
                   ${this._resolveProviders().map((p) => this._providerButton(p))}
                   <span class="composer-spacer"></span>
                   ${(() => {
-                    // 068/003 — absent, not dimmed, when the list is empty.
+                    // Absent, not dimmed, when the list is empty.
                     const todos = this._todoItems();
                     if (todos.length === 0) return "";
                     return html`
@@ -460,7 +460,7 @@ ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
                     `;
                   })()}
                   ${(() => {
-                    // 109/003 — absent, not dimmed, when nothing is pending.
+                    // Absent, not dimmed, when nothing is pending.
                     const pending = this._pendingCounts();
                     if (pending.schedules + pending.reminders === 0) return "";
                     return html`

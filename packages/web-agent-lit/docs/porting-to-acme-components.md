@@ -54,7 +54,7 @@ consumes core directly.
 
 ---
 
-## 2. The `<wa-*>` tag contract in full
+## 2. The wa-* tag contract in full
 
 The seam is nine plain custom element tags. The chat UI renders them directly
 in its lit-html templates and never imports a vendor widget (`md-*` or
@@ -335,12 +335,13 @@ protected sync(): void {
 }
 ```
 
-The 26 icon names the sample ships (`src/ui/icon-svgs.ts`) are: `more_vert`,
+The 32 icon names the sample ships (`src/ui/icon-svgs.ts`) are: `more_vert`,
 `send`, `arrow_upward`, `arrow_downward`, `close`, `check`, `attach_file`,
 `chat`, `stop`, `history`, `delete`, `edit`, `add_comment`, `settings`,
 `arrow_back`, `bug_report`, `ads_click`, `fiber_manual_record`, `folder`,
 `folder_open`, `description`, `image`, `download`, `lock`, `chevron_right`,
-`expand_more`. Names the chat UI, the vfs file tree and the attachment
+`expand_more`, `key`, `dns`, `refresh`, `visibility`, `visibility_off`,
+`science`. Names the chat UI, the vfs file tree and the attachment
 providers actually request: `add_comment`, `arrow_back`, `arrow_downward`,
 `arrow_upward`, `check`, `close`, `delete`, `download`, `edit`,
 `expand_more`, `chevron_right`, `folder`, `folder_open`, `history`, `lock`,
@@ -560,9 +561,9 @@ A `acme-*` binding, in order:
    `wa-menu`, `wa-progress`, `wa-working-dots`, `wa-text-input`,
    `wa-text-area`.
 5. **After each tag, run that tag's adapted test** (the behavioural set from
-   §8, against your element).
+   section 8, against your element).
 6. **Wire the build-time alias** — the `NormalModuleReplacementPlugin` entry
-   from §5, pointing at your registry module.
+   from section 5, pointing at your registry module.
 7. **Run `pnpm build` and `pnpm test`** — the full package suite must pass.
 8. **Mount the panel in a host page** and check the composer: it grows as you
    type, caps at half the panel height, and collapses via `resetHeight()`

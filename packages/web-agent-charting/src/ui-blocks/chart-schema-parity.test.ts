@@ -1,8 +1,8 @@
 /**
  * Parity between the hand-written JSON Schema (candidate) and the
- * pre-migration zod schema (baseline), following task 006's form
- * (web-agent-core/src/ui-blocks/schema-parity.test.ts). The baseline is
- * embedded inline as it stood before this task — not a frozen copy of the
+ * pre-migration zod schema (baseline), following the same form as
+ * web-agent-core/src/ui-blocks/schema-parity.test.ts. The baseline is
+ * embedded inline — not a frozen copy of the
  * emitted candidate schema — so a change on either side surfaces here.
  */
 import { describe, it, expect } from "vitest";
@@ -13,7 +13,7 @@ import { validateChartBlock } from "./validate-chart.js";
 import { SHOW_CHART_SCHEMA } from "../tools/show-chart.js";
 import { SHOW_LIVE_CHART_SCHEMA } from "../tools/show-live-chart.js";
 
-// ── Pre-migration baseline (zod), as chart-schema.ts stood before this task ──
+// ── Pre-migration baseline (zod) ──
 
 function baselineUnwrapXmlText(val: unknown): unknown {
   if (typeof val === "object" && val !== null) {

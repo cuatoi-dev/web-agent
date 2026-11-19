@@ -8,12 +8,14 @@ loop lives in `@cuatoi/web-agent-core`.
 
 ```bash
 pnpm add @cuatoi/web-agent-lit lit-html
+# or
+npm install @cuatoi/web-agent-lit lit-html
 ```
 
 `lit-html` is a required peer dependency (`^1 || ^2 || ^3`) supplied by the host
 application, so the agent UI binds to whichever major the host already ships.
 
-## Quick start
+## Usage
 
 ```ts
 import "@cuatoi/web-agent-lit/themes/wa-tokens.css";
@@ -39,7 +41,7 @@ document.querySelector("[data-agent-ui]").appendChild(panel);
 | `@cuatoi/web-agent-lit/themes` | theme registry: `registerTheme`, `applyTheme`, `listThemes`, `getTheme`, `defaultTheme` |
 | `@cuatoi/web-agent-lit/embed/*` | drop-in embeddable widget, e.g. `embed/web-agent-embed` |
 | `@cuatoi/web-agent-lit/chat-ui/*` | individual chat UI components |
-| `@cuatoi/web-agent-lit/ui/*` | the UI registry seam (`ui/registry`, `ui/registry-types`) |
+| `@cuatoi/web-agent-lit/ui/*` | the UI registry seam (`ui/registry`, `ui/types`) |
 | `@cuatoi/web-agent-lit/ui-blocks/*` | UI-block renderers |
 
 ```ts
@@ -58,9 +60,10 @@ package ships a checker for theme files, `bin/web-agent-theme-check.mjs`
 
 ## UI registry
 
-UI primitives (**button, iconButton, textInput, checkbox, menu, progress,
-textArea, and the optional workingDots**) render through the registry seam in
-`ui/registry-types` rather than importing vendor widgets directly, so a host
+UI primitives (**`<wa-button>`, `<wa-icon-button>`, `<wa-icon>`,
+`<wa-checkbox>`, `<wa-menu>`, `<wa-text-input>`, `<wa-text-area>`,
+`<wa-progress>`, and `<wa-working-dots>`**) render through the registry seam in
+`ui/registry` and `ui/types` rather than importing vendor widgets directly, so a host
 can swap in its own component library via a build-time alias. The default
 implementation is `ui/registry.ts`, which builds plain DOM with Beer CSS class
 names. Its `wa-*` stylesheet lives in `ui/registry-styles.ts` and the panel
@@ -77,4 +80,4 @@ for adopting an internal component set.
 
 ## License
 
-Apache-2.0
+Apache-2.0 — see [LICENSE](./LICENSE).

@@ -1,4 +1,4 @@
-// 009 — scroll-up window loading. Every case that drives a load runs under
+// Scroll-up window loading. Every case that drives a load runs under
 // `vi.useFakeTimers()` and advances past `LOADER_MIN_MS`, so the file stays
 // fast rather than waiting out a real 900 ms hold per case.
 //
@@ -106,7 +106,7 @@ function makeMockSession(): { session: AgentSession; push(next: Partial<SessionS
   };
 }
 
-// --- New for 009 ---
+// --- Scroll-up loading helpers ---
 
 /** jsdom has no layout. Probed on jsdom 24.0.0 in this tree (2026-09-09):
  *  `scrollTop` IS a real writable property and reads back what you set, but
@@ -125,7 +125,7 @@ function stubListMetrics(el: AgentChatPanel) {
   // `advanceTimersByTimeAsync`, setting `scrollTop = scrollHeight` well after
   // this stub is installed and stomping any scrollTop this file asserts on.
   // Same leftover-frame problem `chat-panel.test.ts`'s
-  // "scroll coalesced to one animation frame per redraw (009)" block cancels
+  // "scroll coalesced to one animation frame per redraw" block cancels
   // in its own `beforeEach`; do the same here.
   const priv = el as unknown as Record<string, unknown>;
   const pendingRaf = priv["_scrollRafId"] as number | null;
@@ -381,7 +381,7 @@ describe("AgentChatPanel — scroll-up window loading", () => {
     // `_atBottom` is false (scrolled up) and `_windowStart` stays below
     // `msgs.length`, so re-assigning `.messages` below cannot trip
     // `_recomputeWindow()`'s early-return into re-cutting the window — it
-    // just extends the tail the same way a streaming turn does in 008.
+    // just extends the tail the same way a streaming turn does.
     await element.updateComplete;
     await vi.advanceTimersByTimeAsync(50);
     await element.updateComplete;

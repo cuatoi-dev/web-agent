@@ -165,7 +165,7 @@ describe("AgentChatPanel history dropdown inside a shadow root", () => {
     // different mechanism than the composedPath defect under test here.
     // So the outside-click handler is invoked directly with a constructed
     // event whose composedPath() reports the anchor, isolating exactly the
-    // behaviour this task changed: before the fix (Node.contains()) this
+    // composedPath() behaviour: before the fix (Node.contains()) this
     // constructed event still closes the panel, because contains() cannot
     // see composedPath() at all — it inspects e.target, which a real
     // shadow-crossing click retargets to `host`.

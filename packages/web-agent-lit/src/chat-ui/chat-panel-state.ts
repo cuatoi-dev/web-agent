@@ -45,7 +45,7 @@ export abstract class ChatPanelState extends ChatPanelProps {
     this.requestUpdate();
   }
 
-  /** 010 — demo/gallery-only: puts the panel into one of the message-window
+  /** Demo/gallery-only: puts the panel into one of the message-window
    *  states without a live session, so `gallery.html` can tile them.
    *
    *  The scroll is applied after the render, from a microtask, and that timing
@@ -66,7 +66,7 @@ export abstract class ChatPanelState extends ChatPanelProps {
     if (val.windowStart !== undefined) this._windowStart = val.windowStart;
     if (val.loadingOlder !== undefined) this._loadingOlder = val.loadingOlder;
     this.requestUpdate();
-    // 010 round 2 — demo/gallery-only: a frozen loader photographs the same
+    // Demo/gallery-only: a frozen loader photographs the same
     // every time. The pulse keeps one dot at `scale(0.2)` and the others part
     // way up the scale for most of the cycle, so a static capture lands on
     // sub-pixel dots by luck of timing. Freezing parks all three dots at full
@@ -89,7 +89,7 @@ export abstract class ChatPanelState extends ChatPanelProps {
     });
   }
 
-  /** 010 round 2 — demo/gallery-only. Freezing parks the older-loader dots at
+  /** Demo/gallery-only. Freezing parks the older-loader dots at
    *  full scale with their pulse paused, so a static gallery capture always
    *  shows three visible dots. The pause marker is the inline `animation: none`
    *  on each dot, which `WaWorkingDots._applyFrame()` honours by leaving the dot

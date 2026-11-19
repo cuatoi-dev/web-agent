@@ -50,7 +50,7 @@ export const SCHEDULE_CLOCK_CSS = `        agent-schedule-clock {
           font-weight: 600;
           line-height: 1;
           font-variant-numeric: tabular-nums;
-          /* 109/003 — measured, do not substitute a raw accent token.
+          /* Measured, do not substitute a raw accent token.
              The badge must clear TWO floors in all three themes: 4.5:1 for its
              numeral, and 3:1 for the pill against the composer surface it sits
              on (--wa-input-background-color, chat-panel-composer-css.ts:21).

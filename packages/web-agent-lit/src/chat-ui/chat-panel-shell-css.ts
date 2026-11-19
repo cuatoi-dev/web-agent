@@ -7,7 +7,7 @@
 export const PANEL_SHELL_CSS = `        agent-chat-panel {
           display: flex;
           flex-direction: column;
-          /* 002: the panel no longer places or sizes itself — it fills the box
+          /* The panel no longer places or sizes itself — it fills the box
              the host gives it. 'relative' (not 'static') keeps the panel the
              containing block for the confirm scrim, which is appended to this
              element as an absolutely positioned overlay pinned to all four
@@ -45,7 +45,7 @@ export const PANEL_SHELL_CSS = `        agent-chat-panel {
           /* The left group is flex:1, so it absorbs all the free space and
              there is nothing left to distribute. With space-between and
              three children the pencil was pushed into the middle of the
-             bar — that was the defect this task fixes. Do not put it back. */
+             bar. Do not put it back. */
           align-items: center;
           gap: var(--wa-padding-m, 0.5rem);
           font-weight: bold;
@@ -109,7 +109,7 @@ export const PANEL_SHELL_CSS = `        agent-chat-panel {
           background: var(--wa-background-color, #fafafa);
           contain: layout style paint;
         }
-        /* 010 — the scroll-to-bottom button.
+        /* The scroll-to-bottom button.
            The anchor always reserves space between the list and the composer
            so the list never resizes when the button toggles. It follows a
            growing composer without letting the button cover the last
@@ -191,7 +191,7 @@ export const PANEL_SHELL_CSS = `        agent-chat-panel {
           outline: 2px solid var(--wa-text-color, #ffffff);
           outline-offset: 2px;
         }
-        /* 004 — the panel-scoped image overlay. Pinned to the panel's four
+        /* The panel-scoped image overlay. Pinned to the panel's four
            edges exactly like the confirm scrim, so it never covers the host
            page or the browser tab beside the side panel. */
         agent-chat-panel .wa-image-overlay {

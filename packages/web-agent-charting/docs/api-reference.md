@@ -85,8 +85,7 @@ them.
 
 Each pairs a hand-written interface or union with its schema. `tsc` forces
 the witness to track the type; `chart-schema-drift.test.ts` forces the
-schema's property (or enum) set to track the witness. Neither side can drift
-alone — see **Design decisions D3** in the migration task for the full chain.
+schema's property (or enum) set to track the witness. Neither side can drift alone.
 
 | Export | Kind | Source file | Guards |
 |---|---|---|---|

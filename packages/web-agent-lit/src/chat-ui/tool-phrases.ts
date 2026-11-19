@@ -203,7 +203,7 @@ const IN_PROGRESS_PHRASES: Record<string, (agent: string) => string> = {
  *  (custom tools, or built-ins not in the friendly set). An unresolved
  *  (empty) outcomeSummary means the tool is still in progress, not failed —
  *  route it to a neutral present-tense phrase instead of the "tried to" wording.
- *  124/007: a tool that carries its own phrase wins over the built-in list; a phrase that throws is logged and falls through. */
+ *  A tool that carries its own phrase wins over the built-in list; a phrase that throws is logged and falls through. */
 export function baseToolStepPhrase(
   entry: AuditEntry,
   agentShortName?: string,
@@ -212,7 +212,7 @@ export function baseToolStepPhrase(
   const agent = agentLabel(agentShortName);
   const def = toolPhrases?.get(entry.name);
   if (!entry.outcomeSummary && (!entry.images || entry.images.length === 0)) {
-    // 124/007 — a tool's own wording wins over the built-in list.
+    // A tool's own wording wins over the built-in list.
     if (def?.inProgressPhrase) {
       try {
         return def.inProgressPhrase(agent);
@@ -235,7 +235,7 @@ export function baseToolStepPhrase(
   return builder ? builder(entry, agent) : `${agent} used the tool ${entry.name}`;
 }
 
-/** 002: append the saved-output path to the phrase chosen above. A saved
+/** Append the saved-output path to the phrase chosen above. A saved
  *  result without a path (the block could not be saved) gets no suffix. */
 export function toolStepPhrase(
   entry: AuditEntry,

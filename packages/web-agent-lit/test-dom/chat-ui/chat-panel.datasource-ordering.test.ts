@@ -119,7 +119,7 @@ async function flushUpdates(el: AgentChatPanel) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("chat-panel datasource ordering (003b)", () => {
+describe("chat-panel datasource ordering", () => {
   let element: AgentChatPanel;
   let element2: AgentChatPanel;
 

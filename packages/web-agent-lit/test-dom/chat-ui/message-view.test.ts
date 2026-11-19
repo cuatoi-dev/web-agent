@@ -291,14 +291,14 @@ describe("AgentMessageView", () => {
     expect(element.querySelector(".role-label")).toBeNull();
   });
 
-  it("renders its own stylesheet when it has no chat panel ancestor (011)", async () => {
+  it("renders its own stylesheet when it has no chat panel ancestor", async () => {
     await element.updateComplete;
     const sheet = element.querySelector("style");
     expect(sheet).not.toBeNull();
     expect(sheet!.textContent).toContain("agent-message-view .message-row");
   });
 
-  it("re-assigning identical values requests no further update (011)", async () => {
+  it("re-assigning identical values requests no further update", async () => {
     const registry = new BlockRendererRegistry();
     const toolRenderers = new Map();
     const toolPhrases = new Map();
@@ -389,7 +389,7 @@ describe("AgentMessageView", () => {
   });
 });
 
-describe("compaction row (009)", () => {
+describe("compaction row", () => {
   let element: AgentMessageView;
 
   beforeEach(() => {
@@ -460,7 +460,7 @@ describe("compaction row (009)", () => {
   });
 });
 
-describe("compaction row detail (105/004)", () => {
+describe("compaction row detail", () => {
   let element: AgentMessageView;
 
   beforeEach(() => {
@@ -652,7 +652,7 @@ describe("custom tool renderer", () => {
     expect(phrase.textContent).not.toContain("Agent used the tool");
   });
 
-  it("falls back to 062a phrase when no renderer is registered", async () => {
+  it("falls back to built-in phrase when no renderer is registered", async () => {
     // toolRenderers unset
     element.parts = [
       {
@@ -740,7 +740,7 @@ describe("custom tool renderer", () => {
     expect(phrase.textContent).toBe("Agent used the tool empty_tool");
   });
 
-  // 002: a saved result shows its path, wraps fully, and never overrides custom HTML.
+  // A saved result shows its path, wraps fully, and never overrides custom HTML.
   const savedBlock = (id: string) =>
     `<saved-output path="/tmp/tool-results/${id}.txt" chars="48210">\nOutput too large (48,210 characters). Full output saved to /tmp/tool-results/${id}.txt.`;
 
@@ -1069,7 +1069,7 @@ describe("user bubble CSS guard", () => {
   });
 });
 
-describe("assistant surface + table CSS (005)", () => {
+describe("assistant surface + table CSS", () => {
   let element: AgentMessageView;
   beforeEach(() => {
     element = document.createElement("agent-message-view");
@@ -1099,13 +1099,13 @@ describe("assistant surface + table CSS (005)", () => {
     expect(css).toContain("tbody tr:nth-child(even) td");   // zebra rows
   });
 
-  // Fix — review round 1 (131/003, Stage B item 6): the inherited
+  // Regression: the inherited
   // `.content { word-break: break-word }` behaved like `overflow-wrap: anywhere`,
   // letting the browser's auto table layout shrink a narrow column (e.g.
   // "Level") to a one-character min-content width and break words like "log"
   // mid-letter. `th`/`td` now reset to the standard wrap pair so a cell only
   // breaks at a space.
-  it("keeps table cell words whole — word-break normal, overflow-wrap break-word (131/003 review fix)", async () => {
+  it("keeps table cell words whole — word-break normal, overflow-wrap break-word", async () => {
     element.text = "| Level | Message |\n| --- | --- |\n| log | checkout page ready |";
     await element.updateComplete;
     const th = element.querySelector(".content th")!;
@@ -1117,14 +1117,14 @@ describe("assistant surface + table CSS (005)", () => {
     }
   });
 
-  it("themes message surfaces from theme tokens (009)", async () => {
+  it("themes message surfaces from theme tokens", async () => {
     await element.updateComplete;
     const css = element.querySelector("style")!.textContent;
     expect(css).toContain("background-color: var(--wa-action-color-info, #e0dbff)");
     expect(css).toContain("color: var(--wa-action-text-color-info, #23005c)");
     expect(css).toContain("color: var(--wa-text-color, #202124)");
     expect(css).toContain("background: var(--wa-background-color-300, #f0f1f3)");
-    // task 017: --wa-label-color alone measured 4.44:1 on wa2-light (below
+    // --wa-label-color alone measured 4.44:1 on wa2-light (below
     // the 4.5:1 AA floor) — blended toward --wa-text-color for a safe margin.
     expect(css).toContain("color-mix(in oklab, var(--wa-text-color, #202124) 60%, var(--wa-label-color, #80868b) 40%)");
     expect(css).toContain("background-color: transparent");
@@ -1149,10 +1149,10 @@ describe("assistant surface + table CSS (005)", () => {
   });
 });
 
-// Fix — review round 1 (131/002, Stage B item 6b): a link inside the user
+// Regression: a link inside the user
 // bubble measured 1.21:1 against rgb(131,82,255) using the generic
 // --wa-link-color* tokens. Reused the bubble's own text token instead.
-describe("user bubble link contrast (131/002 review fix)", () => {
+describe("user bubble link contrast", () => {
   let element: AgentMessageView;
   let themeStyle: HTMLStyleElement;
 
@@ -1206,10 +1206,10 @@ describe("user bubble link contrast (131/002 review fix)", () => {
   }
 });
 
-// Task 003410-002: the block cache keeps a block's rendered node stable across
+// The block cache keeps a block's rendered node stable across
 // re-renders instead of rebuilding it (renderBlocksToElement / replaceChildren),
 // which previously destroyed in-progress form input on every message update.
-describe("block node identity and reuse (003410-002)", () => {
+describe("block node identity and reuse", () => {
   let element: AgentMessageView;
 
   const formBlock = (): FormBlock => ({

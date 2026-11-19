@@ -1,4 +1,4 @@
-// 003: CSS rules are tree-scoped, so the bubble ships its own. Beer CSS
+// CSS rules are tree-scoped, so the bubble ships its own. Beer CSS
 // class names cannot cross this boundary, and neither can a host rule that
 // targets `web-agent-bubble #launcher`. Everything paints from --wa-*
 // tokens, which are custom properties and DO cross. A host that needs a
@@ -9,7 +9,7 @@ export const BUBBLE_SHADOW_HTML = `
           position: fixed;
           bottom: 80px;
           right: 20px;
-          /* 002: a host sets these two inherited properties on any ancestor
+          /* A host sets these two inherited properties on any ancestor
              ('web-agent-bubble', 'body', ':root') to resize the box. The
              fallbacks are the defaults, so a host that sets nothing is
              unaffected. The panel inside fills this box. */
@@ -65,7 +65,7 @@ export const BUBBLE_SHADOW_HTML = `
           border-radius: 50%;
           object-fit: cover;
         }
-        /* 007: the panel holds the only Stop button, so collapsing it mid-run
+        /* The panel holds the only Stop button, so collapsing it mid-run
            left the user with no way to stop the agent. This control sits above
            the launcher and is shown only while a run is in flight AND the
            panel is closed. */
@@ -85,7 +85,7 @@ export const BUBBLE_SHADOW_HTML = `
           cursor: pointer;
           line-height: 1;
           z-index: 1000;
-          /* 009: the on-colour is theme-dependent — near-black on the light
+          /* The on-colour is theme-dependent — near-black on the light
              error surface of the dark themes, white on the dark error surface
              of wa2-light. Read it from the token; never hard-code white. */
           background: var(--wa-action-color-error, #d93025);

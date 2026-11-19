@@ -1,4 +1,4 @@
-// ── P&L / equity curve + drawdown (072-4) ──
+// ── P&L / equity curve + drawdown ──
 
 /** Cumulative running total of per-period P&L. y_i = start + Σ returns[0..i].
  *  x_i = opts.x?.[i] (numeric, or ISO/date string → ms) else the index i. */

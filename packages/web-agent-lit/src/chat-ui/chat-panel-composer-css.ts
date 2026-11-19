@@ -50,7 +50,7 @@ export const PANEL_COMPOSER_CSS = `        agent-chat-panel .input-area {
           flex: 1;
           min-width: 0;
         }
-        /* 105/003 — the "/" menu. Every colour is a --wa-* token; the
+        /* The "/" menu. Every colour is a --wa-* token; the
            literals are only the var() fallbacks, matching the history panel
            (chat-panel-history.ts:80-91). Contrast measured 2026-09-05 across
            wa1-dark, wa2-dark and wa2-light — see the refine's contrast
@@ -92,7 +92,7 @@ export const PANEL_COMPOSER_CSS = `        agent-chat-panel .input-area {
           font-size: var(--wa-dropdown-item-font-size, 14px);
           /* The highlight is an accent BAR, not a fill. A solid
              --wa-action-color-info fill against its own on-colour measures
-             4.55:1 in both wa2 themes since task 005 lowered the accent to
+             4.55:1 in both wa2 themes with the accent at
              hsl(257deg 100% 66%), so it now clears the 4.5:1 AA floor for
              normal text. The bar is kept because it reads as a selection
              indicator, not because a fill would fail. As a non-text indicator
