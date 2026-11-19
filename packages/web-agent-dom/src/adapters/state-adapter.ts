@@ -1,5 +1,5 @@
 // state-adapter.ts — StateAdapter with JSONPath query + describeShape.
-// §5.2 (Q1–Q5), §7 (describeShape), §10 (invalid JSONPath).
+// Query rules (Q1–Q5), describeShape, and the invalid-JSONPath message.
 import { JSONPath } from "jsonpath-plus";
 import { invalidJsonPath } from "../tools/error-messages.js";
 import type { QueryInput } from "./types.js";
@@ -168,7 +168,7 @@ export class StateAdapter {
    * Q2: returns { total_matches, returned, results }.
    * Q3: uses keys_only to return only keys.
    * Q4: depth/leaf caps + non-serializable markers.
-   * Q5: invalid path returns §10 error message.
+   * Q5: invalid path returns the standard error message.
    */
   query(input: QueryInput): Promise<string> {
     const path = input.path;
@@ -232,7 +232,7 @@ export class StateAdapter {
 
   /**
    * Describe the shape of the state — types only.
-   * Used by `domTools()` for `query_state`'s prompt snippet (§7).
+   * Used by `domTools()` for `query_state`'s prompt snippet.
    */
   describeShape(): string {
     const state = this.getState();

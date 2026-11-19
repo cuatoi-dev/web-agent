@@ -5,7 +5,7 @@ import type { RefTable } from "./ref-table.js";
 import type { ActionCueFn } from "./types.js";
 
 /** The adapter state `walkFromRoot` reads. `agentUiEl` is the element captured
- *  by the caller for the SEC6 exclusion. */
+ *  by the caller for the agent-UI exclusion. */
 export interface SnapshotWalkContext {
   refTable: RefTable;
   snapshotMaxChars: number;

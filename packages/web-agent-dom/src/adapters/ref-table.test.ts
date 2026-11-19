@@ -54,7 +54,7 @@ describe("RefTable", () => {
     });
   });
 
-  describe("refFor (124/005)", () => {
+  describe("refFor", () => {
     it("returns undefined for an element that was never assigned", () => {
       expect(table.refFor(makeEl())).toBeUndefined();
     });

@@ -1,7 +1,6 @@
 // human-input-events.ts — drives a field through the event sequence a real
 // person produces, so a host that commits on blur/change/keydown sees the
-// agent's input. Orders and flags are measured in Chromium 151 and jsdom 24;
-// see the 006 task file for the probe output.
+// agent's input. Orders and flags are measured in Chromium 151 and jsdom 24.
 
 /** `document.activeElement` is the shadow HOST for a field inside a shadow
  *  root, so the field's own root is what must be asked. In the light DOM the
@@ -48,8 +47,8 @@ export function typeChunkLikeHuman(el: Element, chunk: string, commit: () => voi
 }
 
 /** The commit event. `composed: true` so it crosses a shadow boundary — a real
- *  browser's change does not, and a field inside a shadow root is exactly the
- *  case this task must cover. */
+ *  browser's change does not, and a field inside a shadow root needs it to
+ *  cross. */
 export function dispatchChangeLikeHuman(el: Element): void {
   el.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
 }

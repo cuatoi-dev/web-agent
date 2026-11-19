@@ -43,12 +43,12 @@ export interface DomToolsOptions {
   /**
    * State source for `query_state` — read fresh on every call, same contract as
    * core's own `SessionConfig.store.getState`. This package constructs its own
-   * `StateAdapter` (006-1/2) and core has none to share, so without this
+   * `StateAdapter` and core has none to share, so without this
    * `query_state` has nothing to query. Defaults to `() => ({})`.
    */
   getState?: () => unknown;
   /**
-   * 007: the "ask"-tier confirm gate. Called before an `"ask"`-permission
+   * The "ask"-tier confirm gate. Called before an `"ask"`-permission
    * click/fill/select_option runs; return `false` to block it. `"block"`-tier
    * enforcement needs no wiring — it lives inside `DomAdapter` itself. A host
    * not passing this leaves "ask"-tier elements unconfirmed (they execute like

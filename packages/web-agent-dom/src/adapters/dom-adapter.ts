@@ -1,8 +1,8 @@
 // dom-adapter.ts — builds accessibility-style DOM snapshots with numbered refs.
-// Pure DOM/TS; no loop or SDK imports (§3).
-// Package-owned adapter (006): this package constructs and closes over its own
-// DomAdapter instance. Core ships no DOM adapter of its own since 007.
-// `utils/image.ts` itself stays core-only (006 decision), so only its exported
+// Pure DOM/TS; no loop or SDK imports.
+// Package-owned adapter: this package constructs and closes over its own
+// DomAdapter instance. Core ships no DOM adapter of its own.
+// `utils/image.ts` itself stays core-only, so only its exported
 // `downscaleToolImage` is reused (adapters/screenshot.ts).
 //
 // The element semantics, snapshot formatting, traversal, screenshot, action and
@@ -70,7 +70,7 @@ export class DomAdapter {
       if (r.status === "ok") {
         walkRoot = r.el;
       } else if (r.status === "stale") {
-        // inline §10-style message
+        // inline stale-ref message
         return Promise.resolve(`Ref ${input.scope} is stale (generation ${r.fromGeneration}, current ${r.generation}). Take a new snapshot.`);
       } else if (r.status === "detached") {
         return Promise.resolve(`Ref ${input.scope} no longer exists in the DOM. Take a new snapshot.`);
@@ -83,7 +83,7 @@ export class DomAdapter {
 
     const gen = this.refTable.invalidateAll();
 
-    // Capture agent UI element for exclusion (SEC6).
+    // Capture agent UI element for exclusion.
     this.#agentUiEl = this.root.querySelector(this.agentUiSelector);
 
     if (!walkRoot) {
@@ -100,7 +100,7 @@ export class DomAdapter {
 
   /**
    * Focused snapshot of each given element's subtree, all assigned within a
-   * SINGLE ref-table generation (016-2). `snapshot({scope})` bumps the
+   * SINGLE ref-table generation. `snapshot({scope})` bumps the
    * generation and resets the ref counter on every call, so calling it once
    * per pinned element would silently misresolve refs across items (item 2's
    * call wipes item 1's assignments; because the per-generation ref counter
@@ -177,7 +177,7 @@ export class DomAdapter {
 
   /**
    * Read-only lookup used by the `confirmInteraction` gate in `tool-provider.ts`
-   * (007) to decide whether an about-to-run click/fill/selectOption needs
+   * to decide whether an about-to-run click/fill/selectOption needs
    * confirmation, without performing it or calling `#resolveOrThrow` (which
    * throws on a stale/detached ref — the gate needs a non-throwing check).
    * Returns undefined when the ref cannot be resolved.
@@ -191,7 +191,7 @@ export class DomAdapter {
 
   /**
    * Read-only, non-throwing ref inspection for the panel page tools
-   * (118/122-001): the panel needs to check a ref's status, name, permission
+   * The panel needs to check a ref's status, name, permission
    * and disabled state across a MAIN-world round trip, before it decides
    * whether to run the action at all.
    */

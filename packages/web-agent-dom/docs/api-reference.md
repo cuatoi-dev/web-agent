@@ -4,7 +4,7 @@ title: DOM package API reference
 
 # DOM package API reference
 
-Every export of `src/index.ts` — 19 entries: 6 functions, 3 classes, 1 const
+Every export of `src/index.ts` — 24 entries: 11 functions, 3 classes, 1 const
 and 9 types (some grouped below by the class or function they belong to).
 
 Each type is declared in a types file (`src/types.ts`,
@@ -64,6 +64,13 @@ Readonly fields: `refTable`, `root`, `snapshotMaxChars`, `snapshotMaxDepth`,
 pure `{role, name}` computation `DomAdapter` uses internally, exported so UI
 (the picker) can label elements without a `DomAdapter` instance.
 `src/adapters/dom-adapter.ts` re-exports it.
+
+### `getRole` and `getName` — functions, `src/adapters/element-semantics.ts`
+
+`getRole(el: Element): string` and `getName(el: Element): string` are the two
+halves of `describeElementParts`, exported on their own so a host can label an
+element without a `DomAdapter` instance. `getName` returns an empty string when
+the element has no accessible name.
 
 ### `DomAdapterOptions` — type, `src/adapters/types.ts`
 
@@ -143,6 +150,14 @@ interface PermissionResolution {
 }
 ```
 
+## `isElementVisible`
+
+`isElementVisible(el: Element): boolean` (`src/utils/visibility.ts`) — uses
+`Element.checkVisibility` with the opacity and CSS checks where the platform has
+it, and an ancestor walk on the same three conditions where it does not. It
+does not measure the element's box; `DomAdapter` checks a zero-size box
+separately.
+
 ## `buildPointedElementsBlock`
 
 `buildPointedElementsBlock(snapshots: PointedElementSnapshot[]): string`
@@ -171,6 +186,15 @@ interface PointedElementSnapshot {
 | `agentUiSelector` | `string` | `"[data-agent-ui]"` |
 | `maxItems` | `number` | `8` |
 | `getDomAdapter` | `() => DomAdapter` | none |
+
+## `disabledRef` and `blockedByPolicy`
+
+`disabledRef(ref: string, name: string): string` and
+`blockedByPolicy(ref: string, name: string, reason?: string): string`
+(`src/tools/error-messages.ts`) build the "is disabled" error text and the
+`"block"`-tier refusal text. Both are exported byte-identical to the strings
+`DomAdapter` and the browser extension already return, so a caller can reuse
+them rather than copy the wording.
 
 ## `domSkills`
 
@@ -203,12 +227,12 @@ do not import them from the package root:
 - The modules `DomAdapter` delegates to: `walkFromRoot`
   (`src/adapters/snapshot-walk.ts`), `makeTermMatcher` and `searchText`
   (`src/adapters/snapshot-match.ts`), `countSignificant`, `stateTags`,
-  `skipElement` and `esc` (`src/adapters/snapshot-format.ts`), `getRole`,
-  `getName`, `isInteractive` and `tagLC` (`src/adapters/element-semantics.ts`),
+  `skipElement` and `esc` (`src/adapters/snapshot-format.ts`), `isInteractive`
+  and `tagLC` (`src/adapters/element-semantics.ts`),
   `captureScreenshot` (`src/adapters/screenshot.ts`), `performClick`,
   `performFill` and `performSelectOption` (`src/adapters/interactions.ts`), and
   `waitForIdle` and `waitForText` (`src/adapters/waiters.ts`)
-- `isElementVisible`, `isElementVisibleFallback` (`src/utils/visibility.ts`)
+- `isElementVisibleFallback` (`src/utils/visibility.ts`)
 - `hasVisiblePixels`, `ALPHA_SCAN_MAX_EDGE` (`src/utils/image-alpha.ts`)
 - `holdsFocus`, `focusLikeHuman`, `typeChunkLikeHuman`, `dispatchChangeLikeHuman`, `blurLikeHuman` (`src/utils/human-input-events.ts`)
 - The `src/tools/error-messages.ts` builders: `staleRef`, `detachedRef`,

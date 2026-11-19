@@ -34,7 +34,7 @@ export async function performClick(ctx: InteractionContext, ref: string, signal?
     return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
   }
   // "ask"-tier confirmation happens in the `confirmInteraction` gate of
-  // `domTools()` (tool-provider.ts), before this method is reached — see 007.
+  // `domTools()` (tool-provider.ts), before this method is reached.
 
   const isCSSVisible = isElementVisible(el);
   const rect = el.getBoundingClientRect?.();
@@ -109,7 +109,7 @@ export async function performFill(ctx: InteractionContext, ref: string, value: s
     return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
   }
   // "ask"-tier confirmation happens in the `confirmInteraction` gate of
-  // `domTools()` (tool-provider.ts), before this method is reached — see 007.
+  // `domTools()` (tool-provider.ts), before this method is reached.
 
   const isCSSVisible = isElementVisible(el);
   const rect = el.getBoundingClientRect?.();
@@ -147,19 +147,19 @@ export async function performFill(ctx: InteractionContext, ref: string, value: s
     } else {
       aborted = await typeWordByWord(el, setter, value, paceMs, signal);
     }
-    // A cancelled turn still commits whatever it typed: the raw task for 007
-    // requires that no field is left holding a half-typed value the host
-    // never received a `change` for, and rolling the value back is out of
-    // scope. When the stop landed before the first chunk the value is
-    // unchanged, so no `change` is fired.
+    // A cancelled turn still commits whatever it typed: no field is left
+    // holding a half-typed value the host never received a `change` for,
+    // and rolling the value back is out of scope. When the stop landed
+    // before the first chunk the value is unchanged, so no `change` is
+    // fired.
     if (!aborted || (el as HTMLInputElement).value !== valueBeforeTyping) {
       dispatchChangeLikeHuman(el);
     }
     blurLikeHuman(el as HTMLElement);
     readBack = (el as HTMLInputElement).value;
   } else if (isContentEditable) {
-    // A real browser fires no `change` on a contenteditable — measured, see
-    // the 006 task file. Everything else in the sequence still applies.
+    // A real browser fires no `change` on a contenteditable — measured.
+    // Everything else in the sequence still applies.
     focusLikeHuman(el as HTMLElement);
     typeChunkLikeHuman(el, value, () => { el.textContent = value; });
     blurLikeHuman(el as HTMLElement);
@@ -192,7 +192,7 @@ export async function performSelectOption(ctx: InteractionContext, ref: string, 
     return `Blocked by interaction policy ("block"): not allowed to operate [${ref}]${desc}${extra}; ask the user to do it themselves.`;
   }
   // "ask"-tier confirmation happens in the `confirmInteraction` gate of
-  // `domTools()` (tool-provider.ts), before this method is reached — see 007.
+  // `domTools()` (tool-provider.ts), before this method is reached.
 
   if (!(el instanceof HTMLSelectElement)) {
     throw new Error(`Ref ${ref} is not a native <select>. Custom dropdowns: click to open then click the option.`);
@@ -341,7 +341,7 @@ function typeWordByWord(
 
     const onAbort = () => {
       // Leave the current partial value in place. fill() decides whether to
-      // fire `change` for it (007).
+      // fire `change` for it.
       settle(true);
     };
 

@@ -1,4 +1,4 @@
-// §10 Tool Error Message Matrix — pure builder functions.
+// Tool error messages — pure builder functions.
 // Every function returns an actionable message string.
 // Never build raw stack traces here.
 
@@ -81,7 +81,7 @@ export function invisibleTargetNote(ref: string, name?: string): string {
 
 /** "block"-tier refusal. Byte-identical to the inline text `interactions.ts`
  *  builds for click/fill/selectOption/selectOptions, exported so the panel
- *  page tools' pre-check in content.ts (122/001) can reuse it rather than
+ *  page tools' pre-check in content.ts can reuse it rather than
  *  duplicate the wording. */
 export function blockedByPolicy(ref: string, name: string, reason?: string): string {
   const desc = name ? ` "${name}"` : "";

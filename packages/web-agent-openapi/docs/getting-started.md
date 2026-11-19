@@ -36,7 +36,7 @@ pnpm add @cuatoi/web-agent-openapi
 
 This is the one wiring that exists in this repo today — the
 `openApiToolProviders([...])` entry inside the `panel.toolProviders = [ … ]`
-assignment in `apps/cat-store/src/web/agent-panel-config.ts:255-264` (OpenAPI
+assignment in `apps/cat-store/src/web/agent-panel-config.ts:276-285` (OpenAPI
 there, next to MCP and DOM tools):
 
 ```ts

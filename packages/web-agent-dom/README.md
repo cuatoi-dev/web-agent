@@ -12,7 +12,7 @@ the point-at-elements picker, through `@cuatoi/web-agent-core`'s
 pnpm add @cuatoi/web-agent-dom
 ```
 
-## Quick start
+## Usage
 
 ```ts
 import { createAgentSession, coreSkills } from "@cuatoi/web-agent-core";
@@ -37,4 +37,4 @@ See [`docs/README.md`](./docs/README.md).
 
 ## License
 
-Apache-2.0
+Apache-2.0 — see [LICENSE](./LICENSE).

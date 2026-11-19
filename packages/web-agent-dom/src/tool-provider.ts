@@ -1,7 +1,7 @@
 // tool-provider.ts — domTools(): a ToolProvider bundling the DOM/state tool set.
 //
-// This package owns and constructs its own DomAdapter/StateAdapter (006-1);
-// every tool's `execute` closes over THOSE instances. Since 007, core ships
+// This package owns and constructs its own DomAdapter/StateAdapter;
+// every tool's `execute` closes over THOSE instances. Core ships
 // no adapters of its own at all — this package's `RefTable` is the only one.
 import type {
   ToolProvider,
@@ -20,11 +20,11 @@ export type { ConfirmInteractionDetail, DomToolsOptions } from "./types.js";
 
 const DEFAULT_AGENT_UI_SELECTOR = "[data-agent-ui]";
 
-/** The `see` success sentence. Byte-identical to what shipped before 007. */
+/** The `see` success sentence. */
 const SEE_CAPTURED_TEXT =
   "Screenshot captured. A screenshot has been added as a user image message for visual analysis.";
 
-/** 007: the "ask"-tier confirm gate. `undefined` means proceed; a string is
+/** The "ask"-tier confirm gate. `undefined` means proceed; a string is
  *  the "not confirmed" content to return instead of executing. `"block"`-tier
  *  enforcement needs no gate here — `DomAdapter` throws for it internally. */
 async function confirmAskTier(
@@ -82,7 +82,7 @@ async function runWaitFor(
 
 /** One `ToolProvider` bundling `snapshot_page`, `query_state`, `click`, `fill`,
  *  `select_option`, `wait_for` and (unless `images: false`) `see`, plus the
- *  point-at-elements picker as an `attachmentProvider` (006-8). */
+ *  point-at-elements picker as an `attachmentProvider`. */
 export function domTools(options: DomToolsOptions = {}): ToolProvider[] {
   const agentUiSelector = options.agentUiSelector ?? DEFAULT_AGENT_UI_SELECTOR;
   const includeImages = options.images !== false;
@@ -106,7 +106,7 @@ export function domTools(options: DomToolsOptions = {}): ToolProvider[] {
       stateAdapter = new StateAdapter(options.getState ?? (() => ({})));
       // Core has no state adapter of its own, so nothing else puts the state
       // shape into the prompt. This package's StateAdapter is its own instance
-      // (006-1/2). Fold the shape into query_state's own promptSnippet so it
+      // Fold the shape into query_state's own promptSnippet so it
       // reaches the system prompt (via the "# Tool guidelines" section that
       // every tool's promptSnippet feeds).
       const stateShapeSummary = stateAdapter.describeShape();
@@ -117,7 +117,7 @@ export function domTools(options: DomToolsOptions = {}): ToolProvider[] {
           description: TOOL_DEFS.snapshot_page.description,
           inputSchema: TOOL_DEFS.snapshot_page.inputSchema,
           promptSnippet: TOOL_DEFS.snapshot_page.promptSnippet,
-          // 107/004: keep the newest 1 snapshot PER argument set, expiring
+          // Keep the newest 1 snapshot PER argument set, expiring
           // after 2 user turns.
           ttl: 1,
           uttl: 2,
@@ -130,7 +130,7 @@ export function domTools(options: DomToolsOptions = {}): ToolProvider[] {
           description: TOOL_DEFS.query_state.description,
           inputSchema: TOOL_DEFS.query_state.inputSchema,
           promptSnippet: `${TOOL_DEFS.query_state.promptSnippet} State shape summary: ${stateShapeSummary}`,
-          // 107/004: keep the newest 3 query results per JSONPath, expiring
+          // Keep the newest 3 query results per JSONPath, expiring
           // after 2 user turns.
           ttl: 3,
           uttl: 2,

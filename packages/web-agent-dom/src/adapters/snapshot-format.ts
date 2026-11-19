@@ -9,7 +9,7 @@ export function esc(s: string): string {
   return s.replace(/"/g, "&quot;").replace(/\\/g, "\\\\").replace(/\n/g, "\\n");
 }
 
-/** Build state-annotation string per §5.1 S3. */
+/** Build state-annotation string. */
 export function stateTags(el: Element, role: string): string {
   const parts: string[] = [];
 
@@ -44,7 +44,7 @@ export function stateTags(el: Element, role: string): string {
   return parts.length > 0 ? " " + parts.join(" ") : "";
 }
 
-/** Check if element should be skipped per §5.1 S4. */
+/** Check if element should be skipped. */
 export function skipElement(el: Element): boolean {
   const tag = tagLC(el);
   if (tag === "script" || tag === "style") return true;
@@ -71,7 +71,7 @@ export function countSignificant(
   interactiveOnly: boolean,
   agentUiEl: Element | null,
   cache: InteractiveCache = new Map(),
-  // 002: counts only the nodes the `include_text` filter keeps, so a filtered
+  // Counts only the nodes the `include_text` filter keeps, so a filtered
   // snapshot's `+N nodes hidden` markers and `TRUNCATED` line report matching
   // nodes instead of the whole page. Defaults to "count everything", which is
   // what every unfiltered call site gets without changing.

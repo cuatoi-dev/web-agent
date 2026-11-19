@@ -6,7 +6,7 @@ import type { RefTable } from "./ref-table.js";
 /** Await-able hook fired by the adapter before a synthetic event is
  *  dispatched. Resolves after any cue animation completes.
  *
- *  `signal` (007) lets the cue itself skip any post-animation step (e.g. the
+ *  `signal` lets the cue itself skip any post-animation step (e.g. the
  *  click pulse) once the run has already been stopped — the animation is not
  *  interruptible mid-flight, but a straggling call that only settles AFTER
  *  the run ended must not resurrect a cursor layer that `destroy()` already
@@ -26,7 +26,7 @@ export type ActionCueFn = (
 export interface SnapshotInput {
   scope?: string;
   interactive_only?: boolean;
-  /** 002: case-insensitive substring. When set and non-blank, the snapshot
+  /** Case-insensitive substring. When set and non-blank, the snapshot
    *  keeps only elements whose text or name attributes contain it, plus the
    *  significant ancestors leading to them. Absent, empty or whitespace-only
    *  means no filtering, and the output is byte-identical to an unfiltered

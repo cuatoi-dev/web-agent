@@ -60,9 +60,9 @@ export function walkFromRoot(
   // as hidden, with no new marker type.
   const subtreeMaxNodes = (typeof window !== "undefined" && window.__TINY_BUDGETS__) ? 5 : ctx.snapshotSubtreeMaxNodes;
 
-  // 002: the `include_text` filter. `matchesTerm` is true for every node when
-  // no term is set, so every branch below keeps its task-001 behaviour exactly
-  // and an unfiltered snapshot stays byte-identical.
+  // The `include_text` filter. `matchesTerm` is true for every node when
+  // no term is set, so every branch below behaves as if no term were set, and
+  // an unfiltered snapshot stays byte-identical.
   const term = (opts?.includeText ?? "").trim();
   const filtering = term.length > 0;
   const matchesTerm = makeTermMatcher(opts?.includeText);
@@ -110,12 +110,12 @@ export function walkFromRoot(
       const el = node as Element;
       // Skip S4 elements
       if (skipElement(el)) continue;
-      // Skip agent UI subtree (SEC6) — also check across shadow boundaries
+      // Skip agent UI subtree — also check across shadow boundaries
       if (ctx.agentUiEl && (el === ctx.agentUiEl || ctx.agentUiEl.contains(el))) continue;
     }
 
     const sig = isSignificant(node);
-    // 002: the term gates SELECTION only, never traversal. An element can
+    // The term gates SELECTION only, never traversal. An element can
     // match through an attribute that its ancestors' `textContent` does not
     // carry — `a[title="Edit this at Wikidata"]` has empty text — so pruning
     // the branch above a non-matching node would make that element
@@ -135,7 +135,7 @@ export function walkFromRoot(
     if (node.nodeType === Node.ELEMENT_NODE) {
       // Cap fan-out at the parent, not just the global budget — see
       // `subtreeMaxNodes` above.
-      // 002: the per-parent cap exists to stop one very wide parent spending
+      // The per-parent cap exists to stop one very wide parent spending
       // the global node budget (see `subtreeMaxNodes` above). Under a term the
       // budget is spent only on MATCHING nodes, so the cap protects nothing —
       // and it would silently drop a matching descendant sitting past the cap,
@@ -158,7 +158,7 @@ export function walkFromRoot(
     }
   }
 
-  // 002: an unmatched term explains itself rather than returning an empty tree
+  // An unmatched term explains itself rather than returning an empty tree
   // that reads as a broken tool. The caller prepends `generation: N\n`, exactly
   // as it does for every other snapshot result.
   if (filtering && selectedList.length === 0) {
@@ -201,7 +201,7 @@ export function walkFromRoot(
     if (skipElement(el)) return;
     if (ctx.agentUiEl && (el === ctx.agentUiEl || ctx.agentUiEl.contains(el))) return;
 
-    // 002: under a term, a significant ancestor of a match emits its line too
+    // Under a term, a significant ancestor of a match emits its line too
     // — that is what makes the result a pruned TREE instead of a flat list of
     // hits. Pass 1 already credits the whole ancestor chain of every selected
     // node into `hasSelectedDescendants`, so this needs no extra traversal.
@@ -218,7 +218,7 @@ export function walkFromRoot(
 
       let line = indent;
 
-      // Ref for interactive elements (§5.1 S2)
+      // Ref for interactive elements
       if (interactive) {
         const ref = ctx.refTable.assign(el);
         assignedRefs.set(el, ref);
@@ -233,7 +233,7 @@ export function walkFromRoot(
       const name = getName(el);
       if (name) line += ` "${esc(name)}"`;
 
-      // State tags (§5.1 S3)
+      // State tags
       line += stateTags(el, role);
 
       // Extra annotation for headings
@@ -241,7 +241,7 @@ export function walkFromRoot(
         line += ` (${tagLC(el)})`;
       }
 
-      // §022-002: permission annotation — follows the same resolution as
+      // Permission annotation — follows the same resolution as
       // enforcement (resolveAgentPermission walks light-DOM ancestors and
       // open shadow-root hosts), so the model sees the gate on the ref'd control.
       if (interactive) {
@@ -300,7 +300,7 @@ export function walkFromRoot(
 
     let renderedDescendants = 0;
     for (const child of children) {
-      // 002: count only rendered nodes that are themselves matches. Under a
+      // Count only rendered nodes that are themselves matches. Under a
       // term, `children` also holds ancestor-context lines, which
       // `countSignificant` — given the same matcher — does not count, so
       // counting them here would understate the hidden total and suppress a

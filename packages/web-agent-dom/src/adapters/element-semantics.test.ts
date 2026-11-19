@@ -53,7 +53,7 @@ describe("getName inside an open shadow root", () => {
   });
 });
 
-describe("getRole table roles (001)", () => {
+describe("getRole table roles", () => {
   afterEach(() => {
     document.body.innerHTML = "";
   });
@@ -185,7 +185,7 @@ describe("getName whitespace collapse", () => {
   });
 });
 
-describe("getName skips style, script and hidden text (rec 001)", () => {
+describe("getName skips style, script and hidden text", () => {
   afterEach(() => {
     document.body.innerHTML = "";
   });

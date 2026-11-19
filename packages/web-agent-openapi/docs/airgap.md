@@ -55,17 +55,17 @@ The resolver is a first-party module of this package, reached through a normal
 static import. There is no dynamic `import()` and no separate chunk to configure,
 so a host bundler needs no special setting for it.
 
-The dynamic `import()` this package used before was removed in task 006 because
-it was measured to buy nothing: `apps/docs-site/webpack.config.cjs` sets
+This package has no dynamic `import()`, and a lazy import would buy nothing:
+`apps/docs-site/webpack.config.cjs` sets
 `parser: { javascript: { dynamicImportMode: "eager" } }`, which inlines every
 dynamic import, and `apps/cat-store/webpack.config.js` sets
 `splitChunks.chunks: 'all'` with a fixed `vendors` chunk name, which hoists
 asynchronously imported `node_modules` code into the one initial bundle. Neither
-host ever loaded the parser lazily.
+host loads this code lazily.
 
 ## Documents must be objects, not strings
 
 `parseOpenApiOperations` takes a parsed document (`Record<string, unknown>`).
 `fetchOpenApiDocument` produces one with `response.json()`. A YAML or JSON
-**string** is not parsed — the previous third-party parser did that, and dropping
-it dropped the `yaml` dependency with it.
+**string** is not parsed. Pass a parsed document. This package ships no YAML
+parser, so it has no `yaml` dependency.

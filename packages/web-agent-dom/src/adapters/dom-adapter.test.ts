@@ -253,9 +253,9 @@ describe("DomAdapter", () => {
   });
 
   // -----------------------------------------------------------------------
-  // Agent UI subtree exclusion (SEC6)
+  // Agent UI subtree exclusion
   // -----------------------------------------------------------------------
-  describe("snapshot — agent UI exclusion (SEC6)", () => {
+  describe("snapshot — agent UI exclusion", () => {
     it("excludes elements inside data-agent-ui subtree", async () => {
       setupHtml(`
         <div data-agent-ui><button>Agent button</button></div>
@@ -473,9 +473,9 @@ describe("DomAdapter", () => {
   });
 
   // -----------------------------------------------------------------------
-  // include_text filter (002)
+  // include_text filter
   // -----------------------------------------------------------------------
-  describe("snapshot — include_text filter (002)", () => {
+  describe("snapshot — include_text filter", () => {
     it("attribute-only match is reachable — the ancestors do not carry the term", async () => {
       setupHtml(
         '<div><div><span><a href="#" title="Edit this at Wikidata"><img alt=""></a></span></div></div><section role="region" aria-label="Other"><button>Nothing</button></section>',
@@ -867,9 +867,9 @@ describe("DomAdapter", () => {
 
 
   // -----------------------------------------------------------------------
-  // Snapshot — permission annotation (§022-002)
+  // Snapshot — permission annotation
   // -----------------------------------------------------------------------
-  describe("snapshot — permission annotation (§022-002)", () => {
+  describe("snapshot — permission annotation", () => {
     it("appends (block) to a button with data-agent-permission=block", async () => {
       setupHtml('<button data-agent-permission="block">Place order</button>');
       const out = await adapter.snapshot({});
@@ -990,7 +990,7 @@ describe("DomAdapter", () => {
       expect(chk.checked).toBe(true);
     });
 
-    // 007: click must honour the abort signal — without the post-cue check,
+    // Click must honour the abort signal — without the post-cue check,
     // one more click is dispatched 6 ms after Stop is pressed.
     it("returns the stopped message and dispatches nothing when the signal is already aborted", async () => {
       setupHtml('<button id="btn">Hello</button>');
@@ -1502,7 +1502,7 @@ describe("DomAdapter", () => {
       vi.useRealTimers();
     });
 
-    it("T-T7 cancel mid-type via abort leaves a consistent prefix and fires one change for the partial value (007)", async () => {
+    it("T-T7 cancel mid-type via abort leaves a consistent prefix and fires one change for the partial value", async () => {
       vi.useFakeTimers();
       setupHtml('<input id="txt" />');
       const input = document.getElementById("txt") as HTMLInputElement;
@@ -1526,7 +1526,7 @@ describe("DomAdapter", () => {
 
       // Prefix "one two " was typed; no further input
       expect(events.filter(e => e.startsWith("input:")).length).toBe(2);
-      // 007: the partial value commits a single change (no half-typed value left un-committed)
+      // The partial value commits a single change (no half-typed value left un-committed)
       expect(events.filter(e => e === "change").length).toBe(1);
       // el.value is the typed partial prefix
       expect(input.value).toBe("one two ");
@@ -1573,7 +1573,7 @@ describe("DomAdapter", () => {
       vi.useRealTimers();
     });
 
-    // 007: fill must honour the abort signal after the cue — the field must
+    // Fill must honour the abort signal after the cue — the field must
     // never become document.activeElement.
     it("does not focus the field when the signal aborts during the cue", async () => {
       setupHtml('<input id="txt" />');
@@ -1594,7 +1594,7 @@ describe("DomAdapter", () => {
       expect(result).toBe('Stopped by the user before the action on ref 1 ran. Nothing was changed on the page.');
     });
 
-    // 007: a stop that lands before the first keystroke leaves the field
+    // A stop that lands before the first keystroke leaves the field
     // untouched and fires no change.
     it("a fill aborted before the first chunk fires no change", async () => {
       vi.useFakeTimers();
@@ -1617,7 +1617,7 @@ describe("DomAdapter", () => {
       vi.useRealTimers();
     });
 
-    // 007: regression guard for task 006 — an uninterrupted fill must fire
+    // Regression guard — an uninterrupted fill must fire
     // exactly one change event, not one per word.
     it("an uninterrupted fill still fires exactly one change", async () => {
       vi.useFakeTimers();
@@ -1707,7 +1707,7 @@ describe("DomAdapter", () => {
       expect(result).toContain('Selected "Premium" in [1]');
     });
 
-    // 007: selectOption must honour the abort signal after the cue.
+    // selectOption must honour the abort signal after the cue.
     it("leaves the select unchanged when the signal is aborted", async () => {
       setupHtml(`<select id="sel">
         <option value="">Choose</option>
@@ -1772,7 +1772,7 @@ describe("DomAdapter", () => {
   });
 
   // -----------------------------------------------------------------------
-  // selectOptions — single- and multi-select act-by-ref (122/001)
+  // selectOptions — single- and multi-select act-by-ref
   // -----------------------------------------------------------------------
   describe("selectOptions", () => {
     it("single select rejects multiple values", async () => {
@@ -2180,7 +2180,7 @@ describe("DomAdapter", () => {
     });
 
     // "ask"-tier confirmation lives in the `confirmInteraction` gate of
-    // `domTools()` (007) — DomAdapter does not know about `confirmInteraction`.
+    // `domTools()` — DomAdapter does not know about `confirmInteraction`.
     // By the time click/fill/selectOption run, the gate has already run
     // (see tool-provider.test.ts for the reject path), so
     // DomAdapter itself just performs "ask"-tier actions like "allow".
@@ -2224,7 +2224,7 @@ describe("DomAdapter", () => {
     });
   });
 
-  describe("describeRef (004)", () => {
+  describe("describeRef", () => {
     it("returns name, permission and reason for a resolvable ref", async () => {
       setupHtml('<button id="btn" data-agent-permission="ask" data-agent-permission-reason="confirm please">Remove item</button>');
       await adapter.snapshot({});
@@ -2246,9 +2246,9 @@ describe("DomAdapter", () => {
   });
 
   // -----------------------------------------------------------------------
-  // inspectRef — the panel page tools' non-throwing pre-check (122/001)
+  // inspectRef — the panel page tools' non-throwing pre-check
   // -----------------------------------------------------------------------
-  describe("inspectRef (122/001)", () => {
+  describe("inspectRef", () => {
     it("returns ok status and details for connected element", async () => {
       setupHtml('<button id="btn" data-agent-permission="ask" data-agent-permission-reason="confirm please">Remove item</button>');
       await adapter.snapshot({});
@@ -2457,7 +2457,7 @@ describe("DomAdapter", () => {
   });
 
   // -----------------------------------------------------------------------
-  // snapshotFocused (016-2)
+  // snapshotFocused
   // -----------------------------------------------------------------------
   describe("snapshotFocused", () => {
     it("assigns distinct refs to each pinned element within one generation", async () => {

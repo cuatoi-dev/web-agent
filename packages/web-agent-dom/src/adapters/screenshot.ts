@@ -68,8 +68,8 @@ export async function captureScreenshot(ctx: ScreenshotContext, scope?: string):
   };
 
   // A zero-size target cannot be photographed: it rasterizes to "data:," — a
-  // header with no image bytes, which the model API rejects. Kept from 006 and
-  // still load-bearing: measured 2026-08-19, a `display:none` element has a 0x0
+  // header with no image bytes, which the model API rejects. Still
+  // load-bearing: measured 2026-08-19, a `display:none` element has a 0x0
   // rect but DOES rasterize to a 4x4 PNG with bytes, so the empty-payload branch
   // below would not catch it. Only when a `scope` ref was given: with no scope
   // the target is document.body, whose whole-viewport capture must stay unchanged.

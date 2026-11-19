@@ -66,7 +66,7 @@ makes it reachable by keyboard and screen reader.
 
 ## Snapshot limits
 
-`DomAdapter`'s constructor (`src/adapters/dom-adapter.ts:53-56`) sets four
+`DomAdapter`'s constructor (`src/adapters/dom-adapter.ts:45-48`) sets four
 budgets:
 
 | Limit | Default | Effect |
@@ -181,7 +181,7 @@ No element contains "X". Take a snapshot without include_text to see the page, o
 
 A filtered snapshot is still a new generation. It invalidates the refs from
 every earlier snapshot, the same as an unfiltered one
-(`src/adapters/dom-adapter.ts:93`).
+(`src/adapters/dom-adapter.ts:84`).
 
 `include_text` works with `scope` and `interactive_only`. With
 `interactive_only: true`, text nodes are not selected, so only interactive and

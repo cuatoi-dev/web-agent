@@ -43,19 +43,19 @@ what each one counts.
 Two real hosts wire it today, quoted verbatim from source:
 
 ```ts
-// apps/cat-store/src/web/agent-panel-config.ts:237-245 — full wiring
+// apps/cat-store/src/web/agent-panel-config.ts:258-266 — full wiring
 panel.toolProviders = [
   ...(domAccess
     ? domTools({
         getState: () => store.getState(),
         actionCue: createActionCue({ getCursor: () => getAgentCursor(), speed: () => CUE_SPEED }),
         typingPaceMs: SPEED_PRESETS[CUE_SPEED].msPerWord,
-        confirmInteraction: panel.confirmInteraction.bind(panel),
+        confirmInteraction: target ? target.confirmInteraction.bind(target) : undefined,
       })
     : []),
   // …mcp and openapi providers…
 ];
-// apps/cat-store/src/web/agent-panel-config.ts:209-212
+// apps/cat-store/src/web/agent-panel-config.ts:227-232
 panel.skills = [
   ...coreSkills(),
   ...chartingSkills(),
@@ -65,7 +65,7 @@ panel.skills = [
 ```
 
 ```ts
-// apps/docs-site/src/docs-embed.ts:67-73 — no Redux store, no images
+// apps/docs-site/src/docs-embed.ts:59-64 — no Redux store, no images
 bubble.toolProviders = domTools({
   images: false,                 // matches imageInput: false — no `see`
   actionCue: createActionCue({ getCursor: () => getAgentCursor(), speed: () => CUE_SPEED }),

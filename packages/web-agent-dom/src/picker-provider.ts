@@ -1,5 +1,5 @@
 // picker-provider.ts — point-at-elements picker, registered as an
-// AttachmentProvider on core's 005 seam (006 decision 8).
+// AttachmentProvider on core's `attachmentProviders` seam.
 //
 // Framework-agnostic re-implementation of the picking interaction
 // (web-agent-lit's `PointerController` covers the same ground but isn't
@@ -104,7 +104,7 @@ export function pickerAttachmentProvider(
   const root = document.createElement("div");
   root.setAttribute("data-attachment-slot", "picker");
   // Rendered inside `root`, which the panel places in its own tree, so the chip
-  // rules travel with it. No `id` — see chat-panel-fields.ts:163-166 (task 001).
+  // rules travel with it. No `id`: a page may hold more than one panel.
   const stripStyle = document.createElement("style");
   stripStyle.setAttribute("data-wa-styles", "dom-picker-strip");
   stripStyle.textContent = STRIP_CSS;

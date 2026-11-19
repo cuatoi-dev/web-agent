@@ -5,7 +5,7 @@
 // cycle between the two files.
 
 // ---------------------------------------------------------------------------
-// ResolveResult discriminated union (§5.1 S2 + §10 matrix)
+// ResolveResult discriminated union
 // ---------------------------------------------------------------------------
 export type ResolveResult =
   | { status: "ok"; el: Element; generation: number }

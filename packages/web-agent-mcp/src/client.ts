@@ -100,7 +100,7 @@ export async function connectMcpClient(
 
   // Literal specifiers only — a variable specifier here makes webpack emit
   // "Critical dependency: the request of a dependency is an expression" and
-  // drop the module from the build (see task 004).
+  // drop the module from the build.
   const { Client } = await import(
     /* webpackChunkName: "mcp-sdk-client" */
     "@modelcontextprotocol/sdk/client/index.js"

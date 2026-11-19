@@ -4,7 +4,7 @@
 import type { InteractiveCache } from "./types.js";
 
 // ---------------------------------------------------------------------------
-// Implicit ARIA role mapping (pragmatic subset per §5.1 S1)
+// Implicit ARIA role mapping (pragmatic subset)
 // ---------------------------------------------------------------------------
 const TAG_ROLES: Record<string, string> = {
   nav: "navigation",
@@ -97,7 +97,7 @@ export function getRole(el: Element): string {
     return INPUT_TYPE_ROLES[type] || "textbox";
   }
 
-  // 001 — table elements. Their role comes from the tag and, for a cell, from
+  // Table elements. Their role comes from the tag and, for a cell, from
   // an attribute or an ancestor, so they cannot live in the single-tag
   // TAG_ROLES map and are resolved before it. A `th` is a `columnheader`
   // unless its `scope` names a row (user decision, 2026-11-04).
@@ -161,7 +161,7 @@ function hasInteractiveDescendant(el: Element, cache: InteractiveCache): boolean
   return found;
 }
 
-/** Is the element interactive per §5.1 S2? `cache` is optional so call
+/** Is the element interactive? `cache` is optional so call
  *  sites outside a single snapshot pass (tests, ad-hoc checks) don't need
  *  one; every snapshot-walk call site threads a shared per-call cache — see
  *  `InteractiveCache` in `types.ts` for why that isn't just a speed-up. */
@@ -240,7 +240,7 @@ function clean(text: string | null | undefined): string {
   return (text ?? "").replace(/\s+/g, " ").trim();
 }
 
-/** Compute an accessible name (pragmatic §5.1 S1). Every text-derived source
+/** Compute an accessible name (pragmatic subset). Every text-derived source
  *  goes through `clean`; the 120-character cut applies after the collapse. */
 export function getName(el: Element): string {
   // aria-label

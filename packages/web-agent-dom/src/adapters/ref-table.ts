@@ -1,6 +1,6 @@
 // ref-table.ts — numbered-ref ↔ DOM-element registry.
 // Each new snapshot bumps the generation and invalidates all prior refs.
-// Pure DOM/TS; no loop or SDK imports (§3).
+// Pure DOM/TS; no loop or SDK imports.
 
 import type { RefEntry, ResolveResult } from "./ref-table.types.js";
 
@@ -14,7 +14,7 @@ export class RefTable {
   #generation = 0;
   /** Current-generation map: ref → entry. */
   #map = new Map<number, RefEntry>();
-  /** 124/005 — the reverse of `#map`, for the recorder: it needs the ref an
+  /** The reverse of `#map`, for the recorder: it needs the ref an
    *  element already has, and must not assign a second one for the same
    *  element in the same generation. A WeakMap, so a removed element is
    *  collectable; replaced (not cleared) on `invalidateAll`, because a
@@ -39,7 +39,7 @@ export class RefTable {
 
   /** Bump generation, clear current map, reset ref counter.
    *  Returns the new generation number.
-   *  Called by dom-adapter at the start of each snapshot (task 007). */
+   *  Called by dom-adapter at the start of each snapshot. */
   invalidateAll(): number {
     this.#generation++;
     this.#map.clear();
@@ -61,7 +61,7 @@ export class RefTable {
     return ref;
   }
 
-  /** 124/005 — the ref `el` holds in the CURRENT generation, or undefined
+  /** The ref `el` holds in the CURRENT generation, or undefined
    *  when it has none. Never assigns; the caller decides whether to. */
   refFor(el: Element): number | undefined {
     return this.#byElement.get(el);

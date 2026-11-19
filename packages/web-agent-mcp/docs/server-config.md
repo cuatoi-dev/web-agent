@@ -6,7 +6,7 @@ title: MCP server configuration
 
 ## `McpServerConfig`
 
-All four fields are required (`src/types.ts:49-58`):
+All four fields are required (`src/types.ts:52-61`):
 
 | Field | Type | Required | What it does |
 |---|---|---|---|
@@ -31,7 +31,7 @@ Worked rows, each covered by `src/client.test.ts:13-15`:
 | `my.server!v1` | `my_server_v1` | `my_server_v1_place_order` |
 | `""` | `mcp` | `mcp_place_order` |
 
-Sources: `src/client.ts:20-22, 46-47`;
+Sources: `src/client.ts:20-22, 66-67`;
 `packages/web-agent-core/src/utils/sanitize-name.ts:5-7`.
 
 ## How `url` is resolved
@@ -44,7 +44,7 @@ Source: `packages/web-agent-core/src/utils/resolve-url.ts:2-7`; test coverage
 `src/client.test.ts:20-32`.
 
 **Note:** `connectMcpClient` calls `resolveMcpServerUrl(serverUrl)` with
-**no** base argument (`src/client.ts:78`), so in a browser the page URL is
+**no** base argument (`src/client.ts:99`), so in a browser the page URL is
 always the base. A relative `url` like `"mcp"` resolves against wherever the
 page is served, not against a fixed path.
 
@@ -59,7 +59,7 @@ Quoting `src/types.ts:12-17`:
 | `fetch` | `typeof fetch` | the global `fetch` | Passed to `StreamableHTTPClientTransport`. Use it to add headers or auth. |
 | `timeoutMs` | `number` | — | **Accepted by the type but not used.** `connectMcpClient` never reads it, so setting it has no effect. |
 
-Sources for the `timeoutMs` row: `src/types.ts:15` (declared), `src/client.ts:92-102`
+Sources for the `timeoutMs` row: `src/types.ts:15` (declared), `src/client.ts:113-123`
 (every place `options` is read).
 
 ## Passing options

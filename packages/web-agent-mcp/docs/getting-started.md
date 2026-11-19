@@ -25,7 +25,7 @@ dependencies (`package.json:38-41`), so you do not need to add anything else.
 
 This is the one wiring that exists in this repo today. The excerpt below
 leaves out the DOM and OpenAPI providers that the same array also holds
-(`apps/cat-store/src/web/agent-panel-config.ts:236-265`):
+(`apps/cat-store/src/web/agent-panel-config.ts:258-280`):
 
 ```ts
 import { mcpToolProviders } from "@cuatoi/web-agent-mcp";
@@ -74,10 +74,10 @@ await session.initPromise; // rejects if a required server fails
 ```
 
 `createAgentSession` — `packages/web-agent-core/src/controller.ts:56`.
-`initPromise` — `packages/web-agent-core/src/controller.ts:171-191, 256`.
+`initPromise` — `packages/web-agent-core/src/controller.ts:198-219, 349`.
 
 Core marks a rejected `initPromise` as handled
-(`packages/web-agent-core/src/controller.ts:189-191`). A host that never awaits
+(`packages/web-agent-core/src/controller.ts:217-219`). A host that never awaits
 it gets no unhandled-rejection warning, but it also does not learn that a
 required server failed. Await it, or read `state.error` (see
 [Lifecycle and failures](./lifecycle-and-failures.md)).
@@ -85,7 +85,7 @@ required server failed. Await it, or read `state.error` (see
 ## What the agent sees
 
 On a server named `demomcp`, a tool called `place_order` becomes the tool
-`demomcp_place_order` (`src/client.ts:46-47`; e2e coverage at
+`demomcp_place_order` (`src/client.ts:66-67`; e2e coverage at
 `apps/cat-store/e2e/mcp-remote-tool.mock.spec.ts:15, 33`). The server also adds
 exactly one `# Tool guidelines` line, reading
 `- demomcp (MCP server) — Cat Store remote MCP endpoint`
@@ -103,4 +103,4 @@ providers and loads the new ones, and the conversation is kept. See
 This package fetches nothing at install or at build. The only network call it
 ever makes is to the MCP endpoint the host already runs. Prefer a relative
 `url` (like `"mcp"` above) so the request is same-origin and CORS does not
-apply (`src/types.ts:43-44`).
+apply (`src/types.ts:45-46`).

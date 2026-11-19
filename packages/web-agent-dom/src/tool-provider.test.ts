@@ -135,7 +135,7 @@ function stubRect(el: Element, width: number, height: number): void {
       "Screenshot captured. A screenshot has been added as a user image message for visual analysis.",
     );
     expect(out.images).toEqual([{ dataUrl: "data:image/png;base64,AAA=", mediaType: "image/png" }]);
-    // §006-7: the field must be the generic name, no screenshot-named field left.
+    // The field must be the generic name, no screenshot-named field left.
     expect((out as Record<string, unknown>)._screenshot).toBeUndefined();
   });
 
@@ -173,9 +173,9 @@ function stubRect(el: Element, width: number, height: number): void {
     expect(res!.parts[1].text).toContain("button \"Click me\"");
   });
 
-  // 007: the "ask"-tier confirm gate moved here from lit's onPreTool hook —
+  // The "ask"-tier confirm gate moved here from lit's onPreTool hook —
   // the DOM package is the only layer left that knows the ref's permission.
-  describe("confirmInteraction (007)", () => {
+  describe("confirmInteraction", () => {
     it("is not consulted, and the click runs, for an allow-tier ref", async () => {
       setupHtml('<button id="btn">Add</button>');
       const confirmInteraction = vi.fn(() => Promise.resolve(true));

@@ -10,7 +10,7 @@ requests.
 pnpm add @cuatoi/web-agent-openapi
 ```
 
-## Quick start
+## Usage
 
 ```ts
 import { createAgentSession } from "@cuatoi/web-agent-core";
@@ -51,4 +51,4 @@ API reference.
 
 ## License
 
-Apache-2.0
+Apache-2.0 — see [LICENSE](./LICENSE).

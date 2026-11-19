@@ -1,4 +1,4 @@
-// snapshot-match.ts — the `include_text` filter's matching rule (002). Kept
+// snapshot-match.ts — the `include_text` filter's matching rule. Kept
 // apart from `snapshot-format.ts` (line formatting) and `snapshot-walk.ts`
 // (traversal) so the rule has one home and one import path.
 
