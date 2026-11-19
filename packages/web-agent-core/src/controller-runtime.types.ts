@@ -28,7 +28,7 @@ import type {
   SessionState,
 } from "./controller.types.js";
 
-/** 001 — what `driveTurn` calls to run the turn itself. `runUserTurn` passes a
+/** What `driveTurn` calls to run the turn itself. `runUserTurn` passes a
  *  closure over `runTurn`, which appends the user message and opens a NEW turn;
  *  `resumeLastTurn` passes one over `resumeTurn`, which does neither. Every
  *  other concern — the abort controller, the pre-turn compaction, the failure
@@ -47,13 +47,13 @@ export interface SessionRuntime {
   ctx: ToolContext;
   agent: ReturnType<typeof createPageAgent>;
   providerTools: CustomToolDef[];
-  /** 110/004 — the tool list the session was actually given, snapshotted from
+  /** The tool list the session was actually given, snapshotted from
    *  `agent.customToolDefs`. Seeded by `initAgent()` (controller-config.ts) at
    *  session construction and every rebuild — including the async re-run once
    *  `toolProviders`/the skill registry finish loading — so a restored session
    *  (a page reload) already reports it before any turn runs. `driveTurn()`
    *  (controller-turn.ts) re-snapshots it at turn start too, in case anything
-   *  rebuilt `st.agent` since. 069/001: this is what lets a saved step line
+   *  rebuilt `st.agent` since. This is what lets a saved step line
    *  resolve a tool's own `phrase` without waiting for a new turn. */
   resolvedTools: AvailableTool[];
   /** Providers whose load() resolved, disposed on dispose(). */
@@ -90,10 +90,10 @@ export interface SessionRuntime {
   //
   // One flush writes one record, but one TURN can flush more than once — a turn
   // that also compacts flushes again at the end (controller-turn.ts:170) — so
-  // "the last record" is not "the last turn". 001: that is why the rewind reads
+  // "the last record" is not "the last turn". That is why the rewind reads
   // `lastRecordEntryCount` instead of assuming the turn wrote one record.
   flushedSeq: number;
-  /** 001 — how many journal entries the LAST record `flushTurn` wrote holds.
+  /** How many journal entries the LAST record `flushTurn` wrote holds.
    *  `resumeLastTurn` rewinds persistence by exactly this many entries, so the
    *  resumed flush rewrites that one record and nothing earlier. 0 until the
    *  first flush. */
@@ -106,20 +106,20 @@ export interface SessionRuntime {
   activeCompactionRowId: string | undefined;
   compactionAbort: AbortController | undefined;
   compacting: boolean;
-  /** 105/001 — the resolved command list. Rebuilt by initAgent(), which runs on
+  /** The resolved command list. Rebuilt by initAgent(), which runs on
    *  every updateConfig() and after the tool-provider and skill-registry loads,
    *  so it is fresh whenever the config changes. Building it here rather than
    *  on every commands() call also means the collision warnings fire once per
    *  rebuild instead of once per keystroke. */
   commandList: CommandList;
-  /** 105/001 P7 — set by ctx._requestCompaction, consumed in driveTurn's
+  /** Set by ctx._requestCompaction, consumed in driveTurn's
    *  finally. */
   compactionRequested: boolean;
-  /** 108/001 — how many UNCONFIRMED compact_conversation calls this turn has
+  /** How many UNCONFIRMED compact_conversation calls this turn has
    *  seen. Per-turn: reset unconditionally in driveTurn's finally, so a turn
    *  that only ever asked still starts the next turn clean. */
   compactionUnconfirmedAttempts: number;
-  /** 108/001 — the prompt to run in the turn AFTER a successful compaction.
+  /** The prompt to run in the turn AFTER a successful compaction.
    *  Recorded only on an accepted request, cleared on every path out of the
    *  end-of-turn compaction block, so it can never leak into a later turn. */
   compactionFollowUp: string | undefined;

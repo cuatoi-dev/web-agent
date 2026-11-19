@@ -198,7 +198,7 @@ describe("Controller — ToolProvider integration", () => {
     expect(disposeFn).toHaveBeenCalledTimes(1);
   });
 
-  it("getAttachmentProviders() merges a provider's attachmentProviders with config.attachmentProviders (006)", async () => {
+  it("getAttachmentProviders() merges a provider's attachmentProviders with config.attachmentProviders", async () => {
     const fromProvider: AttachmentProvider = {
       id: "from-provider",
       label: "From provider",
@@ -234,7 +234,7 @@ describe("Controller — ToolProvider integration", () => {
     expect(ids).toEqual(["from-provider", "from-config"]);
   });
 
-  it("a provider's attachmentProvider onUserPrompt is composed into hooks before turn 1 (006)", async () => {
+  it("a provider's attachmentProvider onUserPrompt is composed into hooks before turn 1", async () => {
     const onUserPrompt = vi.fn(() => undefined);
     const pickerLike: AttachmentProvider = {
       id: "picker",
@@ -281,7 +281,7 @@ describe("Controller — ToolProvider integration", () => {
     expect(onUserPrompt).toHaveBeenCalled();
   });
 
-  it("dispose() disposes a provider's attachmentProviders too (006)", async () => {
+  it("dispose() disposes a provider's attachmentProviders too", async () => {
     const attachmentDispose = vi.fn();
     const provider: ToolProvider = {
       name: "with-attachments",
@@ -331,7 +331,7 @@ describe("Controller — ToolProvider integration", () => {
     expect(loadFn).toHaveBeenCalledTimes(1);
   });
 
-  it("a provider tool's own phrase resolves through availableTools() after a reload, before any turn (069/001 rejection fix)", async () => {
+  it("a provider tool's own phrase resolves through availableTools() after a reload, before any turn", async () => {
     const phraseTool: CustomToolDef = {
       ...mkTool("vfs_write_file"),
       phrase: () => "Whiskers wrote the file",
@@ -426,7 +426,7 @@ describe("Controller — ToolProvider integration", () => {
     session2.dispose();
   });
 
-  // 002: a loaded provider's onPostTool runs before the host's, and the final
+  // A loaded provider's onPostTool runs before the host's, and the final
   // rewritten result is what the model receives on the next request.
   it("composes a provider onPostTool before the host onPostTool and sends the final result", async () => {
     const seen: PostToolPayload[] = [];

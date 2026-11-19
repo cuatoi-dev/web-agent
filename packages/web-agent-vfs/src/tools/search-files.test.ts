@@ -164,8 +164,8 @@ describe("search_files", () => {
   });
 });
 
-// 002: content-mode lines over 500 characters are omitted whole.
-describe("search_files long lines (002)", () => {
+// Content-mode lines over 500 characters are omitted whole.
+describe("search_files long lines", () => {
   const file = (content: string, mtimeMs = 1) => ({ content, encoding: "utf8" as const, mimeType: "text/plain", mtimeMs });
 
   it("prints a 500-character matching line as today and omits a 501-character one", async () => {

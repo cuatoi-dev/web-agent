@@ -45,7 +45,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
   const listeners = new Set<() => void>();
   const maxChars = options?.toolResults?.maxChars ?? 12_000;
   const previewChars = options?.toolResults?.previewChars ?? 2_000;
-  // 104/001 — null when the host did not turn memory on.
+  // Null when the host did not turn memory on.
   const memory = resolveMemoryOptions(options?.memory);
 
   function getMounts(): VfsMount[] {
@@ -94,7 +94,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
       if (await isFolder(mount, rel)) {
         throw new Error(`Error: ${p} is a folder.`);
       }
-      // 127/003 — a direct write is not a tool call, so it neither needs nor
+      // A direct write is not a tool call, so it neither needs nor
       // updates the read-before-overwrite tracker.
       const file: VfsFile = typeof content === "string"
         ? { content, encoding: "utf8" as const, mimeType: mimeFromPath(p), mtimeMs: Date.now() }
@@ -138,14 +138,14 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
     },
   };
 
-  // 128/003 — the composer's folder button, on the same handle as the tools.
+  // The composer's folder button, on the same handle as the tools.
   const folderProvider = attachFolderProvider(vfs, { store: options?.folderStore, seedAgentsMd: options?.seedAgentsMd });
 
   return {
     name: "vfs",
     required: false,
     vfs,
-    // 104/002 — `memorySkills(vfs)` reads this back, so the skill text names
+    // `memorySkills(vfs)` reads this back, so the skill text names
     // the configured paths and limits. Null when memory is off.
     memory,
     attachmentProviders: [folderProvider],
@@ -157,7 +157,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
             try { await vfs.delete(file.abs); } catch { /* Continue cleanup. */ }
           }
         } catch { /* Continue prompt handling. */ }
-        // 127/007 — the restore must finish first, so a remembered folder's
+        // The restore must finish first, so a remembered folder's
         // AGENTS.md is in the first message after a reload.
         await folderProvider.ready;
         const paths = [
@@ -183,7 +183,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
           agentsMdTracker.record(sessionId, path, f.mtimeMs);
           blocks.push(`<agents-md path="${path}">\n${f.content}\n</agents-md>`);
         }
-        // 104/001 — memory blocks go after every AGENTS.md block, in the same
+        // Memory blocks go after every AGENTS.md block, in the same
         // prepended text part. getMounts() already succeeded in the loop above:
         // "/home/agent/AGENTS.md" is always in `paths`, and a mount error
         // returned from the hook there.
@@ -201,7 +201,7 @@ export function vfsTools(options?: VfsOptions): VfsToolProvider {
       const mounts = getMounts();
       return [
         readFileTool(mounts, tracker, agentsMdTracker, maxChars),
-        // 104/001 — one memory guideline line, only when memory is on.
+        // One memory guideline line, only when memory is on.
         // write_file carries it because read_file already carries the
         // <agents-md> snippet and a tool def holds one snippet.
         memory

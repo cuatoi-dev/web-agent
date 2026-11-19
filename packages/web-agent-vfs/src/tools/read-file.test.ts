@@ -227,8 +227,8 @@ describe("read_file", () => {
   });
 });
 
-// 002: the read budget bounds the numbered output without changing small reads.
-describe("read_file output budget (002)", () => {
+// The read budget bounds the numbered output without changing small reads.
+describe("read_file output budget", () => {
   const file = (content: string) => ({ content, encoding: "utf8" as const, mimeType: "text/plain", mtimeMs: 1 });
   const budget = 12_000;
   const numbered = (start: number, arr: string[]) =>

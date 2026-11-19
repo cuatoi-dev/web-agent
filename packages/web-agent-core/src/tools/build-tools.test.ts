@@ -52,7 +52,7 @@ describe("buildTools", () => {
     }
   });
 
-  // 007: `see`/DomAdapter-backed tools no longer live in core — the generic
+  // `see`/DomAdapter-backed tools no longer live in core — the generic
   // tool-image path is covered instead with a plain custom tool below ("a tool
   // returning images returns them on the executor result").
 
@@ -88,7 +88,7 @@ describe("buildTools", () => {
     expect(result.content).toContain("dataSource not available");
   });
 
-  it("a tool returning images returns them on the executor result (003 U9)", async () => {
+  it("a tool returning images returns them on the executor result", async () => {
     const imageTool: CustomToolDef = {
       name: "image_tool",
       description: "returns an image",
@@ -106,7 +106,7 @@ describe("buildTools", () => {
     expect("_pendingImage" in ctx).toBe(false);
   });
 
-  it("undecodable image is dropped with a warning (003 U10)", async () => {
+  it("undecodable image is dropped with a warning", async () => {
     vi.stubGlobal("createImageBitmap", vi.fn(() => Promise.reject(new Error("bad"))));
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ blob: () => Promise.resolve(new Blob(["x"])) })));
     vi.stubGlobal("Image", class {
@@ -140,7 +140,7 @@ describe("buildTools", () => {
     }
   });
 
-  it("one good and one empty image drops the empty one with warning (003 U11)", async () => {
+  it("one good and one empty image drops the empty one with warning", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       const imgTool: CustomToolDef = {
@@ -167,7 +167,7 @@ describe("buildTools", () => {
     }
   });
 
-  it("denied call has no images (003 U12)", async () => {
+  it("denied call has no images", async () => {
     const imgTool: CustomToolDef = {
       name: "denied_tool",
       description: "tool with images",
@@ -188,7 +188,7 @@ describe("buildTools", () => {
     expect(result.isError).toBe(true);
   });
 
-  it("onPostTool can replace images (003 U12b)", async () => {
+  it("onPostTool can replace images", async () => {
     const imgC = "data:image/png;base64,CCCC";
     const imgTool: CustomToolDef = {
       name: "hook_replace_tool",
@@ -501,11 +501,11 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("a malformed JSON Schema still executes — Ajv compile failure is non-fatal (004)", async () => {
-    // Was "reported as a tool error, execute never called" before 004. Changed
+  it("a malformed JSON Schema still executes — Ajv compile failure is non-fatal", async () => {
+    // Was "reported as a tool error, execute never called" in an earlier version. Changed
     // deliberately: a live run found ajv's own dynamic import can throw for
     // reasons that have nothing to do with any one schema (a webpack
-    // module-id collision — docs/tests/0167), and before this tool's schema
+    // module-id collision), and before this tool's schema
     // moved to JSON Schema it ran with no validation at all. Failing every
     // ajv-load/compile failure closed would regress previously-working tools
     // whenever ajv is unavailable, so any such failure — a malformed schema
@@ -530,7 +530,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     warnSpy.mockRestore();
   });
 
-  it("a zod-authored tool is argument-validated before execute (003)", async () => {
+  it("a zod-authored tool is argument-validated before execute", async () => {
     const ctx = mockCtx();
     const execute: ExecuteMock = vi.fn<[Record<string, unknown>, ToolContext], Promise<ToolOutcome>>(() => Promise.resolve({ content: "pong" }));
     const zodTool: CustomToolDef = {
@@ -546,7 +546,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("a valid zod call passes the model's own object through (003)", async () => {
+  it("a valid zod call passes the model's own object through", async () => {
     const ctx = mockCtx();
     const execute: ExecuteMock = vi.fn<[Record<string, unknown>, ToolContext], Promise<ToolOutcome>>(() => Promise.resolve({ content: "pong" }));
     const zodTool: CustomToolDef = {
@@ -563,7 +563,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(execute.mock.calls[0][0]).toBe(inputObj);
   });
 
-  it("a schema with defaults does not rewrite the input (003)", async () => {
+  it("a schema with defaults does not rewrite the input", async () => {
     const ctx = mockCtx();
     const execute: ExecuteMock = vi.fn<[Record<string, unknown>, ToolContext], Promise<ToolOutcome>>(() => Promise.resolve({ content: "pong" }));
     const zodTool: CustomToolDef = {
@@ -580,7 +580,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(execute.mock.calls[0][0]).toEqual({});
   });
 
-  it("wait_for with timeout_ms: 3600000 is rejected before the wait (003)", async () => {
+  it("wait_for with timeout_ms: 3600000 is rejected before the wait", async () => {
     const ctx = mockCtx();
     const execute = vi.fn();
     const waitForDef: CustomToolDef = {
@@ -599,7 +599,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("JSON-Schema and zod branch both produce schema-violation prefix and isError (003)", async () => {
+  it("JSON-Schema and zod branch both produce schema-violation prefix and isError", async () => {
     const ctx = mockCtx();
     const execute: ExecuteMock = vi.fn();
     const zodTool: CustomToolDef = {
@@ -627,9 +627,9 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(rJ.isError).toBe(true);
   });
 
-  it("a JSON-Schema tool whose schema fails to compile still executes — validation failure is non-fatal (004)", async () => {
-    // Live proof on 2026-09-03 found a webpack-bundling-specific failure inside
-    // ajv's own module graph (a module-id collision — see docs/tests/0167):
+  it("a JSON-Schema tool whose schema fails to compile still executes — validation failure is non-fatal", async () => {
+    // A live run on 2026-09-03 found a webpack-bundling-specific failure inside
+    // ajv's own module graph (a module-id collision):
     // the dynamic `import("./validate-json-schema.js")` chain can throw before
     // ever returning a validation verdict. Before this tool's schema moved to
     // JSON Schema it ran with no validation at all, so when ajv itself is
@@ -666,7 +666,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     warnSpy.mockRestore();
   });
 
-  it("abort wins over zod validation (003)", async () => {
+  it("abort wins over zod validation", async () => {
     const ctx = mockCtx();
     const execute: ExecuteMock = vi.fn();
     const zodTool: CustomToolDef = {
@@ -683,7 +683,7 @@ describe("custom tools with a raw JSON Schema inputSchema", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("a rejected zod call never reaches onPreTool hooks (003)", async () => {
+  it("a rejected zod call never reaches onPreTool hooks", async () => {
     const onPreTool = vi.fn();
     const ctx = mockCtx({ hooks: { onPreTool } });
     const execute: ExecuteMock = vi.fn();
@@ -768,7 +768,7 @@ describe("skills via buildTools(skills)", () => {
     expect(result.isError).toBe(true);
   });
 
-  it("load_skill with no name is rejected by the schema before the tool runs (003)", async () => {
+  it("load_skill with no name is rejected by the schema before the tool runs", async () => {
     const ctx = mockCtx({ skills: testSkills });
     const { executors } = buildTools(ctx, defaultTools(ctx));
     const result = await executors.load_skill(
@@ -779,7 +779,7 @@ describe("skills via buildTools(skills)", () => {
     expect(result.content).toBe("Invalid input for load_skill: data must have required property 'name'.");
   });
 
-  it("load_skill with a blank name still reaches the tool's own guard (003)", async () => {
+  it("load_skill with a blank name still reaches the tool's own guard", async () => {
     const ctx = mockCtx({ skills: testSkills });
     const { executors } = buildTools(ctx, defaultTools(ctx));
     const result = await executors.load_skill(
@@ -970,7 +970,7 @@ describe("tool lifecycle hooks", () => {
     expect(executeSpy).toHaveBeenCalledTimes(0);
   });
 
-  it("onPreTool ask, unresolved, yields an unconfirmed error and never enters the tool (004)", async () => {
+  it("onPreTool ask, unresolved, yields an unconfirmed error and never enters the tool", async () => {
     // PreToolResult.reason is documented (tool-hooks.types.ts) as sent to the model only
     // for "deny" — the "ask"→unconfirmed path (below) always uses the default
     // wording, since run-hooks.ts's merge never captures `reason` for "ask".
@@ -994,7 +994,7 @@ describe("tool lifecycle hooks", () => {
     expect(executeSpy).toHaveBeenCalledTimes(0);
   });
 
-  it("onPreTool ask with no reason returns the default unconfirmed message (004)", async () => {
+  it("onPreTool ask with no reason returns the default unconfirmed message", async () => {
     const toolDef: CustomToolDef = {
       name: "ask_silent_tool",
       description: "ask",
@@ -1013,7 +1013,7 @@ describe("tool lifecycle hooks", () => {
     expect(res.content).toContain('no confirmation dialog was confirmed; not performed');
   });
 
-  it("onPreTool ask followed by a later handler's allow still enters the tool as allow (004)", async () => {
+  it("onPreTool ask followed by a later handler's allow still enters the tool as allow", async () => {
     // A later "allow" from a second handler doesn't matter — the merge in
     // run-hooks.ts is deny > ask > allow with no downgrade path; a handler
     // that resolves "ask" must do so via its OWN "allow"/"deny" return, not
@@ -1041,7 +1041,7 @@ describe("tool lifecycle hooks", () => {
     expect(executeSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("onPreTool ask resolved by the SAME handler via modifiedInput lets a defensive second handler stand down (004)", async () => {
+  it("onPreTool ask resolved by the SAME handler via modifiedInput lets a defensive second handler stand down", async () => {
     // Mirrors chat-panel's default onPreTool (resolves ask via UI, marks
     // `__waConfirmed`) composed with cat-store's defensive fallback (only
     // flags "ask" when nothing has marked the ref confirmed yet).
@@ -1216,7 +1216,7 @@ describe("tool lifecycle hooks", () => {
     expect(res.content).toBe("same output");
   });
 
-  it("onPostTool fires with isError true when execute throws (010)", async () => {
+  it("onPostTool fires with isError true when execute throws", async () => {
     const postSpy = vi.fn<[PostToolPayload], PostToolResult | void>();
     const toolDef: CustomToolDef = {
       name: "throw_tool",
@@ -1235,7 +1235,7 @@ describe("tool lifecycle hooks", () => {
     expect(res.content).toBe("boom");
   });
 
-  it("a hook cannot rewrite a failed tool call into a success (010)", async () => {
+  it("a hook cannot rewrite a failed tool call into a success", async () => {
     const toolDef: CustomToolDef = {
       name: "throw_tool",
       description: "throws an error",
@@ -1251,12 +1251,12 @@ describe("tool lifecycle hooks", () => {
     const { executors } = buildTools(ctx, [toolDef]);
     const res = await executors.throw_tool({}, { abortSignal: ctx.signal, toolCallId: "tc-throw" });
 
-    // 002: the hook may rewrite the error text; the flag stays forced true.
+    // The hook may rewrite the error text; the flag stays forced true.
     expect(res.content).toBe("swallowed");
     expect(res.isError).toBe(true);
   });
 
-  it("a hook that throws on the failure path still lets the error reach the agent (010)", async () => {
+  it("a hook that throws on the failure path still lets the error reach the agent", async () => {
     const toolDef: CustomToolDef = {
       name: "throw_tool",
       description: "throws an error",
@@ -1283,7 +1283,7 @@ describe("tool lifecycle hooks", () => {
     }
   });
 
-  it("a hook that returns nothing on the failure path leaves the error intact (010)", async () => {
+  it("a hook that returns nothing on the failure path leaves the error intact", async () => {
     const toolDef: CustomToolDef = {
       name: "throw_tool",
       description: "throws an error",
@@ -1302,7 +1302,7 @@ describe("tool lifecycle hooks", () => {
     expect(res.content).toBe("boom");
   });
 
-  it("a successful tool still fires onPostTool exactly once, not marked as an error (010 regression)", async () => {
+  it("a successful tool still fires onPostTool exactly once, not marked as an error", async () => {
     const postSpy = vi.fn<[PostToolPayload], PostToolResult | void>();
     const toolDef: CustomToolDef = {
       name: "ok_tool",
@@ -1320,7 +1320,7 @@ describe("tool lifecycle hooks", () => {
     expect(res.content).toBe("ok");
   });
 
-  it("the failure-path onPostTool receives the modified input (010)", async () => {
+  it("the failure-path onPostTool receives the modified input", async () => {
     const postSpy = vi.fn<[PostToolPayload], PostToolResult | void>();
     const toolDef: CustomToolDef = {
       name: "throw_tool_input",
@@ -1343,7 +1343,7 @@ describe("tool lifecycle hooks", () => {
     expect(postSpy.mock.calls[0][0].input).toEqual({ x: 42 });
   });
 
-  it("an onPreTool deny does not fire onPostTool (010 regression)", async () => {
+  it("an onPreTool deny does not fire onPostTool", async () => {
     const postSpy = vi.fn<[PostToolPayload], PostToolResult | void>();
     const execSpy = vi.fn().mockRejectedValue(new Error("should not run"));
     const toolDef: CustomToolDef = {
@@ -1381,7 +1381,7 @@ describe("tool lifecycle hooks", () => {
     expect(askRes.content).toContain("Interaction required confirmation");
   });
 
-  it("a throwing tool touches neither _onToolBlock nor images (010)", async () => {
+  it("a throwing tool touches neither _onToolBlock nor images", async () => {
     const blockSpy = vi.fn();
     const toolDef: CustomToolDef = {
       name: "throw_tool",
@@ -1407,7 +1407,7 @@ describe("tool lifecycle hooks", () => {
     const { executors } = buildTools(ctx, [toolDef]);
     const res = await executors.throw_tool({}, { abortSignal: ctx.signal, toolCallId: "tc-throw" });
 
-    // 002: returned content is used, but a returned block/images are ignored.
+    // Returned content is used, but a returned block/images are ignored.
     expect(res.content).toBe("x");
     expect(res.isError).toBe(true);
     expect(blockSpy).not.toHaveBeenCalled();
@@ -1415,8 +1415,8 @@ describe("tool lifecycle hooks", () => {
   });
 });
 
-// 002: the payload carries the call identifier and the throw path never emits a stack.
-describe("post-tool payload call id (002)", () => {
+// The payload carries the call identifier and the throw path never emits a stack.
+describe("post-tool payload call id", () => {
   it("the success path passes toolCallId to onPostTool", async () => {
     const postSpy = vi.fn<[PostToolPayload], PostToolResult | void>();
     const toolDef: CustomToolDef = {
@@ -1481,8 +1481,8 @@ describe("post-tool payload call id (002)", () => {
   });
 });
 
-// 001: the executor's result object carries the tool's error verdict to the loop.
-describe("executor error flag (001)", () => {
+// The executor's result object carries the tool's error verdict to the loop.
+describe("executor error flag", () => {
   it("a throwing tool resolves with isError true and the same message", async () => {
     const custom: CustomToolDef = {
       name: "throw_tool",
@@ -1588,7 +1588,7 @@ describe("executor error flag (001)", () => {
   });
 });
 
-describe("input_schema memoization (011)", () => {
+describe("input_schema memoization", () => {
   const noopExecute: ExecuteMock = vi.fn();
   const CLEAN_SCHEMA: JsonSchemaObject = {
     type: "object",

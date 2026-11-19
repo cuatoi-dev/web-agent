@@ -51,7 +51,7 @@ function computeSections(
   }
   // Each clause names a tool, so it is only useful when that tool is present.
   // A host that installs core alone has query_data but neither query_state nor
-  // snapshot_page — those moved to @cuatoi/web-agent-dom (007).
+  // snapshot_page — those moved to @cuatoi/web-agent-dom.
   const preferenceClauses: string[] = [];
   if (nameSet.has("query_data")) {
     preferenceClauses.push("prefer query_data for tabular/aggregated/chart data");

@@ -55,7 +55,7 @@ export class AnthropicLanguageModel implements LanguageModel {
       });
     // Rolling history cache: one breakpoint on the last block of the last
     // message so a turn's tool-loop steps re-read prior history from cache.
-    // (Budget: A+B on system [task 001] + this 1 = 3 of Anthropic's 4.)
+    // (Budget: A+B on system + this 1 = 3 of Anthropic's 4.)
     applyRollingCacheBreakpoint(anthropicMsgs);
     const systemPrompt = opts.systemPrompt || extractedSystem || "";
     const anthropicPO = opts.providerOptions?.["anthropic"];

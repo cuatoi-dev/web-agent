@@ -212,7 +212,7 @@ describe("vfsTools", () => {
     });
   });
 
-  describe("vfs.write (127/003)", () => {
+  describe("vfs.write", () => {
     it("creates a file, then overwrites it without a read first", async () => {
       const provider = vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend() });
       const vfs = provider.vfs;
@@ -476,9 +476,9 @@ describe("vfsTools run-time mounts", () => {
   });
 });
 
-// 002: the provider hook saves a long result through core, and a new chat
+// The provider hook saves a long result through core, and a new chat
 // clears only the saved-result folder.
-describe("vfsTools long tool results (002)", () => {
+describe("vfsTools long tool results", () => {
   const textFile = (content: string) => ({ content, encoding: "utf8" as const, mimeType: "text/plain", mtimeMs: 1 });
 
   const ctxWith = (provider: ReturnType<typeof vfsTools>, hostSeen: unknown[]) =>

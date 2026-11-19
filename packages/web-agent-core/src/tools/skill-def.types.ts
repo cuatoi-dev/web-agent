@@ -26,6 +26,6 @@ export interface SkillDef {
 
   /** The id of the agent that owns this skill. Absent = shared: every agent
    *  that reads the registry sees it. Only a registry with `supportsOwner`
-   *  sets it (idea 120 task 004). */
+   *  sets it. */
   owner?: string;
 }

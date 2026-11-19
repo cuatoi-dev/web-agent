@@ -14,7 +14,7 @@ store is configured, the list is saved with the session.
 ## Turn on todo tracking
 
 Todo tracking is off by default. Set `todo` on the `SessionConfig`
-(`src/controller.types.ts:121`):
+(`src/controller.types.ts:128`):
 
 ```ts
 import { createAgentSession } from "@cuatoi/web-agent-core";
@@ -27,7 +27,7 @@ const session = createAgentSession({
 ```
 
 When `todo.enabled` is `true`, core puts the session's todo store on
-`ToolContext._todos` (`src/controller-config.ts:188`), and `todoTools(ctx)` — and
+`ToolContext._todos` (`src/controller-config.ts:203`), and `todoTools(ctx)` — and
 so `defaultTools(ctx)` — returns `todo_write` and `todo_read`
 (`src/tools/todo-tools.ts:14-15`).
 
@@ -134,9 +134,9 @@ and does not fail the tool call.
 Core restores the list from `SessionMeta.todos`:
 
 - at startup, for the most recent session (`src/controller-sessions.ts:157`)
-- when the session switches (`src/controller-sessions.ts:265-266`)
+- when the session switches (`src/controller-sessions.ts:280-281`)
 
-A new session starts with an empty list (`src/controller-sessions.ts:227`).
+A new session starts with an empty list (`src/controller-sessions.ts:236`).
 Without a session store, the list lives in memory for the page load only.
 
 See [Session backend](./session-backend.md) for the `SessionMeta` shape.
@@ -146,7 +146,7 @@ See [Session backend](./session-backend.md) for the `SessionMeta` shape.
 ## Read the list from the host
 
 `session.todos()` returns a copy of the active session's list
-(`src/controller.ts:267`). Core notifies `subscribe()` listeners after every
+(`src/controller.ts:360`). Core notifies `subscribe()` listeners after every
 change, so a UI can render the plan next to the chat:
 
 ```ts
@@ -161,7 +161,7 @@ session.subscribe(() => {
 
 The package entry point exports `todoTools`, `createTodoStore`, and the types
 `TodoItem`, `TodoStatus`, `TodoControllerSeam` and `TodoStore`
-(`src/index.ts:56-83`). Core creates one store for each session. You need
+(`src/index.ts:74`, `src/index.ts:86-92`). Core creates one store for each session. You need
 `createTodoStore` only to build your own controller.
 
 ---

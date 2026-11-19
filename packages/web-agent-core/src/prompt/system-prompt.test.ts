@@ -23,7 +23,7 @@ describe("System Prompt Builder", () => {
     // Verify operating rules section
     expect(prompt).toContain("# Operating rules");
     expect(prompt).toContain("Never claim an action succeeded without verifying");
-    // 007: defaultTools() ships no DOM write tools, so the write-tool rules
+    // defaultTools() ships no DOM write tools, so the write-tool rules
     // (gated by hasWrite in system-prompt.ts) are absent by default.
     expect(prompt).not.toContain("snapshot_page before clicking");
 
@@ -52,7 +52,7 @@ describe("System Prompt Builder", () => {
     // Verify [ui_action] documentation
     expect(prompt).toContain("Messages prefixed [ui_action:…]");
 
-    // Verify tool guidelines are present — 007: only the default (non-DOM)
+    // Verify tool guidelines are present — only the default (non-DOM)
     // tools ship a snippet by default now.
     expect(prompt).toContain("# Tool guidelines");
     const ctx: ToolContext = { app, signal: new AbortController().signal };
@@ -79,7 +79,7 @@ describe("System Prompt Builder", () => {
     expect(prompt).not.toContain("Custom block schemas here:");
   });
 
-  // 007: `see`'s inclusion by `images`/imageInput no longer lives in core's
+  // `see`'s inclusion by `images`/imageInput no longer lives in core's
   // defaultTools() — it moved to @cuatoi/web-agent-dom's domTools(), which
   // covers this ("images: false omits the see tool" in tool-provider.test.ts).
 
@@ -161,7 +161,7 @@ describe("System Prompt Builder", () => {
       expect(prompt).not.toContain("# Skills");
     });
 
-    it("M3 — an opted-out skill (105/001 P8) is omitted, the others stay", () => {
+    it("M3 — an opted-out skill is omitted, the others stay", () => {
       const list = [
         { name: "s1", description: "desc1", definition: "" },
         { name: "secret", description: "hidden", definition: "", disableModelInvocation: true },
@@ -192,7 +192,7 @@ describe("System Prompt Builder", () => {
       expect(prompt).not.toContain("Be conservative: do not submit forms");
       // Rules independent of write tools remain
       expect(prompt).toContain("Never claim an action succeeded without verifying");
-      // 010: each preference clause is gated on its tool. query_data is absent
+      // Each preference clause is gated on its tool. query_data is absent
       // from this toolset, so its clause must be gone; the other two remain.
       expect(prompt).not.toContain("query_data for tabular/aggregated/chart data");
       expect(prompt).toContain("Prefer query_state for");

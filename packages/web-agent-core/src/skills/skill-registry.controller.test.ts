@@ -341,7 +341,7 @@ describe("Controller — SkillRegistry integration", () => {
     expect(localStorage.length).toBe(0);
   });
 
-  describe("create_skill tool (idea 102 task 002)", () => {
+  describe("create_skill tool", () => {
     it("a confirmed create_skill call saves to the registry and load_skill returns it in the SAME turn", async () => {
       const registry = new LocalStorageSkillRegistry("create-skill-same-turn");
       const confirmInteraction = vi.fn().mockResolvedValue(true);
@@ -551,7 +551,7 @@ describe("Controller — SkillRegistry integration", () => {
     });
   });
 
-  describe("delete_skill tool (idea 114 task 004)", () => {
+  describe("delete_skill tool", () => {
     it("a confirmed delete_skill call removes from the registry and load_skill no longer finds it in the SAME turn", async () => {
       const registry = new LocalStorageSkillRegistry("delete-skill-same-turn");
       await registry.save({

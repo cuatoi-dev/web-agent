@@ -9,9 +9,9 @@ agent is doing — moving to a target element, clicking, or filling text. The
 cursor itself lives in `web-agent-lit`, but the panel does not connect it to
 the tools. Your host connects it: build an `ActionCueFn` with
 `createActionCue()` and pass it to `domTools({ actionCue })`. All three hosts do
-this (`apps/cat-store/src/web/agent-panel-config.ts:241`,
-`apps/docs-site/src/docs-embed.ts:69`,
-`packages/web-agent-browser/src/content.ts:104`). You never call cursor methods
+this (`apps/cat-store/src/web/agent-panel-config.ts:262`,
+`apps/docs-site/src/docs-embed.ts:61`,
+`packages/web-agent-browser/src/content.ts:109`). You never call cursor methods
 yourself.
 
 ---
@@ -27,7 +27,7 @@ same cursor without explicit setup.
 When a run ends, `agent-chat-panel` calls `destroy()`, so a finished or stopped
 run leaves no `.wa-agent-cursor-layer` on the page. It does this only when the
 panel's own `cues` property has `enabled: true`
-(`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:83-93`).
+(`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:82-92`).
 
 ---
 
@@ -117,7 +117,7 @@ off, do not pass `actionCue` to `domTools()`.
 `createActionCue()` has no `enabled` check, and it takes its speed from the
 `speed()` function you pass, not from `CuesConfig`
 (`packages/web-agent-lit/src/chat-ui/cue-actions.ts:6-15`). Core passes
-`cues` through its config (`src/controller-config.ts:55`, default
+`cues` through its config (`src/controller-config.ts:71`, default
 `{ enabled: true, speed: "slow" }` at `src/config.ts:63`), but no code in core
 or in `@cuatoi/web-agent-dom` reads it.
 
@@ -133,10 +133,10 @@ panel.onCuesChange = ({ enabled, speed }) => {
 - The **Settings** screen shows a "Show the agent cursor while it works"
   checkbox and **Slow** / **Fast** buttons. They read `panel.cues`, and show
   `enabled: false` when `panel.cues` is not set
-  (`packages/web-agent-lit/src/chat-ui/chat-panel-screens.ts:14-19`, `:62-79`).
+  (`packages/web-agent-lit/src/chat-ui/chat-panel-screens.ts:18-23`, `:73-88`).
 - A change in Settings updates `panel.cues`, calls `onCuesChange`, and calls
   `clear()` on the cursor when you turn it off
-  (`packages/web-agent-lit/src/chat-ui/chat-panel-screens.ts:34-42`).
+  (`packages/web-agent-lit/src/chat-ui/chat-panel-screens.ts:43-51`).
 - The panel removes the cursor layer at the end of a run only when
   `panel.cues.enabled` is `true` (see [How it works](#how-it-works)).
 

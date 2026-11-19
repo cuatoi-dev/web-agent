@@ -35,7 +35,7 @@ export type ToolRenderer = (input: Record<string, unknown>, result: string) => s
 /** A tool's argument schema: either a zod type or a raw JSON Schema object. */
 export type ToolInputSchema = z.ZodType | JsonSchemaObject;
 
-/** 124/007: what a tool's own `phrase` is given for one finished step. */
+/** What a tool's own `phrase` is given for one finished step. */
 export interface ToolStepPhraseInput {
   /** The audit entry's input, as an object. Never null. */
   input: Record<string, unknown>;
@@ -63,14 +63,14 @@ export interface CustomToolDef {
    */
   summarize?: (input: Record<string, unknown>, ctx: ToolContext) => string;
   /**
-   * 107/004: keep only the newest `ttl` results of this tool **per argument
+   * Keep only the newest `ttl` results of this tool **per argument
    * set**. `snapshot_page({ref:"main"})` and `snapshot_page({ref:"side"})` hold
    * separate windows, so a snapshot of a different element never pushes out a
    * snapshot of this one. `null` or absent means never redacted.
    */
   ttl?: number | null;
   /**
-   * 107/004: a result of this tool lives `uttl` **user** turns. One user
+   * A result of this tool lives `uttl` **user** turns. One user
    * message that drives twenty tool calls is one turn. `null` or absent means
    * never redacted.
    *
@@ -79,7 +79,7 @@ export interface CustomToolDef {
    */
   uttl?: number | null;
   /**
-   * 124/007: this tool's own readable step line for the chat thread, in place
+   * This tool's own readable step line for the chat thread, in place
    * of the framework package's built-in phrase list. `agent` is the resolved
    * agent label ("tesagent", or "Agent" when the host sets no short name).
    *
@@ -88,7 +88,7 @@ export interface CustomToolDef {
    * wording and never breaks the thread.
    */
   phrase?: (step: ToolStepPhraseInput, agent: string) => string;
-  /** 124/007: the line shown while this tool is still running. Same rules. */
+  /** The line shown while this tool is still running. Same rules. */
   inProgressPhrase?: (agent: string) => string;
 }
 
@@ -112,7 +112,7 @@ export interface ToolProvider {
   /** Called at session start, and again for a new list passed to `updateConfig()`. */
   load(): Promise<CustomToolDef[]>;
   /**
-   * Attachment providers this tool provider registers on the composer (006) —
+   * Attachment providers this tool provider registers on the composer —
    * e.g. a DOM package's point-at-elements picker. Merged with
    * `SessionConfig.attachmentProviders` once this provider has loaded.
    */
@@ -144,6 +144,6 @@ export interface ToolDef {
   name: string;
   description: string;
   inputSchema: ToolInputSchema;
-  /** Prose snippet that the system-prompt builder (§7) can insert. */
+  /** Prose snippet that the system-prompt builder can insert. */
   promptSnippet: string;
 }

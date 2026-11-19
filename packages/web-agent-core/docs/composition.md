@@ -6,9 +6,7 @@ title: Composing tools, skills & renderers
 
 The agent's capabilities — tools, skills, and generative-UI block renderers —
 are all **plain arrays you assemble by spreading builder functions**. There is
-no registration API and no `customTools`/`customSkills` config field (removed;
-see [Custom tools](./custom-tool.md) and [Skills](./skill.md) for the prior
-shape). This page is the single copy-paste reference tying together
+no registration API and no `customTools`/`customSkills` config field. This page is the single copy-paste reference tying together
 [Tools & data sources](./tools.md), [Custom tools](./custom-tool.md),
 [Skills](./skill.md), and [Generative UI](./generative-ui.md).
 
@@ -65,35 +63,37 @@ Each recipe is self-contained — copy the imports as shown.
 ### Full agent (defaults)
 
 Leave `tools`/`skills` unset — core falls back to `defaultTools(ctx)` and
-`coreSkills()` (`packages/web-agent-core/src/loop/agent.ts:50`,
-`packages/web-agent-core/src/loop/agent.ts:131`,
-`packages/web-agent-core/src/loop/agent.ts:139`):
+`coreSkills()` (`packages/web-agent-core/src/loop/agent.ts:49`,
+`packages/web-agent-core/src/loop/agent.ts:121`,
+`packages/web-agent-core/src/loop/agent.ts:129`):
 
 ```ts
 const panel = document.createElement("agent-chat-panel") as any;
 panel.path = "/api/anthropic";
 panel.model = "m";
 panel.config = { persist: true };
-// tools/skills left unset — same toolset as before this refactor
+// tools/skills left unset — core uses defaultTools(ctx) and coreSkills()
 document.body.appendChild(panel);
 ```
 
 > **`panel.tools` and `panel.skills` are convenience properties, not the raw
 > config.** `panel.tools = [...]` is **additive** — the panel always computes
 > `tools: (ctx) => [...defaultTools(ctx), ...(panel.tools ?? [])]` internally
-> (`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:64-67`). `panel.skills`,
+> (`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:63-66`). `panel.skills`,
 > by contrast, is passed straight through as `cfg.skills` with **no**
-> auto-merge (`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:68`) — if you set it, you must spread
+> auto-merge (`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:67`) — if you set it, you must spread
 > `coreSkills()` yourself to keep the built-in skills (see cat-store/docs-site
 > examples below). To fully **replace** the tool list (read-only, headless,
 > vanilla below), set `panel.config = { tools: yourFn }` directly — `_config`
-> is spread last in `buildSessionConfig()`
-> (`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:74`) so it wins
+> is spread after `tools` in `buildSessionConfig()`
+> (`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:73`) so it wins
 > over the panel's computed default.
 
-> **Every recipe below replaces the whole tool list, so it also drops the core
-> tools it does not name.** The recipes keep `waitTools()`, `dataTools()`,
-> `genuiTools()` and `skillTools(ctx)`, so each one omits `get_time` (from `timeTools()`),
+> **The read-only, headless and vanilla recipes below replace the whole tool
+> list, so they drop the core tools they do not name.** The read-only recipe
+> keeps `waitTools()`, `dataTools()`, `genuiTools()` and `skillTools(ctx)`; the
+> headless recipe also drops `waitTools()`; the vanilla recipe keeps no core
+> tool. Each one omits `get_time` (from `timeTools()`),
 > `compact_conversation` (from `compactionTools()`), `set_schedule` /
 > `list_schedules` / `cancel_schedule` (from `schedulerTools(ctx)`) and
 > `todo_write` / `todo_read` (from `todoTools(ctx)`). That is deliberate: a recipe
@@ -129,17 +129,23 @@ panel.config = {
   // DOM tools come from a provider, not from `tools`. Omit this line entirely
   // for a headless agent — then snapshot_page/query_state/click/fill/
   // select_option/wait_for/see do not exist for the model.
-  toolProviders: domTools({ /* read-only hosts: see the web-agent-dom docs */ }),
+  // domTools() has no read-only option. Wrap its provider and keep only the read tools.
+  toolProviders: domTools().map((p) => ({
+    ...p,
+    load: async () =>
+      (await p.load()).filter((t) => ["snapshot_page", "query_state", "see"].includes(t.name)),
+  })),
 };
 ```
 
 `apps/docs-site/src/docs-embed.ts:13` imports `domTools` the same way, but it is
 **not** an example of full replacement: it sets `bubble.tools = [searchDocsTool]`
-(`apps/docs-site/src/docs-embed.ts:61`), which is additive, and never sets
-`config.tools`, so it keeps the whole of `defaultTools(ctx)`. The only
-full-replacement `tools` factory in this repo is the `demo-agent-run` demo
-folded into `apps/cat-store/src/web/dev/gallery-demos.ts` (`mountAgentRunDemo`),
-which drives `createPageAgent` directly, not a panel host.
+(`apps/docs-site/src/docs-embed.ts:53`), which is additive, and never sets
+`config.tools`, so it keeps the whole of `defaultTools(ctx)`. For full-replacement
+`tools` factories, see `mountAgentRunDemo` in
+`apps/cat-store/src/web/dev/gallery-demos-agent-run.ts:196`, which drives
+`createPageAgent` directly, and the browser extension's side panel
+(`packages/web-agent-browser/src/sidepanel.ts:161`).
 
 The system prompt automatically drops DOM-write operating rules when these
 tool names are absent (see "Disabling a capability" below).
@@ -298,7 +304,7 @@ replaced by `tools`/`skills` above.
 Omitting a builder removes both the tool **and** its system-prompt guidance —
 `buildSystemPrompt()` prunes operating-rules and the `# Presenting rich UI`
 section based on which tool *names* are present in `toolNames`
-(`packages/web-agent-core/src/prompt/system-prompt.ts:40-97`). For example, a
+(`packages/web-agent-core/src/prompt/system-prompt.ts:40-102`). For example, a
 read-only toolset (no `click`/`fill`/`select_option`/`wait_for`) drops the
 DOM-write operating rules entirely, and a toolset with neither `show_chart`
 nor `show_generative_ui` drops the whole rich-UI section.
@@ -307,8 +313,8 @@ nor `show_generative_ui` drops the whole rich-UI section.
 
 ## Real host examples
 
-- **cat-store (charting present)** — `apps/cat-store/src/web/agent-panel-config.ts:5-6,197-206,209-220`
-- **docs-site (charting absent)** — `apps/docs-site/src/docs-embed.ts:4-13,61,67,73-74`
+- **cat-store (charting present)** — `apps/cat-store/src/web/agent-panel-config.ts:14-15,201-210,227-241`
+- **docs-site (charting absent)** — `apps/docs-site/src/docs-embed.ts:4-13,53,65-66`
 
 Compare them to see the present and absent patterns in full, including the
 tree-shaking result (`apps/docs-site/src/bundle-absence.test.ts` asserts that

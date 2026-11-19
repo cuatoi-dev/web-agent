@@ -361,7 +361,7 @@ describe("builders", () => {
         expect(ctx.skills).toEqual([]);
       });
 
-      // 120/004 — the shared flag and the registry's owner.
+      // The shared flag and the registry's owner.
       it("offers an optional boolean shared when the registry supports owners", () => {
         const def = skillTools(mockCtx({ skillRegistry: ownerRegistry() })).find((d) => d.name === "create_skill")!;
         const schema = def.inputSchema as { properties: Record<string, { type?: string }>; required: string[] };

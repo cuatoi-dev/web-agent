@@ -7,7 +7,7 @@ export const DEFAULT_IMAGE_LIMITS: ImageLimits = {
   quality: 0.82,
 };
 
-/** 003: limits for images a tool returns. 1536 = 768 × 2, just under Claude's
+/** Limits for images a tool returns. 1536 = 768 × 2, just under Claude's
  *  1568 px standard tier. User attachments keep DEFAULT_IMAGE_LIMITS. */
 export const TOOL_IMAGE_LIMITS = {
   maxDimension: 1536,
@@ -209,7 +209,7 @@ export async function downscaleImage(
 }
 
 /**
- * 003: downscale an image a tool returned to TOOL_IMAGE_LIMITS, keeping its
+ * Downscale an image a tool returned to TOOL_IMAGE_LIMITS, keeping its
  * format where it can.
  *
  * - Within 1536 px and 1 MB: returned unchanged (same bytes, same format,

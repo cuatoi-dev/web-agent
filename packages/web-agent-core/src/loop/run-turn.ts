@@ -45,7 +45,7 @@ export async function runTurn(
 }
 
 /**
- * 001 — continue the turn that is already open, instead of starting a new one.
+ * Continue the turn that is already open, instead of starting a new one.
  *
  * The difference from `runTurn` is the ABSENCE of `cm.appendUser`: the user
  * message and every completed step are already in the journal under a turnId

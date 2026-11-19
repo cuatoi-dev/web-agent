@@ -12,9 +12,9 @@ provider; see [Custom providers](#custom-providers).
 
 | `endpointType` | Implementation | Wire format |
 |---|---|---|
-| `"anthropic"` (default) | `AnthropicLanguageModel` (`src/transport/anthropic-provider.ts:23`) | Anthropic Messages, built in this package (`src/transport/wire.types.ts`) |
-| `"openai"` | `OpenAILanguageModel` (`src/transport/openai-provider.ts:32`) | OpenAI chat completions, translated to and from the Anthropic shape (`src/transport/openai-to-anthropic.ts`, `src/transport/openai-wire.types.ts`) |
-| `"gemini"` | `GeminiLanguageModel` (`src/transport/gemini-provider.ts:33`) | Google Gemini `generateContent`, translated to and from the Anthropic shape (`src/transport/gemini-to-anthropic.ts`, `src/transport/gemini-wire.types.ts`) |
+| `"anthropic"` (default) | `AnthropicLanguageModel` (`src/transport/anthropic-provider.ts:13`) | Anthropic Messages, built in this package (`src/transport/wire.types.ts`) |
+| `"openai"` | `OpenAILanguageModel` (`src/transport/openai-provider.ts:25`) | OpenAI chat completions, translated to and from the Anthropic shape (`src/transport/openai-to-anthropic.ts`, `src/transport/openai-wire.types.ts`) |
+| `"gemini"` | `GeminiLanguageModel` (`src/transport/gemini-provider.ts:26`) | Google Gemini `generateContent`, translated to and from the Anthropic shape (`src/transport/gemini-to-anthropic.ts`, `src/transport/gemini-wire.types.ts`) |
 | `"mock"` | `createMockProvider()` — deterministic, network-free; drive it with `setMockScript()` | none — no network |
 
 Core depends on no vendor software development kit (SDK). All three real
@@ -80,12 +80,12 @@ Core builds each request URL itself, as `baseURL + path`
 the `path` / `baseURL` you configure must differ:
 
 - **Anthropic** — the provider appends `/v1/messages`
-  (`src/transport/anthropic-provider.ts:133,162`) → set
+  (`src/transport/anthropic-provider.ts:118`) → set
   `path = "/api/anthropic"` (no trailing `/v1`). If you do include `/v1`, the
-  provider strips it (`src/transport/anthropic-provider.ts:176`), so both forms
+  provider strips it (`src/transport/anthropic-provider.ts:135`), so both forms
   reach the same URL.
 - **OpenAI** — the provider appends `/chat/completions`
-  (`src/transport/openai-provider.ts:163,212`) → set
+  (`src/transport/openai-provider.ts:151`) → set
   `path = "/api/openai/v1"` (include `/v1`).
 - **Gemini** — the provider appends
   `/v1beta/models/{model}:generateContent`
@@ -107,8 +107,8 @@ local gateway by full URL.
 
 | Host | `endpointType` | `path` (baseURL) | `model` | Source |
 |---|---|---|---|---|
-| cat-store | `"anthropic"` | `/api/anthropic` | `sonnet` | `apps/cat-store/src/web/agent-panel-config.ts:54-61`, applied at `:181` |
-| docs-site | `"openai"` | `/api/openai/v1` | `sonnet` | `apps/docs-site/src/docs-embed.ts:55-56`, `:160-161` |
+| cat-store | `"anthropic"` | `/api/anthropic` | `sonnet` | `apps/cat-store/src/web/agent-panel-config.ts:95-101`, applied at `:186` |
+| docs-site | `"openai"` | `/api/openai/v1` | `sonnet` | `apps/docs-site/src/docs-embed.ts:47-48`, `:151` |
 | web-agent-browser | `"anthropic"` | `http://localhost:30000/api/anthropic` | `sonnet` | `packages/web-agent-browser/brand/model.yml:22-29` |
 
 cat-store's provider switcher offers four entries
@@ -119,19 +119,20 @@ which tries the other three routes in order. cat-store registers that endpoint
 type itself (`apps/cat-store/src/web/any-model-chain.ts`, `ANY_MODEL_CHAIN`
 and the `providerRegistry.register` call below it).
 
-The browser extension uses the first entry of the brand's model list on a fresh
-profile, and the options page offers the whole list
-(`packages/web-agent-browser/src/lib/brand-models.ts:17-31`). A value the user
-saves replaces the default, field by field
-(`packages/web-agent-browser/src/lib/settings.ts:18-39`). When the brand has no
-model list, the compiled presets in
-`packages/web-agent-browser/src/lib/presets.ts:16-23` apply.
+The browser extension uses the first enabled entry of the brand's model list on
+a fresh profile, and the options page offers the whole list
+(`packages/web-agent-browser/src/lib/brand-models.ts:10-14`,
+`packages/web-agent-browser/src/lib/model-store.ts:128-131`). When the user picks
+a default model, the extension uses that model instead. A key the user sets with
+the Key button replaces the brand's default key. When the brand has no model
+list, the compiled presets in
+`packages/web-agent-browser/src/lib/presets.ts:14-18` apply.
 
 In the mock end-to-end tier, all three hosts replace the transport with
 `type: "mock"`
-(`apps/cat-store/src/web/agent-panel-config.ts:187-194`,
-`apps/docs-site/src/docs-embed.ts:150-158`,
-`packages/web-agent-browser/src/sidepanel.ts:114-119`).
+(`apps/cat-store/src/web/agent-panel-config.ts:192-198`,
+`apps/docs-site/src/docs-embed.ts:142-152`,
+`packages/web-agent-browser/src/sidepanel.ts:323-326`).
 
 ### Reverse proxy routes
 

@@ -59,8 +59,12 @@ thumbnail strip.
 
 ## ImageConfig
 
-`AgentConfig.images?: ImageConfig` — controls downscaling applied before images
-enter a message. These limits apply to user attachments only. Tool images use TOOL_IMAGE_LIMITS (1536 px, 1 MB) and keep their format where they can.
+The Lit panel's `images` property (`panel.images`, an `ImageConfig`) controls
+the downscaling that the built-in image provider applies when the user attaches
+an image. The panel passes it as `imageAttachmentProvider({ limits })`.
+`AgentConfig` has no `images` field. Core then downscales every user image again
+with the default limits (1024 px, 512 KB, quality 0.82) before the turn, so a
+limit larger than the default has no effect. These limits apply to user attachments only. Tool images use TOOL_IMAGE_LIMITS (1536 px, 1 MB) and keep their format where they can.
 
 From `packages/web-agent-core/src/config.types.ts:46-53`:
 
@@ -68,7 +72,7 @@ From `packages/web-agent-core/src/config.types.ts:46-53`:
 interface ImageConfig {
   maxDimension?: number;   // default 1024 — longest edge in px
   maxBytes?: number;       // default 524288 (512 KB) — max encoded size
-  quality?: number;        // default 0.82 — JPEG/WebP re-encode quality 0–1
+  quality?: number;        // default 0.82 — JPEG re-encode quality 0–1
 }
 ```
 
@@ -76,8 +80,10 @@ Processing order:
 
 1. If the image's longest edge exceeds `maxDimension`, downscale while
    preserving aspect ratio.
-2. Re-encode as JPEG/WebP at `quality`.
-3. If the result still exceeds `maxBytes`, lower quality and re-encode again.
+2. Re-encode as JPEG at `quality`. The result is always JPEG, whatever the
+   input format.
+3. If the result still exceeds `maxBytes`, lower quality by 0.1 and re-encode
+   again. Repeat until the result fits or quality reaches 0.3.
 
 ---
 
@@ -131,7 +137,7 @@ Any other `endpointType`, such as a custom fallback chain, returns `false`.
 vision model (`src/transport/vision.ts:6-17`).
 
 A session from `createAgentSession()` always sets `imageInput`, because
-`DEFAULT_CONFIG.imageInput` is `true` (`src/controller-config.ts:56`). So in a
+`DEFAULT_CONFIG.imageInput` is `true` (`src/config.ts:64`, applied at `src/controller-config.ts:72`). So in a
 session the name guess does not apply, and a model without vision receives the
 image. What happens then depends on the model provider. The guess applies when
 you call a provider factory directly with a config that has no `imageInput`.
@@ -150,7 +156,7 @@ const offerScreenshot = imageReachesModel(
 
 An image with an empty base64 payload never reaches a provider. Each message
 converter checks the payload with `assertImagePayload()` and throws
-`Invalid image: base64 payload is empty` (`src/utils/image.ts:27-31`).
+`Invalid image: base64 payload is empty` (`src/utils/image.ts:47-51`).
 
 ---
 

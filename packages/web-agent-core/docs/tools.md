@@ -22,15 +22,18 @@ Two more, `create_skill` and `delete_skill`, are added when the host's
 `see`) moved to the separate `@cuatoi/web-agent-dom` package. Core keeps only
 their **schemas** (see below).
 
-Core also exports one tool that `defaultTools(ctx)` does not include: `calcTool`
-(`calc`). Add it yourself; see [The calc tool](#the-calc-tool). This page shows how tools are defined, how to wire
+Core also exports tools that `defaultTools(ctx)` does not include: `calcTool`
+(`calc`), and the two samples `sampleGreetingTool` and `sampleQuickReplyTool`. Add it yourself; see [The calc tool](#the-calc-tool). This page shows how tools are defined, how to wire
 custom data sources, and a worked example from the cat-store app. For host-defined
 custom tools, see [Custom tools](./custom-tool.md).
 
 ## Built-in tool definitions
 
-All tool schemas live in `src/tools/definitions.ts` as `ToolDef` objects whose
-`inputSchema` is a raw JSON Schema object (`JsonSchemaObject`). Each `ToolDef` has:
+The DOM, `wait` and data tool schemas live in `src/tools/definitions.ts` as
+`ToolDef` objects whose `inputSchema` is a raw JSON Schema object
+(`JsonSchemaObject`). The other core tools (`get_time`, `show_generative_ui`,
+the skill, compaction, scheduler and todo tools) declare their schemas in their
+own modules. Each `ToolDef` has:
 
 - **`name`** — the tool name the LLM uses (e.g. `snapshot_page`)
 - **`description`** — natural-language description the LLM sees
@@ -70,7 +73,8 @@ export const WAIT_DEF: ToolDef = {
 };
 ```
 
-The full tool map `TOOL_DEFS` is exported so consumers can inspect or extend it:
+The schema table `TOOL_DEFS` is exported so consumers can inspect it. It holds
+only the twelve definitions in `definitions.ts`, not every core tool:
 
 ```ts
 // packages/web-agent-core/src/tools/definitions.ts
@@ -88,11 +92,11 @@ export const TOOL_DEFS: Record<string, ToolDef> = {
   sample_field_values: SAMPLE_FIELD_VALUES_DEF,
   query_data: QUERY_DATA_DEF,
 };
-// TOOL_DEFS is a SCHEMA table, not the tool set core executes. Since the
-// previous batch's task 007, the DOM entries (snapshot_page, query_state,
-// click, fill, select_option, wait_for, see) carry no executor in core —
-// `@cuatoi/web-agent-dom` imports these schemas and supplies the
-// executors via a ToolProvider. `see` is omitted when a host passes
+// TOOL_DEFS is a schema table, not the tool set core runs. The DOM
+// entries (snapshot_page, query_state, click, fill, select_option,
+// wait_for, see) have no executor in core. `@cuatoi/web-agent-dom`
+// imports these schemas and supplies the executors through a
+// ToolProvider. `see` is omitted when a host passes
 // domTools({ images: false }).
 export const TOOL_NAMES: string[] = Object.keys(TOOL_DEFS);
 ```
@@ -111,7 +115,7 @@ the tool declared its schema. The check lives in `wrapExecutor`
   module is reached only through a dynamic `import()`, so a host with no
   JSON-Schema tool never loads ajv. If that import or the validator itself
   fails to load, core logs a `console.warn` and runs the call **without**
-  argument validation (`src/tools/build-tools.ts:45-66`). Only a real schema
+  argument validation (`src/tools/build-tools.ts:60-69`). Only a real schema
   violation rejects the call.
 
 Both produce the same wording, `Invalid input for {name}: {detail}.`, and both
@@ -152,7 +156,7 @@ export function buildTools(
 
 `buildTools()` takes a flat `CustomToolDef[]`. `<agent-chat-panel>` builds this
 internally as `[...defaultTools(ctx), ...panel.tools]`
-(`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:64-67`). `defaultTools(ctx)`
+(`packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:63-66`). `defaultTools(ctx)`
 supplies `wait`, `get_time`, the four data tools, `show_generative_ui`, `search_skills`,
 `load_skill`, `compact_conversation`, the three scheduler tools, the two todo
 tools and — with a writable `skillRegistry` — `create_skill` and
@@ -165,16 +169,19 @@ host-defined tools (see [Custom tools](./custom-tool.md)).
 
 Each executor is wrapped with:
 1. Abort signal check (honours turn-level cancellation)
-2. Catch-all that converts any thrown error to `{ content: <message>, isError: true }`
-   (never exposes stack traces). The loop copies `isError` onto the `tool-result`
-   part, and `message-converter.ts` turns it into `is_error` on the Anthropic wire.
+2. Argument validation, then the `onPreTool` and `onPostTool` hooks
+3. A catch around `execute` that converts a thrown error to
+   `{ content: <message>, isError: true }` (never exposes stack traces). An error
+   thrown outside `execute`, for example by a hook, returns `{ content: <message> }`
+   without `isError`. The loop copies `isError` onto the `tool-result` part, and
+   `message-converter.ts` turns it into `is_error` on the Anthropic wire.
 
 ## Executor pattern
 
 Every tool executor receives the parsed input and a `ToolContext`:
 
 ```ts
-// packages/web-agent-core/src/tool-hooks.types.ts:48-94
+// packages/web-agent-core/src/tool-hooks.types.ts:49-110
 export interface ToolContext {
   dataSource?: DataSourceProvider;
   app: AppContext;
@@ -212,6 +219,9 @@ export interface ToolContext {
   /** Internal — the session-owned todo seam read by `todo_write` and
    *  `todo_read`. Absent when todo is not configured or is disabled. */
   _todos?: TodoControllerSeam;
+  /** The id of the chat this tool call belongs to. A tool keys per-chat
+   *  state on it. Absent when no controller owns this context. */
+  readonly sessionId?: string;
 }
 ```
 
@@ -219,10 +229,10 @@ export interface ToolContext {
 `onPostTool` after every tool call. See [Lifecycle hooks](./hooks.md).
 
 `buildTools()` does not dispatch by name — it wraps each def's own `execute`
-function directly (`src/tools/build-tools.ts:237` calls `wrapExecutor`, defined at
-`src/tools/build-tools.ts:32`). (A separate, name-based
-`getHandler()`/`executeToolByName()` pair exists in the same file for the four
-core tool builders, but it isn't in `buildTools()`'s call path — it's only
+function directly (`src/tools/build-tools.ts:295` calls `wrapExecutor`, defined at
+`src/tools/build-tools.ts:34`). (A separate, name-based
+`getHandler()`/`executeToolByName()` pair exists in the same file for six core
+tools — `wait`, the four data tools and `show_generative_ui` — but it isn't in `buildTools()`'s call path — it's only
 exercised by `build-tools.test.ts`.) A core executor is a plain function
 taking `(input, ctx)`, e.g. `src/tools/query-data.ts`:
 
@@ -276,7 +286,7 @@ Data sources are the extension point most hosts use. You provide an array of
 `SourceEntry` objects:
 
 ```ts
-// packages/web-agent-core/src/datasource/registry.ts
+// packages/web-agent-core/src/datasource/types.ts:423-437
 export interface SourceEntry {
   describe(): SourceInfo | Promise<SourceInfo>;
   query(q: DataQuery): Promise<QueryResult>;
@@ -284,6 +294,9 @@ export interface SourceEntry {
    *  queryable, in this order, each with a friendly label. Omit it and the
    *  source exposes every field it describes. */
   allowFields?: FieldAllowEntry[];
+  /** Optional distinct-value sampling for one field. When omitted, the
+   *  provider falls back to a groupBy aggregate query. */
+  sampleValues?(field: string, limit?: number): Promise<{ values: (string | number | boolean)[]; hasMore: boolean }>;
 }
 
 // packages/web-agent-core/src/datasource/types.ts
@@ -292,6 +305,8 @@ export interface SourceInfo {
   description: string;
   fields: FieldSchema[];
   rowCount: number;
+  error?: string;                          // why the source has no usable schema
+  unsupportedFields?: UnsupportedField[];  // fields held but not queryable
 }
 ```
 
@@ -329,14 +344,15 @@ cannot be used (`src/datasource/types.ts:126`).
 ### Cat-store worked example
 
 The cat-store app (`apps/cat-store/src/web/orders-backend/datasource-sources.ts`)
-registers three data sources: orders, products, and cart.
+registers four data sources: orders, products, cart, and an Elasticsearch
+orders source. The example below shows the first three.
 
 Here is the **products** source — it reads from the Redux store and uses the
 core `runQuery()` engine:
 
 ```ts
 // apps/cat-store/src/web/orders-backend/datasource-sources.ts
-import { SourceEntry, SourceInfo, DataQuery, QueryResult, FieldSchema, runQuery } from "@cuatoi/web-agent-core";
+import { SourceEntry, SourceInfo, DataQuery, QueryResult, FieldSchema, FieldAllowEntry, runQuery } from "@cuatoi/web-agent-core";
 
 export const PRODUCT_FIELDS: FieldSchema[] = [
   { name: "id", type: "string" },
@@ -409,7 +425,7 @@ every field it describes is discoverable and queryable, with no label.
 The sources are then wired to the panel:
 
 ```ts
-// apps/cat-store/src/web/agent-panel-config.ts:198
+// apps/cat-store/src/web/agent-panel-config.ts:202
 panel.sources = getCatSources(() => store.getState());
 ```
 
@@ -446,12 +462,13 @@ const byCategory = await runQuery(myRows, myFields, {
 - **Free-text search**: `search` — a case-insensitive substring matched across
   every `string` and `enum` field of the source. It combines with `filter` as
   AND and applies before aggregation.
-- **Filters**: MongoDB-style — `$and`, `$or`, `$gt`, `$gte`, `$lt`, `$lte`,
-  `$eq`, `$ne`, `$in`, `$nin`, `$regex`, `$exists`
+- **Filters**: MongoDB-style — `$and`, `$or`, `$not`, `$gt`, `$gte`, `$lt`,
+  `$lte`, `$eq`, `$ne`, `$in`, `$nin`, `$between`, `$contains`, `$startsWith`,
+  `$endsWith`, `$regex`, `$exists`, `$isNull`
 - **Sorting**: multi-field with `asc`/`desc` direction. A top-level `sort` is
   for row queries only; with `aggregate` present it is rejected, not applied.
 - **Aggregation**: Cube-style `groupBy` + measures (`count`, `sum`, `avg`,
-  `min`, `max`, `countDistinct`) with optional `having`, sort, and limit.
+  `min`, `max`, `countDistinct`, `first`, `last`) with optional `having`, sort, and limit.
   Order an aggregate result with `sort` inside `aggregate`, naming a result
   column (the groupBy or measure alias); an aggregate needs no `select` —
   rename a column with `as`.
@@ -482,8 +499,9 @@ It uses the `expr-eval-fork` parser and applies these limits
 | `MAX_CALC_TIMEOUT_MS` | 1000 ms | Evaluation runs synchronously and cannot be stopped. A run that took longer returns an error instead of the result. |
 | `MAX_CALC_OUTPUT_LENGTH` | 500 characters | A longer result is cut and marked as truncated. |
 
-A missing or empty `expression` returns an error that names the `expression`
-argument and shows an example call. A parse or evaluation failure returns
+An empty `expression` returns an error that names the `expression` argument
+and shows an example call. A missing `expression` fails schema validation
+before the tool runs and returns an `Invalid input for calc: …` error. A parse or evaluation failure returns
 `Calculation error: <message>`. All failures set `isError: true`.
 
 The package also exports `runCalc`, `calcInputSchema` and the three limit

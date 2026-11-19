@@ -1,4 +1,4 @@
-// §10 Tool Error Message Matrix — pure builder functions.
+// Tool error messages — pure builder functions.
 // Every function returns an actionable message string.
 // Never build raw stack traces here.
 
@@ -29,8 +29,8 @@ export function schemaViolation(name: string, msg: string): string {
 
 /**
  * The model's tool arguments arrived but were not valid JSON, so transport
- * substituted `{}` (`ToolUseBlock.argumentsIssue === "unparsable"`, produced by
- * task 001). Worded so the model cannot read it as a schema violation: it never
+ * substituted `{}` (`ToolUseBlock.argumentsIssue === "unparsable"`, set by
+ * the transport). Worded so the model cannot read it as a schema violation: it never
  * says a property is missing, because the model DID send arguments — it is the
  * JSON that could not be read.
  */

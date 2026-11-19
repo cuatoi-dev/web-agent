@@ -187,8 +187,8 @@ describe("JSON Schema Draft 2020-12 Validation", () => {
   });
 });
 
-describe("Core tool schemas — Draft 2020-12 structural invariants (004)", () => {
-  // Task 004 migrated these off Zod onto raw JSON Schema. These assertions
+describe("Core tool schemas — Draft 2020-12 structural invariants", () => {
+  // These moved off Zod onto raw JSON Schema. These assertions
   // check the DECLARED constraints — type, required list, additionalProperties,
   // bounds — not a frozen copy of the emitted blob, so a deliberate schema
   // change updates one assertion, not a pasted-value diff.

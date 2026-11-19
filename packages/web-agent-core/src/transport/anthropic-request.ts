@@ -20,7 +20,7 @@ function resolveFetch(injected?: typeof fetch): typeof fetch {
   // `unbound-method`: an unbound `window.fetch` throws "Illegal invocation" in
   // a browser when called without `window` as its receiver, so `.bind(window)`
   // is the correct call here, not just a type-only fix — proven live by the
-  // browser check (see anthropic-request.test.ts and the task's browser run).
+  // browser check (see anthropic-request.test.ts).
   const f =
     injected ||
     (typeof window !== "undefined" && window.fetch ? window.fetch.bind(window) : undefined) ||

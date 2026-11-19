@@ -114,10 +114,10 @@ describe("Compaction Orchestrator", () => {
     expect(cm.journal.filter((e) => e.meta.tombstone).map((e) => e.meta.tombstone?.summary)).toEqual(["SUMMARY 1", "SUMMARY 2"]);
     expect(mockSummarize).toHaveBeenCalledTimes(2);
     // Each call is handed the live ContextManager (cm.compose() is read inside
-    // the summarizer, not serialized into a prompt string — task 001).
+    // the summarizer, not serialized into a prompt string).
     expect(mockSummarize.mock.calls[1][0]).toBe(cm);
     // ...and the same page agent, so it can build the identical tools/system
-    // prefix a live turn would send (the fix — task 001 round 2).
+    // prefix a live turn would send.
     expect(mockSummarize.mock.calls[1][1]).toBe(AGENT);
   });
 
@@ -659,7 +659,7 @@ describe("summariseInCachedConversation", () => {
     cm.recordStep([{ role: "assistant", content: "hi there" }]);
     cm.commitTurn();
 
-    // 003: a whitespace-only TEXT response is retried by the withRetry
+    // A whitespace-only TEXT response is retried by the withRetry
     // transport middleware (middleware.ts's isEmptyResult) ONLY when the turn
     // did not finish normally. With finishReason "stop" it now reaches this
     // function and raises the same "summariser returned no text". The case

@@ -16,7 +16,7 @@ export type CompactionRowStatus = "running" | "done" | "cancelled" | "failed";
 
 /** One entry of the tool list the agent was actually given for a turn.
  *  The debug view displays `name` and `description`; it never calls the tool.
- *  124/007 adds the two optional phrase functions, which is how a tool loaded
+ *  The two optional phrase functions are how a tool loaded
  *  through `toolProviders` gets its own readable step line into the thread —
  *  provider tools never pass through the host's `tools` array. */
 export interface AvailableTool {
@@ -45,14 +45,14 @@ export interface SessionMessage {
   trace?: AuditEntry[];
   disabled?: boolean;
   failed?: { message: string; retryable: boolean };
-  /** 003: the turn completed and carried no content at all. NOT a failure —
+  /** The turn completed and carried no content at all. NOT a failure —
    *  the model ended its turn with nothing. Rendered as a neutral notice,
    *  never as the red error state. Mutually exclusive with `failed`. */
   notice?: { message: string; retryable: boolean };
-  /** 074: true while this assistant message's turn is still running (awaiting
+  /** True while this assistant message's turn is still running (awaiting
    * more steps). Used by the UI to show the mid-turn "working" placeholder. */
   pending?: boolean;
-  /** 003: opaque object from an `onUserPrompt` handler. Core never inspects it. */
+  /** Opaque object from an `onUserPrompt` handler. Core never inspects it. */
   promptMeta?: Record<string, unknown>;
 }
 
@@ -62,11 +62,11 @@ export interface QueuedMessage {
   images?: ImageAttachment[];
   userDisplayText?: string;
   promptMeta?: Record<string, unknown>;
-  /** 105/001 P6. Present when this item is a slash command typed while a turn
+  /** Present when this item is a slash command typed while a turn
    *  was running. `text` still carries what the user typed, so the existing
    *  queued-message chip renders unchanged. */
   command?: { name: string; argument: string };
-  /** 110/005 P2. Who put this item in the queue. Present only for a schedule
+  /** Who put this item in the queue. Present only for a schedule
    *  tick; ABSENT for anything a user typed, which is what keeps a user's
    *  message out of the coalesce. A schedule that fires while its own
    *  previous message is still undelivered replaces that message, matched on
@@ -90,9 +90,9 @@ export interface SessionState {
   usage: { input: number; output: number };
   contextWindow: { used: number; total: number; percent: number };
   queuedMessages: QueuedMessage[];
-  /** The active model id (067 runtime switcher). Mirrors the agent's live model. */
+  /** The active model id. Mirrors the agent's live model. */
   model: string;
-  /** 074: id of the turn currently in flight (undefined when idle). Lets the
+  /** Id of the turn currently in flight (undefined when idle). Lets the
    * UI attach a mid-turn "working" indicator to the right turn. */
   inProgressTurnId?: string;
 }
@@ -126,7 +126,7 @@ export interface SessionConfig extends Partial<AgentConfig> {
   /** Host opt-in for session-owned todo tracking. When absent or enabled is
    *  false, todo tools report unavailable. */
   todo?: { enabled: boolean };
-  /** 008 — how many rendered rows the chat panel keeps in the DOM. A user
+  /** How many rendered rows the chat panel keeps in the DOM. A user
    *  bubble is one row, an assistant text bubble is one row, and each tool
    *  chip is one row. The panel reads it; core never does. */
   messageWindow?: number;
@@ -171,7 +171,7 @@ export interface AgentSession {
   cancelQueued(id: string): void;
   popLastQueued(): { text: string; images?: ImageAttachment[] } | undefined;
   clearQueue(): void;
-  /** 105/001 — the resolved user-facing command list: host skills marked
+  /** The resolved user-facing command list: host skills marked
    *  `command: true`, then core's own actions, whose names a skill cannot
    *  claim. Rebuilt whenever the config changes. */
   commands(): CommandEntry[];
@@ -180,7 +180,7 @@ export interface AgentSession {
   /** Queue a command typed while a turn is running. It drains in order, as a
    *  command and never as prompt text. `text` is what the user typed and is
    *  what the queued-message chip shows. `source` is set only by the
-   *  scheduler (110/005 P2); a caller that omits it queues an ordinary user
+   *  scheduler; a caller that omits it queues an ordinary user
    *  message that is never coalesced. */
   enqueueCommand(
     name: string,
@@ -203,7 +203,7 @@ export interface AgentSession {
   /** Registered attachment providers, in registration order. The binding renders these. */
   getAttachmentProviders(): AttachmentProvider[];
   /**
-   * 110/004 — the tool list the agent was actually given for the most recent
+   * The tool list the agent was actually given for the most recent
    * turn, as name/description pairs, in the order the model sees them.
    *
    * Resolved by `createPageAgent()` from the real `ToolContext` (every seam

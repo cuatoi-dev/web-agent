@@ -160,15 +160,15 @@ export function createAgentSession(config: SessionConfig): AgentSession {
     }
     st.providerTools = result.tools;
     st.loadedProviders = result.loaded;
-    // Providers can also register attachmentProviders (006) — rebuild agentConfig
+    // Providers can also register attachmentProviders — rebuild agentConfig
     // so their onUserPrompt handlers are composed into hooks before turn 1.
     // buildConfig() ran once synchronously (before providers were loaded), so
     // effectiveAttachmentProviders() only sees them from here.
     buildConfig(st);
     if (st.providerTools.length > 0) {
       // Same reason: rebuild so turn 1 already has these tools and their
-      // prompt snippets, and do it BEFORE openOrCreateActiveSession(). 001/113
-      // — `preserveJournal: true` because a send() invoked in this startup
+      // prompt snippets, and do it BEFORE openOrCreateActiveSession().
+      // `preserveJournal: true` because a send() invoked in this startup
       // window must not be orphaned onto a `cm` this rebuild throws away.
       initAgent(st, { preserveJournal: true });
     }
@@ -186,7 +186,7 @@ export function createAgentSession(config: SessionConfig): AgentSession {
     if (st.registrySkills.length > 0) {
       // Rebuild so turn 1 already has these skills in ctx.skills and in the
       // `# Skills` prompt section, and do it BEFORE openOrCreateActiveSession().
-      // 001/113 — `preserveJournal: true`, same reason as the tool-provider
+      // `preserveJournal: true`, same reason as the tool-provider
       // rebuild above: this read is a real `chrome.storage.local` round trip,
       // wide enough for a send() to land on the pre-rebuild `cm` and be
       // silently orphaned when this call replaced it.

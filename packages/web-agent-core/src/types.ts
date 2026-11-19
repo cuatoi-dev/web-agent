@@ -48,7 +48,7 @@ export interface ConfirmInteractionDetail {
  * `message-converter.ts` turns it into `is_error` on the Anthropic wire.
  * Absent means success — the field is omitted, never set to `false`.
  */
-/** One image a tool returned (003). `dataUrl` is a `data:<type>;base64,…` URL;
+/** One image a tool returned. `dataUrl` is a `data:<type>;base64,…` URL;
  *  `mediaType` is the type in its header. */
 export interface ToolImage {
   dataUrl: string;
@@ -58,7 +58,7 @@ export interface ToolImage {
 export interface ToolExecutorResult {
   content: string;
   isError?: boolean;
-  /** 003: every image the tool returned, already downscaled by `wrapExecutor`.
+  /** Every image the tool returned, already downscaled by `wrapExecutor`.
    *  Absent when the tool returned none or every image was dropped. */
   images?: ToolImage[];
 }

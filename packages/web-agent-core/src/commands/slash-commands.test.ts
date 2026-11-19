@@ -149,9 +149,9 @@ describe("buildCommandList", () => {
     expect(entries[0].matchNames).toEqual(["summary"]);
   });
 
-  // --- Branch B tests (001/113) ---
+  // --- Branch B tests ---
 
-  it("001/B — a skill named 'new' cannot displace core's command", () => {
+  it("a skill named 'new' cannot displace core's command", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const s = skill({ name: "new", command: true, aliases: [] });
     const list = buildCommandList(coreCmds(), [s]);
@@ -160,7 +160,7 @@ describe("buildCommandList", () => {
     warn.mockRestore();
   });
 
-  it("001/B — a skill aliased 'clear' cannot displace core's alias", () => {
+  it("a skill aliased 'clear' cannot displace core's alias", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const s = skill({ name: "reset", aliases: ["clear"], command: true });
     const list = buildCommandList(coreCmds(), [s]);
@@ -169,7 +169,7 @@ describe("buildCommandList", () => {
     warn.mockRestore();
   });
 
-  it("001/B — warns once, naming the skill, when a reserved name is refused", () => {
+  it("warns once, naming the skill, when a reserved name is refused", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const s = skill({ name: "myscill", aliases: ["new"], command: true });
     buildCommandList(coreCmds(), [s]);
@@ -179,7 +179,7 @@ describe("buildCommandList", () => {
     warn.mockRestore();
   });
 
-  it("001/B — a refused skill still appears in entries", () => {
+  it("a refused skill still appears in entries", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const s = skill({ name: "new", command: true, aliases: [] });
     const list = buildCommandList(coreCmds(), [s]);

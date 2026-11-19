@@ -259,7 +259,7 @@ export function fromOpenAIResponse(
     content,
     stop_reason: toAnthropicStopReason(normalizedFinish),
     // Cache fields are intentionally absent — OpenAI's zero must not be
-    // reported as a cache miss. See "Cache tokens" in task file.
+    // reported as a cache miss.
     usage: {
       input_tokens: usage?.prompt_tokens ?? 0,
       output_tokens: usage?.completion_tokens ?? 0,

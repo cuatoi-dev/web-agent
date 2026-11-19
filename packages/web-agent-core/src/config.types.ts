@@ -52,7 +52,7 @@ export interface ImageConfig {
   quality?: number;
 }
 
-/** A user-selectable model entry for the runtime model switcher (067). */
+/** A user-selectable model entry for the runtime model switcher. */
 export interface ModelOption {
   /** Backend model id sent on the wire (e.g. "m"). */
   id: string;
@@ -102,8 +102,8 @@ export interface AgentConfig {
   imageInput?: boolean;
   /**
    * Host-supplied list of user-selectable models for the runtime model switcher
-   * (067-ui). UI-only metadata — the transport ignores it; the active model is
-   * `model`. When fewer than 2 entries, 067-ui hides the switcher.
+   * in the chat UI. UI-only metadata — the transport ignores it; the active model is
+   * `model`. When fewer than 2 entries, the chat UI hides the switcher.
    */
   models?: ModelOption[];
   /**

@@ -13,7 +13,7 @@ scheduler. Schedules live in memory only, so they end when the session ends.
 ## Turn on scheduling
 
 Scheduling is off by default. Set `scheduler` on the `SessionConfig`
-(`src/controller.types.ts:118`):
+(`src/controller.types.ts:125`):
 
 ```ts
 import { createAgentSession } from "@cuatoi/web-agent-core";
@@ -31,11 +31,11 @@ With a panel from `@cuatoi/web-agent-lit`, pass the same field through
 When `scheduler.enabled` is `true`, core does three things:
 
 - It puts the session's scheduler on `ToolContext._scheduler`
-  (`src/controller-config.ts:187`).
+  (`src/controller-config.ts:202`).
 - `schedulerTools(ctx)`, and so `defaultTools(ctx)`, returns `set_schedule`,
   `list_schedules` and `cancel_schedule` (`src/tools/scheduler-tools.ts:13-14`).
 - It adds three slash commands to the command list: `/schedule`,
-  `/schedule-list` and `/schedule-cancel` (`src/controller-config.ts:211`).
+  `/schedule-list` and `/schedule-cancel` (`src/controller-config.ts:226`).
   See [Scheduler commands](#scheduler-commands).
 
 When `scheduler` is absent or `enabled` is `false`, the seam is absent, the
@@ -101,7 +101,7 @@ Each schedule uses a `setTimeout` of `every`. When the timer fires
 
 A queued command runs as a command, never as prompt text. If the command no
 longer exists when its turn comes, core drops it
-(`src/controller-queue.ts:138-151`).
+(`src/controller-queue.ts:155-167`).
 
 ### Recovery after an error
 
@@ -111,7 +111,7 @@ ends with an error does not drain either, for the same reason.
 
 A schedule tick is different, because it arrives one interval later. When a tick
 finds a stale error, it clears `state.error` and drains the queue again
-(`src/controller-queue.ts:115-134`). So a schedule continues on its own after an
+(`src/controller-queue.ts:132-151`). So a schedule continues on its own after an
 API outage ends, and you do not need to press Retry. During the outage, step 2
 above keeps the queue at one waiting message for each schedule.
 
@@ -158,9 +158,9 @@ Schedules are never written to the session store. Core removes every schedule
 and stops every timer when:
 
 - a new session starts — `createSession()`, `reset()`, `/new`, deleting the
-  active session, or `clearAllSessions()` (`src/controller-sessions.ts:226`)
-- the session switches to another one (`src/controller-sessions.ts:236`)
-- the session is disposed (`src/controller.ts:245`)
+  active session, or `clearAllSessions()` (`src/controller-sessions.ts:235`)
+- the session switches to another one (`src/controller-sessions.ts:278`)
+- the session is disposed (`src/controller.ts:338`)
 
 A page reload also ends every schedule, because the timers live in the page.
 
@@ -201,8 +201,8 @@ cancelled, so a UI can show a badge from this value.
 
 ## Exports
 
-The package entry point exports these scheduler items (`src/index.ts:56-76`,
-`src/index.ts:143`):
+The package entry point exports these scheduler items (`src/index.ts:73`,
+`src/index.ts:76-85`, `src/index.ts:152`):
 
 | Export | What it is |
 |---|---|

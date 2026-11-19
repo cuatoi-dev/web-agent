@@ -273,7 +273,7 @@ describe("withAllowList().sampleValues", () => {
 });
 
 describe("withAllowList().query — projection guardrail criterion 5", () => {
-  it('rejects a select naming a field the host did not allow-list, with the task 001 message', async () => {
+  it('rejects a select naming a field the host did not allow-list, with the allow-list message', async () => {
     const querySpy = vi.fn(() => Promise.resolve({
       source: "s",
       aggregated: false,

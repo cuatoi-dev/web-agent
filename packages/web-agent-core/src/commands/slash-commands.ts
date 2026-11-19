@@ -25,7 +25,7 @@ export function parseSlashInput(
  *  host wins the exact name it registered; core then fills only what is still
  *  free, and warns when a host left it holding half a command.
  *
- *  001/113 — core's OWN names are reserved and cannot be claimed by a skill.
+ *  Core's OWN names are reserved and cannot be claimed by a skill.
  *  A skill shadowing /new makes the session unresettable and the user cannot
  *  see why. Every other name keeps the host-first rule. */
 export function buildCommandList(

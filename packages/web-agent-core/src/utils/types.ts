@@ -24,7 +24,7 @@ export interface UserMessageInput {
   images?: ImageAttachment[];
   /** The user's original typed prose before prompt-hook overrides or block formatting. */
   userDisplayText?: string;
-  /** 003: opaque object from an `onUserPrompt` handler, stored in turn metadata. */
+  /** Opaque object from an `onUserPrompt` handler, stored in turn metadata. */
   promptMeta?: Record<string, unknown>;
 }
 

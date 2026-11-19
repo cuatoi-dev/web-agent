@@ -693,8 +693,8 @@ describe("fromOpenAIResponse — usage", () => {
     expect(translated.message.usage.output_tokens).toBe(20);
   });
 
-  // Task 086-003 specific requirement: cache token fields MUST be absent, never 0.
-  it("ensures cache token fields are absent when usage is absent, 0, or non-zero (task 086-003)", () => {
+  // Requirement: cache token fields MUST be absent, never 0.
+  it("ensures cache token fields are absent when usage is absent, 0, or non-zero", () => {
     // 1. Usage absent
     const respNoUsage: OpenAIChatCompletion = {
       choices: [{ message: { content: "hi" }, finish_reason: "stop" }],

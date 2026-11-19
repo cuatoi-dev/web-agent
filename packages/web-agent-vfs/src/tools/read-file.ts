@@ -38,7 +38,7 @@ export function readFileTool(mounts: VfsMount[], tracker: ReadTracker, agentsMdT
       if (f.encoding === "utf8" && lines.length > 0 && (start < 1 || start > lines.length)) {
         return fail(`Error: offset ${start} is outside the file (${lines.length} lines).`);
       }
-      // 002: bound the numbered output. A failed budget check returns before any
+      // Bound the numbered output. A failed budget check returns before any
       // tracker records or ancestor lookups, so nothing is marked read.
       const budget = readBudget.toLocaleString("en-US");
       let shown: string[] = [];

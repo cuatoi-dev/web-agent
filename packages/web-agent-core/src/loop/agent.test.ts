@@ -329,7 +329,7 @@ describe("PageAgent.generate() — prepareStep / onStepFinish / delta", () => {
     });
   });
 
-  it("one tool, two images produces two image parts after labels (003 U4)", async () => {
+  it("one tool, two images produces two image parts after labels", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>();
     mockCreate
       .mockResolvedValueOnce(anthropicToolUseResponse("call_1", "img_a"))
@@ -363,8 +363,8 @@ describe("PageAgent.generate() — prepareStep / onStepFinish / delta", () => {
     expect(cm.recordStep.mock.calls[1][2]).toEqual({});
   });
 
-  it("two tools in one step sends both images in call order (003 U5)", async () => {
-    // Before 003 only the last image (BBBB) was sent.
+  it("two tools in one step sends both images in call order", async () => {
+    // An earlier version sent only the last image (BBBB).
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>();
     mockCreate
       .mockResolvedValueOnce(
@@ -393,7 +393,7 @@ describe("PageAgent.generate() — prepareStep / onStepFinish / delta", () => {
     expect((blocks[3] as ImageBlockParam).source.data).toBe("BBBB");
   });
 
-  it("each image is sent once (003 U6)", async () => {
+  it("each image is sent once", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>();
     mockCreate
       .mockResolvedValueOnce(anthropicToolUseResponse("c1", "img_a"))
@@ -428,7 +428,7 @@ describe("PageAgent.generate() — prepareStep / onStepFinish / delta", () => {
     }
   });
 
-  it("text-only model drops image from wire but hands to journal (003 U7)", async () => {
+  it("text-only model drops image from wire but hands to journal", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>();
     mockCreate
       .mockResolvedValueOnce(anthropicToolUseResponse("call_1", "img_a"))
@@ -478,7 +478,7 @@ describe("PageAgent.generate() — prepareStep / onStepFinish / delta", () => {
     ).toBe(false);
   });
 
-  it("no tool returned images: no extra user message (003 U8)", async () => {
+  it("no tool returned images: no extra user message", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>().mockResolvedValue(anthropicTextResponse("done"));
     const { agent, ctx } = makeAgent({ mockCreate });
 
@@ -757,12 +757,12 @@ describe("PageAgent.generate() and runBareTurn() — thinking and error taxonomy
 });
 
 // ---------------------------------------------------------------------------
-// createMockProvider integration — registry injection (030-5)
+// createMockProvider integration — registry injection
 // ---------------------------------------------------------------------------
 import { createMockProvider } from "../transport/mock-provider.js";
 import { setMockScript } from "../transport/registry.js";
 
-describe("createMockProvider — agent loop integration (030-5)", () => {
+describe("createMockProvider — agent loop integration", () => {
   it("direct _model injection: tool-call-then-text script drives the full loop deterministically", async () => {
     const ctx: ToolContext = {
       app: { appName: "Test" },
@@ -809,7 +809,7 @@ describe("createMockProvider — agent loop integration (030-5)", () => {
   });
 });
 
-describe("PageAgent — runtime model swap (067)", () => {
+describe("PageAgent — runtime model swap", () => {
   it("setModel changes the model sent on the next generate() call", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>().mockResolvedValue({
       id: "msg_x", type: "message", role: "assistant",
@@ -845,7 +845,7 @@ describe("PageAgent — runtime model swap (067)", () => {
   });
 });
 
-describe("PageAgent — onStep callback (074)", () => {
+describe("PageAgent — onStep callback", () => {
   it("calls opts.onStep once per recorded step", async () => {
     const mockCreate = vi.fn<[MessageCreateParams], Promise<Message>>();
     mockCreate
@@ -876,8 +876,8 @@ describe("PageAgent — onStep callback (074)", () => {
   });
 });
 
-// 001: the executor's error verdict must survive the loop onto the wire.
-describe("a failing tool result reaches the provider request as is_error (001)", () => {
+// The executor's error verdict must survive the loop onto the wire.
+describe("a failing tool result reaches the provider request as is_error", () => {
   function flagTestCfg(): Partial<AgentConfig> {
     return {
       tools: () => [
@@ -1048,7 +1048,7 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
     }
   });
 
-  it("an unparsable tool payload produces the parse-failure result (003)", async () => {
+  it("an unparsable tool payload produces the parse-failure result", async () => {
     const pingExecutor = vi.fn().mockResolvedValue({ content: "pong" });
     const pingTool: CustomToolDef = {
       name: "ping",
@@ -1065,7 +1065,7 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
     expect(part.output).not.toContain("required");
   });
 
-  it("an empty tool payload still runs an all-optional tool (003)", async () => {
+  it("an empty tool payload still runs an all-optional tool", async () => {
     const pingExecutor = vi.fn().mockResolvedValue({ content: "pong" });
     const pingTool: CustomToolDef = {
       name: "ping",
@@ -1081,7 +1081,7 @@ describe("PageAgent — argumentsIssue is not journaled to the assistant message
     expect(part.isError).toBeUndefined();
   });
 
-  it("an empty tool payload for a required-argument tool reports the missing property (003)", async () => {
+  it("an empty tool payload for a required-argument tool reports the missing property", async () => {
     const pingExecutor = vi.fn().mockResolvedValue({ content: "pong" });
     const pingTool: CustomToolDef = {
       name: "ping",

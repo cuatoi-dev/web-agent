@@ -90,13 +90,13 @@ export function createScheduler(deps: SchedulerDependencies): SchedulerRegistry 
 
   function fire(entry: ScheduleEntry): void {
     if (registry.get(entry.name) !== entry) return;
-    // 110/005 P2. `runs` increments even when this fire replaces its own
+    // `runs` increments even when this fire replaces its own
     // undelivered message, so `repeat` still terminates the schedule. A
     // broken endpoint can never turn a bounded schedule into an unbounded
     // one.
     entry.runs += 1;
 
-    // 110/005 P2. This schedule's own stale message goes first, so it holds
+    // This schedule's own stale message goes first, so it holds
     // at most one pending item. Matched on the schedule name, so another
     // schedule's item and every user-typed item survive.
     deps.dropQueuedFromSchedule(entry.name);
@@ -109,7 +109,7 @@ export function createScheduler(deps: SchedulerDependencies): SchedulerRegistry 
     }
 
     if (!deps.isRunning()) {
-      // 110/005 P1. A tick is a fresh, time-separated attempt, so it may
+      // A tick is a fresh, time-separated attempt, so it may
       // clear a stale error and retry. Without this the queue deadlocks
       // forever after the first API error.
       void deps.maybeDrainQueue({ clearStaleError: true });

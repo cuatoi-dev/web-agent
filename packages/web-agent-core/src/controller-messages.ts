@@ -7,10 +7,10 @@ import type { ContentPart, ModelMessage, TextPart } from "./types.js";
 import type { SessionMessage, SessionMessagePart } from "./controller.types.js";
 import type { BuildMessagesParams } from "./controller-messages.types.js";
 
-/** 003: shown when a turn completed and produced no content at all. */
+/** Shown when a turn completed and produced no content at all. */
 export const EMPTY_TURN_NOTICE = "The model ended its turn without a reply.";
 
-/** 003: true when this turn has an assistant entry and not one of its
+/** True when this turn has an assistant entry and not one of its
  *  assistant entries carries any content. That is a completed turn the model
  *  ended with nothing — distinct from a turn still in progress (no assistant
  *  entry yet) and from a turn that produced tool calls or blocks. */
@@ -86,7 +86,7 @@ export function getAssistantParts(
         if (block) {
           parts.push({ kind: "block", block });
         } else if (audit?.unknownTool) {
-          // 003 — the tool was never offered and never ran; core refused the
+          // The tool was never offered and never ran; core refused the
           // call as `Unknown tool`. It must not appear in the thread as a
           // completed tool step. The model's own text reply (already flushed)
           // still records the attempt.
@@ -161,7 +161,7 @@ export function buildSessionMessages(params: BuildMessagesParams): SessionMessag
             if (foundAudit.failed === undefined) {
               foundAudit = { ...foundAudit, failed: hasError };
             }
-            // 003: put the call's saved images on a COPY of its audit entry, so
+            // Put the call's saved images on a COPY of its audit entry, so
             // the tool part carries them and the stored audit stays image-free.
             const imgs = entry.meta.toolImages?.[part.toolCallId];
             if (imgs) {
@@ -277,7 +277,7 @@ export function buildSessionMessages(params: BuildMessagesParams): SessionMessag
             userMessage.failed = turnFailed;
           }
         } else if (!completedAssistantMessage && isEmptyCompletedTurn(turnEntries) && userMessage) {
-          // 003: the turn finished and said nothing. The gate above leaves
+          // The turn finished and said nothing. The gate above leaves
           // `completedAssistantMessage` undefined here, so the panel would
           // otherwise show the user's message and nothing after it. The
           // notice rides on the USER message — exactly where `failed` goes

@@ -405,7 +405,7 @@ describe("scheduler", () => {
       expect(scheduler.pendingCounts()).toEqual({ schedules: 0, reminders: 0, total: 0 });
     });
 
-    describe("110/005 — coalescing and stale-error recovery", () => {
+    describe("coalescing and stale-error recovery", () => {
       let queue: Array<{ text: string; source?: { kind: "schedule"; name: string } }>;
 
       beforeEach(() => {

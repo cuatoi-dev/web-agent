@@ -29,7 +29,7 @@ function getOutputText(output: unknown): string {
   return "";
 }
 
-/** 107/004: a stable string identity for one tool call's arguments — the
+/** A stable string identity for one tool call's arguments — the
  *  `hashArgs` of the plan's pseudo code. Object keys are sorted at every depth,
  *  so `{a:1,b:2}` and `{b:2,a:1}` produce the same string and share one TTL
  *  window. No arguments, or an empty argument object, is the identity `"-"`.
@@ -50,7 +50,7 @@ function stableStringify(value: unknown): string {
   return `{${Object.keys(obj).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
 }
 
-/** 107/004: what replaces an expired result's content. It names the tool and the
+/** What replaces an expired result's content. It names the tool and the
  *  age, so the model can see a result existed there and call the tool again. */
 export function redactionNote(toolName: string, age: number): string {
   return `[expired ${toolName} result — ${age} user turn${age === 1 ? "" : "s"} old. Call ${toolName} again if you need it.]`;

@@ -26,7 +26,7 @@ export class CompactionError extends Error {
 // request (required for the cache prefix to match — see
 // summariseInCachedConversation below) and no instruction otherwise, a real
 // model sometimes calls a tool (e.g. a fresh query_data) instead of
-// answering — observed directly in this task's live proof. Anthropic's
+// answering — observed directly in a live run. Anthropic's
 // tool_choice has no "none" value to force this at the request level
 // (`transport/anthropic-mapping.ts`'s mapToolChoice), so the instruction is
 // the only lever.

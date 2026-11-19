@@ -14,7 +14,7 @@ import type { ContentPart } from "../types.js";
  * accept without a bridge — this is a type-only cast, not a behavior change. */
 type RealCreate = (params: Record<string, unknown>, opts?: { signal?: AbortSignal }) => unknown;
 
-// 007: core no longer ships snapshot_page/click — this loop-machinery test
+// Core no longer ships snapshot_page/click — this loop-machinery test
 // stubs two tools NAMED "snapshot_page"/"click" (via cfg.tools) purely so
 // ContextManager's classifyParts() (loop/context-helpers.ts) tags their
 // tool-result journal entries as "tool_result_snapshot"/"tool_result_action"
@@ -220,7 +220,7 @@ describe("runTurn Integration", () => {
     });
   });
 
-  // 007: the "block"-tier adversarial-injection defense (SEC5 §12) moved with
+  // The "block"-tier adversarial-injection defense moved with
   // the DOM tools — it's now covered at the unit level by
   // packages/web-agent-dom/src/adapters/dom-adapter.test.ts ("block returns
   // terminal message and does NOT click") and end to end by cat-store's

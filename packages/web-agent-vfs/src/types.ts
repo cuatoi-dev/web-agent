@@ -57,7 +57,7 @@ export interface VfsResolution {
   rel?: string;
 }
 
-/** 104/001 — agent memory files loaded into the first message of a chat.
+/** Agent memory files loaded into the first message of a chat.
  *  `memory: true` is the same as `memory: {}`: every default applies. */
 export interface MemoryOptions {
   /** Default "/home/shared/USER.md". */
@@ -130,7 +130,7 @@ export interface VfsHandle {
 
 /** ToolProvider returned by vfsTools() carrying the extra vfs handle and the
  *  resolved memory options. `memory` is null when the host did not turn memory
- *  on (104/002 builds the memory skills from it). */
+ *  on (`memorySkills()` builds the memory skills from it). */
 export type VfsToolProvider = import("@cuatoi/web-agent-core").ToolProvider & {
   vfs: VfsHandle;
   memory: ResolvedMemory | null;

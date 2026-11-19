@@ -15,7 +15,7 @@ only in memory for the current page load.
 
 Set `AgentConfig.persist` to `true`. Core then uses `sessionStore` when you set
 one, and otherwise creates an `IdbSessionStore` with `sessionNamespace`
-(`src/controller-config.ts:98-102`). `persist` defaults to `false`
+(`src/controller-config.ts:106-110`). `persist` defaults to `false`
 (`src/config.ts:58`). With `persist` off, core ignores `sessionStore` and
 `sessionNamespace`.
 
@@ -33,7 +33,7 @@ panel.config = {
 
 The Lit panel hides the "New session" button, the "Session history" button and
 the rename controls only when `panel.config.persist` is exactly `false`
-(`packages/web-agent-lit/src/chat-ui/chat-panel.ts:159`, `:163-164`). When you
+(`packages/web-agent-lit/src/chat-ui/chat-panel.ts:324`, `:333`, `:338`). When you
 leave `persist` unset, the panel shows them, but core stores nothing. See
 [Session backend interface](./session-backend.md).
 
@@ -64,44 +64,43 @@ From `src/loop/types.ts:7-18`. See [Todo tracking](./todo.md#persistence) for
 ## Session lifecycle in the UI
 
 The session UI is in `packages/web-agent-lit/src/chat-ui/`. The header
-template is in `chat-panel.ts`, the buttons are created in
-`chat-panel-elements.ts`, the history panel is in `chat-panel-history.ts`, the
-title editor is in `chat-panel-screens.ts`, and auto-title is in
-`chat-panel-session.ts`. The header buttons are disabled while a turn runs
-(`chat-panel.ts:111-118`).
+template and its buttons are in `chat-panel.ts`, the history panel is in
+`chat-panel-history.ts`, the title editor handlers are in
+`chat-panel-screens.ts`, and auto-title is in `chat-panel-session.ts`. The
+header buttons are disabled while a turn runs
+(`chat-panel.ts:327`, `:335`, `:340`).
 
 ### New session
 
-The "New session" icon button (`_newSessionBtnEl`) in the panel header calls
-`createSession()` (`chat-panel-elements.ts:136-141`). The "+ New Session"
-button at the bottom of the history panel does the same
-(`chat-panel-history.ts:163-167`, `:230-233`). Core gives the new session a
-generated UUID and an empty title (`src/controller-sessions.ts:200-210`). Until
-the session has a title, the header shows the agent name or the app name
-(`chat-panel.ts:133-139`), and the history row shows the creation date
-(`session-label.ts:15-26`).
+The "New session" icon button in the panel header calls `createSession()`
+(`chat-panel.ts:332-336`). The "+ New Session" button at the bottom of the
+history panel does the same (`chat-panel-history.ts:143-150`, `:215-218`). Core
+gives the new session a generated UUID and an empty title
+(`src/controller-sessions.ts:206-215`). Until the session has a title, the
+header shows the agent name or the app name (`chat-panel.ts:287-293`), and the
+history row shows the creation date (`session-label.ts:9-20`).
 
 ### Session history
 
-The "Session history" icon button (`_historyBtnEl`) opens a history panel
-(`chat-panel-elements.ts:116-122`). Each row shows the session title and its
-`updatedAt` time (`chat-panel-history.ts:130-143`). The panel lists
+The "Session history" icon button opens a history panel
+(`chat-panel.ts:337-341`). Each row shows the session title and its
+`updatedAt` time (`chat-panel-history.ts:130-133`). The panel lists
 `SessionState.sessions` in the order core gives it. `IdbSessionStore` sorts
 that list by `updatedAt`, newest first (`src/loop/session-store.ts:147-150`).
 
 Clicking another session asks "Switch to this session?" first. Clicking the
-active session closes the panel (`chat-panel-history.ts:113-127`, `:220-228`).
+active session closes the panel (`chat-panel-history.ts:163-166`, `:205-213`).
 To load a session, core calls `readRange()` on the store, 200 records at a
 time, until it reaches the start of the session, and rebuilds the message list
-(`src/controller-sessions.ts:99-118`, `:233-255`).
+(`src/controller-sessions.ts:98-118`, `:245-266`).
 
 ### Auto-title
 
 The panel asks core for a title after the first assistant reply, and again
-after the third (`chat-panel-session.ts:120-129`). Core sends the conversation
+after the third (`chat-panel-session.ts:128-136`). Core sends the conversation
 to the model and asks for a 3 to 6 word title. It removes surrounding quotes,
 cuts the title to 80 characters, and saves it with `titleManual: false`
-(`src/controller-sessions.ts:299-317`). Auto-title does nothing without a
+(`src/controller-sessions.ts:314-334`). Auto-title does nothing without a
 session store. Once the user renames the session, `titleManual` is `true` and
 the panel stops auto-titling that session.
 
@@ -110,32 +109,33 @@ the panel stops auto-titling that session.
 There are two ways to start a rename. Both open the same inline text input in
 the panel header:
 
-- The "Edit session title" button (`_titleEditBtnEl`). It appears when you
+- The "Edit session title" button. It appears when you
   move the pointer over the header, or when keyboard focus moves into the
   header. On a touch device it is always shown
   (`chat-panel-shell-css.ts:88-103`).
 - A double-click on the session title text.
 
 Both are hidden only when `panel.config.persist` is `false`
-(`chat-panel.ts:159`, `chat-panel-screens.ts:279-280`). While the input is
+(`chat-panel.ts:324`, `chat-panel-screens.ts:376`). While the input is
 open, **Enter** or the "Save title" button saves, and **Escape** or the
-"Cancel title edit" button cancels (`chat-panel-elements.ts:173-211`). Saving
-an empty title closes the editor without a change
-(`chat-panel-screens.ts:290-296`). Saving calls `setTitle()`, which stores the
-title with `titleManual: true` (`src/controller-sessions.ts:291-297`).
+"Cancel title edit" button cancels (`chat-panel.ts:306-318`,
+`chat-panel-screens.ts:354-371`). Saving an empty title closes the editor
+without a change (`chat-panel-screens.ts:386-392`). Saving calls `setTitle()`,
+which stores the title with `titleManual: true`
+(`src/controller-sessions.ts:306-312`).
 
 ### Delete
 
 Each row in the history panel has a delete icon button. It asks "Delete this
 session?" and then calls `deleteSession(id)` for that one session
-(`chat-panel-history.ts:145-153`, `:214-218`). Core calls
+(`chat-panel-history.ts:134-139`, `:168-172`). Core calls
 `SessionStore.deleteByIds([id])`. If you delete the active session, core
-creates a new one (`src/controller-sessions.ts:270-280`).
+creates a new one (`src/controller-sessions.ts:285-295`).
 
 The "Clear all history" button at the bottom of the history panel asks for
 confirmation, deletes every stored session, and starts a new session
-(`chat-panel-history.ts:176-181`, `:235-239`,
-`src/controller-sessions.ts:282-289`).
+(`chat-panel-history.ts:151-158`, `:220-224`,
+`src/controller-sessions.ts:297-304`).
 
 ---
 
@@ -147,7 +147,7 @@ confirmation, deletes every stored session, and starts a new session
 change.
 
 Each message in `SessionState.messages` exposes an array of `parts` (`SessionMessagePart`
-at `src/controller.types.ts:24-32`). Parts include `text`, `block`, `tool`, and `compaction`.
+at `src/controller.types.ts:29-37`). Parts include `text`, `block`, `tool`, and `compaction`.
 Compaction parts record history compression runs. On live runs, compaction parts
 carry `stats?: CompactionStats`, whereas reloaded sessions reconstruct compaction parts
 with `status: "done"` and no `stats`. See [Compaction](./compaction.md) for full
@@ -158,12 +158,12 @@ details and presence guards.
 ## Session-only config fields
 
 `SessionConfig` extends `Partial<AgentConfig>` and adds these fields
-(`src/controller.types.ts:93-126`):
+(`src/controller.types.ts:100-133`):
 
 | Field | What it does |
 |---|---|
 | `appContext.appName`, `appContext.appDescription` | Name and describe the host app in the system prompt. Defaults: `"Web Application"` and `"An interactive web application."` |
-| `appContext.appInstructions` | Your own instructions for this agent. Core copies them to `ToolContext.app` (`src/controller-config.ts:147`) and adds them to the system prompt as an `# App instructions` section (`src/prompt/system-prompt.ts:121-123`). |
+| `appContext.appInstructions` | Your own instructions for this agent. Core copies them to `ToolContext.app` (`src/controller-config.ts:162`) and adds them to the system prompt as an `# App instructions` section (`src/prompt/system-prompt.ts:120-122`). |
 | `appContext.userName`, `appContext.userInfo` | Details about the current user, added to the system prompt as data, not instructions. |
 | `store` | An object with `getState()`. Core reads `getState().ui.route` for the current route before each turn. |
 | `sources` | The `SourceEntry[]` behind the data tools. See [Tools & data sources](./tools.md#wiring-data-sources). |
@@ -175,7 +175,7 @@ details and presence guards.
 
 ## AgentSession methods
 
-From `src/controller.types.ts:140-215`:
+From `src/controller.types.ts:147-222`:
 
 | Method | What it does |
 |---|---|
@@ -204,7 +204,7 @@ From `src/controller.types.ts:140-215`:
 
 ## SessionState fields
 
-From `src/controller.types.ts:70-91`:
+From `src/controller.types.ts:77-98`:
 
 | Field | What it holds |
 |---|---|
@@ -228,7 +228,7 @@ content. The two never appear together. See the next section.
 ## Retry the last turn
 
 `retryLast()` acts only on the last turn, and only in two cases
-(`src/controller-turn.ts:381-399`). In every other case it does nothing.
+(`src/controller-turn.ts:410-426`). In every other case it does nothing.
 
 **A failed turn resumes from its last completed step.** A turn fails when the
 model call errors or when you abort it; core marks it `failed`. `retryLast()`
@@ -237,14 +237,14 @@ completed stay in the conversation, so a tool that already ran is **not** run
 again. For example, a `place_order` tool that ran before the failure does not
 place a second order. With a session store, core drops only the turn's last
 stored record, and the resumed turn writes it again with the new steps
-(`src/controller-turn.ts:297-341`).
+(`src/controller-turn.ts:327-370`).
 
 **An empty completed turn is sent again.** When the model ends its turn
 normally but with no content, core does not treat it as a failure. It sets
 `notice` on the user message with the text
 `The model ended its turn without a reply.` and `retryable: true`
-(`src/controller-messages.ts:264-272`). `retryLast()` then removes that turn and
-sends the user message again (`src/controller-turn.ts:349-379`).
+(`src/controller-messages.ts:278-287`). `retryLast()` then removes that turn and
+sends the user message again (`src/controller-turn.ts:378-408`).
 
 Both paths emit `retry:start`, then `retry:success` or `retry:failure` through
 `subscribeEvents()`.
@@ -255,7 +255,7 @@ Both paths emit `retry:start`, then `retry:success` or `retry:failure` through
 
 `availableTools()` returns the name and description of every tool the agent was
 given for the most recent turn, in the order the model sees them
-(`src/controller.types.ts:198-214`). The list includes tool-provider tools,
+(`src/controller.types.ts:205-221`). The list includes tool-provider tools,
 the scheduler and todo tools, and `create_skill` or `delete_skill` when the
 session offers them. Use it for a debug view. It returns `[]` before the first
 turn. Each call returns a fresh copy.

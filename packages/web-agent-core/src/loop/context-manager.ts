@@ -68,7 +68,7 @@ export class ContextManager {
     return this.#audit;
   }
 
-  // 074: the id of the turn currently in flight (appended via appendUser,
+  // The id of the turn currently in flight (appended via appendUser,
   // not yet commitTurn'd). undefined when no turn is open.
   get activeTurnId(): string | undefined {
     if (this.#currentTurnId && !this.#completedTurns.has(this.#currentTurnId)) {
@@ -82,7 +82,7 @@ export class ContextManager {
   }
 
   /**
-   * 107/002: record a compaction by APPENDING a tombstone. Nothing already in
+   * Record a compaction by APPENDING a tombstone. Nothing already in
    * the journal is rewritten or removed, so replay and rollback keep working.
    *
    * The entry carries no text of its own — its `msg` is an empty user message,
@@ -237,7 +237,7 @@ export class ContextManager {
    * Discards the entire last turn (user message + any partial assistant/tool steps
    * and audits) so that the manager rehydrates identically to "that turn never happened".
    * Returns the removed journal entries to allow the caller to recover user input.
-   * Shared primitive for 043 rollback and 044 retry.
+   * Shared primitive for turn rollback and turn retry.
    */
   truncateLastTurn(): JournalEntry[] {
     if (this.#journal.length === 0) {
@@ -282,7 +282,7 @@ export class ContextManager {
     this.#lastKnownJournalLength = 0;
     this.#version++;
 
-    // 107/002: a tombstone is an ordinary journal entry and shares the turn id
+    // A tombstone is an ordinary journal entry and shares the turn id
     // of the turn it followed, so rolling that turn back also drops its
     // tombstone — the context grows back to what it was. That is deliberate.
 
@@ -360,7 +360,7 @@ export class ContextManager {
     this.#stepNo++;
     for (const msg of messages) {
       const meta = extractMeta(msg, this.#currentTurnId, this.#stepNo, currentUserTurn(this.#journal) - 1);
-      // 003: a tool message keeps the images its own calls returned. Saved here,
+      // A tool message keeps the images its own calls returned. Saved here,
       // on the journal entry, so a flush writes them once (the audit list is
       // re-saved whole in every flush — loop/session-lifecycle.ts).
       if (msg.role === "tool" && imagesByCallId && Array.isArray(msg.content)) {
@@ -447,7 +447,7 @@ export class ContextManager {
   }
 
   /**
-   * 107/004: expire tool results whose declared lifetime has run out, in place
+   * Expire tool results whose declared lifetime has run out, in place
    * in the journal. Returns how many results it redacted.
    *
    * The sweep itself is `redactExpiredResultsInJournal` in

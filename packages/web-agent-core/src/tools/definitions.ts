@@ -3,7 +3,7 @@ import type { ToolDef, JsonSchemaObject } from "./types.js";
 export type { ToolDef } from "./types.js";
 
 // ---------------------------------------------------------------------------
-// §5 Tool definitions — single source of truth for tool schemas + metadata.
+// Tool definitions — single source of truth for tool schemas + metadata.
 // All schemas set additionalProperties: false to reject unknown keys.
 // ---------------------------------------------------------------------------
 
@@ -148,7 +148,7 @@ export const seeSchema: JsonSchemaObject = {
 // Tool descriptor (`ToolDef`, declared in types.ts) — carries everything needed by the SDK + system-prompt builder.
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// The eight §5 tools.
+// The eight tools defined here.
 // ---------------------------------------------------------------------------
 export const SNAPSHOT_PAGE_DEF: ToolDef = {
   name: "snapshot_page",
@@ -225,7 +225,7 @@ export const SEE_DEF: ToolDef = {
 };
 
 // ---------------------------------------------------------------------------
-// §9 Data-source tools
+// Data-source tools
 // ---------------------------------------------------------------------------
 export const listDataSourcesSchema: JsonSchemaObject = {
   type: "object",

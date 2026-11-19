@@ -13,7 +13,7 @@ import { createSession } from "./controller-sessions.js";
 import { compact, runUserTurn, send } from "./controller-turn.js";
 
 
-/** 105/001 — core's own commands. `compact` returns false when there is
+/** Core's own commands. `compact` returns false when there is
  *  nothing to compact or a turn or compaction is running, and `new` always
  *  acts. Neither is ever exposed to the model: an agent that can reset its
  *  own session can restart itself out of an instruction it dislikes. */
@@ -133,7 +133,7 @@ export async function maybeDrainQueue(
   st: SessionRuntime,
   opts?: { clearStaleError?: boolean },
 ): Promise<void> {
-  // 110/005 P1. Never re-enter while a turn runs. `fire()` already checks
+  // Never re-enter while a turn runs. `fire()` already checks
   // isRunning() before calling, but the guard belongs here so no future
   // caller can re-enter mid-turn.
   if (st.running) return;
@@ -227,7 +227,7 @@ export function clearQueue(st: SessionRuntime): void {
   notifyListeners(st);
 }
 
-/** 110/005 P2. Drops this schedule's own undelivered message so a schedule
+/** Drops this schedule's own undelivered message so a schedule
  *  holds at most one pending item. Matched on `source.name`, never
  *  globally: a second schedule keeps its own item, and a user-typed
  *  message has no `source` and is never touched. */

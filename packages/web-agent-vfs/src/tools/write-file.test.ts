@@ -238,7 +238,7 @@ describe("write_file on an attached folder", () => {
     expect(await disk.get("/x.bin")).toBeUndefined();
   });
 
-  it("keeps the 069 rule on internal mounts: any earlier read is enough", async () => {
+  it("keeps the read-before-write rule on internal mounts: any earlier read is enough", async () => {
     const { home, tracker, write } = attached();
     await home.set!("/a.md", txt("old", 100));
     tracker.markRead("s1", "/home/agent/a.md", 100);

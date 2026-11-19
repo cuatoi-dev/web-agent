@@ -111,7 +111,7 @@ export function buildConfig(st: SessionRuntime) {
 }
 
 export function initAgent(st: SessionRuntime, opts?: { preserveJournal?: boolean }) {
-  // 001/113 live-proof finding — `initAgent()` used to replace `st.cm`
+  // Found in a live run: `initAgent()` used to replace `st.cm`
   // unconditionally on every call. `loadConfiguredToolProviders()` and
   // `loadConfiguredSkillRegistry()` (controller.ts) both call this again,
   // asynchronously, after session creation, to fold in tools/skills that
@@ -121,8 +121,8 @@ export function initAgent(st: SessionRuntime, opts?: { preserveJournal?: boolean
   // the turn keeps writing to the now-orphaned old `cm` and the session
   // silently shows zero messages forever, while the send's own promise
   // never resolves either way — a real defect, not a flaky test, caught by
-  // this task's live proof (which seeds a skill registry entry, widening the
-  // window past a real `chrome.storage.local` round trip). Both of those two
+  // a live run that seeds a skill registry entry, which widens the
+  // window past a real `chrome.storage.local` round trip. Both of those two
   // startup call sites pass `preserveJournal: true` so an in-flight or
   // already-recorded turn is never orphaned. `doUpdateConfig` passes it too:
   // a config change never resets the conversation. Only the first call, from
@@ -144,7 +144,7 @@ export function initAgent(st: SessionRuntime, opts?: { preserveJournal?: boolean
 
   st.ctx = {
     dataSource,
-    // 069/001 — a GETTER, not a field. `switchSession()` reassigns
+    // A GETTER, not a field. `switchSession()` reassigns
     // `st.activeSessionId` without rebuilding `st.ctx`, so a field written here
     // would keep reporting the chat that was active when the agent was
     // built. Getter-only on purpose: nothing assigns `ctx.sessionId`.
@@ -174,7 +174,7 @@ export function initAgent(st: SessionRuntime, opts?: { preserveJournal?: boolean
       st.toolBlocksVersion++;
       notifyListeners(st);
     },
-    // 108/001 — ONE decision point. This is the only place that can see the
+    // ONE decision point. This is the only place that can see the
     // confirmation counter, whether a compaction is already running, whether
     // this turn already asked, and whether anything is eligible, so the
     // verdict is computed here and the tool only renders it.
@@ -219,10 +219,10 @@ export function initAgent(st: SessionRuntime, opts?: { preserveJournal?: boolean
       ? mergeSkills(st.agentConfig.skills ?? coreSkills(), st.registrySkills)
       : undefined;
 
-  // 105/001 — the command list is built from the SAME merged list the agent
+  // The command list is built from the SAME merged list the agent
   // gets, but the FULL one: `disableModelInvocation` hides a skill from the
   // model, never from the person typing.
-  // 109/004 — scheduler commands are added when scheduler is enabled.
+  // Scheduler commands are added when scheduler is enabled.
   const schedulerCmdSkills = st.currentConfig.scheduler?.enabled ? schedulerSkills() : [];
   st.commandList = buildCommandList(
     coreCommandDefs(st),
@@ -247,7 +247,7 @@ export function initAgent(st: SessionRuntime, opts?: { preserveJournal?: boolean
         }
       : st.agentConfig;
   st.agent = createPageAgent(cfgForAgent, st.ctx, st.cm);
-  // 069/001 — seed resolvedTools from the agent just built, so a saved step
+  // Seed resolvedTools from the agent just built, so a saved step
   // line's own phrase resolves right after session construction/restore
   // (a page reload), before any turn runs. Without this, session.availableTools()
   // stayed [] until driveTurn()'s per-turn snapshot (controller-turn.ts), and a

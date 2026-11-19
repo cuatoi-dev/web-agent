@@ -19,7 +19,7 @@ pnpm add @cuatoi/web-agent-core
 npm install @cuatoi/web-agent-core
 ```
 
-## Quick start
+## Usage
 
 ```ts
 import { createAgentSession } from "@cuatoi/web-agent-core";

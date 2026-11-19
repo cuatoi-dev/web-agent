@@ -3,7 +3,7 @@ import { hashArgs, redactionNote } from "./context-helpers.js";
 import { currentUserTurn } from "./context-assembly.js";
 
 /**
- * 107/004: expire tool results whose declared lifetime has run out, in place
+ * Expire tool results whose declared lifetime has run out, in place
  * in the journal. Returns how many results it redacted.
  *
  * This replaces P1, which knew `snapshot_page` and `query_state` by name and

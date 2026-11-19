@@ -135,7 +135,7 @@ export const FILES_SCREEN_STYLES = html`
       --md-icon-button-focus-icon-color: var(--wa-action-color-error, #d32f2f);
       --md-icon-button-pressed-icon-color: var(--wa-action-color-error, #d32f2f);
       --md-icon-button-disabled-icon-color: var(--wa-action-color-error, #d32f2f);
-      /* Round 2: the pressed ripple defaults to Material's neutral
+      /* The pressed ripple defaults to Material's neutral
          on-surface-variant colour, which LIGHTENS a dark panel surface
          enough that the red icon drops to 2.8:1 on release (below the 3:1
          WCAG AA non-text floor) — rest (4.9:1) and hover (3.9:1) pass. A

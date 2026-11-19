@@ -80,11 +80,11 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
   const sessionEpoch = st.sessionEpoch;
   st.running = true;
   st.error = undefined;
-  // 110/004 — freeze what this turn's agent was built with, BEFORE the
+  // Freeze what this turn's agent was built with, BEFORE the
   // notify below, so the first state update already carries it. `defs` is
   // resolved in createPageAgent() from the full ToolContext
   // (loop/agent.ts:139) and handed out as customToolDefs (:219).
-  // 069/001 — `initAgent()` already seeds this the same way at session
+  // `initAgent()` already seeds this the same way at session
   // construction/restore, so a saved step line's phrase resolves before this
   // turn even starts; this call just re-snapshots it for the turn that is
   // about to run, in case anything rebuilt `st.agent` since.
@@ -99,7 +99,7 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
       st.ctx.app.route = (st.currentConfig.store?.getState?.() as { ui?: { route?: string } } | undefined)?.ui?.route || "/";
     }
 
-    // 107/004: expire stale tool results BEFORE reading usage, so a session
+    // Expire stale tool results BEFORE reading usage, so a session
     // the sweep brings back under the threshold does not compact at all.
     st.cm.redactExpiredResults(st.agent.customToolDefs);
     const currentUsage = st.cm.getUsage();
@@ -162,7 +162,7 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
           stopReason: turnResult.stopReason,
         });
       }
-      // 108/001 — per-turn state resets together, and this one resets
+      // Per-turn state resets together, and this one resets
       // UNCONDITIONALLY (outside the `if (compactionRequested)` below), so a
       // turn that only ever made unconfirmed calls still starts the next turn
       // clean and gets the question again rather than the repeat error.
@@ -177,7 +177,7 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
             observer: st.compactionObserver,
           });
           flushTurn(st);
-          // 108/001 — the follow-up runs as an ordinary queued text turn, so
+          // The follow-up runs as an ordinary queued text turn, so
           // maybeDrainQueue() below picks it up AFTER the compaction settled
           // and it sees the compacted context. No new machinery.
           if (st.compactionFollowUp) {
@@ -192,7 +192,7 @@ async function driveTurn(st: SessionRuntime, invoke: TurnInvoker): Promise<void>
           }
           flushTurn(st);
           console.error("Compaction failed:", e);
-          // 108/001 — deliberately do NOT queue the follow-up here. The agent
+          // Deliberately do NOT queue the follow-up here. The agent
           // asked for room before doing the work; if the room was not made,
           // running the work anyway is the outcome it was trying to avoid, and
           // the compaction error is already surfaced to the user.
@@ -308,7 +308,7 @@ function emitRetryOutcome(st: SessionRuntime): void {
 }
 
 /**
- * 001 — continue the open turn from its last completed step.
+ * Continue the open turn from its last completed step.
  *
  * Nothing is removed from the journal, so a tool that already ran is never run
  * again: `cm.compose()` hands the model the completed steps as context and
@@ -370,7 +370,7 @@ async function resumeLastTurn(st: SessionRuntime, turnId: string): Promise<void>
 }
 
 /**
- * The pre-001 behaviour, unchanged: discard the turn and re-send it from the
+ * The original behaviour, unchanged: discard the turn and re-send it from the
  * user message. Now reached ONLY by an empty completed turn — a turn the model
  * ended with an empty assistant message. Resuming that one would re-send the
  * empty message to the model and most likely produce nothing again.
@@ -414,12 +414,12 @@ export async function retryLast(st: SessionRuntime): Promise<void> {
   const lastTurnId = journal[journal.length - 1].meta.turnId;
   const lastTurnEntries = journal.filter(e => e.meta.turnId === lastTurnId);
   const isFailed = lastTurnEntries.some(e => e.meta.failed);
-  // 003: an empty completed turn is not a failure, but the panel offers
+  // An empty completed turn is not a failure, but the panel offers
   // Retry on it (the notice from controller-messages.ts), so this guard has
   // to let it through or that button does nothing.
   if (!isFailed && !isEmptyCompletedTurn(lastTurnEntries)) return;
 
-  // 001: a failed turn — error OR abort, both set `meta.failed`
+  // A failed turn — error OR abort, both set `meta.failed`
   // (driveTurn, :127-133 and :134-141) — RESUMES from its last completed step.
   // `isFailed` wins when a turn matches both tests, so the tool-preserving path
   // is the default.

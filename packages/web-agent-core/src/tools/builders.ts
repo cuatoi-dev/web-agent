@@ -31,7 +31,7 @@ import { todoTools } from "./todo-tools.js";
 // could be imported from here before the split can still be imported from here.
 export { skillTools, schedulerTools, todoTools };
 
-/** Convert a §5 ToolDef + its handler into a CustomToolDef. */
+/** Convert a ToolDef + its handler into a CustomToolDef. */
 function fromDef(
   def: ToolDef,
   execute: CustomToolDef["execute"],
@@ -45,7 +45,7 @@ function fromDef(
   };
 }
 
-/** wait — an unconditional pause. Stays in core (007 decision 4). */
+/** wait — an unconditional pause. Stays in core. */
 export function waitTools(): CustomToolDef[] {
   return [fromDef(WAIT_DEF, runWait)];
 }
@@ -81,7 +81,7 @@ export function genuiTools(): CustomToolDef[] {
   ];
 }
 
-/** compact_conversation (108/001) — the model-facing half of the same
+/** compact_conversation — the model-facing half of the same
  *  compaction action `/compact` runs. Two OPTIONAL inputs: `confirmation`
  *  gates the action behind an explicit request from the user or a skill, and
  *  `followUp` is the work to carry on with once the context is compacted.

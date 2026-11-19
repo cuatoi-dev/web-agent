@@ -83,7 +83,7 @@ export type MockScript =
 export interface ToGeminiContentsOptions {
   imageInputEnabled?: boolean;
   modelSupportsVision?: boolean;
-  /** toolCallId -> thoughtSignature, from a previous response. See task file. */
+  /** toolCallId -> thoughtSignature, from a previous response. */
   thoughtSignatures?: Record<string, string>;
 }
 

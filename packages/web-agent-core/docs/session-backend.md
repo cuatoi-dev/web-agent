@@ -97,26 +97,29 @@ namespaces to avoid sharing session data.
 
 ## Per-host namespacing via AgentConfig
 
-Set `AgentConfig.sessionNamespace?: string` and core creates the store for
-you:
+Set `AgentConfig.persist` to `true` and `AgentConfig.sessionNamespace?: string`,
+and core creates the store for you:
 
 ```ts
 panel.config = {
   // ...
+  persist: true,
   sessionNamespace: "cat-store",  // creates IdbSessionStore("cat-store")
 };
 ```
 
-Core instantiates `new IdbSessionStore(namespace)` when `sessionNamespace` is
-set and `sessionStore` is not. `sessionNamespace` is ignored when
-`sessionStore` is explicitly provided.
+When `persist` is `true` and `sessionStore` is not set, core instantiates
+`new IdbSessionStore(sessionNamespace)`. `sessionNamespace` is ignored when
+`sessionStore` is explicitly provided. When `persist` is `false` (the default),
+core creates no store.
 
 ---
 
 ## Custom backend
 
 To use server-side persistence, encryption, or multi-device sync, implement
-the seven-method `SessionStore` interface and pass it as `AgentConfig.sessionStore`:
+the seven-method `SessionStore` interface, pass it as `AgentConfig.sessionStore`,
+and set `persist: true`. With `persist` off, core ignores `sessionStore`:
 
 ```ts
 class MyServerStore implements SessionStore {
@@ -129,7 +132,7 @@ class MyServerStore implements SessionStore {
   async deleteByIds(ids) { await api.delete("/sessions", { ids }); }
 }
 
-panel.config = { ..., sessionStore: new MyServerStore() };
+panel.config = { ...panel.config, persist: true, sessionStore: new MyServerStore() };
 ```
 
 ---

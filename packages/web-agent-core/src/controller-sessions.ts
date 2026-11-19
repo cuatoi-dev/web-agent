@@ -24,7 +24,7 @@ export function persistTodos(st: SessionRuntime, items: TodoItem[]) {
     .catch((err) => console.error("[todo] saveMeta failed:", err));
 }
 
-/** 105/004 fix — rebuilds the fallback rows a rehydrated journal should show.
+/** Rebuilds the fallback rows a rehydrated journal should show.
  *  Persisted state carries tombstones but never the live `stats` a
  *  `CompactionRow` holds during a run, so every tombstone becomes a "done"
  *  row with no stats: the single-line fallback the render path already has
@@ -176,7 +176,7 @@ export async function openOrCreateActiveSession(st: SessionRuntime) {
 export function flushTurn(st: SessionRuntime) {
   if (!st.sessionStore || !st.activeSessionId) return;
   const newEntries = st.cm.journal.slice(st.flushedJournalLength);
-  // 001 — the real size of the record about to be written, so a resume can
+  // The real size of the record about to be written, so a resume can
   // rewind exactly this record. A turn that also compacts flushes twice, so
   // this is NOT the size of the turn.
   st.lastRecordEntryCount = newEntries.length;

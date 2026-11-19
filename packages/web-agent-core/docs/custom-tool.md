@@ -17,13 +17,13 @@ on-demand instruction blocks, see [Skills](./skill.md).
 
 ## CustomToolDef shape
 
-From `packages/web-agent-core/src/tools/types.ts:37-67`:
+From `packages/web-agent-core/src/tools/types.ts:51-93`:
 
 ```ts
 interface CustomToolDef {
   name: string;
   description: string;
-  inputSchema: z.ZodType | { type: "object"; [key: string]: unknown };
+  inputSchema: z.ZodType | JsonSchemaObject;  // JsonSchemaObject = { type: "object"; [key: string]: unknown }
   promptSnippet?: string;
   execute: (input: Record<string, unknown>, ctx: ToolContext) => Promise<ToolOutcome>;
   /** Optional friendly tool-call renderer for the tool-step row. */
@@ -34,6 +34,10 @@ interface CustomToolDef {
   ttl?: number | null;
   /** A result of this tool lives N user turns. null = never. */
   uttl?: number | null;
+  /** Optional readable step line for the chat thread. Sync; must not throw. */
+  phrase?: (step: ToolStepPhraseInput, agent: string) => string;
+  /** Optional line shown while this tool is still running. */
+  inProgressPhrase?: (agent: string) => string;
 }
 ```
 
@@ -46,13 +50,14 @@ interface CustomToolDef {
 | `execute` | Async function receiving validated input and `ToolContext`. Must return `ToolOutcome`. |
 | `renderer` | Optional friendly HTML renderer for the tool-step row, given the input and the result text. |
 | `summarize` | Optional readable wording for this call, surfaced as `summary` in the `onPreTool` hook payload. See [Lifecycle hooks](./hooks.md#onpretool). |
-| `ttl` | Optional. Keep only the newest `ttl` results of this tool **per argument set** — the tool name plus its arguments, with object keys sorted, so `snapshot_page({ref:"main"})` and `snapshot_page({ref:"side"})` hold separate windows. Older results are replaced in place by a short note naming the tool, so the model can see the call happened and run it again. `null` or absent means never. |
+| `ttl` | Optional. Keep only the newest `ttl` results of this tool **per argument set** — the tool name plus its arguments, with object keys sorted, so `snapshot_page({scope:"12"})` and `snapshot_page({scope:"34"})` hold separate windows. Older results are replaced in place by a short note naming the tool, so the model can see the call happened and run it again. `null` or absent means never. |
 | `uttl` | Optional. A result of this tool lives `uttl` **user** turns; one user message that drives twenty tool calls is one turn. `null` or absent means never. `ttl` and `uttl` are independent tests, not a fallback chain — whichever expires first redacts the result. |
 
 Both fields default to never. A tool that declares neither keeps every result
 for the whole conversation, which is how every tool behaved before these fields
 existed. `@cuatoi/web-agent-dom` sets `ttl: 1, uttl: 2` on `snapshot_page` and
-`ttl: 3, uttl: 2` on `query_state`; no other shipped tool sets either field.
+`ttl: 3, uttl: 2` on `query_state`. The browser extension sets `ttl: 1, uttl: 2`
+on its `page_snapshot` tool.
 
 ---
 
@@ -93,7 +98,7 @@ interface ToolOutcome {
 ## ToolContext fields
 
 ```ts
-// packages/web-agent-core/src/tool-hooks.types.ts:48-94
+// packages/web-agent-core/src/tool-hooks.types.ts:49-110
 interface ToolContext {
   dataSource?: DataSourceProvider;  // query registered data sources
   app: AppContext;                  // appName, appDescription, appInstructions, route, userName, userInfo
@@ -109,6 +114,7 @@ interface ToolContext {
   _requestCompaction?: ...;         // internal — compact_conversation asks the controller
   _scheduler?: ...;                 // internal — the set_schedule/list_schedules/cancel_schedule seam
   _todos?: ...;                     // internal — the todo_write/todo_read seam
+  readonly sessionId?: string;      // id of the chat this call belongs to; absent with no controller
 }
 ```
 
@@ -173,7 +179,8 @@ panel.tools = [getPromotionsTool];
 
 Set the `tools` property on `<agent-chat-panel>` or the bubble to your
 *extra* tools — the panel merges them with `defaultTools(ctx)` internally
-(see `chat-panel.ts`) before calling `buildTools()`.
+(see `packages/web-agent-lit/src/chat-ui/chat-panel-session.ts:63-66`) before
+calling `buildTools()`.
 
 ```ts
 panel.config = {

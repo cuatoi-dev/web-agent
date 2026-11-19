@@ -236,9 +236,11 @@ Outcomes:
 - **Declined** — `registry.save` is never called, `ctx.skills` is unchanged,
   and the tool returns an error result telling the model the user declined.
 - **Confirmed** — `registry.save` is called once with the trimmed
-  `{ name, description, definition }`. On success, the same object is pushed
-  into `ctx.skills` immediately, so `load_skill` and `search_skills` find it
-  in the **same turn** — no new session required.
+  `{ name, description, definition }` (plus `{ shared }` for a registry with
+  `supportsOwner`). On success, the same object is added to `ctx.skills`
+  immediately, or replaces the entry with that name on an overwrite, so
+  `load_skill` and `search_skills` find it in the **same turn** — no new
+  session required.
 - **`registry.save` rejects** — the tool returns an error naming the
   failure; the session keeps running and `ctx.skills` is not touched.
 - **An empty or whitespace-only `name`, `description` or `definition`** is
@@ -299,8 +301,8 @@ Two built-in skills ship with core
 
 | Name | Description |
 |------|-------------|
-| `query_data_advanced` | Guide for complex data queries: MongoDB-style filters, aggregation (groupBy + measures), sorting, pagination with examples. |
-| `present_to_user` | When and how to call `show_generative_ui` (and `show_chart`, if composed) using the intent→render→confirm pattern. See [Generative UI](./generative-ui.md). |
+| `query_data_advanced` | Guide for complex data queries: filters, aggregation, sorting, and pagination. |
+| `present_to_user` | How to present rich UI to the user — when and how to call `show_chart` and `show_generative_ui` (charts, buttons, forms) with the intent→render→confirm pattern. See [Generative UI](./generative-ui.md). |
 
 The `multi_step_ui` skill is **not** part of `coreSkills()` — it moved to
 `@cuatoi/web-agent-dom` with the DOM tools it describes, and ships as
@@ -316,8 +318,9 @@ does not). See the `@cuatoi/web-agent-charting` package docs.
 ## Registering skills
 
 Set `AgentConfig.skills: SkillDef[]` (or `panel.skills` / `bubble.skills` on
-the lit UI). This is the **full** skill list for the agent — core no longer
-merges anything in automatically, so a host that wants the built-ins spreads
+the lit UI). When you set it, it replaces the built-ins: core adds only the
+skills from a configured `SkillRegistry`. When you leave it unset, core uses
+`coreSkills()`. A host that sets its own list and wants the built-ins spreads
 `coreSkills()` alongside its own:
 
 ```ts

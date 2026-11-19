@@ -488,12 +488,12 @@ describe("AgentSession Controller", () => {
     // A block-emitting tool renders as a block and produces NO tool-step part …
     expect(assistantMsg?.parts?.some((p) => p.kind === "tool")).toBe(false);
     // … but it IS recorded in the audit trace. E2E audit assertions must read
-    // `trace`, not the rendered tool-step rows (task 016).
+    // `trace`, not the rendered tool-step rows.
     expect(assistantMsg?.trace?.map((t) => t.name)).toEqual(["show_generative_ui"]);
   });
 
   it("plain multi-tool turn produces interleaved tool parts in order", async () => {
-    // 003: the tools must actually be offered, or core refuses each call as
+    // The tools must actually be offered, or core refuses each call as
     // `Unknown tool` and (correctly) renders no tool step for it.
     const addToCart: CustomToolDef = {
       name: "add_to_cart",
@@ -878,8 +878,8 @@ describe("AgentSession Controller", () => {
     expect(lastMsg?.failed?.retryable).toBe(false);
   });
 
-  it("updateConfig({ persist: false }) during in-flight session init does not throw (018 race)", async () => {
-    // Regression for a race exposed by task 018 (cat-store's session now
+  it("updateConfig({ persist: false }) during in-flight session init does not throw", async () => {
+    // Regression for a race exposed by a host change (cat-store's session now
     // starts on first bubble click instead of at page load, shrinking the
     // window before a host might flip `persist`): openOrCreateActiveSession()
     // used to read the module-closure `sessionStore` again after an `await`,
@@ -922,8 +922,8 @@ describe("AgentSession Controller", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("a send() before a slow skillRegistry resolves is not orphaned onto a discarded cm (001/113)", async () => {
-    // Found live: task 001's live proof seeds a skill registry entry before
+  it("a send() before a slow skillRegistry resolves is not orphaned onto a discarded cm", async () => {
+    // Found live: a live run that seeds a skill registry entry before
     // the first send, and `chrome.storage.local.get` is a real async round
     // trip — wide enough for a send() to run against the `cm` initAgent()
     // created at session-creation time, before loadConfiguredSkillRegistry()
@@ -1215,7 +1215,7 @@ describe("retryLast", () => {
     expect(state.messages.find((m) => m.role === "assistant")?.text).toBe("recovered reply");
   });
 
-  // 001 — resume a failed turn from its last completed step, instead of
+  // Resume a failed turn from its last completed step, instead of
   // discarding the whole turn and replaying it from the user message.
 
   /** A tool with a real side effect, so a second execution is observable. */
@@ -1559,18 +1559,17 @@ describe("retryLast", () => {
     await session2.initPromise;
     expect(session2.getState().messages.filter((m) => m.role === "user").length).toBe(3);
     // Not asserted: no entry carries meta.failed. The marker on turn 2's FIRST
-    // record (from the mid-turn compaction flush) is out of scope for 001 —
-    // see "Explicitly out of scope" in the task file.
+    // record (from the mid-turn compaction flush) is a separate behaviour
+    // that this test does not cover.
   });
 });
 
-// ── 006 acceptance guards ──────────────────────────────────────────────
-// These pass on the current code (probes A, B, D, E in task 006's plan
-// already confirmed the mechanisms below are clean). They guard the
-// acceptance criteria — turn count, restore, the queue feature, and
+// ── Duplicate chat bubble guards ───────────────────────────────────────
+// These pass on the current code. They guard turn count, restore, the
+// queue feature, and
 // one-record-per-turn persistence — so a future change cannot silently
 // reintroduce a duplicate through one of these paths.
-describe("duplicate chat bubble regression guards (006)", () => {
+describe("duplicate chat bubble regression guards", () => {
   it("five sequential turns with persist:true render one bubble each", async () => {
     const metaStore: SessionMeta[] = [];
     const messagesStore: Record<string, TurnFlushRecord[]> = {};
@@ -2056,7 +2055,7 @@ describe("duplicate chat bubble regression guards (006)", () => {
   });
 });
 
-describe("auto-retry:attempt events (044-4)", () => {
+describe("auto-retry:attempt events", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -2116,7 +2115,7 @@ describe("auto-retry:attempt events (044-4)", () => {
   });
 });
 
-describe("provider fallback events (005)", () => {
+describe("provider fallback events", () => {
   it("a provider fallback reaches subscribeEvents", async () => {
     const { createFallbackProviderFactory } = await import("./transport/fallback-provider.js");
     const { providerRegistry } = await import("./transport/registry.js");
@@ -2315,7 +2314,7 @@ describe("provider fallback events (005)", () => {
   });
 });
 
-describe("prompt queue (048-1)", () => {
+describe("prompt queue", () => {
   it("enqueue-while-running does not throw + shows in state", async () => {
     let resolveFetch!: (res: Response) => void;
     const deferredFetch = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>().mockImplementation(() => new Promise<Response>((r) => { resolveFetch = r; }));
@@ -2959,7 +2958,7 @@ describe("clearAllSessions", () => {
   });
 });
 
-describe("AgentSession.setModel (067)", () => {
+describe("AgentSession.setModel", () => {
   it("getState().model defaults to the config model", () => {
     const session = createAgentSession({ persist: false, model: "test-model" });
     expect(session.getState().model).toBe("test-model");
@@ -3016,7 +3015,7 @@ describe("AgentSession.setModel (067)", () => {
   });
 });
 
-describe("no toolProviders: the zero-config default (007)", () => {
+describe("no toolProviders: the zero-config default", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -3070,7 +3069,7 @@ describe("no toolProviders: the zero-config default (007)", () => {
   });
 });
 
-describe("mid-turn incremental notify (074)", () => {
+describe("mid-turn incremental notify", () => {
   // Helper: sequential fetch returning different bodies on each call
   function mkSeqFetch(seq: Array<Message | { __status: number }>) {
     let idx = 0;
@@ -3568,7 +3567,7 @@ describe("missing model", () => {
   });
 });
 
-describe("compaction UI signal (009)", () => {
+describe("compaction UI signal", () => {
   // summariseInCachedConversation's provider call forwards cfg.fetch, so the
   // session `fetch` config alone is enough for the compaction summarize call.
   // The global stub stays too, pointed at the same mock instance, so turns
@@ -3926,7 +3925,7 @@ describe("compaction UI signal (009)", () => {
     expect(stats?.durationMs).toBeGreaterThanOrEqual(0);
   });
 
-  it("a session rehydrated from the store with a tombstone in its journal renders the single-line fallback row (105/004 reload fix)", async () => {
+  it("a session rehydrated from the store with a tombstone in its journal renders the single-line fallback row", async () => {
     const metaStore: SessionMeta[] = [];
     const messagesStore: Record<string, TurnFlushRecord[]> = {};
     const mockSessionStore: SessionStore = {
@@ -3993,7 +3992,7 @@ describe("compaction UI signal (009)", () => {
     // compactionRows is in-memory only, so it carries no stats across the
     // reload — but the rehydrate path now repopulates one "done" row per
     // journal tombstone, so the transcript renders the single-line fallback
-    // (105/004 review fix) rather than no row at all.
+    // rather than no row at all.
     const session2 = createAgentSession({
       persist: true,
       sessionStore: mockSessionStore,
@@ -4011,7 +4010,7 @@ describe("compaction UI signal (009)", () => {
     expect(compactionParts[0].compaction?.stats).toBeUndefined();
   });
 
-  it("switchSession repopulates the fallback compaction row when switching to a session with a persisted tombstone (105/004 review fix)", async () => {
+  it("switchSession repopulates the fallback compaction row when switching to a session with a persisted tombstone", async () => {
     const metaStore: SessionMeta[] = [];
     const messagesStore: Record<string, TurnFlushRecord[]> = {};
     const mockSessionStore: SessionStore = {
@@ -4257,7 +4256,7 @@ describe("compaction UI signal (009)", () => {
     await Promise.all([first, second]);
   });
 
-  // 175317/001 — a message the user queues while a MANUAL compaction runs never
+  // A message the user queues while a MANUAL compaction runs never
   // fired: compact()'s finally cleared `st.running` but, unlike driveTurn's
   // finally, never drained the queue, so nothing ever started it. compact() now
   // drains too, guarded on both the epoch (createSession bumps it) and the
@@ -4626,7 +4625,7 @@ describe("compaction UI signal (009)", () => {
     ).toBe(false);
   });
 
-  describe("107/004: sweep before compaction check", () => {
+  describe("sweep before compaction check", () => {
     it("expires tool results before the compaction check, so a freed session does not compact", async () => {
       // Scenario 14: tool with ttl: 1. The mock reports a large input-token
       // count, so the pre-turn fast-path usage is above the threshold. The
@@ -4778,7 +4777,7 @@ describe("compaction UI signal (009)", () => {
     });
   });
 
-  describe("107/005: canCompact state field and memoization", () => {
+  describe("canCompact state field and memoization", () => {
     it("canCompact is false for turns 1-3 and flips to true upon 4th turn completion", async () => {
       const fetchMock = mkAnthropicFetch([
         mkTextResp("r1"),
@@ -5057,7 +5056,7 @@ describe("compaction UI signal (009)", () => {
     });
   });
 
-  describe("State and message reference identity caching (Task 007)", () => {
+  describe("State and message reference identity caching", () => {
     it("consecutive getState() calls return identical message and parts references", async () => {
       const fetchFn = mkAnthropicFetch([
         mkTextResp("answer 1"),
@@ -5147,7 +5146,7 @@ describe("compaction UI signal (009)", () => {
     });
   });
 
-  describe("slash commands (105/001)", () => {
+  describe("slash commands", () => {
     // A call resolves only when explicitly told to; lets a test queue items
     // mid-turn deterministically without a fixed real-time hold/release pair.
     function mkDeferredFetch() {
@@ -5580,10 +5579,10 @@ describe("compaction UI signal (009)", () => {
       await session.initPromise;
 
       // Two filler turns — kTurnsVerbatim: 1 needs two ALREADY-COMPLETED turns
-      // before anything is eligible. 108/001 moved the eligibility check
+      // before anything is eligible. A later change moved the eligibility check
       // (cm.hasCompactableTurns()) from turn-end into the seam, which runs
       // mid-generate, BEFORE the trigger turn below is committed — so unlike
-      // the pre-108/001 version of this test, the trigger turn itself can no
+      // the earlier version of this test, the trigger turn itself can no
       // longer count toward eligibility. Two prior completed turns are needed,
       // matching the same two-turn setup the command-path tests (P5c/P5e) use.
       const pFiller1 = session.send([{ type: "text", text: "filler1" }]);
@@ -5598,7 +5597,7 @@ describe("compaction UI signal (009)", () => {
       await Promise.resolve();
       void session.send([{ type: "text", text: "queued" }]);
 
-      // Call 2: the model asks for compact_conversation. 108/001 — the call
+      // Call 2: the model asks for compact_conversation. The call
       // MUST carry confirmation: true; an unconfirmed call is a question and
       // compacts nothing.
       await resolveCall(2, mkToolResp("call-1", "compact_conversation", { confirmation: true }));
@@ -5635,7 +5634,7 @@ describe("compaction UI signal (009)", () => {
       await session.initPromise;
 
       // Two filler turns — see T3 for why two ALREADY-COMPLETED turns are
-      // needed (108/001 moved the eligibility check before the trigger turn
+      // needed (the eligibility check runs before the trigger turn
       // commits).
       const pFiller1 = session.send([{ type: "text", text: "filler1" }]);
       await resolveCall(0, mkTextResp("filler1 reply"));
@@ -5662,7 +5661,7 @@ describe("compaction UI signal (009)", () => {
       // maybeDrainQueue() is unconditionally called from the finally block —
       // it IS reached — but the finally passes no options, so its
       // `if (error !== undefined) { if (!opts?.clearStaleError) return; }`
-      // guard (110/005 P1) still returns: a turn already in the failed state
+      // guard still returns: a turn already in the failed state
       // never fires the queued item as a prompt. The queue survives
       // untouched rather than being silently dropped or sent, exactly as an
       // ordinary failed turn leaves a text-only queue (see "hold on failure"
@@ -5672,7 +5671,7 @@ describe("compaction UI signal (009)", () => {
       expect(session.getState().queuedMessages.map((q) => q.text)).toEqual(["queued"]);
     });
 
-    describe("110/005 — the queue recovers after an API error", () => {
+    describe("the queue recovers after an API error", () => {
       afterEach(() => {
         vi.useRealTimers();
       });
@@ -5810,7 +5809,7 @@ describe("compaction UI signal (009)", () => {
         // Start a second, still-running turn directly via a fresh send that we
         // never resolve — this is the "running" state the guard must respect.
         // Starting a turn resets `error` on its own (driveTurn's own,
-        // pre-existing reset) — that happens regardless of this task's fix, so
+        // pre-existing reset) — that happens regardless of the guard under test, so
         // capture the baseline AFTER the turn has started, not before.
         const pRunning = session.send([{ type: "text", text: "long-running" }]);
         await Promise.resolve();
@@ -6300,12 +6299,12 @@ describe("todo integration", () => {
   });
 });
 
-describe("availableTools() (110/004)", () => {
+describe("availableTools()", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("reports the built-in list right after construction, before any turn runs (069/001)", () => {
+  it("reports the built-in list right after construction, before any turn runs", () => {
     // Seeded by initAgent() at session construction (controller-config.ts),
     // not just at turn start (controller-turn.ts) — this is what lets a
     // restored (page-reload) history line resolve a tool's own phrase
@@ -6567,7 +6566,7 @@ describe("appContext.appInstructions", () => {
   });
 });
 
-describe("ToolContext.sessionId (069/001)", () => {
+describe("ToolContext.sessionId", () => {
   it("equals the active chat's id, and tracks the id after createSession()", async () => {
     let capturedCtx: ToolContext | undefined;
 
@@ -6599,7 +6598,7 @@ describe("ToolContext.sessionId (069/001)", () => {
   });
 });
 
-describe("default step limit (155400-001)", () => {
+describe("default step limit", () => {
   it("a session with no maxIterations from the host stops a turn after 200 tool steps", async () => {
     let modelCalls = 0;
     let toolRuns = 0;
@@ -6638,7 +6637,7 @@ describe("default step limit (155400-001)", () => {
   }, 60_000);
 });
 
-describe("tool images persist (003)", () => {
+describe("tool images persist", () => {
   it("persists tool images to journal and restores on reload and session switch", async () => {
     const metaStore: SessionMeta[] = [];
     const messagesStore: Record<string, TurnFlushRecord[]> = {};

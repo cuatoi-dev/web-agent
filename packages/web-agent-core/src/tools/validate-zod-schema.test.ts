@@ -3,7 +3,7 @@ import { z } from "zod";
 import { validateZodInput } from "./validate-zod-schema.js";
 import { schemaViolation } from "./error-messages.js";
 
-// These tool schemas moved to JSON Schema in task 004 (validated by ajv, not
+// These tool schemas moved to JSON Schema (validated by ajv, not
 // this module — see validate-json-schema.test.ts). validateZodInput() is
 // still exercised generically here against equivalent hand-authored zod
 // schemas, so this file keeps proving the same behaviors (strict mode,

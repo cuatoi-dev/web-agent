@@ -50,9 +50,9 @@ function wrapExecutor(
         // The load/validate step is wrapped on its own: a host bundler can fail
         // this dynamic import for reasons that have nothing to do with the
         // caller's input (e.g. a webpack module-id collision inside ajv's own
-        // dependency graph — see docs/tests/0167 for one observed live). That
+        // dependency graph, observed in a live run). That
         // failure is NON-FATAL to the call: before this tool's schema moved to
-        // JSON Schema, it ran with no validation at all (pre-004), so falling
+        // JSON Schema, it ran with no validation at all, so falling
         // back to "run unvalidated" here is strictly no worse than that, and
         // it keeps the tool working when ajv itself is unavailable. Only an
         // actual schema-violation verdict from a successfully loaded ajv
@@ -68,8 +68,8 @@ function wrapExecutor(
           );
         }
       } else if (isZodSchema(def.inputSchema)) {
-        // zod branch (003). Every core, DOM, charting and host tool is authored
-        // this way, so before 003 nothing here was validated at all. Statically
+        // zod branch. Every core, DOM, charting and host tool is authored
+        // this way, so without this branch none of them is validated. Statically
         // imported: zod is already in core's graph, ajv is not involved.
         const error = validateZodInput(def.name, def.inputSchema, input);
         if (error) return { content: error, isError: true };
@@ -120,7 +120,7 @@ function wrapExecutor(
       try {
         outcome = await def.execute(effectiveInput, turnCtx);
       } catch (err: unknown) {
-        // 010: a throwing tool must still reach the host's onPostTool — before
+        // A throwing tool must still reach the host's onPostTool — before
         // this, the throw jumped to the outer catch and the host saw onPreTool
         // with no partner. The hook chain may rewrite the error TEXT; the text
         // it returns is sent to the model. The error flag stays forced true, and
@@ -144,7 +144,7 @@ function wrapExecutor(
         // Same flag as before; the (possibly rewritten) text is now sent.
         return { content: failure.content, isError: true };
       }
-      // 001: the TOOL owns the verdict. Read it before the hook chain runs, so a
+      // The TOOL owns the verdict. Read it before the hook chain runs, so a
       // host hook that rewrites the outcome cannot clear (or set) the flag.
       const toolFailed = outcome.isError === true;
       if (ctx.hooks) {
@@ -155,7 +155,7 @@ function wrapExecutor(
           outcome,
         });
       }
-      // 003: every image is downscaled to the tool-image limits. One that cannot
+      // Every image is downscaled to the tool-image limits. One that cannot
       // be decoded (or is empty) is dropped with a warning; the text result
       // still reaches the model.
       const images: ToolImage[] = [];

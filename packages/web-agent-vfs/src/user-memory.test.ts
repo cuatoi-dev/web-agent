@@ -18,7 +18,7 @@ async function setup(opts: { agents?: boolean; user?: string; mem?: string } = {
   return { tmp, home, shared };
 }
 
-describe("vfsTools memory (104/001)", () => {
+describe("vfsTools memory", () => {
   it("V1: memory off: the first message is unchanged and no tool carries the memory guideline", async () => {
     const { tmp, home, shared } = await setup({ agents: true, user: "Name: Alex", mem: "Likes cats" });
     for (const p of [vfsTools({ tmp, home, shared }), vfsTools({ tmp, home, shared, memory: false })]) {

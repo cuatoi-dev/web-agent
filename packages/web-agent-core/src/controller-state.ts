@@ -97,7 +97,7 @@ export function abort(st: SessionRuntime) {
 }
 
 /** Attachment providers from both the host's static config AND any loaded
- *  `ToolProvider`s (006) — e.g. a DOM package registering its point-at-elements
+ *  `ToolProvider`s — e.g. a DOM package registering its point-at-elements
  *  picker. Re-reads `st` on every call, so it stays correct whether
  *  `loadedProviders` has populated yet. */
 export function effectiveAttachmentProviders(st: SessionRuntime): AttachmentProvider[] {

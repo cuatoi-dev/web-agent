@@ -9,9 +9,18 @@ so files survive a page reload.
 
 ```bash
 pnpm add @cuatoi/web-agent-vfs
+# or
+npm install @cuatoi/web-agent-vfs
 ```
 
-## Quick start
+The `@cuatoi/web-agent-vfs/lit` subpath (the Files screen, `filesScreen`) also
+needs the optional peer dependencies `@cuatoi/web-agent-lit` and `lit-html`:
+
+```bash
+npm install @cuatoi/web-agent-lit lit-html
+```
+
+## Usage
 
 ```ts
 import { createAgentSession } from "@cuatoi/web-agent-core";
@@ -140,8 +149,9 @@ Both skills are model-invoked. Neither adds a slash command.
   defaults to 2000 lines. A read whose numbered output exceeds the same
   12,000-character budget returns a PARTIAL view of the longest whole-line
   prefix; a read with an explicit `offset` or `limit` over the budget fails with
-  an error that names the limit. A read of a single line over the budget names
-  that line's raw length.
+  an error that names the limit. A read with no `offset` or `limit` whose first
+  line alone is over the budget fails with an error that names that line's raw
+  length.
 - **`write_file(file_path, content, encoding?, mime_type?)`** — creates a file,
   or overwrites one already read in this chat (see below). `encoding` is
   `"utf8"` (default) or `"base64"` for an image; `base64` writes require
@@ -245,7 +255,7 @@ unsubscribe();
   visible. `.git` and `node_modules` folders are skipped. Other files do not
   exist for the tools.
 - **Read only.** With `writable: false` the backend has no `set` and no
-  `delete`. Each change fails with `<path> is read-only. The user attached
+  `delete`. Each change fails with `Error: <path> is read-only. The user attached
   <prefix> read only. Writable paths: …`.
 - **Confirms.** `delete_file` and `move_file` ask the user through the tool
   context's `confirmInteraction` when either end is on the user's disk. Your
@@ -254,7 +264,8 @@ unsubscribe();
 - **Lifetime.** `mount` throws a `ConfigError` when the prefix is `/` or
   overlaps a mount. `unmount` removes only a mount added by `mount` and returns
   `false` for any other path. It also clears the agent's read records under that
-  prefix. `subscribe` calls the listener once after each mount or unmount.
+  prefix. `subscribe` calls the listener once after each mount, unmount, or
+  successful `vfs.write`.
 
 ### The folder button
 
@@ -295,3 +306,7 @@ const provider = vfsTools({
   seedAgentsMd: "# Workspace\n",
 });
 ```
+
+## License
+
+Apache-2.0 — see [LICENSE](./LICENSE).

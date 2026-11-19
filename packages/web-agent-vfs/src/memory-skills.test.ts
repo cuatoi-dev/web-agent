@@ -5,7 +5,7 @@ import type { VfsOptions } from "./types.js";
 const provider = (memory?: VfsOptions["memory"]) =>
   vfsTools({ tmp: MemoryBackend(), home: MemoryBackend(), shared: MemoryBackend(), memory });
 
-describe("memorySkills (104/002)", () => {
+describe("memorySkills", () => {
   it("M1: memory off returns no skills", () => {
     for (const p of [provider(), provider(false)]) {
       expect(memorySkills(p)).toEqual([]);

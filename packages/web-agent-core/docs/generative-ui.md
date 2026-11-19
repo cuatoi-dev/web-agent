@@ -22,7 +22,8 @@ interaction pattern. The skill (defined in
 2. Call the tool — the block renders inline at that position.
 3. Send a brief closing line.
 
-**On error:** the tool returns a precise `<field-path>: <reason>` message. Read
+**On error:** the tool returns an `Invalid input for show_generative_ui: <reason>.`
+message that names the failing field path. Read
 it, fix the offending field, and call the tool again. Do not fall back to fenced
 blocks or markdown tables.
 
@@ -129,7 +130,8 @@ package docs. Cross-calls `load_skill("chart")` for the config shape.
 
 ## ErrorCardBlock
 
-If a block fails renderer-side validation, an `ErrorCardBlock` is shown:
+`ErrorCardBlock` is a block type that the Lit renderer shows as an error card
+when it receives one:
 
 ```ts
 {
@@ -139,15 +141,18 @@ If a block fails renderer-side validation, an `ErrorCardBlock` is shown:
 }
 ```
 
-This surfaces in the chat so the model can see and retry with a corrected spec.
+Core does not create this block. An invalid `show_generative_ui` spec does not
+render a block. The tool returns an error result to the model instead, and the
+model can retry with a corrected spec.
 
 ---
 
 ## blockGuidelines
 
-`AgentConfig.blockGuidelines?: string` — any string here is appended to the
-system prompt as host-specific UI guidelines for the model (e.g. "always use
-primary brand colors in charts").
+`AgentConfig.blockGuidelines?: string` is accepted, but core does not add it
+to the system prompt. To give the model host-specific UI guidelines (for
+example "always use primary brand colors in charts"), use
+`AgentConfig.appendSystemPrompt`.
 
 ---
 

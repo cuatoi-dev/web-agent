@@ -27,7 +27,7 @@ export type CompactionRequestOutcome =
 export interface ToolOutcome {
   content: string;
   isError?: boolean;
-  /** 003: images for the model, from any tool. `wrapExecutor`
+  /** Images for the model, from any tool. `wrapExecutor`
    *  (tools/build-tools.ts) downscales each one with `downscaleToolImage`, and
    *  the loop sends all of them on the next step. */
   images?: ToolImage[];
@@ -93,7 +93,7 @@ export interface ToolContext {
   /** Session-owned todo tracking seam. Absent when todo is not configured or disabled. */
   _todos?: TodoControllerSeam;
   /**
-   * 069/001: the id of the chat this tool call belongs to. A tool keys
+   * The id of the chat this tool call belongs to. A tool keys
    * per-chat state on it — the VFS read-before-write tracker is the first.
    *
    * Assigned in `initAgent()` (controller-config.ts) as a GETTER over

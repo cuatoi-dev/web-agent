@@ -19,7 +19,7 @@ export function validateContextInvariants(msgs: ModelMessage[], mode: "assert" |
     return;
   }
 
-  // 107/002: a rebuilt context starts with the compaction summary and the
+  // A rebuilt context starts with the compaction summary and the
   // first kept turn is a user message, so exactly ONE user→user pair is
   // legal — at the head. Anthropic combines consecutive same-role turns
   // (verified against the live endpoint, 2026-09-04).

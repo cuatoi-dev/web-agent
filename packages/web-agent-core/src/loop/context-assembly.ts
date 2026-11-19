@@ -15,7 +15,7 @@ export function lastTombstoneIndex(entries: JournalEntry[]): number {
   return -1;
 }
 
-/** 107/004: the ordinal of the user turn about to run — the number of user
+/** The ordinal of the user turn about to run — the number of user
  *  turns already in the journal, plus the one being appended now.
  *
  *  A turn starts at the `appendUser` entry, the only entry with
@@ -31,7 +31,7 @@ export function currentUserTurn(journal: JournalEntry[]): number {
 }
 
 export function convertToMessages(entries: JournalEntry[]): ModelMessage[] {
-  // 107/002: a tombstone carries no message of its own. The summary is
+  // A tombstone carries no message of its own. The summary is
   // emitted by assembleContext at the tombstone's position; an older
   // tombstone that falls inside the kept window is simply dropped.
   return entries.filter((e) => !e.meta.tombstone).map((e) => e.msg);
@@ -60,7 +60,7 @@ export function startOfNthTurnBefore(entries: JournalEntry[], index: number, n: 
 }
 
 /**
- * 107/002: the whole of context assembly.
+ * The whole of context assembly.
  *
  * NO TOMBSTONE MEANS NO TRIMMING. A conversation that never crossed 75% keeps
  * every turn, however many there are. The 2-turn window is a POST-COMPACTION

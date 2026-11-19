@@ -1,4 +1,4 @@
-// 104/001 — USER.md and MEMORY.md, loaded into the first message of a chat
+// USER.md and MEMORY.md, loaded into the first message of a chat
 // when the host turns memory on. The loader never changes the files.
 import type { MemoryOptions, ResolvedMemory, VfsFile, VfsMount, VfsOptions } from "./types.js";
 import { resolve } from "./mounts.js";

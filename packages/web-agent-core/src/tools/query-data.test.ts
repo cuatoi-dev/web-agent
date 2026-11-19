@@ -79,7 +79,7 @@ describe("runQueryData", () => {
     expect(out.content).toMatch(/aborted/i);
   });
 
-  it("provider error propagates as string (§10-style)", async () => {
+  it("provider error propagates as string", async () => {
     const ctx = mockCtx(mockProvider());
     try {
       await runQueryData({ source: "error" }, ctx);
@@ -185,7 +185,7 @@ describe("runQueryData", () => {
     });
 });
 
-// 001: a guardrail outcome declared isError:true must survive wrapExecutor.
+// A guardrail outcome declared isError:true must survive wrapExecutor.
 describe("the wide-source guardrail result reaches the wrapper", () => {
   it("the wide-source guardrail result reaches the wrapper with isError true", async () => {
     const fields = fieldList(300);
@@ -209,7 +209,7 @@ describe("the wide-source guardrail result reaches the wrapper", () => {
   });
 });
 
-// 002: the engine's aggregate rejection must reach the model flagged, not
+// The engine's aggregate rejection must reach the model flagged, not
 // as a successful result.
 describe("an aggregate rejection reaches the wrapper", () => {
   function engineBackedProvider(): DataSourceProvider & { queryCalls: DataQuery[]; describeCalls: number } {

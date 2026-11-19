@@ -365,12 +365,12 @@ describe("AgentFilesScreen (DOM tier)", () => {
     expect(screen.querySelector('button[aria-label="Delete"]')).not.toBeNull();
   });
 
-  // 003410-005 round 2: Stage A found the red rule reaching the outer
+  // A review found the red rule reaching the outer
   // <wa-icon-button> host but not the glyph a real browser paints (a
   // Material-backed registry draws it in shadow DOM from its own
   // --md-icon-button-icon-color, not inherited "color" — jsdom cannot
   // resolve var() or inherit custom properties across elements, so that
-  // half of the fix is only provable live; see the task's Outcome). This
+  // half of the fix is only provable live). This
   // checks the half jsdom CAN prove for the default registry: the colour
   // actually reaches the rendered SVG glyph, not just the button host, and
   // differs from a button the rule does not target.
@@ -500,9 +500,9 @@ describe("AgentFilesScreen (DOM tier)", () => {
     expect(query("pre.wa-file-text")).not.toBeNull();
   });
 
-  // 127/003 — the screen subscribes to the handle, so a file a tool saved
+  // The screen subscribes to the handle, so a file a tool saved
   // appears without the user reopening the screen.
-  describe("refresh on change (127/003)", () => {
+  describe("refresh on change", () => {
     function rowNames(): (string | undefined)[] {
       return queryAll(".wa-ftree-row-name").map((el) => el.textContent?.trim());
     }

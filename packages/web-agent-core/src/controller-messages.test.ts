@@ -159,7 +159,7 @@ describe("buildSessionMessages — restored history audit failed backfill", () =
   });
 });
 
-describe("buildSessionMessages — unknown-tool calls are not rendered as tool steps (003)", () => {
+describe("buildSessionMessages — unknown-tool calls are not rendered as tool steps", () => {
   it("omits the step line for a call core refused as unknown, keeping text and real steps", () => {
     const rawAudits: AuditEntry[] = [
       {
@@ -205,7 +205,7 @@ describe("buildSessionMessages — unknown-tool calls are not rendered as tool s
     expect(assistantMsg!.trace?.[0].unknownTool).toBe(true);
   });
 
-  describe("buildSessionMessages — tool images (003)", () => {
+  describe("buildSessionMessages — tool images", () => {
     it("attaches saved tool images to audit.images without mutating rawAudits", () => {
       const imgA = { dataUrl: "data:image/png;base64,AAAA", mediaType: "image/png" };
       const rawAudits = [

@@ -1,4 +1,4 @@
-// 108/001 — one home for the compaction verdict type and every string the
+// One home for the compaction verdict type and every string the
 // compaction paths render. The tool (builders.ts) and the /compact command
 // (controller-queue.ts) both read NOTHING_TO_COMPACT from here, so the two paths
 // cannot drift into different wording for the same state — which is exactly

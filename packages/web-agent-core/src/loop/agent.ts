@@ -136,7 +136,7 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
 
   // Provider model — swappable at runtime for tests (_client / _model seams).
   let _model: LanguageModel = providerRegistry.get(cfg, { fetch: cfg.fetch });
-  // Runtime-swappable active model id (067). Initialised from config; changed
+  // Runtime-swappable active model id. Initialised from config; changed
   // via setModel() for the NEXT turn without rebuilding the transport/session.
   let _modelId: string = cfg.model;
 
@@ -191,14 +191,14 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
     // Advanced seam: swap the entire model (e.g. mock LanguageModel in unit tests).
     get _model() { return _model; },
     set _model(m: LanguageModel) { _model = m; },
-    // Runtime model swap (067): read the active id, or change it for the next turn.
+    // Runtime model swap: read the active id, or change it for the next turn.
     get modelId() { return _modelId; },
     setModel(id: string) { _modelId = id; },
     // Exposed so compaction (loop/compaction.ts) can build a request that
     // reads the identical cached tools/system/messages prefix — see the
     // buildCallOptions doc comment above.
     buildCallOptions,
-    // 107/004: the tool definitions this agent was built with. The controller
+    // The tool definitions this agent was built with. The controller
     // hands them to cm.redactExpiredResults(), so the context manager reads
     // `ttl`/`uttl` off the definition instead of knowing any tool by name.
     // `defs` is built at :139 from `(cfg.tools ?? defaultTools)(ctx)`, and the
@@ -222,13 +222,13 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
 
       prevMsgCount = 0; // reset per generate() call (prepareStep stepNumber===0 equiv)
 
-      // 003: every image a tool returned in the previous step, in call order.
+      // Every image a tool returned in the previous step, in call order.
       // Replaces ctx._pendingImage. Sent once, on the next model call only.
       let pendingImages: Array<ToolImage & { toolName: string }> = [];
 
       for (let i = 0; i < cfg.maxIterations; i++) {
         // ---- prepareStep equivalent ----
-        // 003: send every image the previous step's tools returned as one user
+        // Send every image the previous step's tools returned as one user
         // message, each after its own label. The message lives in stepMessages
         // only, so it is never journaled and each image is sent once.
         let stepMessages = workingMessages;
@@ -314,8 +314,8 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
             let isError: boolean;
             let unknownTool = false;
             if (block.argumentsIssue === "unparsable") {
-              // 003: transport could not parse the arguments the model sent and
-              // substituted `{}` (task 001's marker). Running the tool on `{}`
+              // Transport could not parse the arguments the model sent and
+              // substituted `{}` (the `argumentsIssue` marker). Running the tool on `{}`
               // would be running a call the model never made, and letting `{}`
               // reach schema validation would answer "missing required
               // property" for an argument the model DID send. Answer with the
@@ -373,7 +373,7 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
         const delta = accumulatedMessages.slice(prevMsgCount);
         prevMsgCount = accumulatedMessages.length;
         cm.recordStep(delta, deriveAudit({ toolResults: stepToolResults }), imagesByCallId);
-        // Live repaint seam (074): let the host repaint the transcript the moment
+        // Live repaint seam: let the host repaint the transcript the moment
         // this step's messages are journaled, instead of waiting for turn end.
         opts.onStep?.();
 

@@ -26,8 +26,8 @@ export interface CommandEntry {
   unavailableMessage?: string;
 }
 
-/** A core command before collision resolution. Internal to core: this task
- *  opens no registration path for a host handler (idea 106). */
+/** A core command before collision resolution. Internal to core: there is
+ *  no registration path for a host handler. */
 export interface CoreCommandDef {
   name: string;
   aliases: string[];

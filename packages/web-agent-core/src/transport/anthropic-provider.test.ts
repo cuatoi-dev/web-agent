@@ -440,7 +440,7 @@ describe("AnthropicLanguageModel", () => {
     });
 
     it("keeps a message's content shape stable whether or not it currently carries the rolling breakpoint", async () => {
-      // Stage-B regression (task 001): the breakpoint used to convert ONLY the
+      // Regression: the breakpoint used to convert ONLY the
       // last message's bare string into a block array. Once a later request's
       // breakpoint moved past that message (e.g. compaction's appended turn),
       // it reverted to a bare string — a real content-shape change, not just
@@ -495,8 +495,8 @@ describe("AnthropicLanguageModel — raw fetch transport", () => {
   }
 
   // Property/invariant assertions against the wire format, not a pasted
-  // literal — no pre-change body was ever captured (see task file Outcome
-  // note), so these check the actual vendor wire-format rules directly
+  // literal — no pre-change body was ever captured, so these
+  // check the actual vendor wire-format rules directly
   // rather than comparing to a recorded reference body.
   it("request body for a plain call: max_tokens default and cache_control placement", async () => {
     const stubFetch = vi.fn<Parameters<typeof globalThis.fetch>, ReturnType<typeof globalThis.fetch>>().mockResolvedValue(jsonResponse(makeMockMessage()));

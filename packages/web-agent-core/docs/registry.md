@@ -2,7 +2,7 @@
 title: UI element seam concept
 ---
 
-# UI element seam (ADR 001)
+# UI element seam
 
 The chat UI renders its primitives — buttons, inputs, menus, progress —
 as **`<wa-*>` custom element tags** in its lit-html templates, so a host can
@@ -36,7 +36,7 @@ resolves to changes.
 
 ## Styling & theme contract
 
-- The default implementation uses **Beer CSS** classes (e.g. `wa-btn`, `wa-input`) and consumes the `--wa-*` design tokens for theming.
+- The default implementation adds **Beer CSS** class names (for example `border`, `circle`, `primary`) next to its own `wa-*` classes (for example `wa-btn`, `wa-input`), and consumes the `--wa-*` design tokens for theming.
 - The host styling is aligned via token mappings such as:
   ```css
   background-color: var(--internal-primary, var(--wa-action-color-info, #1a73e8));

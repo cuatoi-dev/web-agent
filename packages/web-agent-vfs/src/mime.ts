@@ -1,5 +1,5 @@
 /** The four image types a base64 write may declare. Nothing else is allowed;
- *  PDF is deliberately absent (idea 069, "PDF is not supported now"). */
+ *  PDF is deliberately absent: PDF is not supported. */
 export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
 const BY_EXTENSION: Record<string, string> = {

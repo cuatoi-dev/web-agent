@@ -1,4 +1,4 @@
-// 104/002 — the two memory skills. They carry rules only: the file tools do the
+// The two memory skills. They carry rules only: the file tools do the
 // reads and writes. `memorySkills` reads the resolved memory options from the
 // provider, so the skill text names the real paths and limits.
 import type { SkillDef } from "@cuatoi/web-agent-core";

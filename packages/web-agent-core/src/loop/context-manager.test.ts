@@ -300,7 +300,7 @@ describe("ContextManager", () => {
       expect(classifyParts(msg)).toEqual(["user_prose"]);
     });
 
-    it("turnsToCompact returns the eligible turn ids (serialisation removed, task 001)", () => {
+    it("turnsToCompact returns the eligible turn ids (serialisation removed)", () => {
       const compactCm = new ContextManager({
         ...TEST_CFG,
         kTurnsVerbatim: 1,  // only keep last 1 turn verbatim
@@ -541,7 +541,7 @@ describe("ContextManager", () => {
     });
   });
 
-  describe("appendUser (007: pointedItems removed, userDisplayText + promptMeta remain)", () => {
+  describe("appendUser (pointedItems removed, userDisplayText + promptMeta remain)", () => {
     it("stores userDisplayText and promptMeta when passed", () => {
       const meta = { tag: "test" };
       cm.appendUser({ role: "user", content: "full prompt" }, "typed prose", meta);
@@ -559,9 +559,9 @@ describe("ContextManager", () => {
   });
 
   // ------------------------------------------------------------
-  // 011: commitTurn deduplication
+  // commitTurn deduplication
   // ------------------------------------------------------------
-  describe("commitTurn deduplication (011)", () => {
+  describe("commitTurn deduplication", () => {
     it("does not serialize messages recordStep already journaled", () => {
       cm.appendUser({ role: "user", content: "hi" });
       const assistant: ModelMessage = { role: "assistant", content: "hello" };
@@ -591,9 +591,9 @@ describe("ContextManager", () => {
   });
 
   // ------------------------------------------------------------
-  // 074: activeTurnId getter
+  // activeTurnId getter
   // ------------------------------------------------------------
-  describe("activeTurnId (074)", () => {
+  describe("activeTurnId", () => {
     it("activeTurnId reflects an open turn and clears on commit", () => {
       expect(cm.activeTurnId).toBeUndefined();
 
@@ -667,9 +667,9 @@ describe("ContextManager", () => {
   });
 
   // ------------------------------------------------------------
-  // Tombstone context rebuild (107/002)
+  // Tombstone context rebuild
   // ------------------------------------------------------------
-  describe("Tombstone context rebuild (107/002)", () => {
+  describe("Tombstone context rebuild", () => {
     it("no tombstone keeps every turn", () => {
       const largeCm = new ContextManager({
         ...TEST_CFG,
@@ -834,7 +834,7 @@ describe("ContextManager", () => {
     });
   });
 
-  describe("messagesSummarisedByLastTombstone (idea 105/004)", () => {
+  describe("messagesSummarisedByLastTombstone", () => {
     it("returns 0 when no tombstone exists in the journal", () => {
       for (let i = 1; i <= 3; i++) {
         cm.appendUser({ role: "user", content: `Turn ${i}` });
@@ -903,7 +903,7 @@ describe("ContextManager", () => {
     });
   });
 
-  describe("toolCallsRedactedByLastTombstone (idea 105/004, requirement change 1)", () => {
+  describe("toolCallsRedactedByLastTombstone", () => {
     it("returns 0 when no tombstone exists in the journal", () => {
       cm.appendUser({ role: "user", content: "Turn 1" });
       cm.recordStep([{ role: "assistant", content: "Reply 1" }]);
@@ -981,9 +981,9 @@ describe("ContextManager", () => {
   });
 
   // -----------------------------------------------------------
-  // 107/004: per-tool result TTL
+  // Per-tool result TTL
   // -----------------------------------------------------------
-  describe("107/004: per-tool result TTL", () => {
+  describe("per-tool result TTL", () => {
     /** Helper: build a journal with one user turn containing N tool calls and
      *  results, using the real API so meta.userTurn is stamped correctly. */
     function buildTurnWithResults(
@@ -1229,7 +1229,7 @@ describe("ContextManager", () => {
       c.recordStep([{ role: "tool", content: [{ type: "tool-result" as const, toolCallId: "c1", toolName: "my_tool", output: { type: "text", value: "r1" } }] }]);
       c.commitTurn();
 
-      // Delete userTurn from the tool entry to simulate a pre-107/004 journal
+      // Delete userTurn from the tool entry to simulate an older journal
       const toolEntry = c.journal.find((e) => e.msg.role === "tool")!;
       delete (toolEntry.meta as Record<string, unknown>).userTurn;
 
@@ -1323,7 +1323,7 @@ describe("ContextManager", () => {
     });
   });
 
-  describe("recordStep tool images (003)", () => {
+  describe("recordStep tool images", () => {
     it("attaches tool images to meta.toolImages on tool messages and not assistant messages", () => {
       const imgA = [{ dataUrl: "data:image/png;base64,AAAA", mediaType: "image/png" }];
       const imgB = [{ dataUrl: "data:image/png;base64,BBBB", mediaType: "image/png" }];

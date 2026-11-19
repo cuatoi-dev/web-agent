@@ -1,4 +1,4 @@
-// 128/003 — the composer's folder button. Attaches a folder on the user's
+// The composer's folder button. Attaches a folder on the user's
 // disk (or, where the browser has no folder API, a read-only copy) as a
 // run-time mount at /share/<name>, shows a chip per folder, and tells the
 // model in the next message.

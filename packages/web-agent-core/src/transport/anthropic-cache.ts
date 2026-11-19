@@ -13,7 +13,7 @@ import type { MessageParam, CacheControlEphemeral } from "./wire.types.js";
 // that carried the breakpoint on the request where it was last (block array,
 // `applyRollingCacheBreakpoint` below converted it) reverts to a bare string
 // the moment a later request's breakpoint moves past it (e.g. compaction's
-// appended turn) — task 001's Stage-B review caught this: the cached prefix
+// appended turn) — a code review caught this: the cached prefix
 // stopped matching at exactly that message, so most of the history was still
 // billed at full price despite `tools`/`system` matching exactly. Mutates
 // `messages` in place; called at the start of `applyRollingCacheBreakpoint` so

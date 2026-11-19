@@ -1,4 +1,4 @@
-// 127/003 — turns a Blob into the VFS file record. The screenshot tool
+// Turns a Blob into the VFS file record. The screenshot tool
 // captures a PNG as bytes; the backends store base64, not bytes, so the blob
 // is read here with the browser's own FileReader. No Buffer and no fetch, so
 // this runs unchanged on the airgapped target.

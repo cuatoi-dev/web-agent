@@ -80,7 +80,7 @@ export interface StepToolResult {
   failed?: boolean;
   /** True when the tool had no executor: the model called a tool that was
    *  never offered. Core answered `Unknown tool: <name>`; the call never ran.
-   *  003: lets the message builder omit the step line for a call that never
+   *  Lets the message builder omit the step line for a call that never
    *  happened. */
   unknownTool?: boolean;
 }
@@ -107,30 +107,30 @@ export interface JournalEntry {
     toolName?: string;         // for tool parts
     generation?: number;       // for snapshot/query results
     createdAt: number;
-    /** 107/004: the 1-based ordinal of the user turn this entry belongs to.
-     *  `uttl` measures age in these. Absent on entries written before 107/004,
+    /** The 1-based ordinal of the user turn this entry belongs to.
+     *  `uttl` measures age in these. Absent on entries written by older versions,
      *  which the sweep therefore treats as "same turn as now" and never expires
      *  by age. */
     userTurn?: number;
     failed?: { message: string; retryable: boolean };
     /** User's typed prose before prompt-hook overrides or block formatting. */
     userDisplayText?: string;
-    /** 003: opaque object returned by an `onUserPrompt` handler. Persisted and
+    /** Opaque object returned by an `onUserPrompt` handler. Persisted and
      *  handed back to the UI verbatim — core never inspects its contents. */
     promptMeta?: Record<string, unknown>;
-    /** 107/002: present ONLY on a compaction tombstone. Its `summary` replaces
+    /** Present ONLY on a compaction tombstone. Its `summary` replaces
      *  everything before this entry when the context is rebuilt. `createdAt`
      *  above is the tombstone's timestamp. An entry without this field is an
      *  ordinary journal entry. */
     tombstone?: { summary: string };
-    /** 003: on a role "tool" entry only — the images each tool call in this
+    /** On a role "tool" entry only — the images each tool call in this
      *  message returned, keyed by toolCallId. Written once, by
      *  `ContextManager.recordStep`. Never sent to the model. */
     toolImages?: Record<string, ToolImage[]>;
   };
 }
 
-/** 107/004: the only part of a tool definition the context manager reads.
+/** The only part of a tool definition the context manager reads.
  *  `CustomToolDef` satisfies it structurally. */
 export interface ToolTtlPolicy {
   name: string;
@@ -147,7 +147,7 @@ export interface AuditEntry {
   /** Mirrors StepToolResult.unknownTool. The trace keeps the entry as an
    *  honest record; the rendered step line is omitted for it. */
   unknownTool?: boolean;
-  /** 003: the images this call returned. Filled IN MEMORY by
+  /** The images this call returned. Filled IN MEMORY by
    *  `buildSessionMessages` (controller-messages.ts) from the tool entry's
    *  `meta.toolImages`; never persisted on the audit list. */
   images?: ToolImage[];

@@ -185,7 +185,7 @@ describe("mergeSkills", () => {
   });
 });
 
-describe("modelVisibleSkills (105/001 P8)", () => {
+describe("modelVisibleSkills", () => {
   it("M5 — a list with no opted-out skill returns the same contents", () => {
     const list: SkillDef[] = [
       { name: "a", description: "d", definition: "def" },

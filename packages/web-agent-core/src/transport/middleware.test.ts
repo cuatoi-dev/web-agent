@@ -253,7 +253,7 @@ describe("withRetry middleware", () => {
   });
 
   it("a config that omits requestTimeoutMs gets the 15-minute default", async () => {
-    // 110/005 P3. Do not spread DEFAULT_CONFIG's own requestTimeoutMs here —
+    // Do not spread DEFAULT_CONFIG's own requestTimeoutMs here —
     // the point is the `?? 900_000` fallback in withRetry, which only
     // a config that never sets the field can exercise.
     const { requestTimeoutMs: _omitted, ...withoutTimeout } = cfg({ maxRetries: 0 });
@@ -322,10 +322,10 @@ describe("withRetry middleware", () => {
 
 // ---------------------------------------------------------------------------
 // withRetry — auto-retry policy: default maxRetries, Fibonacci backoff,
-// onRetryAttempt surfacing (044-4)
+// onRetryAttempt surfacing
 // ---------------------------------------------------------------------------
 
-describe("withRetry — auto-retry policy (044-4)", () => {
+describe("withRetry — auto-retry policy", () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

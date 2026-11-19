@@ -381,7 +381,7 @@ describe("OpenAILanguageModel — injected fetch", () => {
     expect((wrapped as { _client?: unknown })._client).toBe(mockClient);
   });
 
-  it("cache token fields are absent on a usage produced from an OpenAI response (task 086-003)", async () => {
+  it("cache token fields are absent on a usage produced from an OpenAI response", async () => {
     const responseWithCache = {
       id: "chatcmpl-123",
       choices: [

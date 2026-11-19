@@ -16,7 +16,7 @@ import type { SkillDef } from "../tools/skill-def.types.js";
  *
  * `supportsOwner` and `ownerLabel` are optional too. A registry that sets
  * `supportsOwner: true` stores an owner per skill, and `create_skill` then
- * offers the optional `shared` input (idea 120 task 004). Every other
+ * offers the optional `shared` input. Every other
  * registry is unchanged.
  *
  * Reading happens at session start, and again when `updateConfig()` passes a

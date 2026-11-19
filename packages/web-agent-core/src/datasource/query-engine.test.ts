@@ -328,7 +328,7 @@ describe("query-engine", () => {
     expect(res.rows[0].category).toBe("Pet");
   });
 
-  // ─── Top-level sort/select on aggregates (task 002) ─────────────────
+  // ─── Top-level sort/select on aggregates ─────────────────
 
   it("aggregate + top-level sort throws instead of dropping it", () => {
     expect(() =>

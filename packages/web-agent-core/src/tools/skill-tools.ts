@@ -4,11 +4,11 @@ import type { JsonSchemaObject } from "../types.js";
 
 /** search_skills, load_skill — read ctx.skills at execute time. No prompt snippet
  *  (the # Skills prompt section is rendered separately in system-prompt.ts).
- *  `create_skill` (idea 102 task 002) is appended only when `ctx.skillRegistry`
- *  exposes a `save` method, and `delete_skill` (idea 114 task 004) only when it
+ *  `create_skill` is appended only when `ctx.skillRegistry`
+ *  exposes a `save` method, and `delete_skill` only when it
  *  exposes a `remove` method — the optional method IS the writable signal, there
  *  is no separate config flag. `create_skill` offers an optional `shared` input
- *  only when the registry sets `supportsOwner` (idea 120 task 004). */
+ *  only when the registry sets `supportsOwner`. */
 export function skillTools(ctx?: ToolContext): CustomToolDef[] {
   const searchSkillsSchema: JsonSchemaObject = {
     type: "object",
@@ -32,7 +32,7 @@ export function skillTools(ctx?: ToolContext): CustomToolDef[] {
     required: ["name"],
     additionalProperties: false,
   };
-  // 120/004 — `shared` exists only when the registry stores owners, so every
+  // `shared` exists only when the registry stores owners, so every
   // other host's create_skill schema is exactly what it was.
   const offersShared = ctx?.skillRegistry?.supportsOwner === true;
   const createSkillSchema: JsonSchemaObject = {
@@ -155,7 +155,7 @@ export function skillTools(ctx?: ToolContext): CustomToolDef[] {
         const definition = rawDef.trim();
         const isOverwrite = (execCtx.skills ?? []).some((s) => s.name === name);
 
-        // 120/004 — an owner-aware registry names who the new skill is for.
+        // An owner-aware registry names who the new skill is for.
         // `shared` missing or true = every agent; only `false` is private.
         const registry = execCtx.skillRegistry;
         const ownerAware = registry?.supportsOwner === true;

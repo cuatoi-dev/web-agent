@@ -198,7 +198,7 @@ export class AgentFilesScreen extends Component {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    // 127/003 — subscribe whether the handle was set before or after the
+    // Subscribe whether the handle was set before or after the
     // element entered the DOM.
     this._syncSubscription();
     if (!this._root && this._vfs) {

@@ -2,7 +2,7 @@ import type { ReadTracker } from "./types.js";
 
 /** Which files the agent has read, per chat, and the file's modification time
  *  when it was read. In memory only: after a page
- *  reload the agent must read a file again before it edits it (idea 069).
+ *  reload the agent must read a file again before it edits it.
  *  A context with no `sessionId` shares one bucket keyed "". */
 export function createReadTracker(): ReadTracker {
   const reads = new Map<string, Map<string, number>>();

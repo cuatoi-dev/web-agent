@@ -66,7 +66,7 @@ describe("createMockProvider — generate()", () => {
     });
   });
 
-  describe("delayMs (009)", () => {
+  describe("delayMs", () => {
     afterEach(() => {
       vi.useRealTimers();
     });

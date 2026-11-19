@@ -3,7 +3,7 @@
 // with no cast. If this file stops compiling, the types no longer fit the real
 // request. `satisfies` is used so no widening hides a mismatch.
 //
-// This file deliberately does not import anything from the providers — task 001
+// This file deliberately does not import anything from the providers, so it
 // switches nothing over.
 import type { MessageCreateParams, MessageParam, Tool } from "./wire.types.js";
 
