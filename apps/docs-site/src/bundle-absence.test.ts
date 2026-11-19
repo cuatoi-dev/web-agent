@@ -13,7 +13,7 @@ const cssStubPlugin: esbuild.Plugin = {
   },
 };
 
-// 005: pin `lit-html` to v1 ONLY for imports issued from web-agent-lit's own
+// Pin `lit-html` to v1 ONLY for imports issued from web-agent-lit's own
 // source (it was written against the v1 API). Scoped by importer rather than
 // a blanket `alias` entry, because docs-embed.ts now also pulls in the real
 // `lit` package (v3, via docs-agent-widget.ts) — `lit`'s own internal

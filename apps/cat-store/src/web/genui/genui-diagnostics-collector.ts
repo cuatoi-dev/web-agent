@@ -15,7 +15,7 @@ export function createGenuiDiagnosticsCollector(
   let listening = false;
 
   const onMessage = (ev: MessageEvent): void => {
-    // The frame is same-origin by design (task 004), so anything from another
+    // The frame is same-origin by design, so anything from another
     // origin is not ours.
     if (ev.origin !== win.location.origin) return;
     const data = ev.data as Partial<GenuiDiagnosticMessage> | null | undefined;

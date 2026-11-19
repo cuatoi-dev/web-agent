@@ -5,7 +5,7 @@ const FRAME_DEFAULT_THEME_ID = "wa2-dark";
 
 /** The `data-theme` the generated-UI frame gets for the host's `data-theme`.
  *  A custom theme shows its base theme: no custom CSS is sent into the
- *  frame (idea 135, user decision). */
+ *  frame. */
 export function frameThemeFor(hostThemeId: string | null): string {
   const t = getTheme(hostThemeId ?? FRAME_DEFAULT_THEME_ID) ?? getTheme(FRAME_DEFAULT_THEME_ID);
   return t?.base ?? t?.id ?? FRAME_DEFAULT_THEME_ID;

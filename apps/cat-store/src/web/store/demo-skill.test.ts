@@ -103,7 +103,7 @@ describe("catStoreDemoSkill", () => {
     expect(branchA.indexOf("click")).toBeLessThan(branchA.indexOf("add_to_cart"));
   });
 
-  // task 017 live verification: the model echoed the script's own bold
+  // Observed in a live run: the model echoed the script's own bold
   // "**Step 9 — ...**" header into its narration and left it unclosed. The
   // script text is never rendered to the user, so it has nothing to gain from
   // bold step headers — removing "**" from the source removes the pattern the
@@ -112,7 +112,7 @@ describe("catStoreDemoSkill", () => {
     expect(catStoreDemoSkill.definition).not.toContain("**");
   });
 
-  // task 006 fix: a Stage-A review found show_chart was called repeatedly on
+  // A review found show_chart was called repeatedly on
   // the live agent page but no chart ever rendered — the model had queried the
   // full catalog and built its own larger, decimal-valued chart instead of the
   // literal config given, which the chart validator rejected every time.
@@ -126,7 +126,7 @@ describe("catStoreDemoSkill", () => {
     expect(step7).toContain("products");
   });
 
-  // 003: show_live_chart must appear in both branches.
+  // show_live_chart must appear in both branches.
   it("Branch A Step 5 calls show_live_chart with the orders aggregate", () => {
     const def = catStoreDemoSkill.definition;
     const branchA = def.slice(
@@ -199,7 +199,7 @@ describe("catStoreDemoSkill", () => {
     expect(step8).toContain("var(--wa-action-color-info)");
     expect(step8).toContain("var(--wa-action-color-success)");
     expect(step8).toContain("var(--wa-action-color-error)");
-    // Task 008 was rejected for advertising tokens that render as nothing —
+    // Guard against advertising tokens that render as nothing —
     // guard against that regressing here too.
     expect(step8).not.toContain("--wa-primary");
     expect(step8).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);

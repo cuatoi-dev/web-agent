@@ -14,14 +14,13 @@ export function getShowcaseThemes(): { id: ShowcaseTheme; label: string }[] {
   ];
 }
 
-/** URL of the theme-showcase demo in single-card mode, themed. Task 009 folded
- *  the standalone `theme-showcase.html` page into the gallery. */
+/** URL of the theme-showcase demo in single-card mode, themed. */
 export function frameUrl(theme: ShowcaseTheme): string {
   return `gallery.html?frame=demo-theme-showcase&showcase=1&theme=${theme}`;
 }
 
 /** One canned conversation, identical in all four frames: a user turn, an
- *  assistant turn, and two rendered generative-UI blocks (task 010). */
+ *  assistant turn, and two rendered generative-UI blocks. */
 export function buildShowcaseState(): SessionState {
   return makeState({
     messages: [

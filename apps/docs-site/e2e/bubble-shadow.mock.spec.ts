@@ -1,10 +1,10 @@
 import { test, expect } from './fixtures';
 import { openBubble, shot } from './helpers';
 
-// 003: the bubble is a shadow element.
+// The bubble is a shadow element.
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
-test.describe('003: web-agent-bubble is a shadow element', () => {
+test.describe('web-agent-bubble is a shadow element', () => {
   test('1: the shadow root is open and the light DOM is empty', async ({ page }) => {
     await openBubble(page);
     const shape = await page.evaluate(() => {

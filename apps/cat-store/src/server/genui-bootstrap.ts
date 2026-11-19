@@ -5,7 +5,7 @@ import { GENUI_DIAGNOSTIC_MARKER } from "../shared/genui-diagnostics.js";
  *  It must be inline and first. Patching `contentWindow.console` from the
  *  parent was measured to fail: the initial about:blank window is reused, so
  *  the patch is gone on the second load and every agent retry goes dark
- *  (idea 095). Attaching at `load` misses parse-time output. */
+ *. Attaching at `load` misses parse-time output. */
 export function renderGenuiBootstrapScript(): string {
   return `
 (function () {

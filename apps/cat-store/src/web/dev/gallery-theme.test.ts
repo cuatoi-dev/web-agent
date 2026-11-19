@@ -162,7 +162,7 @@ describe("gallery theme switcher", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe(before);
   });
 
-  it("never writes localStorage (task-005 contract: cat-store:theme is app-owned)", () => {
+  it("never writes localStorage (cat-store:theme is app-owned)", () => {
     const spy = vi.spyOn(Storage.prototype, "setItem");
     const host = document.createElement("div");
     const cb = vi.fn();

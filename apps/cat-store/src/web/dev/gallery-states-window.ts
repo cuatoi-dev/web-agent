@@ -6,7 +6,7 @@ import type { SessionMessage } from "@cuatoi/web-agent-core";
 import type { GalleryState } from "./types";
 import { makeState } from "./gallery-blocks";
 
-// 010 — a transcript longer than one message window, for the four window
+// A transcript longer than one message window, for the four window
 // states. 80 turns x (1 user row + 1 assistant row + 4 tool-chip rows) = 480
 // rows against the 200-row default window (chat-panel-window.ts:7), so the window is
 // active and there is more than one older window behind it. Same shape as the
@@ -44,7 +44,7 @@ const WINDOW_TRANSCRIPT: SessionMessage[] = Array.from(
 ).flat();
 
 export const WINDOW_STATES: GalleryState[] = [
-  // 010 — the four message-window states. Together they make the whole
+  // The four message-window states. Together they make the whole
   // windowing feature (008, 009, 010) reviewable with no model run.
   {
     id: 'window-bottom',

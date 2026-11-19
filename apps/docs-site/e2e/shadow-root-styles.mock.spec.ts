@@ -9,7 +9,7 @@ const SHADOW_HOST_ID = 'wa-shadow-test-host';
  *  every registry's iconButton(), so this holds for the default registry and
  *  for cat-store's Material registry alike). Returns their bounding rects,
  *  read from whichever `root` the panel currently lives in — a test-created
- *  shadow host's `ShadowRoot` when `hostId` is given, or (003) the bubble's
+ *  shadow host's `ShadowRoot` when `hostId` is given, or the bubble's
  *  own OPEN shadow root by default — `agent-chat-panel` is never in the light
  *  DOM when reached through the normal `<web-agent-bubble>` flow any more. */
 async function titleEditControlRects(page: Page, hostId: string | null) {
@@ -75,9 +75,9 @@ test('the panel keeps its styles inside a shadow root', async ({ page }) => {
   expect(await page.evaluate(() => !!document.getElementById('wa-confirm-scrim-styles'))).toBe(false);
 
   // Open the inline title editor: confirm and cancel are `.wa-icon-btn`
-  // buttons (they were `.wa-btn` text buttons before task 001 of 2026-08-11).
-  // Hover the header first — the pencil is pointer-events:none until then
-  // (task 001 of 2026-09-07), and Playwright's hit test would fail.
+  // buttons (not `.wa-btn` text buttons).
+  // Hover the header first — the pencil is pointer-events:none until then,
+  // or Playwright's hit test would fail.
   await page.locator(`#${SHADOW_HOST_ID} agent-chat-panel .header`).hover();
   await page.locator(`#${SHADOW_HOST_ID} [aria-label="Edit session title"]`).click();
 
@@ -99,7 +99,7 @@ test('the panel keeps its styles inside a shadow root', async ({ page }) => {
   expect(measured.width).toBe('40px');         // an unstyled button sizes to content
   expect(measured.height).toBe('40px');
 
-  // Regression guard (task 001 rework, commit 3952bc93): the title input,
+  // Regression guard: the title input,
   // the confirm and cancel icon buttons and the header's icon buttons must
   // never overlap. Before the fix, the cancel control's right edge sat 67px
   // past the icon group's left edge at the panel's default width; here, at

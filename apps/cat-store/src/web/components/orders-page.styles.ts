@@ -110,7 +110,7 @@ export const ordersPageStyles = css`
     }
     .status-cancelled {
       background: var(--wa-action-color-error-10opc, #fee2e2);
-      /* 009: tbody tr:hover repaints the row under this chip, and over that
+      /* Tbody tr:hover repaints the row under this chip, and over that
          backdrop the error token alone measures 3.45:1 (wa1-dark) and 4.37:1
          (wa2-light). The same mix used by .error-container measures 6.14:1 /
          8.04:1 / 7.39:1 hovered and 10.40:1 / 9.90:1 / 7.89:1 at rest. */
@@ -135,7 +135,7 @@ export const ordersPageStyles = css`
     .error-container {
       padding: var(--wa-padding-xl, 16px);
       background: var(--wa-action-color-error-10opc, #fee2e2);
-      /* 009: this box sits on the page background, not on a card, so the error
+      /* This box sits on the page background, not on a card, so the error
          token alone measures 4.21:1 (wa1-dark), 4.29:1 (wa2-dark) and 4.19:1
          (wa2-light) against its own 10% tint — all under 4.5:1. Same remedy as
          chat-panel-screens-css.ts's .wa-notice: mix the error hue with the theme text

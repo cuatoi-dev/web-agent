@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 
 const ARTIFACTS = path.resolve(__dirname, '../../../temp/artifacts/2026-10-01-022937-003-attach-folder-button');
 
-test('live proof against real model in cat-store', async ({ page }) => {
+test('attach folder against real model in cat-store', async ({ page }) => {
   test.setTimeout(300_000);
   await fs.mkdir(ARTIFACTS, { recursive: true });
 

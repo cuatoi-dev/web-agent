@@ -126,8 +126,8 @@ describe("cat-store UI elements", () => {
   });
 });
 
-/** Restores the `registry.textArea` / `registry.iconButton` factory coverage that
- *  003410-005 dropped along with `acme-registry.test.ts`, against the surviving
+/** Covers the `<wa-text-area>` custom element (`AcmeTextArea`) that replaced
+ *  the older `registry.textArea` factory. This tests the surviving
  *  `<wa-text-area>` custom element (`AcmeTextArea`). Panel height comes from the
  *  nearest `agent-chat-panel` ancestor, so each test mounts one — matching the
  *  real composer layout, not a bare `document.body` append. */

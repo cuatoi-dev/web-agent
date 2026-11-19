@@ -35,11 +35,11 @@ export {
  * Returns [] when the panel is not mounted/has no state; callers' non-empty
  * HARD assertion is the intended loud failure — do NOT fall back to the DOM.
  *
- * Still used by audit-trace.mock.spec.ts (mock tier, out of scope for this task).
+ * Still used by audit-trace.mock.spec.ts (mock tier).
  */
 export async function auditToolNames(page: Page): Promise<string[]> {
   return page.evaluate(() => {
-    // 003: pierce the bubble's shadow root explicitly — agent-chat-panel now
+    // Pierce the bubble's shadow root explicitly — agent-chat-panel now
     // lives there. See helpers.ts's waitForAgentInitSettled.
     const panel = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel') as
       | (Element & { messages?: { trace?: { name: string }[] }[] })
@@ -62,7 +62,7 @@ export async function hasBlock(page: Page, tag: string): Promise<boolean> {
   }, tag);
 }
 
-/** Still used by generative-ui-button-display-leak.mock.spec.ts (mock tier, out of scope for this task). */
+/** Still used by generative-ui-button-display-leak.mock.spec.ts (mock tier). */
 export async function waitForBlock(page: Page, tag: string, timeout = 180_000): Promise<void> {
   await page.waitForFunction(
     (t) => {

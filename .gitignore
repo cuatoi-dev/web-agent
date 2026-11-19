@@ -19,3 +19,4 @@ packages/web-agent-browser/dist-template/
 # Local scratch: agent briefs, probe output, logs and review artifacts.
 temp/
 artifacts/
+tasks/

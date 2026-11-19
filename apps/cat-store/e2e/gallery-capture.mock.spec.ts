@@ -49,7 +49,7 @@ for (const theme of listThemes().map(({ id }) => id)) {
     await page.screenshot({ path: ipadPath, fullPage: true });
     console.log(`[gallery-capture] ipad    → ${ipadPath}`);
 
-    // 068/003 — the todo indicator tile on its own, at desktop width. The
+    // The todo indicator tile on its own, at desktop width. The
     // full-page shots above are too small to judge a 15px badge.
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.waitForTimeout(500);

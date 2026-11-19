@@ -17,7 +17,7 @@ import type { AgentChatPanel } from "@cuatoi/web-agent-lit";
 import { configureAgentPanel } from "./agent-panel-config";
 import { enablePanelResize } from "./panel-resize";
 import { ACME_PANEL_MD_STYLES } from "../acme-registry";
-// 004: the shadow wrapper that hosts the bubble.
+// The shadow wrapper that hosts the bubble.
 import { CatAgentWidget } from "./components/cat-agent-widget";
 import { CAT_STORE_LAUNCHER_ICON } from "./dev/gallery-states";
 import { THEME_CHANGE_EVENT } from "./theme";
@@ -37,13 +37,13 @@ if (app) {
 const agentUi = document.querySelector("[data-agent-ui]");
 if (agentUi) {
   agentUi.innerHTML = "";
-  // 004: the bubble is hosted inside the widget's shadow root, not appended to
+  // The bubble is hosted inside the widget's shadow root, not appended to
   // the light DOM. The widget renders synchronously on connect, so `bubble` is
   // already connected here and its own shadow root is live — which is what the
   // Material sheet append and enablePanelResize() below rely on.
   const widget = new CatAgentWidget();
   const panel = widget.bubble;
-  // 003: the shared cat-store agent wiring. Configure BEFORE append so every
+  // The shared cat-store agent wiring. Configure BEFORE append so every
   // property is set before the element connects to the document.
   // WebAgentBubble is a panel-like proxy (web-agent-embed.ts), not the real
   // <agent-chat-panel> agent-page.ts builds — it forwards every property
@@ -61,7 +61,7 @@ if (agentUi) {
   panel.launcherIcon = CAT_STORE_LAUNCHER_ICON;
   panel.closeIcon = "✕";
   agentUi.appendChild(widget);
-  // 003: the panel now lives in the bubble's OPEN shadow root, so the
+  // The panel now lives in the bubble's OPEN shadow root, so the
   // `agent-chat-panel md-*` rules that map Material Web onto --wa-* tokens
   // must live in that tree too. The document.head copy in acme-registry.ts
   // still serves the light-DOM panels (gallery, ?frame=).
@@ -70,7 +70,7 @@ if (agentUi) {
   mdStyle.textContent = ACME_PANEL_MD_STYLES;
   // Already connected (comment above) so the shadow root is live.
   panel.shadowRoot!.appendChild(mdStyle);
-  // 003: host opt-in for the drag-to-resize grip. Must come after the append —
+  // Host opt-in for the drag-to-resize grip. Must come after the append —
   // the bubble builds #panel-container in connectedCallback.
   enablePanelResize(panel);
 

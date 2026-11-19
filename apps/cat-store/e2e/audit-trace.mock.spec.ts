@@ -4,7 +4,7 @@ import { auditToolNames } from './demo-helpers';
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
-// Guard for the defect behind task 016: `show_chart` returns `outcome.block`,
+// Guard for the defect where `show_chart` returns `outcome.block`,
 // so it renders as a chart block and produces NO `.tool-step` row. The audit
 // helper must still report it — otherwise the live demo spec's
 // `expect.soft(tools).toContain('show_chart')` can only pass when charting is

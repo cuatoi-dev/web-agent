@@ -9,7 +9,7 @@ test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 // renders <md-icon-button>, not the default registry's native <button>.
 const ICONS = 'agent-chat-panel .composer-controls [data-attachment-provider]';
 
-test.describe('page overlay styles — picker + grip (task 002)', () => {
+test.describe('page overlay styles — picker + grip', () => {
   test.beforeEach(async ({ page }) => {
     await openPanel(page);
     // openPanel() navigates to the app root (landing-view, no products) — route
@@ -78,7 +78,7 @@ test.describe('page overlay styles — picker + grip (task 002)', () => {
     // V3: the raw task's called-out measurement — flex, not block. The strip
     // is the picker's composer slot() element (AttachmentProvider.slot()),
     // mounted above the composer — i.e. inside agent-chat-panel, which now
-    // lives in the bubble's OPEN shadow root (003). Unlike the outline, which
+    // lives in the bubble's OPEN shadow root. Unlike the outline, which
     // attaches to document.body directly, the strip travels with the panel.
     const stripDisplay = await page.evaluate(
       () => getComputedStyle((document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')!.shadowRoot!.querySelector('.wa-dom-picker-strip')!).display,

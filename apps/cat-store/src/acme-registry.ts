@@ -8,7 +8,7 @@ import "@material/web/menu/menu-item.js";
 import "@material/web/progress/linear-progress.js";
 import { ACME_ELEMENTS } from "./acme-elements";
 
-/** 003: the panel now renders inside <web-agent-bubble>'s shadow root, and CSS
+/** The panel now renders inside <web-agent-bubble>'s shadow root, and CSS
  *  rules are tree-scoped — these would no longer reach it from document.head.
  *  The head copy below still serves the light-DOM panels (the gallery and the
  *  ?frame= renderer); `apps/cat-store/src/web/index.ts` places a second copy
@@ -35,7 +35,7 @@ export const ACME_PANEL_MD_STYLES = `
       --md-icon-button-disabled-icon-color: var(--wa-label-color, #888888);
       --md-icon-button-disabled-icon-opacity: 1;
     }
-    /* 010 — the scroll-to-bottom button is the one panel icon button drawn ON
+    /* The scroll-to-bottom button is the one panel icon button drawn ON
        the accent fill, so its glyph takes the on-accent token instead of the
        body text colour the block above sets for every other one.
        --wa-action-text-color-info on --wa-action-color-info measures

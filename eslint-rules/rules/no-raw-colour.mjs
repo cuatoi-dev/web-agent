@@ -21,8 +21,8 @@ const COLOUR_KEYWORD_ALLOW_LIST = new Set([
   "none",         // SVG fill/stroke disable
 ]);
 
-// Files whose colours ENCODE DATA rather than style chrome, exempt by the
-// recorded decision on task 018: "The Chart.js data-series palette stays
+// Files whose colours ENCODE DATA rather than style chrome, intentionally
+// exempt: "The Chart.js data-series palette stays
 // untouched … Those are data-encoding colours whose job is to keep N series
 // mutually distinguishable; collapsing them onto a 3-theme token set would
 // make series ambiguous."

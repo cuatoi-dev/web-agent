@@ -42,7 +42,7 @@ const probeChart = () => {
 };
 
 for (const theme of listThemes().map(({ id }) => id)) {
-  test(`chart block chrome + plot area follow ${theme} (018)`, async ({ page }) => {
+  test(`chart block chrome + plot area follow ${theme}`, async ({ page }) => {
     test.setTimeout(45_000);
     await page.goto(`gallery.html?theme=${theme}`, { waitUntil: 'networkidle' });
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -78,7 +78,7 @@ for (const theme of listThemes().map(({ id }) => id)) {
     });
   });
 
-  test(`annotation label renders themed on the card — ${theme} (018)`, async ({ page }) => {
+  test(`annotation label renders themed on the card — ${theme}`, async ({ page }) => {
     test.setTimeout(45_000);
     await page.goto(`gallery.html?theme=${theme}`, { waitUntil: 'networkidle' });
     await page.waitForSelector('agent-chart-block .chart-container', { timeout: 15_000 });
@@ -130,7 +130,7 @@ for (const theme of listThemes().map(({ id }) => id)) {
   });
 }
 
-test('chart canvas re-themes on a live data-theme change (018)', async ({ page }) => {
+test('chart canvas re-themes on a live data-theme change', async ({ page }) => {
   test.setTimeout(45_000);
   await page.goto('gallery.html?theme=wa2-dark', { waitUntil: 'networkidle' });
   await page.waitForSelector('agent-chart-block .chart-container', { timeout: 15_000 });

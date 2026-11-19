@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { openPanel, sendChat } from './helpers';
 
-// 104/001 — USER.md and MEMORY.md reach the model in the first message of an
+// USER.md and MEMORY.md reach the model in the first message of an
 // Agent page chat, and never in the bubble.
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 

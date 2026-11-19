@@ -4,7 +4,7 @@ import { openPanel, sendChat, waitForTurnComplete } from './helpers';
 import type { ChatPanelProbe } from './dom-types';
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
-// Deterministic mock-tier e2e for turn-level error recovery (044). Scripts are
+// Deterministic mock-tier e2e for turn-level error recovery. Scripts are
 // arrays of MockResponse consumed one per model call (retries included), so
 // `maxRetries` set via `panel.config` before the first send controls exactly
 // how many scripted entries a turn consumes. Small maxRetries (0-2) keeps the
@@ -127,7 +127,7 @@ test('terminal 400: failed notice immediately, no progress notice, no Retry', as
   await expect(notice.locator('.wa-notice-dismiss')).toBeEnabled();
 });
 
-// 006: the path no existing case covered. The four cases above all end their
+// The path no existing case covered. The four cases above all end their
 // transcript on the failed turn, or clear `failed` by rewriting that same turn
 // through retryLast(). None sends a NEW, different message after a failure,
 // which is exactly where the stale notice lived.

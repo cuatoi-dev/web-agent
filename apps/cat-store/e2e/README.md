@@ -4,29 +4,28 @@ Playwright end-to-end tests for the cat-store host app. Self-contained: helpers,
 fixtures, and config live in this folder (`helpers.ts`, `fixtures/`, `../playwright.config.ts`).
 
 ## Suites
-- `smoke.spec.ts` — panel opens, basic chat reply.
-- `functional.spec.ts` — chat, agent tool-loop (snapshot/navigate/click/fill/select/wait_for),
+- `smoke.mock.spec.ts` — panel opens, basic chat reply.
+- `functional.mock.spec.ts` — chat, agent tool-loop (snapshot/click/fill/select/wait_for),
   query_data/state, UI blocks + chart, add-to-cart + cart badge, mobile viewport.
-- `image.spec.ts` — **vision**: attach/paste/drag, downscale-hint toast, the model
-  describing a real image, transcript thumbnail, panel image overlay, reload behavior, the `see` tool.
+- `image-ui.mock.spec.ts` and `image-interaction.mock.spec.ts` — attach/paste/drag,
+  downscale-hint toast, transcript thumbnail, panel image overlay, and image turns.
+- Additional `*.mock.spec.ts` files cover sessions, themes, charts, MCP/OpenAPI tools, and layout.
 
 ## Running
 ```bash
 # Mock tier (default) — runs all mock e2e specs against local dev server.
-pnpm --filter cat-store test:e2e
+pnpm --filter @web-agent/cat-store test:e2e
 
 # Gallery capture — captures theme gallery screenshots on local dev server.
-pnpm --filter cat-store test:e2e:gallery
+pnpm --filter @web-agent/cat-store test:e2e:gallery
 ```
 Env switch: `E2E_ENV` (default `mock`; `local` uses `http://localhost:10030/`).
 
 ## Notes
-- Live-model tests run **serial** (`workers:1`) with `retries:2` to avoid the model
-  worker-concurrency cap and absorb throttle flakes.
+- Playwright runs **serial** (`workers: 1`) with `retries: 0` (`../playwright.config.ts`).
 - The composer is a **Material Web `<md-outlined-text-field>` (shadow DOM)** — the
   `sendChat` helper focuses the host and uses `keyboard.type` (not `.fill()`) so the
   Send button enables. Assistant replies are read from `.message-container.assistant .content`.
-- Vision model: `minimax-m3:cloud`.
 
 ## Prompt-cache smoke (non-gating)
 

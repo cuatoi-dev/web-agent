@@ -151,7 +151,7 @@ function buildPanelProps(
 ): PanelProps {
   const panel = {} as AgentChatPanel;
   if (target?.config) panel.config = target.config;
-  // Key gate (137/001): every /api/openai, /api/anthropic and /api/gemini call
+  // Key gate: every /api/openai, /api/anthropic and /api/gemini call
   // carries the gateway key in that route's own auth header, or the reverse
   // proxy rejects it with 401. `process.env.WEB_AGENT_TOKEN` is a build-time
   // constant, injected by webpack.config.js's DefinePlugin — not a source
@@ -210,12 +210,12 @@ function buildPanelProps(
   ];
   const schedulerEnabled = panel.config?.scheduler?.enabled !== false;
   const todoEnabled = panel.config?.todo?.enabled !== false;
-  // 069 — the agent's virtual file system (ten tools), default layout:
+  // The agent's virtual file system (ten tools), default layout:
   // /tmp on sessionStorage, /home/agent and /home/shared on localStorage.
-  // 125/001: read-only host mount at /store for store promotions.
-  // 104/001: memory (USER.md, MEMORY.md) only when the caller turns it on —
+  // Read-only host mount at /store for store promotions.
+  // Memory (USER.md, MEMORY.md) only when the caller turns it on —
   // the Agent page does, the bubble does not.
-  // 104/002: created here, above panel.skills, because memorySkills() reads the
+  // Created here, above panel.skills, because memorySkills() reads the
   // provider's resolved memory options. It is added to toolProviders below.
   const vfs = vfsTools({
     mounts: {
@@ -235,10 +235,10 @@ function buildPanelProps(
     panelChartSkill,
     shopManagerReportSkill,
     ...(schedulerEnabled ? [stockMonitorSkill] : []),
-    // 104/002 — [] when memory is off, so the bubble has neither skill.
+    // [] when memory is off, so the bubble has neither skill.
     ...memorySkills(vfs),
   ];
-  // Async skill seam (idea 102 task 001): skills the user stored in this
+  // Async skill seam: skills the user stored in this
   // browser. The namespace matches sessionNamespace below, so cat-store's
   // stored skills never collide with another app on the same origin. A stored
   // skill with the same name as one above replaces it.
@@ -251,7 +251,7 @@ function buildPanelProps(
   // under a path prefix such as /cat-store/ and strips that prefix).
   // `demomcp` is required (a connect/discover failure is a hard startup error).
   // Test seam __WA_EXTRA_MCP_SERVERS__ allows e2e specs to inject optional servers.
-  // 007: the host owns the confirm-scrim wiring too — it is the only layer
+  // The host owns the confirm-scrim wiring too — it is the only layer
   // that knows both @cuatoi/web-agent-lit (the dialog) and
   // @cuatoi/web-agent-dom (the "ask"-tier permission check).
   const extraMcpServers = window.__WA_EXTRA_MCP_SERVERS__ ?? [];
@@ -283,7 +283,7 @@ function buildPanelProps(
         required: true,
       },
     ]),
-    // 104/002 — the same provider that panel.skills read, created above.
+    // The same provider that panel.skills read, created above.
     vfs,
   ];
   panel.config = {

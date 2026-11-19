@@ -34,7 +34,7 @@ Subtree & Provided theme example:
 
 ```html
 <div data-theme="wa2-light">
-  <!-- Inherits all 352 base wa2-light tokens, overrides two -->
+  <!-- Inherits all 353 base wa2-light tokens, overrides two -->
   <div data-theme="provided" style="--wa-action-color-info: #c2185b; --wa-border-color: #e0e0e0;">
     <agent-chat-panel></agent-chat-panel>
   </div>
@@ -57,13 +57,13 @@ Override any token by re-declaring it on `:root` or a parent element:
 ```
 
 See `packages/web-agent-lit/src/themes/TOKENS.md` for the full reference of all
-352 `--wa-*` design tokens.
+353 `--wa-*` design tokens.
 
 ## Level 2: Beer CSS theming
 
 The default UI uses [Beer CSS](https://www.beercss.com) classes. The library
 is vendored at `apps/docs-site/vendor/beercss/` and loaded by the docs site in
-`src/engine/index.html`:
+`apps/docs-site/src/engine/index.html`:
 
 ```html
 <link rel="stylesheet" href="vendor/beercss/beer.min.css" />
@@ -84,7 +84,7 @@ overriding its CSS variables:
 }
 ```
 
-The default element set (`src/ui/wa-elements.ts`) applies Beer CSS classes to
+The default element set (`packages/web-agent-lit/src/ui/wa-elements.ts`) applies Beer CSS classes to
 the vanilla DOM node each `<wa-*>` tag builds:
 
 | Role | Default class | Beer CSS pattern |
@@ -181,12 +181,12 @@ excluded from the build entirely.
   it is tree-shaken away
 - Your element set side-effect-imports only the components you need
 - The panel layout (flex, scroll regions, container queries) stays the same
-  since it lives in `src/ui/styles.ts` which is not aliased
+  since it lives in `packages/web-agent-lit/src/ui/styles.ts` which is not aliased
 
 ## Layout without Beer CSS
 
 If you swap the registry and do not load Beer CSS, the panel still works. The
-layout CSS in `src/ui/styles.ts` provides vanilla styles:
+layout CSS in `packages/web-agent-lit/src/ui/styles.ts` provides vanilla styles:
 
 - `.wa-panel-root` — container query, flex column
 - `.wa-composer` — flex wrap input + buttons

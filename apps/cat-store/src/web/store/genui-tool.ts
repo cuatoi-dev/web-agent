@@ -14,7 +14,7 @@ export type { GenuiToolHost } from "./types";
  *  lost: the collector keeps buffering and the next call's drain returns it. */
 export const GENUI_DRAIN_SETTLE_MS = 300;
 
-/** Per-entry and per-result caps. See "The result budget" in the task file. */
+/** Per-entry and per-result diagnostic caps. */
 export const DIAGNOSTIC_ENTRY_MAX_CHARS = 500;
 export const MAX_DIAGNOSTIC_ENTRIES = 20;
 export const DEFAULT_RESULT_MAX_CHARS = 6_000;

@@ -2,14 +2,12 @@
  *  that keep a dragged right-panel width inside them. Moved out of
  *  `agent-page.ts` unchanged. */
 
-/** Left column — session history. Task 004 fills it. Fixed by the user on
- *  2026-08-12. */
+/** Left column — session history. */
 export const AGENT_SESSIONS_COLUMN_WIDTH_PX = 200;
 /** Right column — hosts the generative UI frame.
- *  The raw task fixed only "a fixed width"; 320px matches the widest chart card
- *  the charting renderers produce and still leaves the chat column the majority
- *  of a 1280px viewport (760px). Task 005 keeps it as the starting width; the
- *  user can drag it or collapse it from there. */
+ *  320px matches the widest chart card the charting renderers produce and
+ *  still leaves the chat column the majority of a 1280px viewport (760px).
+ *  This is the starting width; the user can drag or collapse it from there. */
 export const AGENT_RIGHT_PANEL_WIDTH_PX = 320;
 
 /** The right panel never drags below this. */

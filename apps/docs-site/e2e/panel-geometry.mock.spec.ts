@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { openBubble } from './helpers';
 
-test.describe('002: panel geometry comes from its container', () => {
+test.describe('panel geometry comes from its container', () => {
   test('default bubble box is 480 x min(660, 80vh)', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await openBubble(page);

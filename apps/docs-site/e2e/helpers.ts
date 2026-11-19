@@ -12,7 +12,7 @@ export const ARTIFACTS_DIR = path.resolve(__dirname, 'artifacts');
 export async function openBubble(page: Page) {
   await page.goto('', { timeout: 30_000 });
 
-  // 003: wait on the launcher button, not the `web-agent-bubble` host — the
+  // Wait on the launcher button, not the `web-agent-bubble` host — the
   // host carries no CSS of its own (default `display: inline`) and its shadow
   // content is all `position: fixed`, so the host's own bounding box collapses
   // to 0x0 and Playwright's `state: 'visible'` never resolves against it. The
@@ -37,7 +37,7 @@ export async function sendChat(page: Page, text: string) {
 
 export async function waitForAssistantReply(page: Page, timeout = 120_000): Promise<string> {
   await page.waitForFunction(() => {
-    // 003: agent-chat-panel now lives inside <web-agent-bubble>'s OPEN shadow
+    // Agent-chat-panel now lives inside <web-agent-bubble>'s OPEN shadow
     // root, so a raw document.querySelector no longer finds it — go through
     // the bubble's shadowRoot explicitly.
     const root = (document.querySelector('docs-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot;
@@ -135,7 +135,7 @@ export async function lastAssistantHtml(page: Page): Promise<string> {
 export async function waitForTurnComplete(page: Page, timeout = 150_000) {
   // Wait for turn to start (running === true) — short timeout, swallow if already done
   await page.waitForFunction(
-    // 003: pierce the bubble's shadow root explicitly — see waitForAssistantReply.
+    // Pierce the bubble's shadow root explicitly — see waitForAssistantReply.
     () => (document.querySelector('docs-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel')?.running === true,
     undefined,
     { polling: 200, timeout: 8_000 },
@@ -150,7 +150,7 @@ export async function waitForTurnComplete(page: Page, timeout = 150_000) {
   await page.waitForTimeout(500);
 }
 
-// ─── Demo helpers (task 004549-005) ────────────────────────────────────────
+// ─── Demo helpers ────────────────────────────────────────
 
 const PROMPTS_LOG = path.resolve(__dirname, '../test-results/demo-prompts.jsonl');
 

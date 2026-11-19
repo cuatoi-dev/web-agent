@@ -2,7 +2,7 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import wa from "./eslint-rules/index.mjs";
 
-// One eslint config for the whole workspace. Task 019, 2026-09-01.
+// One eslint config for the whole workspace.
 //
 // `ignores` and `files` patterns below resolve against THIS file's directory
 // (the workspace root), NOT the directory eslint runs in, so every pattern
@@ -160,7 +160,7 @@ export default tseslint.config(
     },
   },
   {
-    // Task 001, 2026-09-09. `.js` import specifiers in the units that resolve
+    // `.js` import specifiers in the units that resolve
     // with `moduleResolution: "Bundler"`. Webpack resolves a relative
     // specifier literally, so `./store.js` names a file that does not exist
     // and the importing module silently ends up with no exports.
@@ -224,7 +224,6 @@ export default tseslint.config(
     // helpers are test infrastructure and relax with the tests. Every other
     // rule — require-await, unbound-method, no-floating-promises,
     // no-misused-promises and all core rules — stays ON here.
-    // Task 001, 2026-09-02.
     files: [
       "**/*.test.ts",
       "**/*.spec.ts",
@@ -245,7 +244,7 @@ export default tseslint.config(
     // module generates and runs it against a fake `window`/`console`.
     // `new Function` IS the thing under test, so the rule cannot be
     // satisfied without changing what the test proves. Scoped to this one
-    // file; 3 findings suppressed. Task 016, 2026-09-01.
+    // file; 3 findings suppressed.
     files: ["apps/cat-store/src/server/genui-bootstrap.test.ts"],
     rules: { "@typescript-eslint/no-implied-eval": "off" },
   },
@@ -255,7 +254,7 @@ export default tseslint.config(
     // so it reads the shipped string rather than a pasted copy of it.
     // `new Function` IS how it turns that source text into an object; the
     // rule cannot be satisfied without changing what the test proves. Scoped
-    // to this one file. Task 006, 2026-09-16.
+    // to this one file.
     files: ["apps/docs-site/src/demo-skill.test.ts"],
     rules: { "@typescript-eslint/no-implied-eval": "off" },
   },
@@ -264,7 +263,7 @@ export default tseslint.config(
     // with `new Function` to prove the exact string CDP receives is valid,
     // runnable JavaScript with no free module-level names. `new Function` IS
     // the thing under test; the rule cannot be satisfied without changing
-    // what the test proves. Scoped to this one file. Task 131/001, 2026-09-19.
+    // what the test proves. Scoped to this one file.
     files: ["packages/web-agent-browser/src/lib/cdp-page-source.test.ts"],
     rules: { "@typescript-eslint/no-implied-eval": "off" },
   },

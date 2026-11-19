@@ -13,7 +13,7 @@ const ARTIFACTS_DIR = path.resolve(
 );
 
 /**
- * 003410-005: `.message-container.assistant`'s only child is now the
+ * `.message-container.assistant`'s only child is now the
  * `<wa-working-dots>` tag, not the bare `<div>` directly — the fade-in
  * animation and the bouncing spans still live on ITS own inner `<div>`
  * (both registries: default registry class="wa-working-dots"; cat-store
@@ -35,7 +35,7 @@ const CONTRAST_PROBE = `(() => {
     });
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   };
-  // 003: the "live turn" group opens the real bubble (agent-chat-panel lives
+  // The "live turn" group opens the real bubble (agent-chat-panel lives
   // in its OPEN shadow root); the "gallery — cat-store override" group uses
   // gallery.html?frame=..., which mounts agent-chat-panel in a plain <div> on
   // document.body with no bubble at all. Fall back to document when there is
@@ -76,7 +76,7 @@ async function toggleTheme(page: Page) {
 async function waitForDotsOpaque(page: Page, timeout = 5_000) {
   await page.waitForFunction(
     (sel) => {
-      // 003: see CONTRAST_PROBE — fall back to document when there is no
+      // See CONTRAST_PROBE — fall back to document when there is no
       // bubble (gallery.html?frame=... mounts the panel directly).
       const root = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot ?? document;
       const el = root.querySelector(sel);

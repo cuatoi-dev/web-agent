@@ -1,14 +1,14 @@
 import { test, expect } from './fixtures';
 import { openPanel, gotoCart, clearCartViaUI, shot, sendChat, waitForTurnComplete, getCartBadge } from './helpers';
 
-// idea-022 fenced UI — DETERMINISTIC (no live LLM):
+// Fenced UI — DETERMINISTIC (no live LLM):
 //   (A) the real fenced data-agent-permission attributes render on the live cart DOM
 //   (B/C/D) the confirm scrim renders over the chat panel and Allow/Reject/Escape resolve
 //   (E) a live agent turn drives the click tool through the open shadow roots of
 //       marked md-icon-button (ask) and md-filled-button (block) hosts — the scrim
 //       gates the ask-tier click, the block-tier click is refused with no dialog
-// The full DomAdapter gate path is covered by web-agent-dom unit tests (task 001);
-// the cat-store attribute conditionals by cart-view.test.ts (task 004). This spec
+// The full DomAdapter gate path is covered by web-agent-dom unit tests;
+// the cat-store attribute conditionals by cart-view.test.ts. This spec
 // covers the deployed-DOM + live-scrim integration that unit tests cannot.
 
 // State-driven shadow-host permission script, self-contained for .toString()
@@ -87,7 +87,7 @@ async function seedCart(page: Page) {
   );
 }
 
-test.describe('idea-022 fenced UI', () => {
+test.describe('fenced UI', () => {
   test('A: fenced data-agent-permission attributes render on the live cart DOM', async ({ page }) => {
     await openPanel(page);
     await clearCartViaUI(page);

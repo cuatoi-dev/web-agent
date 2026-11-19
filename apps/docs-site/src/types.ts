@@ -38,7 +38,7 @@ export type GalleryStateId =
   | 'choose-model'
   | 'pointed-sent'
   | 'present-demo'
-  // Folded dev demo (task 010). Renders in `?frame=<id>` mode, skipped in catalog strip.
+  // Folded dev demo. Renders in `?frame=<id>` mode, skipped in catalog strip.
   | 'demo-cues'
   | 'cues-demo';
 
@@ -62,9 +62,9 @@ export interface GalleryState {
   debugOpen?: boolean;
   /** Demo-only: enables the debug flag so the header kebab menu gains a Debug item. */
   debug?: boolean;
-  /** Demo-only: host model list for the kebab "Choose model" group (067-ui). */
+  /** Demo-only: host model list for the kebab "Choose model" group. */
   models?: ModelOption[];
-  /** Demo-only: opens the header kebab menu for the capture (067-ui). */
+  /** Demo-only: opens the header kebab menu for the capture. */
   menuOpen?: boolean;
   // 045b avatar/naming config (applied by the gallery host, not SessionState)
   agentName?: string;

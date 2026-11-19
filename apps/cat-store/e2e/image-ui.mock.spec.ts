@@ -60,7 +60,7 @@ test('overlay: opens on thumbnail click inside the panel, closes on Escape', asy
   await expect(page.locator('agent-chat-panel .wa-image-overlay')).toHaveCount(0, { timeout: 3_000 });
 });
 
-test('overlay: Tab then Escape closes it (003410-002 — Escape listener is not once-only)', async ({ page }) => {
+test('overlay: Tab then Escape closes it (Escape listener is not once-only)', async ({ page }) => {
   test.setTimeout(30_000);
   await attachImage(page);
   await page.evaluate((dataUrl) => {

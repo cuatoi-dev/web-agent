@@ -119,7 +119,7 @@ function renderFrameMode(gs: GalleryState) {
   if (gs.menuOpen) {
     panel.menuOpen = true;
   }
-  // 002: the panel fills its container, so this page (the host) owns the
+  // The panel fills its container, so this page (the host) owns the
   // floating box it used to draw for itself.
   const frameBox = document.createElement('div');
   frameBox.style.cssText = 'position:fixed;right:20px;bottom:20px;width:480px;height:660px;';

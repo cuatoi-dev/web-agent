@@ -63,7 +63,7 @@ async function toggleTheme(page: import("@playwright/test").Page) {
  * (cat-store's registry override, apps/cat-store/src/acme-registry.ts, animates
  * it in with `wa-fade-in 0.2s 400ms both`).
  *
- * Task 017 established why the dots were invisible: the dot colour resolved to
+ * Why the dots used to be invisible: the dot colour resolved to
  * --wa-text-color-disabled, which is 2.26:1 against the light transcript
  * background. The colour now comes from --wa-text-color and is asserted by
  * measured contrast in working-dots.mock.spec.ts. This helper still waits only

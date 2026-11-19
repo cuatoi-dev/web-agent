@@ -21,14 +21,14 @@ declare global {
     __scrim?: unknown;
     /** Toast messages captured off the `agent-toast` DOM event. */
     __toasts?: string[];
-    /** True when the panel had a host `notify` callback at probe time (008). */
+    /** True when the panel had a host `notify` callback at probe time. */
     __hadNotify?: boolean;
     /** `snapshot_page` tool-result text captured by the shadow-host mock
      *  script in fenced-ui.mock.spec.ts. */
     __SHADOW_HOST_SNAPSHOT__?: string;
     /** `click` tool-result text for the block-tier refusal, same script. */
     __SHADOW_HOST_BLOCK_RESULT__?: string;
-    /** create-skill-no-owner.mock.spec.ts (120/004): the create_skill
+    /** create-skill-no-owner.mock.spec.ts: the create_skill
      *  input_schema from the first model call's tool list. */
     __CAT_CREATE_SKILL_SCHEMA__?: Record<string, unknown> | null;
     /** attach-folder.mock.spec.ts and memory-loader.mock.spec.ts: the text of

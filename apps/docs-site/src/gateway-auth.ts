@@ -1,4 +1,4 @@
-// 137/001 — the gateway accepts only each route's own auth header, so a
+// The gateway accepts only each route's own auth header, so a
 // request to an LLM route carries the key in that header. Any other path
 // (orders, MCP, genui) is sent unchanged.
 

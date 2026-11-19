@@ -11,7 +11,7 @@ import {
 
 const VIEWPORT = { width: 1280, height: 800 };
 
-describe("resizeFromGrip (003)", () => {
+describe("resizeFromGrip", () => {
   it("a zero-distance drag returns the start size", () => {
     expect(resizeFromGrip({ width: 500, height: 600 }, 0, 0, VIEWPORT)).toEqual({
       width: 500,
@@ -72,7 +72,7 @@ describe("resizeFromGrip (003)", () => {
   });
 });
 
-describe("clampPanelSize (003)", () => {
+describe("clampPanelSize", () => {
   it("a size already inside the bounds is returned unchanged", () => {
     expect(clampPanelSize({ width: 500, height: 500 }, VIEWPORT)).toEqual({
       width: 500,
@@ -96,10 +96,10 @@ describe("clampPanelSize (003)", () => {
   });
 });
 
-describe("enablePanelResize (002)", () => {
+describe("enablePanelResize", () => {
   function stubBubble(): HTMLElement {
     const bubble = document.createElement("web-agent-bubble");
-    // 003: enablePanelResize reads and writes the bubble's OPEN shadow root.
+    // enablePanelResize reads and writes the bubble's OPEN shadow root.
     const root = bubble.attachShadow({ mode: "open" });
     const container = document.createElement("div");
     container.id = "panel-container";

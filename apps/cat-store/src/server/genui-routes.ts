@@ -44,7 +44,7 @@ export function renderGenuiFrameHtml(profile: "material" | "plain" = "material")
            tokens, so they fall back to Material's own light-baseline
            defaults regardless of data-theme. That is what made a pre-filled
            md-outlined-text-field's value text measure 1.06:1 against its own
-           field in the wa2-dark theme (task 008 review). Map every colour
+           field in the wa2-dark theme. Map every colour
            property onto the same --wa-* tokens the host chrome already
            uses (agent-page.ts / acme-registry.ts), so the field flips with
            data-theme exactly like the rest of the panel. Label colours use

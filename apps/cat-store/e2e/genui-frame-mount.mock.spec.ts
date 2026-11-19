@@ -3,7 +3,7 @@ import { chooseTheme, gotoAgentPage } from './helpers';
 import path from 'path';
 import fs from 'fs';
 
-// Task 004: genui frame mount — Material render, replacement, plain profile,
+// Genui frame mount — Material render, replacement, plain profile,
 // theme sync, and drag-resize (pointer-events:none on iframe).
 
 const ARTIFACTS_DIR = path.resolve(

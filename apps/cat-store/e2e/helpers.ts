@@ -7,7 +7,7 @@ export const TEST_IMAGE = path.resolve(__dirname, 'fixtures/004-test-rainbow.png
 export const ARTIFACTS_DIR = path.resolve(__dirname, 'artifacts');
 
 /**
- * Agent-init settle gate (task 011).
+ * Agent-init settle gate.
  *
  * The panel is created on the FIRST launcher click (web-agent-embed.ts:346), so
  * `page.goto(..., { waitUntil: 'networkidle' })` cannot cover the fetches the
@@ -67,7 +67,7 @@ export async function waitForAgentInitSettled(page: Page, timeout = 30_000) {
     // loadConfiguredToolProviders() and loadConfiguredSkillRegistry()
     // (controller.ts:170-188) — and both call initAgent() before returning. So
     // once this is set, every describe fetch of this page load has been issued.
-    // 003: agent-chat-panel now lives inside <web-agent-bubble>'s OPEN shadow
+    // Agent-chat-panel now lives inside <web-agent-bubble>'s OPEN shadow
     // root, so a raw document.querySelector no longer finds it — go through
     // the bubble's shadowRoot explicitly.
     const panel = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel') as ChatPanelProbe | null;
@@ -101,7 +101,7 @@ export async function openPanel(page: Page) {
   await page.locator('agent-chat-panel #input').waitFor({ state: 'visible', timeout: 15_000 });
 
   // Do not return while the agent is still fetching: a later page.goto /
-  // page.reload would cancel that fetch and trip the console guard (task 011).
+  // page.reload would cancel that fetch and trip the console guard.
   await waitForAgentInitSettled(page);
 }
 
@@ -148,7 +148,7 @@ export async function submitComposer(page: Page, text: string) {
   await page.locator('agent-chat-panel #input').click();
   await page.waitForTimeout(100);
   await page.evaluate(() => {
-    // 003: pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
+    // Pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
     const el = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel #input') as ComposerInputProbe | null;
     if (el) el.value = '';
   });
@@ -163,7 +163,7 @@ export async function submitComposer(page: Page, text: string) {
 
 export async function waitForAssistantReply(page: Page, timeout = 120_000): Promise<string> {
   await page.waitForFunction(() => {
-    // 003: pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
+    // Pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
     const root = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot;
     const vs = [...(root?.querySelectorAll('agent-message-view') ?? [])].filter(v => v.querySelector('.assistant'));
     if (vs.length === 0) return false;
@@ -320,7 +320,7 @@ export async function getLinePromoBadge(page: Page, productId: string): Promise<
 export async function waitForTurnComplete(page: Page, timeout = 150_000) {
   // Wait for turn to start (running === true) — short timeout, swallow if already done
   await page.waitForFunction(
-    // 003: pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
+    // Pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
     () => ((document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel') as ChatPanelProbe | null)?.running === true,
     undefined,
     { polling: 200, timeout: 8_000 },
@@ -369,7 +369,7 @@ export function attachmentIcon(page: Page, providerId = 'image') {
 export async function attachImage(page: Page, file = TEST_IMAGE) {
   await page.locator('agent-chat-panel input[type="file"][accept="image/*"]').setInputFiles(file);
   await page.waitForFunction(() => {
-    // 003: pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
+    // Pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
     const s = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel .wa-thumb-strip') as HTMLElement | null;
     return s && getComputedStyle(s).display !== 'none' && s.querySelector('img');
   }, { timeout: 10_000, polling: 500 });
@@ -384,7 +384,7 @@ export async function pasteImage(page: Page, file = TEST_IMAGE) {
     const blob = await resp.blob();
     const dt = new DataTransfer();
     dt.items.add(new File([blob], 'pasted.png', { type: 'image/png' }));
-    // 003: pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
+    // Pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
     const input = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel #input');
     if (input) {
       input.dispatchEvent(new ClipboardEvent('paste', {
@@ -408,7 +408,7 @@ export async function dropImage(page: Page, file = TEST_IMAGE) {
     return { name: 'drop.png', mimeType: 'image/png', buffer: Array.from(new Uint8Array(await blob.arrayBuffer())) };
   }, b64);
   await page.evaluate((p) => {
-    // 003: pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
+    // Pierce the bubble's shadow root explicitly — see waitForAgentInitSettled.
     const panel = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel');
     if (!panel) return;
     const file = new File([new Uint8Array(p.buffer)], p.name, { type: p.mimeType });
@@ -423,7 +423,7 @@ export async function dropImage(page: Page, file = TEST_IMAGE) {
   }, { timeout: 10_000, polling: 500 });
 }
 
-// ─── Demo helpers (task 004549-005) ────────────────────────────────────────
+// ─── Demo helpers ────────────────────────────────────────
 
 const PROMPTS_LOG = path.resolve(__dirname, '../test-results/demo-prompts.jsonl');
 

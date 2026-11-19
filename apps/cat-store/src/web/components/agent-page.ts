@@ -79,10 +79,9 @@ export class AgentPage extends LitElement {
   /** Read by the e2e specs through `page.evaluate`, so a spec never duplicates
    *  the list. The list itself lives in agent-panel-config.ts. */
   readonly _entries = PROVIDER_ENTRIES;
-  /** Current right-panel width in px. Not persisted — the shipped bubble grip
-   *  saves nothing (docs/tests/0031-drag-resize-chat-box.md:7) and this task
-   *  follows it. A reload, or leaving and re-entering #/agent, restores the
-   *  default. */
+  /** Current right-panel width in px. Not persisted — matching the bubble
+   *  grip behaviour. A reload, or leaving and re-entering #/agent, restores
+   *  the default. */
   @state() private _sideWidth = AGENT_RIGHT_PANEL_WIDTH_PX;
   /** true → the right panel is hidden and the chat takes its width. The width
    *  above is kept, so expanding restores what the user dragged. */
@@ -374,7 +373,7 @@ export class AgentPage extends LitElement {
   };
 
   /** Returns every diagnostic the frame reported since the previous drain, and
-   *  empties the buffer. Task 008 feeds this into the tool result. */
+   *  empties the buffer so the tool can include them in its result. */
   public drainDiagnostics(): GenuiDiagnostic[] {
     return this._diagnostics.drain();
   }
@@ -428,8 +427,7 @@ export class AgentPage extends LitElement {
     }
   }
 
-  /** Asks the frame to capture itself and returns the PNG data URL. Task 008
-   *  decides what of this goes into a tool result. */
+  /** Asks the frame to capture itself and returns the PNG data URL. */
   public async screenshot(timeoutMs?: number): Promise<GenuiScreenshotResult> {
     const iframe = this.shadowRoot?.querySelector(".genui-frame") as HTMLIFrameElement | null;
     if (!iframe) {

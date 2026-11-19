@@ -4,7 +4,7 @@ test('chart-datasource-demo: canvas has non-zero area (Chart.js)', async ({ page
   test.setTimeout(30_000);
 
   // Use full URL (baseURL + relative goto breaks dynamic chunk loading)
-  // 009: the datasource chart is now a gallery frame. `/public/cat-store/*`
+  // The datasource chart is now a gallery frame. `/public/cat-store/*`
   // 301-redirects to `/cat-store/*`, so the canonical path is used directly.
   await page.goto('http://localhost:28780/cat-store/gallery.html?frame=demo-chart-datasource');
 

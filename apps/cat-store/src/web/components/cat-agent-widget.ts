@@ -8,7 +8,7 @@ import "@cuatoi/web-agent-lit/embed/web-agent-embed";
 import type { WebAgentBubble } from "@cuatoi/web-agent-lit/embed/web-agent-embed";
 
 /**
- * 004 — the host wrapper that proves the nested shadow-DOM hosting pattern.
+ * The host wrapper that proves the nested shadow-DOM hosting pattern.
  *
  * It mirrors the internal `dracoda-widget`: a Lit element with a real shadow
  * root that holds <web-agent-bubble> inside it, so the nesting is

@@ -94,7 +94,7 @@ function mountPanel(state: SessionState, gs?: GalleryState): AgentChatPanel {
 }
 
 function renderFrameMode(gs: GalleryState) {
-  // 009: a folded dev demo owns the whole page and needs to scroll, so it does
+  // A folded dev demo owns the whole page and needs to scroll, so it does
   // not get the panel frame's `overflow:hidden`.
   document.body.style.cssText = gs.mount
     ? 'margin:0;padding:0;'
@@ -132,14 +132,14 @@ function renderFrameMode(gs: GalleryState) {
   if (gs.menuOpen) {
     panel.menuOpen = true;
   }
-  // 002: the panel fills its container, so this page (the host) owns the
+  // The panel fills its container, so this page (the host) owns the
   // floating box it used to draw for itself.
   const frameBox = document.createElement('div');
   frameBox.style.cssText = 'position:fixed;right:20px;bottom:20px;width:480px;height:660px;';
   frameBox.appendChild(panel);
   document.body.appendChild(frameBox);
 
-  // 010 — same ordering rule as the catalog: after the append.
+  // Same ordering rule as the catalog: after the append.
   if (gs.demoWindow) panel.demoWindow = gs.demoWindow;
 
   if (gs.overlay === 'confirm' && gs.confirmDetail) {
@@ -157,7 +157,7 @@ function renderCatalog(theme: GalleryTheme) {
   if (!strip) return;
 
   for (const gs of GALLERY_STATES) {
-    // 009: folded dev demos render only in `?frame=` mode. Adding them as
+    // Folded dev demos render only in `?frame=` mode. Adding them as
     // tiles would put blocks-demo's two deliberate rejection charts on this
     // page, and finance-charts.mock.spec.ts:42 asserts it holds zero
     // `.error-card`.
@@ -173,7 +173,7 @@ function renderCatalog(theme: GalleryTheme) {
       const bubble = document.createElement('web-agent-bubble') as WebAgentBubble;
       if (gs.agentShortName) bubble.agentShortName = gs.agentShortName;
       if (gs.agentAvatar) bubble.agentAvatar = gs.agentAvatar;
-      // 008: cat-store vendors no icon font, so the component default
+      // Cat-store vendors no icon font, so the component default
       // <i>chat</i> renders the icon NAME as text. Use the same glyph the
       // live launcher uses (index.ts). Guarded on agentAvatar because
       // launcherIcon takes precedence over the avatar in the component
@@ -218,7 +218,7 @@ function renderCatalog(theme: GalleryTheme) {
     caption.style.cssText = 'padding: var(--wa-padding-m, 8px) 0 var(--wa-padding-s, 4px);font-size:0.85rem;color:var(--wa-label-color, #555);';
     figure.appendChild(caption);
     strip.appendChild(figure);
-    // 010 — after the append, never before: `demoWindow` parks the real list at
+    // After the append, never before: `demoWindow` parks the real list at
     // a scroll position, and a disconnected element has no layout, so an
     // earlier write would be clamped to 0.
     if (panelEl && gs.demoWindow) panelEl.demoWindow = gs.demoWindow;

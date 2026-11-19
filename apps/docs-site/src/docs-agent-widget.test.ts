@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import "./docs-agent-widget";
 import type { DocsAgentWidget } from "./docs-agent-widget";
 
-describe("DocsAgentWidget (005)", () => {
+describe("DocsAgentWidget", () => {
   let widget: DocsAgentWidget;
 
   beforeEach(() => {

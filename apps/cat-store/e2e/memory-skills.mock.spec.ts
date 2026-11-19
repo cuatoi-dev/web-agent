@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { openPanel, sendChat } from './helpers';
 import type { AgentPageProbe, ChatPanelProbe, WebAgentBubbleProbe } from './dom-types';
 
-// 104/002 — the remember and onboarding skills are configured on the Agent page
+// The remember and onboarding skills are configured on the Agent page
 // only, and the model sees them in the # Skills prompt section.
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 

@@ -12,7 +12,7 @@ import type {
 // "node" — see vitest.config.ts); the per-file override above pulls in jsdom
 // (added as a devDependency for this test) without changing the other tests.
 //
-// 004: docs-site wires `bubble.hooks.onUserPrompt` to prepend the current
+// Docs-site wires `bubble.hooks.onUserPrompt` to prepend the current
 // page location as context. <docs-agent-widget> must exist in the DOM BEFORE
 // the module is imported so wireAgent()'s top-level querySelector finds it —
 // a static top-level import would be hoisted ahead of any DOM setup in this
@@ -29,12 +29,12 @@ import type {
 // The DOM setup and the import live in `beforeAll`, not in the test: the
 // cold transform of the whole `web-agent-lit` source graph counts against
 // the 5000ms test timeout, and under a parallel `pnpm -r test` run it grows
-// past it (121/004 rejection). A hook has its own timeout budget, set here
+// past it. A hook has its own timeout budget, set here
 // to 30s, so the transform no longer risks the test's 5s.
 //
-// 005: the bubble is now hosted inside <docs-agent-widget>'s shadow root
+// The bubble is now hosted inside <docs-agent-widget>'s shadow root
 // rather than appended directly to the light DOM.
-describe("docs-embed hooks wiring (004)", () => {
+describe("docs-embed hooks wiring", () => {
   beforeAll(async () => {
     document.body.innerHTML = "<docs-agent-widget></docs-agent-widget>";
     window.location.hash = "#/guides/tools";

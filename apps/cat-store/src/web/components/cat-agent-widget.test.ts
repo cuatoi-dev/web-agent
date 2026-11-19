@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import "./cat-agent-widget";
 import type { CatAgentWidget } from "./cat-agent-widget";
 
-// 004: unit tests for <cat-agent-widget> — the shadow wrapper that hosts the bubble.
+// Unit tests for <cat-agent-widget> — the shadow wrapper that hosts the bubble.
 describe("CatAgentWidget", () => {
   let widget: CatAgentWidget;
 

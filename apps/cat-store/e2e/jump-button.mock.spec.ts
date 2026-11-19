@@ -101,7 +101,7 @@ test('jump-button S3 — press returns the list to the bottom and removes the bu
   await page.evaluate(() => {
     const panel = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document)
       .querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel');
-    // .wa-jump-btn (003410-005) is now the <wa-icon-button> wrapper, whose
+    // .wa-jump-btn is now the <wa-icon-button> wrapper, whose
     // own click listener sits on the real button one level inside — a real
     // user's mouse click lands there naturally (the wrapper contributes no
     // box of its own), but a JS .click() call must target it explicitly.
@@ -138,7 +138,7 @@ test('jump-button S4/S5 — centred over the list and clear of the composer', as
       const list = panel?.querySelector('.messages-list') as HTMLElement | null;
       const input = panel?.querySelector('.input-area') as HTMLElement | null;
       if (!wrapper || !list || !input) throw new Error('jump button geometry nodes not found');
-      // The wrapper is display: contents (003410-005) so it contributes no box
+      // The wrapper is display: contents so it contributes no box
       // of its own; measure the real button that carries the visible geometry.
       const btn = wrapper.querySelector('button, md-icon-button') ?? wrapper;
       const b = btn.getBoundingClientRect();
@@ -169,7 +169,7 @@ test('jump-button S6/S7/S9 — no count, an accessible name, and an SVG glyph', 
     const wrapper = panel?.querySelector('.wa-jump-btn') as HTMLElement | null;
     if (!wrapper) throw new Error('.wa-jump-btn not found');
     // aria-label lands on the real button one level inside the wrapper
-    // (003410-005); textContent/querySelector already traverse through it.
+    //; textContent/querySelector already traverse through it.
     const field = wrapper.querySelector('button, md-icon-button') ?? wrapper;
     return {
       text: wrapper.textContent ?? '',
@@ -198,7 +198,7 @@ test('jump-button S8 — keyboard focus is visibly indicated', async ({ page }) 
       .querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel');
     const wrapper = panel?.querySelector('.wa-jump-btn') as HTMLElement | null;
     if (!wrapper) throw new Error('.wa-jump-btn not found');
-    // The wrapper carries no tabindex of its own (003410-005) — .focus() and
+    // The wrapper carries no tabindex of its own — .focus() and
     // the :focus-visible outline both belong to the real button inside it.
     const btn = wrapper.querySelector('button, md-icon-button') ?? wrapper;
     btn.focus();
@@ -290,13 +290,13 @@ for (const theme of listThemes().map(({ id }) => id)) {
       const first = panel?.querySelector('.messages-list')?.firstElementChild;
       return { tag: first?.tagName ?? '', spans: first?.querySelectorAll('span').length ?? -1 };
     });
-    // 003410-005: the loader is now the <wa-working-dots> tag (its own inner
+    // The loader is now the <wa-working-dots> tag (its own inner
     // <div> sits one level inside it); querySelectorAll('span') already
     // traverses through that extra level, so the span count is unaffected.
     expect(loaderHead.tag).toBe('WA-WORKING-DOTS');
     expect(loaderHead.spans).toBe(3);
     await page.waitForTimeout(2000);
-    // Round 2: DOM shape is not enough — the rejection showed three spans can
+    // DOM shape is not enough — three spans can
     // be present yet sub-pixel. Assert visibility: non-zero computed opacity
     // AND a non-trivial bounding width on every dot, so a bounce-stuck or
     // scale(0) dot fails this case. If the dots are invisible again, `minW`
@@ -305,7 +305,7 @@ for (const theme of listThemes().map(({ id }) => id)) {
       const panel = document.querySelector('agent-chat-panel');
       const host = panel?.querySelector('.messages-list')?.firstElementChild as HTMLElement | null;
       // The fade-in animation is inline style on the <wa-working-dots> tag's
-      // own inner <div> (003410-005), one level below the host measured above.
+      // own inner <div>, one level below the host measured above.
       const first = (host?.firstElementChild as HTMLElement | null) ?? host;
       const dots = first ? Array.from(first.querySelectorAll('span')) : [];
       const perDot = dots.map((s) => {

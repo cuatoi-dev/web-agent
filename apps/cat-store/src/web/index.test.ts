@@ -5,7 +5,7 @@ import { navigate } from "./router";
 import type { WebAgentBubble } from "@cuatoi/web-agent-lit/embed/web-agent-embed";
 import { setToast } from "./store/ui-slice";
 
-// 010: cat-store wires all seven `panel.hooks` as console loggers. The
+// Cat-store wires all seven `panel.hooks` as console loggers. The
 // per-tool completion toast was removed; `panel.notify` (the general toast
 // channel) stays.
 describe("web/index hooks wiring", () => {
@@ -36,7 +36,7 @@ describe("web/index hooks wiring", () => {
     spy = vi.spyOn(console, "log").mockImplementation(() => {});
     document.body.innerHTML = '<div id="app"></div><div data-agent-ui></div>';
     await import("./index");
-    // 004: the bubble now lives inside <cat-agent-widget>'s shadow root.
+    // The bubble now lives inside <cat-agent-widget>'s shadow root.
     const widget = document.querySelector("[data-agent-ui] cat-agent-widget");
     bubble = widget!.shadowRoot!.querySelector("web-agent-bubble") as WebAgentBubble;
   });
@@ -157,7 +157,7 @@ describe("web/index hooks wiring", () => {
   });
 
   it("the host mounts the widget, and the widget hosts the bubble", async () => {
-    // 004: cat-agent-widget wraps the bubble inside its own shadow root.
+    // Cat-agent-widget wraps the bubble inside its own shadow root.
     const widgetInDom = document.querySelector("[data-agent-ui] cat-agent-widget");
     expect(widgetInDom).not.toBeNull();
     // The bubble must NOT be a direct child of [data-agent-ui] (it lives in the shadow root).

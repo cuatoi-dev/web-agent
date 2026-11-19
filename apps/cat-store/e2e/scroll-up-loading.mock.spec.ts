@@ -56,7 +56,7 @@ async function readCounts(page: Page): Promise<{ views: number; rows: number }> 
 }
 
 /** The panel's `.messages-list`'s first element child, when it is the
- *  loader — the `<wa-working-dots>` tag (003410-005), whose own inner `<div>`
+ *  loader — the `<wa-working-dots>` tag, whose own inner `<div>`
  *  carries the fade-in animation and the three `span` children. */
 async function readLoaderState(page: Page): Promise<{ present: boolean; spanCount: number; opacity: number }> {
   return page.evaluate(() => {
@@ -183,7 +183,7 @@ async function runContrastProbeTop(page: Page): Promise<{ ratio: number; dotColo
   return page.evaluate(CONTRAST_PROBE_TOP);
 }
 
-test.describe('009: scroll-up window loading', () => {
+test.describe('scroll-up window loading', () => {
   test('B1: the window is active on a 1,800-row transcript', async ({ page }) => {
     await openPanel(page);
     await injectMessages(page, transcript(300, 4));

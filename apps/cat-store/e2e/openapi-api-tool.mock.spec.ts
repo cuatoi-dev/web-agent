@@ -42,7 +42,7 @@ test("declarative OpenAPI tool ordersApi_describeOrders executes against backend
 // the host (apps/cat-store/src/web/agent-panel-config.ts) whitelists only the first two. createOrder is a
 // mutating POST; it must never become a callable tool.
 //
-// `AgentChatPanel._availableTools()` is not the right proof for this. Since 110/004 it does
+// `AgentChatPanel._availableTools()` is not the right proof for this. It does
 // report the session's real resolved list, provider tools included (the controller folds them
 // into the agent's factory at packages/web-agent-core/src/controller-config.ts:219-233), so an absent
 // name there is evidence about the tool list — not about the network. The whitelist is a

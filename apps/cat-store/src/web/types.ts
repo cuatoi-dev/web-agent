@@ -41,13 +41,12 @@ export interface AgentPanelOptions {
    *  false → no DOM tools, no DOM skill, no action cue, no confirm scrim
    *  (full-page mode). */
   domAccess: boolean;
-  /** 104/001 — true → USER.md and MEMORY.md load into the first message of a
+  /** True → USER.md and MEMORY.md load into the first message of a
    *  chat, and the prompt carries the memory guideline (Agent page).
    *  false or absent → neither (bubble). The file tools see the files either way. */
   memory?: boolean;
   /** Supplied only by <agent-page>, which owns the generative UI frame. When
-   *  it is absent — bubble mode — render_agent_ui is not registered, which is
-   *  what keeps the bubble out of scope for task 008. */
+   *  it is absent — bubble mode — render_agent_ui is not registered. */
   genui?: GenuiToolHost;
 }
 

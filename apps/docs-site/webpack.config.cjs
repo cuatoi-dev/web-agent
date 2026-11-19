@@ -3,7 +3,7 @@ const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 
-// 137/001 — the gateway key: the env value, else the dev default. Used by
+// The gateway key: the env value, else the dev default. Used by
 // the build define and by the dev-server proxy below.
 const GATEWAY_KEY = process.env.WEB_AGENT_TOKEN || "wa-demo-token";
 
@@ -54,7 +54,7 @@ module.exports = {
     // a dependency no package here has any more.
     parser: { javascript: { dynamicImportMode: "eager" } },
     rules: [
-      // 005: pin `lit-html` to v1 ONLY for the modules that were already written
+      // Pin `lit-html` to v1 ONLY for the modules that were already written
       // against its v1 API (web-agent-lit's own templates, and docs-site's own
       // app.ts) — scoped by issuer, not global, so it does not also rewrite the
       // `lit` package's (v3) internal `lit-html` import. `docs-agent-widget.ts`
@@ -70,7 +70,7 @@ module.exports = {
     ],
   },
   plugins: [
-    // Key gate (137/001): bakes the gateway key into the bundle at build time
+    // Key gate: bakes the gateway key into the bundle at build time
     // so docs-embed.ts sends it in each LLM route's own auth header, without
     // hardcoding a literal in the source.
     new webpack.DefinePlugin({
@@ -88,7 +88,7 @@ module.exports = {
     devMiddleware: { publicPath: "/public/web-agent-docs/" },
     historyApiFallback: { index: "/public/web-agent-docs/index.html" },
     // Same method as cat-store: the three LLM routes → the reverse proxy on :30000; any other /api path → :28780.
-    // 137/001 — each LLM route gets its own auth header; any other /api
+    // Each LLM route gets its own auth header; any other /api
     // path is proxied with no header, as before.
     proxy: [
       { context: ["/api/openai"], target: "http://localhost:30000", changeOrigin: true,

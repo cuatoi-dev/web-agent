@@ -1,12 +1,12 @@
 import { test, expect } from './fixtures';
 import { chooseTheme, openPanel, shot } from './helpers';
 
-// 004: cat-store hosts the bubble inside <cat-agent-widget>'s shadow root.
+// Cat-store hosts the bubble inside <cat-agent-widget>'s shadow root.
 import type { ChatPanelProbe } from './dom-types';
 import type { WebAgentBubble } from '@cuatoi/web-agent-lit/embed/web-agent-embed';
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
-test.describe('004: the bubble is hosted inside a shadow wrapper', () => {
+test.describe('the bubble is hosted inside a shadow wrapper', () => {
   test('1: the widget owns a real open shadow root and the bubble lives inside it', async ({ page }) => {
     await openPanel(page);
     const shape = await page.evaluate(() => {

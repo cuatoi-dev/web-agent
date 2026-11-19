@@ -1,4 +1,4 @@
-// gallery-demos.ts — the six dev demos folded into the gallery (task 009).
+// gallery-demos.ts — the six dev demos folded into the gallery.
 //
 // Each entry renders only in `gallery.html?frame=<id>`: `renderFrameMode` in
 // gallery.ts strips the catalog scaffold and hands `document.body` to `mount`.

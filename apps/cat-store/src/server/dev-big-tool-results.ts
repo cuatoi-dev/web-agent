@@ -1,4 +1,4 @@
-// Development and test fixtures for the long-tool-result live proof. These are
+// Development and test fixtures for long-tool-result verification. These are
 // registered on the cat-store MCP server only when NODE_ENV is "development" or
 // "test", so production never advertises them. They build their strings in
 // memory — no network, no disk.

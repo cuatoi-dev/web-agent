@@ -28,7 +28,7 @@ test('attach: file input -> composer thumbnail', async ({ page }) => {
   const thumb = page.locator('agent-chat-panel .wa-thumb-strip img');
   await expect(thumb).toBeVisible();
 
-  // 009: the staged thumbnail is a matted card. The mat must not grow the
+  // The staged thumbnail is a matted card. The mat must not grow the
   // 56x56 outer footprint, and it must be a different surface from the strip.
   const box = (await thumb.boundingBox())!;
   expect(Math.round(box.width)).toBe(56);

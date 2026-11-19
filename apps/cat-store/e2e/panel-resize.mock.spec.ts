@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { openPanel, shot } from './helpers';
 
-// 003: drag the top-left grip to resize the open chat box.
+// Drag the top-left grip to resize the open chat box.
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
@@ -25,7 +25,7 @@ async function dragFromGrip(page: import('@playwright/test').Page, dx: number, d
   await page.mouse.up();
 }
 
-test.describe('003: drag the top-left grip to resize the chat box', () => {
+test.describe('drag the top-left grip to resize the chat box', () => {
   test('1: the grip is a 28x28 nwse-resize hit area; its inline-SVG arrow is hidden at rest and shown on hover', async ({ page }) => {
     await openPanel(page);
     const grip = page.locator('web-agent-bubble .wa-resize-grip');
@@ -295,7 +295,7 @@ test.describe('003: drag the top-left grip to resize the chat box', () => {
   });
 });
 
-test.describe('003: touch drag (iPad landscape)', () => {
+test.describe('touch drag (iPad landscape)', () => {
   test.use({ hasTouch: true, viewport: { width: 1024, height: 768 } });
 
   test('13: touch uses the same code path and clamps to the viewport maximum', async ({ page }) => {

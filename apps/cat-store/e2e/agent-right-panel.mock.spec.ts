@@ -3,7 +3,7 @@ import { chooseTheme, gotoAgentPage, reloadAgentPage, sendChat } from './helpers
 import path from 'path';
 import fs from 'fs';
 
-// 005: collapse and drag-resize the agent page's right panel.
+// Collapse and drag-resize the agent page's right panel.
 // Viewport is the project default (1280x800) from playwright.config.ts.
 
 const ARTIFACTS_DIR = path.resolve(

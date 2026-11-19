@@ -85,7 +85,7 @@ test('sessions: manual title-edit persists and shows in history list', async ({ 
   await page.locator('#history-anchor').waitFor({ state: 'visible', timeout: 15_000 });
 
   // Open inline title-edit by clicking the pencil icon button
-  // The pencil is pointer-events:none until the header is hovered (task 001),
+  // The pencil is pointer-events:none until the header is hovered,
   // and Playwright's "Receives Events" check is a hit test, so hover first.
   await page.locator('agent-chat-panel .header').hover();
   await page.locator('[aria-label="Edit session title"]').click();
@@ -94,7 +94,7 @@ test('sessions: manual title-edit persists and shows in history list', async ({ 
   // Set value on the vanilla input element and dispatch 'input' event so the
   // registry's textInput component fires onInput with the new value.
   await page.evaluate(() => {
-    // 003: pierce the bubble's shadow root explicitly — agent-chat-panel and
+    // Pierce the bubble's shadow root explicitly — agent-chat-panel and
     // its descendants now live there.
     const root = (document.querySelector('docs-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot;
     const input = root?.querySelector('.wa-title-edit-row .wa-input-container input.wa-input') as HTMLInputElement;

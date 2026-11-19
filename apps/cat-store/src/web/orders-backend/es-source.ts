@@ -6,7 +6,7 @@ import type { SourceEntry } from "@cuatoi/web-agent-lit";
  *  ORDERS_API in backend.ts:9. Never an Elasticsearch URL. */
 export const ES_PROXY_ENDPOINT = "/api/es-orders";
 
-/** The index task 003 created by hand. Read-only. */
+/** The seeded read-only Elasticsearch index. */
 export const ES_ORDERS_INDEX = "catstore-orders-v1";
 
 /**

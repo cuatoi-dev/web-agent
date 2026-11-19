@@ -1,5 +1,5 @@
 // gallery-states-charts.ts — the chart gallery states: the generic chart block
-// plus the finance charts added by task 072 (candlestick, payoff, equity,
+// plus the finance charts (candlestick, payoff, equity,
 // drawdown, volume, waterfall). Split out of gallery-states.ts; the states are
 // unchanged and stay in their original order.
 

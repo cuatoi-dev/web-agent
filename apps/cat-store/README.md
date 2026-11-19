@@ -4,6 +4,21 @@ Full-stack demo cat-store host application for the `@cuatoi/web-agent-*` package
 single-page application (SPA), an Express 5 backend orders API, and a remote
 Model Context Protocol (MCP) tool endpoint that shares the same `OrdersStore`.
 
+## Running locally
+
+This app is private and is not published on npm. Run it from the workspace root:
+
+```bash
+pnpm install
+# Terminal 1: build and start the Express orders and MCP server (port 20030)
+pnpm --filter @web-agent/cat-store build:server
+pnpm --filter @web-agent/cat-store start:server
+# Terminal 2: start the Webpack dev server (http://localhost:10030/)
+pnpm --filter @web-agent/cat-store dev
+```
+
+The Webpack dev server proxies `/api/orders` and `/mcp` to `http://localhost:20030`.
+
 ## Architecture
 
 - **SPA**: Lit 3 web components (`src/web`)
@@ -16,11 +31,12 @@ The app runs as a Node.js service on port `20030`, for example under pm2. A
 reverse proxy (Apache, nginx, Caddy or Traefik)
 serves it at the `/cat-store/` path and strips that prefix, so the app itself
 serves the REST API at `/api/orders` and MCP at `/mcp`. The same proxy serves
-the LLM routes described in `packages/web-agent-core/docs/providers.md`.
+the LLM routes described in [providers.md](../../packages/web-agent-core/docs/providers.md).
 
-- Local: `http://localhost:28780/cat-store/`
+- Local dev server: `http://localhost:10030/`
+- Backend server (direct): `http://localhost:20030/`
 
-## REST Orders API
+## REST orders API
 
 - `GET /api/orders` — query orders (JSON `q` param, DataQuery-style); returns
   rows plus `page.total`
@@ -31,7 +47,7 @@ the LLM routes described in `packages/web-agent-core/docs/providers.md`.
 
 Orders live in an in-memory `OrdersStore` and reset on restart.
 
-## Remote MCP Endpoint
+## Remote MCP endpoint
 
 The cat-store exposes a remote, stateless Model Context Protocol (MCP) server
 using the Streamable HTTP transport over JSON-RPC 2.0. Each request gets a fresh
@@ -39,13 +55,13 @@ server + transport (no session registry), so any number of clients can connect
 without state collisions.
 
 - **Endpoint Path**: `/mcp` (served at `/cat-store/mcp` behind the reverse proxy)
-- **Local URL**: `http://localhost:28780/cat-store/mcp`
+- **Local URL**: `http://localhost:20030/mcp` (or `http://localhost:10030/mcp` through the dev server proxy)
 - **Protocol Version**: `2025-11-25`
 - **Authentication**: unauthenticated (public)
 - **CORS**: wildcard (`Access-Control-Allow-Origin: *`), survives the reverse proxy hop
 - **Non-POST requests**: HTTP `405 Method Not Allowed` with a JSON body
 
-### Exposed Tools
+### Exposed tools
 
 #### `place_order`
 
@@ -63,7 +79,7 @@ as JSON text.
 | `itemCount` | integer | `1` |
 | `items` | string | `""` |
 
-### Example MCP Client Usage (TypeScript / Node.js)
+### Example MCP client usage (TypeScript / Node.js)
 
 ```typescript
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -71,7 +87,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 
 async function main() {
   const transport = new StreamableHTTPClientTransport(
-    new URL("http://localhost:28780/cat-store/mcp")
+    new URL("http://localhost:20030/mcp")
   );
 
   const client = new Client(

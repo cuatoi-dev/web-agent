@@ -44,7 +44,7 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
   const settings = buildGenerateSettings(cfg, ctx.app);
   const defs = (cfg.tools ?? defaultTools)(ctx);
   const { tools: toolDefs, executors } = buildTools(ctx, defs);
-  let _model: LanguageModel = providerRegistry.get(cfg, { fetch });
+  let _model: LanguageModel = providerRegistry.get(cfg, { fetch: cfg.fetch });
   // ...
   return {
     async generate({ messages, abortSignal, onStep }) {
@@ -63,10 +63,12 @@ export function createPageAgent(cfg: AgentConfig, ctx: ToolContext, cm: ContextM
 - **`buildTools(ctx, defs)`** (`src/tools/build-tools.ts`) — takes a flat
   `CustomToolDef[]` (`cfg.tools`, defaulting to `defaultTools(ctx)`) and
   returns a JSON-schema `toolDefs` array for the LLM and an `executors` map.
-  `defaultTools(ctx)` registers the core DOM/data tools plus `search_skills`,
-  `load_skill`, and `show_generative_ui`; optional tools like `show_chart` and
-  any host-defined tools are appended by the caller (`<agent-chat-panel>`
-  merges `panel.tools` in automatically).
+  `defaultTools(ctx)` (`packages/web-agent-core/src/tools/builders.ts`) registers
+  `wait`, `get_time`, the four data tools, `show_generative_ui`, skill tools,
+  compaction, scheduler, and todo tools. DOM tools (`domTools()`) come from
+  `@cuatoi/web-agent-dom`, chart tools (`show_chart`, `show_live_chart`) come
+  from `@cuatoi/web-agent-charting`, and host-defined tools are appended by the
+  caller (`<agent-chat-panel>` merges `panel.tools` in automatically).
 - **`providerRegistry.get(cfg)`** — resolves the `LanguageModel` for
   `cfg.endpointType` and wraps it with retry/timeout middleware.
 - **`cm.recordStep()`** — appends the step's new messages and audit entries to
@@ -106,8 +108,10 @@ metadata:
 
 ## Tool execution
 
-All tools are defined in `src/tools/definitions.ts` with Zod schemas. The
-`buildTools()` function in `src/tools/build-tools.ts`:
+The twelve DOM, `wait`, and data tool schemas live in
+`packages/web-agent-core/src/tools/definitions.ts` as raw JSON Schema objects
+(`JsonSchemaObject`); other tools declare their schemas in their own modules.
+The `buildTools()` function in `packages/web-agent-core/src/tools/build-tools.ts`:
 
 1. Iterates over `TOOL_DEFS` (a `Record<string, ToolDef>`)
 2. Wraps each executor via `wrapExecutor()` which:
@@ -119,45 +123,39 @@ All tools are defined in `src/tools/definitions.ts` with Zod schemas. The
 Each tool executor receives a `ToolContext`:
 
 ```ts
-// src/tools/build-tools.ts
+// packages/web-agent-core/src/tool-hooks.types.ts
 export interface ToolContext {
-  domAdapter: DomAdapter;
-  stateAdapter: StateAdapter;
   dataSource?: DataSourceProvider;
   app: AppContext;
   signal: AbortSignal;
-  imageInput?: boolean;             // when false, see tool is omitted
+  imageInput?: boolean;
   skills?: SkillDef[];              // merged skill registry
-  _onToolBlock?: (toolCallId: string, block: RenderableBlock) => void; // internal
+  hooks?: AgentHooks;
+  queryResultMaxChars?: number;
+  wideSourceFieldThreshold?: number;
+  skillRegistry?: SkillRegistry;
+  confirmInteraction?: (detail: ConfirmInteractionDetail) => Promise<boolean>;
+  readonly sessionId?: string;
 }
 ```
 
-The built-in tools and their executors live in `src/tools/*.ts`:
+The built-in tools live across `@cuatoi/web-agent-core`, `@cuatoi/web-agent-dom`,
+and `@cuatoi/web-agent-charting`:
 
-| Tool | Executor file | Delegates to |
-|------|--------------|--------------|
-| `snapshot_page` | `snapshot-page.ts` | `domAdapter.snapshot()` |
-| `query_state` | `query-state.ts` | `stateAdapter.query()` |
-| `click` | `click.ts` | `domAdapter.click()` |
-| `fill` | `fill.ts` | `domAdapter.fill()` |
-| `select_option` | `select-option.ts` | `domAdapter.selectOption()` |
-| `wait_for` | `wait-for.ts` | `domAdapter` / `stateAdapter` |
-| `wait` | `wait.ts` | none (pure timer, races `ctx.signal`) |
-| `see` | `see.ts` | `domAdapter.screenshot()` (vision; omitted when `imageInput: false`) |
-| `list_data_sources` | `list-data-sources.ts` | `DataSourceProvider` |
-| `get_field_details` | `get-field-details.ts` | `DataSourceProvider` |
-| `sample_field_values` | `sample-field-values.ts` | `DataSourceProvider` |
-| `query_data` | `query-data.ts` | `DataSourceProvider` |
-| `show_chart` | `show-chart.ts` | inline — produces a `ChartBlock` |
-| `show_generative_ui` | `show-generative-ui.ts` | inline — produces a `FormBlock` / `ButtonsBlock` |
-| `search_skills` | built into `build-tools.ts` | in-memory skill registry |
-| `load_skill` | built into `build-tools.ts` | in-memory skill registry |
+| Tool | Package | Delegates to |
+|------|---------|--------------|
+| `snapshot_page`, `query_state`, `click`, `fill`, `select_option`, `wait_for`, `see` | `@cuatoi/web-agent-dom` | `DomAdapter` / `StateAdapter` (registered via `domTools()`) |
+| `wait`, `get_time` | `@cuatoi/web-agent-core` | timer (`ctx.signal`) / clock |
+| `list_data_sources`, `get_field_details`, `sample_field_values`, `query_data` | `@cuatoi/web-agent-core` | `DataSourceProvider` |
+| `show_generative_ui` | `@cuatoi/web-agent-core` | inline — produces a `FormBlock` / `ButtonsBlock` |
+| `search_skills`, `load_skill` | `@cuatoi/web-agent-core` | skill registry (`tools/skill-tools.ts`) |
+| `show_chart`, `show_live_chart` | `@cuatoi/web-agent-charting` | inline — produces a `ChartBlock` |
 
 ## Error classification
 
 Errors from the LLM provider are classified in `src/loop/errors.ts`:
 
-- `rate_limit` — HTTP 429
+- `rate_limit` — HTTP 429 or 529
 - `fatal_auth` — HTTP 401/403
 - `bad_request` — HTTP 400
 - `network` — everything else (timeout, DNS, 5xx)
@@ -239,13 +237,14 @@ Block interactions bridge back to the agent via `buttonToMessage()` and
 `formSubmitToMessage()` in `src/ui-blocks/bridge.ts`, which prefix replies with
 `[ui_action:...]` so the LLM understands the context.
 
-See [Generative UI](#/core/generative-ui) and [Chart](#/charting/chart) for full details.
+See [Generative UI](../../../../packages/web-agent-core/docs/generative-ui.md) and [Chart](../../../../packages/web-agent-charting/docs/chart.md) for full details.
 
 ## Persistence
 
-When `persist: true` is set in `AgentConfig`, the conversation is saved to
-IndexedDB via the `attachPersistence()` / `rehydrate()` functions in
-`src/loop/persistence.ts`. On page reload, `loadPersisted()` restores the
+When `persist: true` is set in `AgentConfig`, the controller saves conversations
+to a `SessionStore` (by default `IdbSessionStore` in
+`packages/web-agent-core/src/loop/session-store.ts`, keyed by
+`sessionNamespace`). On page reload, the controller restores the saved
 `ContextManager` state so the conversation continues where it left off.
 
 ## Transport
@@ -262,21 +261,24 @@ interface LanguageModel {
 }
 ```
 
-`providerRegistry` (`src/transport/registry.ts`) maps `cfg.endpointType` to a
-provider factory. Two providers are built in:
+`providerRegistry` (`packages/web-agent-core/src/transport/registry.ts`) maps
+`cfg.endpointType` to a provider factory. Three HTTP providers are built in,
+each calling `fetch` directly with no external LLM SDK:
 
-- **Anthropic** (`endpointType: "anthropic"`) — uses `@anthropic-ai/sdk`. Every
-  call sends `stream: false` and reads one complete JSON response.
-- **OpenAI-compatible** (`endpointType: "openai"`) — uses `openai` v6. Works
-  with any OpenAI-compatible proxy (Ollama, LiteLLM, etc.). Reasoning models
-  (`o1`/`o3`) receive the system prompt as the `"developer"` role.
+- **Anthropic** (`endpointType: "anthropic"`, default) — calls the Anthropic
+  Messages API (`src/transport/anthropic-provider.ts`).
+- **OpenAI-compatible** (`endpointType: "openai"`) — calls the Chat Completions
+  API (`src/transport/openai-provider.ts`). Works with OpenAI-compatible proxies
+  such as Ollama and LiteLLM.
+- **Gemini** (`endpointType: "gemini"`) — calls the Gemini generateContent API
+  (`src/transport/gemini-provider.ts`).
 
-Both are automatically wrapped with `withRetry` middleware
-(`src/transport/middleware.ts`): a 30 s per-attempt timeout (via a combined
-`AbortController`) plus up to 2 retries with exponential back-off, covering
-empty/dead streams and transient network failures.
+Each provider is wrapped with `withRetry` middleware
+(`packages/web-agent-core/src/transport/middleware.ts`): a per-attempt timeout
+of `requestTimeoutMs` (default `900000` ms) and up to `maxRetries` (default `5`)
+retries with exponential back-off for transient failures.
 
-A deterministic `"mock"` provider is also registered for unit tests.
+A deterministic `"mock"` provider is also registered for tests.
 
-See [Custom Providers](#/core/providers) for the step-by-step guide to writing
+See [Custom Providers](../../../../packages/web-agent-core/docs/providers.md) for the step-by-step guide to writing
 and registering your own provider.

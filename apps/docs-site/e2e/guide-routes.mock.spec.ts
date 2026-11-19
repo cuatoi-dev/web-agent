@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 /**
  * The two pre-rename component-guide slugs. They are assembled from parts
  * rather than written as literals because this spec lives in the in-scope
- * tree, and idea 133's whole-batch done check greps that tree for the retired
+ * tree, and repo-wide checks grep that tree for the retired
  * brand and must return nothing. The routes asserted below are the real
  * pre-rename routes; only their spelling is built at runtime.
  */

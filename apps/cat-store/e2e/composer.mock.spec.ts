@@ -9,7 +9,7 @@ test.describe('composer & panel geometry', () => {
     await expect(panel).toBeVisible();
 
     const viewport = page.viewportSize();
-    // 002: the panel fills #panel-container, whose size is
+    // The panel fills #panel-container, whose size is
     // var(--web-agent-panel-width, 480px) x var(--web-agent-panel-height, 660px) capped at
     // 80vh. Measure the rendered border box with boundingBox() — the panel
     // has box-sizing: border-box, so its border box IS the size the host set
@@ -61,7 +61,7 @@ test.describe('composer & panel geometry', () => {
       const panelH = panel.getBoundingClientRect().height;
       const input = (document.querySelector('cat-agent-widget')?.shadowRoot ?? document).querySelector('web-agent-bubble')?.shadowRoot?.querySelector('agent-chat-panel #input') as HTMLElement;
       const inputH = input.getBoundingClientRect().height;
-      // #input is now the <wa-text-area> wrapper (003410-005), not the real
+      // #input is now the <wa-text-area> wrapper, not the real
       // field — its own shadowRoot is null. The field a registry actually
       // renders (a light-DOM child of the wrapper) may itself keep the real
       // <textarea> in ITS shadow DOM (Acme's <md-outlined-text-field>), or as
@@ -87,7 +87,7 @@ test.describe('composer & panel geometry', () => {
       field!.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    // #input is the <wa-text-area> wrapper (003410-005): it has no shadow
+    // #input is the <wa-text-area> wrapper: it has no shadow
     // root and no tabindex of its own, so locator.press()'s internal
     // .focus() call on it is a no-op — the key would land wherever focus
     // already was (nowhere useful). A real click hit-tests to the actual

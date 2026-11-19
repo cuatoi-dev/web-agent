@@ -58,7 +58,7 @@ describe("mountIntoFrame", () => {
     const src = '<script>window.__TEST_VAR__ = "executed";</script>';
     await mountIntoFrame(iframe, src);
     // The function completes without error; script re-creation
-    // works in a real browser frame (tested live in task 004).
+    // works in a real browser frame.
     const doc = iframe.contentDocument!;
     const root = doc.getElementById("genui-root");
     expect(root).not.toBeNull();

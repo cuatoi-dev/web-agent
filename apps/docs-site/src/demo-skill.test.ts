@@ -63,8 +63,7 @@ describe("docsDemoSkill", () => {
    * Steps 1 and 11 both call show_generative_ui with a buttons block. Parses
    * both out of the skill text and runs each through the real block
    * validator — same approach as extractStep8Block, applied to the buttons
-   * branch. Added under the manager's scope extension (same task file,
-   * "Manager scope decision") alongside the step 8 fix.
+   * branch alongside the step 8 check.
    */
   function extractButtonsBlocks(): Record<string, unknown>[] {
     const def = docsDemoSkill.definition;

@@ -26,7 +26,7 @@ export const DEMO_BRANDED_AVATAR =
 // track --wa-action-text-color-info and measured 2.66-2.95:1 against the
 // launcher fill in every theme (WCAG 1.4.11 needs 3:1). An inline SVG with
 // `fill="currentColor"` inherits the launcher's `color`, which IS the
-// contrast-safe token pair already used everywhere else (task 008's pattern).
+// contrast-safe token pair already used everywhere else.
 export const CAT_STORE_LAUNCHER_ICON =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.38 5.07L2 22l5.07-1.38C8.52 21.5 10.25 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>';
 

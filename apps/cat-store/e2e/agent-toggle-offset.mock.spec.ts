@@ -3,7 +3,7 @@ import { chooseTheme, gotoAgentPage, sendChat } from './helpers';
 import path from 'path';
 import fs from 'fs';
 
-// 001: the collapse toggle sits clear of the divider rail when expanded, and
+// The collapse toggle sits clear of the divider rail when expanded, and
 // stays a fixed 8px inside the viewport's right edge when collapsed.
 // Viewport is the project default (1280x800) from playwright.config.ts.
 
@@ -67,7 +67,7 @@ test('scenario 2: collapsed — the toggle sits 8px inside the viewport edge and
   const bToggle = (await toggle(page).boundingBox())!;
   const bChat = (await page.locator('agent-page .col-chat').boundingBox())!;
 
-  // Task 001 re-anchored the collapsed offset from "GAP_PX clear of the
+  // The collapsed offset is anchored instead of "GAP_PX clear of the
   // rail" (which pushed the toggle deep enough into .col-chat to overlap a
   // right-aligned user message bubble) to a fixed 8px from the viewport's
   // own right edge, so it can never be clipped regardless of layout width.
@@ -87,8 +87,8 @@ test('scenario 2b: collapsed, narrow viewport — the toggle never overlaps the 
   // the toggle is where intended, not that a bubble never sits under it.
   //
   // Collapse BEFORE sending: at 375px the EXPANDED three-column layout
-  // overflows its 760px combined minimum width (a separate, known,
-  // out-of-scope defect — see the task file), which squeezes #input off
+  // overflows its 760px combined minimum width (a separate, known
+  // layout limitation), which squeezes #input off
   // screen and makes it unclickable. Collapsing first removes .col-side and
   // lets .col-chat take the full width, same as the reported case.
   await page.setViewportSize({ width: 375, height: 740 });
@@ -168,7 +168,7 @@ test('scenario 4: the toggle stays inside the rail\'s DOM, and the grip does not
   expect(await parentIsDivider()).toBe(true);
 });
 
-test('scenario 5: task 005\'s stacking fix still holds, in both themes', async ({ page }) => {
+test('scenario 5: the stacking fix still holds, in both themes', async ({ page }) => {
   await gotoAgentPage(page);
 
   for (const theme of ['dark', 'light'] as const) {

@@ -5,9 +5,9 @@ import "@cuatoi/web-agent-lit/embed/web-agent-embed";
 import type { WebAgentBubble } from "@cuatoi/web-agent-lit";
 
 /**
- * 005 — host wrapper that proves the nested shadow-DOM pattern on docs-site.
+ * Host wrapper that proves the nested shadow-DOM pattern on docs-site.
  *
- * Mirrors cat-store's CatAgentWidget (task 004): a Lit element with a real
+ * Mirrors cat-store's CatAgentWidget: a Lit element with a real
  * shadow root that hosts <web-agent-bubble>, so the nesting is
  * widget shadow -> bubble shadow -> panel. docs-site uses the DEFAULT UI
  * registry (unlike cat-store, which aliases it to Material), so this is the
@@ -38,7 +38,7 @@ export class DocsAgentWidget extends LitElement {
 
   constructor() {
     super();
-    // 005: forward web-agent-bubble's ::part() names through this element's
+    // Forward web-agent-bubble's ::part() names through this element's
     // own shadow boundary, so a host stylesheet can still write
     // `docs-agent-widget::part(launcher-icon)` etc. — a ::part() selector only
     // pierces the one shadow root of the element it names, and the bubble now

@@ -156,7 +156,7 @@ export class CartView extends LitElement {
     }
     store.dispatch(placeOrder({ id: created.id, total: created.total }));
     store.dispatch(clearCart());
-    // Async toast — target for wait_for (task 011)
+    // Async toast — target for wait_for
     setTimeout(() => {
       store.dispatch(setToast("Order confirmed"));
     }, 800);

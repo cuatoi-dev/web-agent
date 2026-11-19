@@ -13,12 +13,11 @@ unclickable, or shows the raw icon name as text after swapping the `<wa-*>`
 element set.
 
 **Cause:** The composer renders `<wa-icon-button icon="send">` or
-`icon="stop"`. Under the default element set (`src/ui/wa-elements.ts`), the
-icon name is looked up in the `ICON_SVGS` map (`src/ui/icon-svgs.ts`) and
+`icon="stop"`. Under the default element set (`packages/web-agent-lit/src/ui/wa-elements.ts`), the
+icon name is looked up in the `ICON_SVGS` map (`packages/web-agent-lit/src/ui/icon-svgs.ts`) and
 drawn as inline SVG. If your custom `<wa-icon-button>` class does not draw SVG
-for every icon name the chat UI uses (see the full list in the "Icon SVGs —
-full set required" section of [Lit 3 support & the UI element
-seam](./lit3-registry)), the button still fires `press`, but shows the raw
+for every icon name the chat UI uses (see section 5c of [Lit 3 support & the UI element
+seam](../../../../packages/web-agent-lit/docs/lit3-registry.md)), the button still fires `press`, but shows the raw
 name as text instead of a glyph.
 
 **Fix:** Ensure your custom `<wa-icon-button>` class handles every icon name.
@@ -46,22 +45,22 @@ for every icon the chat UI uses.
 **Symptom:** The agent panel shows "Network error" or the browser console has
 CORS/404 errors when the agent tries to call the backend.
 
-**Cause:** The default `path` is `/api/openai/v1`. This requires a proxy on
-your server at that path. If the proxy is misconfigured or absent, the LLM
-API calls fail.
+**Cause:** The default `baseURL` is `/api/anthropic` (`packages/web-agent-core/src/config.ts:53`).
+This requires a proxy on your server at that path. If the proxy is misconfigured
+or absent, the LLM API calls fail.
 
 **Checks:**
 1. Confirm the proxy is running. The dev server for cat-store proxies
-   `/api/openai` to `http://localhost:30000` (see `apps/cat-store/webpack.config.js:130-135`):
+   `/api/openai`, `/api/anthropic`, and `/api/gemini` to `http://localhost:30000`
+   (see `apps/cat-store/webpack.config.js:122-146`):
    ```js
    proxy: [{ context: ["/api/openai"], target: "http://localhost:30000", changeOrigin: true }]
    ```
-2. If the API is on a different origin, set `path` to the absolute URL. The
-   `getAbsoluteBaseURL()` function in `src/transport/provider.ts:41-49`
+2. If the API is on a different origin, set `baseURL` to the absolute URL. The
+   `getAbsoluteBaseURL()` function in `packages/web-agent-core/src/transport/provider.ts:1`
    resolves relative paths against `window.location.origin`.
-3. The provider uses `apiKey: "ollama"` (OpenAI) or `apiKey: "proxy"`
-   (Anthropic). Ensure your proxy does not require a real API key or handles
-   these sentinel values.
+3. Core's built-in providers send no API key header on their own. Inject
+   upstream credentials in your reverse proxy or through a custom `AgentConfig.fetch`.
 
 ## Chart.js chart not rendering
 
@@ -71,18 +70,17 @@ broken element.
 **Cause and checks:**
 
 1. **Chart.js is bundled** — `chart.js` 2.7.3 is a direct dependency of
-   `web-agent-lit`, not a peer. No separate install is needed. If you see a
-   module-not-found error, check that your bundler alias resolves
-   `@cuatoi/web-agent-lit` correctly.
+   `@cuatoi/web-agent-charting`, not a peer. No separate install is needed.
+   If you see a module-not-found error, check that your bundler resolves
+   `@cuatoi/web-agent-charting` correctly.
 
-2. **Invalid config** — The `show_chart` tool validates the config with Zod
-   before rendering. If validation fails, the tool returns an error string to
-   the model and no block is emitted. Check the agent's response for a
-   `config.<field>:` error message.
+2. **Invalid config** — The `show_chart` tool validates the input against its
+   JSON Schema (`ajv`) before rendering. If validation fails, the tool returns
+   an error string to the model and no block is emitted.
 
-3. **Sanitizer rejection** — Even after Zod validation, `hasDataUrl()` and
-   `checkRowCountExceeded()` run before rendering. If the config has a remote
-   `data.url` or a dataset exceeding 2,000 rows, the tool returns an error.
+3. **Sanitizer rejection** — `hasDataUrl()` and `checkRowCountExceeded()` run
+   before rendering. If the config has a remote `data.url` or a dataset
+   exceeding 2,000 rows, the tool returns a `config.data:` error.
 
 4. **`chart-error` custom event** — `<agent-chart-block>` fires a
    `chart-error` CustomEvent when the Chart.js canvas fails to render. Listen
@@ -95,14 +93,14 @@ broken element.
    programmatically and setting `spec` instead of `config`, switch to `config`.
    The `spec` field is deprecated and may not render.
 
-See [Chart](#/charting/chart) for the full config shape and sanitizer rules.
+See [Chart](../../../../packages/web-agent-charting/docs/chart.md) for the full config shape and sanitizer rules.
 
 ## White-box icons without Beer CSS
 
 **Symptom:** Icons appear as white squares or invisible boxes when using the
 default element set without Beer CSS loaded.
 
-**Cause:** `iconNode()` (`src/ui/icon-svgs.ts`) falls back to creating an
+**Cause:** `iconNode()` (`packages/web-agent-lit/src/ui/icon-svgs.ts`) falls back to creating an
 `<i>` element with `textContent = name` (e.g. `<i>send</i>`) for any name not
 in its `ICON_SVGS` map. This relies on Beer CSS's icon font or Material Icons
 to render. Without Beer CSS, the `<i>` element has no styling and is
@@ -138,7 +136,7 @@ If the parent container does not have a defined height, the panel collapses.
 
 The bubble embed sizes its own container with
 `width: var(--web-agent-panel-width, 480px)`, `height: var(--web-agent-panel-height, 660px)`
-and `max-height: 80vh` (`src/embed/web-agent-embed.ts:214-226`). Set those two
+and `max-height: 80vh` (`packages/web-agent-lit/src/embed/bubble-shadow-template.ts:16-18`). Set those two
 properties on any ancestor element to change the size. A panel you mount
 yourself fills whatever container you put it in, so give that container a size.
 
@@ -165,26 +163,26 @@ conversation is short, compaction does not fire.
 tool call that is not in the tool map.
 
 **Cause:** `buildTools()` registers whatever flat `CustomToolDef[]` the host
-sets on `panel.tools`. Hosts compose this from `defaultTools(ctx)` (the core
-DOM/data tools: `snapshot_page`, `query_state`, `click`, `fill`,
-`select_option`, `wait_for`, `wait`, `see`, `list_data_sources`, `get_field_details`,
-`sample_field_values`, `query_data`, `search_skills`, `load_skill`, `show_generative_ui`)
-plus any optional (`show_chart`) or host-defined tools. A name outside the composed array will
-not be found.
+sets on `panel.tools`, merged with `defaultTools(ctx)` (`wait`, `get_time`,
+`list_data_sources`, `get_field_details`, `sample_field_values`, `query_data`,
+`show_generative_ui`, skill, compaction, scheduler, and todo tools) plus any
+`toolProviders` such as `domTools()` from `@cuatoi/web-agent-dom` or
+`chartTools()` from `@cuatoi/web-agent-charting`. A name outside the composed
+set will not be found.
 
 **Fix:** Set `panel.tools = [myTool]` — the panel merges it with
 `defaultTools(ctx)` automatically. If the name clashes with an existing
 tool, a `console.warn` is emitted and the duplicate is skipped — check the
 browser console.
 
-See [Custom Tools](#/core/custom-tool) for the full authoring guide.
+See [Custom Tools](../../../../packages/web-agent-core/docs/custom-tool.md) for the full authoring guide.
 
 ## "Can't find variable: process" in browser
 
 **Symptom:** The esbuild bundle throws a ReferenceError for `process`.
 
 **Cause:** The code has `process.env.NODE_ENV` guards in development-mode
-detection (e.g. `src/loop/context-manager.ts:5`). When bundled with certain
+detection (e.g. `packages/web-agent-core/src/loop/context-helpers.ts:6-7`). When bundled with certain
 build tools that do not polyfill `process`, this fails.
 
 **Fix (Webpack):** Add `new webpack.DefinePlugin({ 'process.env.NODE_ENV': JSON.stringify('production') })`

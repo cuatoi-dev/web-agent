@@ -19,7 +19,7 @@ export class OrdersStore {
     return this.orders.length;
   }
 
-  // `search` is part of DataQuery since task 002, and runQuery applies it over
+  // `search` is part of DataQuery, and runQuery applies it over
   // every string and enum field before filtering (query-engine.ts:23-28). The
   // store no longer prefilters.
   query(q: DataQuery): QueryResult {

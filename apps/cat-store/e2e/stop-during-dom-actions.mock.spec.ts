@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { chooseTheme, openPanel, sendChat, shot } from './helpers';
 
-// 007: proves the Stop control actually stops a run of DOM `click` actions —
+// Proves the Stop control actually stops a run of DOM `click` actions —
 // both from the collapsed bubble's own `#stop-run` control (Finding 1, the
 // defect the user reported) and from the panel's own composer Stop button
 // (Findings 2 and 3).
@@ -23,7 +23,7 @@ const N_CLICKS = 12;
 /**
  * Deterministic, state-driven on tool-results AFTER the last user message —
  * not on call index — so a second turn in the same conversation does not
- * inherit the first turn's click count (measured pitfall, task 007 plan).
+ * inherit the first turn's click count.
  *
  * `snapshot_page` and `click` are REAL tool executions even in mock tier —
  * only the model's response is scripted — so `snaps[0].output` is the real
@@ -83,7 +83,7 @@ test.beforeEach(async ({ page }) => {
   // Headless Chromium defaults prefers-reduced-motion to "reduce", which
   // makes the DOM adapter's cue pacing instant and collapses the window a
   // test needs to interrupt a run mid-flight. Emulate a real user's setting
-  // (measured necessary, task 007 plan) so clicks are paced.
+  // so clicks are paced.
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.addInitScript(`window.__WA_MOCK_SCRIPT__ = ${stopDuringClicksScript.toString()};`);
 });
@@ -100,7 +100,7 @@ test('S2 — the bubble Stop control stops a run before all planned clicks land 
 
   await expect.poll(() => getClickCount(page), { timeout: 15_000, message: 'waiting for the first click' }).toBeGreaterThanOrEqual(1);
 
-  // Collapse the panel — this is the regression: before this task, no Stop
+  // Collapse the panel — regression guard: previously, no Stop
   // control existed anywhere once the panel was hidden.
   await page.locator('web-agent-bubble button#launcher').click();
 

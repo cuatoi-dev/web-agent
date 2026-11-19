@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { openPanel, sendChat, shot } from './helpers';
 import type { ProviderCallOptions } from '@cuatoi/web-agent-core';
 
-// 120/004 — cat-store's LocalStorageSkillRegistry has no owners, so its
+// Cat-store's LocalStorageSkillRegistry has no owners, so its
 // create_skill has no `shared` input and the confirm summary is unchanged.
 // BDD 0250.10.
 

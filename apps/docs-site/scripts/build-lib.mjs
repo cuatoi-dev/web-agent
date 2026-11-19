@@ -125,8 +125,8 @@ export function assertNoDuplicateSlugs(guidePages, packagePages) {
     }
     byKey.set(key, p);
   }
-  // (b) a site page and a package page owning the same slug — the leftover-copy
-  //     case this task exists to end (e.g. src/content/tools.md left behind
+  // (b) a site page and a package page owning the same slug — prevents leftover
+  //     duplicate copies (e.g. src/content/tools.md left behind
   //     next to packages/web-agent-core/docs/tools.md).
   const bySlug = new Map(guidePages.map(p => [p.slug, p]));
   for (const p of packagePages) {

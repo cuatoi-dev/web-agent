@@ -26,7 +26,7 @@ test('sessions: create 2 → list shows both → delete one → list shows one �
 
   await page.locator('#history-anchor').waitFor({ state: 'visible', timeout: 15_000 });
 
-  // The panel is now created on first launcher click (task 018 — bubbled
+  // The panel is now created on first launcher click (bubbled
   // mount), not at page load, so its openOrCreateActiveSession() for the
   // 1st session is still in flight when openPanel() returns. Wait for it to
   // land (activeSessionId set) before explicitly creating a 2nd session, or
@@ -84,13 +84,13 @@ test('sessions: manual title-edit persists and shows in history list', async ({ 
   await page.locator('#history-anchor').waitFor({ state: 'visible', timeout: 15_000 });
 
   // Open inline title-edit by clicking the pencil icon button
-  // The pencil is pointer-events:none until the header is hovered (task 001),
+  // The pencil is pointer-events:none until the header is hovered,
   // and Playwright's "Receives Events" check is a hit test, so hover first.
   await page.locator('agent-chat-panel .header').hover();
   await page.locator('[aria-label="Edit session title"]').click();
   await page.locator('.wa-title-edit-row').waitFor({ state: 'visible', timeout: 5_000 });
 
-  // 003410-005: _handleTitleEditConfirm() reads this._titleEditValue, the
+  // _handleTitleEditConfirm() reads this._titleEditValue, the
   // panel's own reactive field, updated only by the <wa-text-input>'s
   // value-input event — setting .value directly on the Material field (the
   // old approach, from when the panel read the DOM element itself) never
@@ -103,8 +103,8 @@ test('sessions: manual title-edit persists and shows in history list', async ({ 
   // Confirm — the check icon button inside the row. cat-store's md-icon-button
   // moves the `aria-label` attribute we set to `data-aria-label` on the host
   // shortly after it connects (Material Web's own aria delegation, via
-  // ElementInternals — pre-existing for every icon button here, not new to
-  // this task), so `[data-aria-label=...]` is what actually lands on the host
+  // ElementInternals — standard for every icon button here),
+  // so `[data-aria-label=...]` is what actually lands on the host
   // element that holds our glyph <svg>; `getByRole` resolves to the button
   // INSIDE md-icon-button's shadow root instead, which has no light-DOM svg
   // child of its own (the svg is slot-projected, not a real descendant).

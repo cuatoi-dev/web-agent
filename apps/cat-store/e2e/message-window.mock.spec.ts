@@ -93,7 +93,7 @@ async function lastViewMetrics(page: import('@playwright/test').Page): Promise<{
   });
 }
 
-test.describe('008: the chat message window', () => {
+test.describe('the chat message window', () => {
   test('B1-B3: the window bounds what is in the DOM, starts on a user message, and the cut extends to that turn\'s user message', async ({ page }) => {
     await openPanel(page);
     await injectMessages(page, transcript(300));

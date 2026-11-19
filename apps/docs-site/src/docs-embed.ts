@@ -17,12 +17,12 @@ import { docsGuideSkill } from "./docs-guide-skill";
 import { docsDemoSkill } from "./demo-skill";
 import { DEMO_AGENT_AVATAR } from "./gallery-states";
 import { enablePanelResize } from "./panel-resize";
-// 005: the shadow wrapper that hosts the bubble.
+// The shadow wrapper that hosts the bubble.
 import { DocsAgentWidget } from "./docs-agent-widget";
 import { withGatewayAuth } from "./gateway-auth";
 
 function wireAgent() {
-  // 005: the bubble is hosted inside <docs-agent-widget>'s shadow root, not
+  // The bubble is hosted inside <docs-agent-widget>'s shadow root, not
   // appended to the light DOM directly. Fall back to replacing a bare
   // <web-agent-bubble> (e.g. a page that has not been converted) so this
   // keeps working either way.
@@ -36,7 +36,7 @@ function wireAgent() {
   }
   const bubble = widget?.bubble ?? document.querySelector("web-agent-bubble");
   if (bubble) {
-    // Key gate (137/001): a gateway LLM call carries the key in its route's
+    // Key gate: a gateway LLM call carries the key in its route's
     // own auth header, or the reverse proxy rejects it with 401.
     // `process.env.WEB_AGENT_TOKEN` is a build-time constant, injected by
     // webpack.config.cjs's DefinePlugin — not a source literal.
@@ -76,7 +76,7 @@ function wireAgent() {
     bubble.agentAvatar = DEMO_AGENT_AVATAR;
     bubble.launcherIcon = "menu_book";
 
-    // 004: inject the current page into every user prompt so the agent knows
+    // Inject the current page into every user prompt so the agent knows
     // which doc the reader is on. 011: every one of the seven lifecycle hooks
     // also prints one line, so the whole turn can be traced in the browser
     // console — parity with cat-store's agent-panel-config.ts. Plain
@@ -151,7 +151,7 @@ function wireAgent() {
       bubble.type = "openai";
     }
 
-    // 003: host opt-in for the drag-to-resize grip. The gallery builds its own
+    // Host opt-in for the drag-to-resize grip. The gallery builds its own
     // bubbles from a separate entry and does not call this.
     enablePanelResize(bubble);
   }

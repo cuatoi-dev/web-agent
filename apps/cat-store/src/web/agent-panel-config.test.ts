@@ -265,7 +265,7 @@ describe("configureAgentPanel", () => {
   });
 
   // 005 invariant: chart skill loaded => a live chart tool is registered.
-  it("registers a live chart tool alongside the chart skill (005)", async () => {
+  it("registers a live chart tool alongside the chart skill", async () => {
     const panel = makePanelStub();
     configureAgentPanel(panel, { domAccess: false });
 
@@ -280,7 +280,7 @@ describe("configureAgentPanel", () => {
     expect(toolNames).toContain("show_live_chart");
     expect(toolNames).toContain("calc");
 
-    // 003: the bespoke host tool is gone; the generic one replaces it.
+    // The bespoke host tool is gone; the generic one replaces it.
     expect(toolNames).not.toContain("show_orders_revenue_chart");
 
     // A live chart tool emits a block carrying both query and encoding — that
@@ -492,7 +492,7 @@ describe("PROVIDER_ENTRIES", () => {
   });
 });
 
-describe("memory option (104/001)", () => {
+describe("memory option", () => {
   afterEach(() => {
     localStorage.clear();
   });
@@ -531,7 +531,7 @@ describe("memory option (104/001)", () => {
   });
 });
 
-describe("memory skills (104/002)", () => {
+describe("memory skills", () => {
   const names = (panel: AgentChatPanel) => panel.skills!.map((s) => s.name);
   const rememberSkill = (panel: AgentChatPanel) => panel.skills!.find((s) => s.name === "remember")!;
 

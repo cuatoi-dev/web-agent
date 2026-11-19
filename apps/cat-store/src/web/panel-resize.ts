@@ -1,14 +1,14 @@
 /**
- * 003 — drag the top-left grip to resize the open chat box.
+ * Drag the top-left grip to resize the open chat box.
  *
- * Host-side only. It sets the two custom properties task 002 added
+ * Host-side only. It sets the two panel-size custom properties
  * (`--web-agent-panel-width`, `--web-agent-panel-height`) on the <web-agent-bubble> element,
  * and reads the box of the bubble's own `#panel-container` div, which lives in
  * the bubble's OPEN shadow root. It never queries, styles, or modifies
  * anything inside `agent-chat-panel`.
  *
  * This file is duplicated in `apps/docs-site/src/panel-resize.ts` on purpose.
- * Task 001 deleted `apps/_shared/` so each app can be lifted out of the repo on
+ * Each app is self-contained so it can be lifted out of the repo on
  * its own. Do not extract it into a shared module or package.
  */
 
@@ -59,7 +59,7 @@ export function resizeFromGrip(start: Size, deltaX: number, deltaY: number, view
 /** The grip carries its own rules, so they travel with it into whatever tree the
  *  host puts the bubble in. Nothing is written to `document.head`, and the
  *  element carries no `id` — an id in the light DOM would still answer
- *  `document.getElementById`, which is the global scope this task removes. */
+ *  `document.getElementById`, which this avoids to stay shadow-root scoped. */
 function createStyleEl(): HTMLStyleElement {
   const style = document.createElement("style");
   style.setAttribute("data-wa-styles", "resize-grip");
@@ -98,7 +98,7 @@ function createStyleEl(): HTMLStyleElement {
     .wa-resize-grip[data-wa-dragging] svg {
       opacity: 1;
     }
-    /* 003: this sheet now lives inside the bubble's shadow root, so ':host'
+    /* This sheet now lives inside the bubble's shadow root, so ':host'
        is the <web-agent-bubble> element and '#panel-container' is a sibling
        subtree. Lifts the bubble's own 'max-height: 80vh' once the user has
        dragged. Specificity (1 id, 2 pseudo/attribute) beats the bubble's own
@@ -111,7 +111,7 @@ function createStyleEl(): HTMLStyleElement {
 
 /** Opt in. Call once per bubble, after it is in the DOM.
  *
- *  003: the bubble is a shadow element. Its root is open precisely so a host
+ *  The bubble is a shadow element. Its root is open precisely so a host
  *  can attach chrome like this grip next to the panel container, in the same
  *  tree — which is also what lets the grip's own <style> reach it. */
 export function enablePanelResize(bubble: HTMLElement): void {
