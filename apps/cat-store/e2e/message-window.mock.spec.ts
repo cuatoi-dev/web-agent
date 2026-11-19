@@ -7,7 +7,7 @@ import type { SessionMessage, SessionMessagePart } from '@cuatoi/web-agent-core'
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
 const ARTIFACTS_DIR = path.resolve(
-  __dirname, '..', '..', '..', 'tasks', 'artifacts',
+  __dirname, '..', '..', '..', 'temp', 'artifacts',
   '2026-09-08-204122-008-chat-message-window',
 );
 

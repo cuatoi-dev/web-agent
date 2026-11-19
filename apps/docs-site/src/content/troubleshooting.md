@@ -167,7 +167,7 @@ sets on `panel.tools`, merged with `defaultTools(ctx)` (`wait`, `get_time`,
 `list_data_sources`, `get_field_details`, `sample_field_values`, `query_data`,
 `show_generative_ui`, skill, compaction, scheduler, and todo tools) plus any
 `toolProviders` such as `domTools()` from `@cuatoi/web-agent-dom` or
-`chartTools()` from `@cuatoi/web-agent-charting`. A name outside the composed
+`chartingTools()` from `@cuatoi/web-agent-charting`. A name outside the composed
 set will not be found.
 
 **Fix:** Set `panel.tools = [myTool]` — the panel merges it with

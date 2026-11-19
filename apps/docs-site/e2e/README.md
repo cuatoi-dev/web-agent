@@ -8,7 +8,7 @@ config live in this folder (`helpers.ts`, `../playwright.config.ts`).
 - `functional.mock.spec.ts` — docs chat, summarize current page, markdown / UI-block rendering.
 - `nonvision.mock.spec.ts` — asserts vision is **OFF** on docs: no attach button, paste/drag
   adds no thumbnail, a visual ask is handled via text (no `see` tool, no 400).
-- Additional `*.mock.spec.ts` files cover routing, search, sessions, resize, showcase, and themes.
+- Additional `*.mock.spec.ts` files cover routing, search, sessions, resize, showcase, and shadow-root styles.
 
 ## Running
 ```bash

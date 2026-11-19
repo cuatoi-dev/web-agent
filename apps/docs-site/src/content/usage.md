@@ -120,7 +120,7 @@ to fence a group of controls:
 ```
 
 `AgentChatPanel` exposes a built-in confirm dialog via `panel.confirmInteraction(detail)`
-(`packages/web-agent-lit/src/chat-ui/chat-panel-fields.ts:48-52`). Pass it into
+(`packages/web-agent-lit/src/chat-ui/chat-panel-props.ts:107`). Pass it into
 `domTools({ confirmInteraction: (d) => panel.confirmInteraction(d) })` so
 `"ask"`-tier `click`/`fill`/`select_option` calls prompt the user. You can still
 attach `panel.hooks.onPreTool` for logging or extra guards:
