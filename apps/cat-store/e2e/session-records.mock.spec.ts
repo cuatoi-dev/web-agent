@@ -5,8 +5,7 @@ import { openPanel, sendChat, waitForTurnComplete, waitForAgentInitSettled } fro
 import type { ChatPanelProbe } from './dom-types';
 
 const ARTIFACTS_DIR = path.resolve(
-  __dirname, '..', '..', '..', 'tasks', 'artifacts',
-  '2026-09-08-204122-007-session-records-the-store-can-page',
+  __dirname, '../../../temp/artifacts/session-records-the-store-can-page',
 );
 
 test.setTimeout(60_000);

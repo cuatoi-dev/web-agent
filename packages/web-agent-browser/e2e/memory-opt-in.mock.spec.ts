@@ -13,7 +13,7 @@ const EXT = path.resolve(HERE, "../dist");
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/memory-opt-in");
 const ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../../../tasks/artifacts/2026-11-06-112108-003-extension-memory-opt-in",
+  "../../../temp/artifacts/extension-memory-opt-in",
 );
 const USER_PATH = "/home/shared/USER.md";
 const MEMORY_HELP =

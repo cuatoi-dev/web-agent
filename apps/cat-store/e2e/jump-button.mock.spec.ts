@@ -8,8 +8,7 @@ import type { SessionMessage, SessionMessagePart } from '@cuatoi/web-agent-core'
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 
 const ARTIFACTS_DIR = path.resolve(
-  __dirname, '..', '..', '..', 'tasks', 'artifacts',
-  '2026-09-08-204122-010-jump-button-and-gallery-states',
+  __dirname, '../../../temp/artifacts/jump-button-and-gallery-states',
 );
 
 /** One turn: a user bubble, then an assistant bubble carrying `tools` chips.

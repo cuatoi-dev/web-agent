@@ -12,7 +12,7 @@ import type { BrowserContext, Page, Worker } from "@playwright/test";
 const ORIGIN = "http://localhost:10040";
 const CHECKOUT_URL = `${ORIGIN}/checkout.html`;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS = path.resolve(HERE, "../../../../../tasks/artifacts/2026-10-18-110941-003-vfs-write-and-saving-tools");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/vfs-saving-tools");
 
 /** The eight bytes every PNG starts with. */
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];

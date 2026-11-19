@@ -17,7 +17,7 @@ import { bodyOf, captionOf, savedPathOf, SAVED_PNG_PATH, SAVED_RECORDING_PATH } 
 const SITE_URL = process.env.DEMO_SITE_URL ?? "http://localhost:10040/checkout.html";
 const SITE_ORIGIN = new URL(SITE_URL).origin;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS = path.resolve(HERE, "../../../../../tasks/artifacts/2026-10-18-110941-003-vfs-write-and-saving-tools");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/vfs-saving-tools");
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
 
