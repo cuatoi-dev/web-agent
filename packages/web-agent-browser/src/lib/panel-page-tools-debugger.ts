@@ -1,5 +1,5 @@
-// The debugger session tools: start_debugging, stop_debugging (124/001), and
-// page_hover, page_press_key, page_emulate (124/002). The session itself
+// The debugger session tools: start_debugging, stop_debugging, and
+// page_hover, page_press_key, page_emulate. The session itself
 // lives in debugger-session.ts, one per side panel page.
 import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
@@ -96,7 +96,7 @@ export function createDebuggerPageTools(options: PanelPageToolsOptions): CustomT
     summarize: (input) => `Start debugging tab #${tabIdText(input)}`,
     execute: async (input) => {
       const tabId = Number(input.tabId);
-      // 131/001 — no activation check and no page script. Chrome's own
+      // No activation check and no page script. Chrome's own
       // debugging bar is the consent, so start_debugging attaches to any tab
       // Chrome allows.
       const started = await session.start(tabId);

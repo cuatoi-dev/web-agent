@@ -8,7 +8,7 @@ This package includes the assets below. Each one keeps its own licence.
 
 ## lobe-icons
 
-The files in `src/lib/provider-logos.ts` are provider logos copied from
+The SVG strings in `src/lib/provider-logos.ts` are provider logos copied from
 [lobe-icons](https://github.com/lobehub/lobe-icons).
 
 MIT License
@@ -34,4 +34,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Each logo is also a trademark of its owner. The MIT licence covers the SVG
-files, not the right to use the brands.
+markup, not the right to use the brands.

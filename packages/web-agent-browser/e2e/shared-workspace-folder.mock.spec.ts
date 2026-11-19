@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { test, expect } from "./extension.fixture";
 import type { BrowserContext, Page, TestInfo } from "@playwright/test";
 
-// 127/007 — the remembered shared folder. Real extension, real IndexedDB, real
+// The remembered shared folder. Real extension, real IndexedDB, real
 // vfs and seed. The model is scripted; the folder picker is an OPFS stand-in;
 // queryPermission/requestPermission are stubbed so each permission state can be
 // reached without a browser restart.

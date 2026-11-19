@@ -1,7 +1,7 @@
 import type { VfsHandle } from "@cuatoi/web-agent-vfs";
 import { errorMessage } from "./error-message";
 
-/** The one path a brand's starter text seeds (127/004). */
+/** The one path a brand's starter text seeds. */
 export const HOME_AGENTS_MD = "/home/agent/AGENTS.md";
 
 /** Writes the brand's starter `AGENTS.md` into an agent's `/home/agent` once.

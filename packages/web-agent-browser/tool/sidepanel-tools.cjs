@@ -51,7 +51,7 @@ const SIDE_PANEL_TOOL_NAMES = [
   "start_recording",
   "stop_recording",
   "page_screenshot",
-  // vfs tools (069/003)
+  // vfs tools
   "read_file",
   "write_file",
   "edit_file",

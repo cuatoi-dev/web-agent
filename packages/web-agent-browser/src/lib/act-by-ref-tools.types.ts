@@ -1,9 +1,9 @@
-// 131/002 — the file spec shared by upload-files.ts and
+// The file spec shared by upload-files.ts and
 // panel-page-tools-network-dialog.ts, plus the bridge's own askMainWorld
-// signature. Named for the act-by-ref tools that first introduced FileSpec
-// (122/001); not renamed, because two modules still import it by this path.
+// signature. Named for the act-by-ref tools that first introduced FileSpec;
+// it is not renamed, because two modules still import it by this path.
 
-/** One `page_upload_file` file (124/003). Exactly one content form is set:
+/** One `page_upload_file` file. Exactly one content form is set:
  *  `text`, `base64`, or `size` with a one-character `fill`. */
 export interface FileSpec {
   name: string;

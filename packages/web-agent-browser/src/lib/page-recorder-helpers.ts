@@ -140,7 +140,7 @@ export function describe(el: Element): string {
   return name ? `${role} "${name}"` : role;
 }
 
-/** `button "Apply"` — the plan's readable-line element part. */
+/** `button "Apply"` — the element part of a readable step line. */
 export function named(el: Element): string {
   const { role, name: full } = describeElementParts(el);
   // describeElementParts falls back to the tag name; stableName needs the real

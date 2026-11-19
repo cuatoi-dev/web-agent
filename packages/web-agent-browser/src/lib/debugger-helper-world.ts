@@ -1,4 +1,4 @@
-// 131/002 — the isolated world the ref tools call into, one per debugged tab's
+// The isolated world the ref tools call into, one per debugged tab's
 // top frame. The context id is NOT proof the helper is installed: after a
 // navigation Chrome hands back the SAME id with an empty world (measured
 // 2026-09-19), so the cache is cleared on Page.frameNavigated for the main frame.
@@ -54,7 +54,7 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
     return { ok: true, frame: m[1] === undefined ? "" : `f${m[1]}`, backendNodeId: n };
   }
 
-  /** The plan's `resolve(tabId, ref)`. A live `f<k>` gives that child's
+  /** `resolve(tabId, ref)`. A live `f<k>` gives that child's
    *  session; a bare ref gives the top target, in the frame the snapshot
    *  recorded for it (the top frame when it recorded none). */
   function resolve(
@@ -308,7 +308,7 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
     return frameChainAt(tabId, r.at);
   }
 
-  /** 131/004 — the same walk, from a frame rather than a ref. A recorded step
+  /** The same walk, from a frame rather than a ref. A recorded step
    *  has no ref, so the driver passes the frame the binding call came from. */
   async function frameChainAt(tabId: number, at: { sessionId?: string; frameId: string; refPrefix?: string }): Promise<string[]> {
     const refPrefix = at.refPrefix ?? prefixOfSession(tabId, at.sessionId);
@@ -332,7 +332,7 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
       const ownerRef = `${child ? prefixOfSession(tabId, ownerSession) : refPrefix}${backendNodeId}`;
       const built = await call<{ selector: string }>(tabId, ownerRef, "iframeSelector", []);
       if (!built.ok || typeof built.value?.selector !== "string") break;
-      // 127/002 — a frame with no page-level CSS (inside a shadow root) makes
+      // A frame with no page-level CSS (inside a shadow root) makes
       // the whole chain unusable, so report none rather than a partial one.
       if (built.value.selector === "") return [];
       up.push(built.value.selector);
@@ -444,7 +444,7 @@ export function createHelperWorlds(session: DebuggerSession, loadSource?: () => 
   }
 
   /** One frame's world only — Chrome hands back the same context id for an
-   *  empty world after that frame navigates (the 131/002 finding, per frame). */
+   *  empty world after that frame navigates. */
   function forgetFrame(tabId: number, sessionId: string | undefined, frameId: string): void {
     contexts.get(tabId)?.delete(frameKey({ ...(sessionId === undefined ? {} : { sessionId }), frameId }));
   }

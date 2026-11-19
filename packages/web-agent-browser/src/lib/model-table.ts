@@ -26,7 +26,7 @@ export function deleteButtonText(count: number): string {
   return count > 0 ? `Delete selected (${count})` : "Delete selected";
 }
 
-/** A brand row's key text (137/001): the Key-button key's last four
+/** A brand row's key text: the Key-button key's last four
  *  characters, "provided key" for the brand's default key, else "no key". */
 function brandKeyText(p: ResolvedProvider): string {
   if (p.keySource === "user") return `key ••••${p.apiKey.trim().slice(-4)}`;

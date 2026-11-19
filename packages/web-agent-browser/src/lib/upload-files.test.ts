@@ -5,7 +5,7 @@ import { basename, formatSize, mimeFromPath, resolveFiles } from "./upload-files
 
 const FORM_ERROR = (label: string) => `File "${label}": pass exactly one of text, base64, size and fill, or path.`;
 
-describe("upload-files (124/003, 001)", () => {
+describe("upload-files", () => {
   it("U2.1: empty array or undefined returns error", async () => {
     const vfs = testVfs();
     expect(await resolveFiles([], vfs)).toEqual({ ok: false, error: "Pass at least one file." });

@@ -1,4 +1,4 @@
-// 127/003 — the timestamp in a saved screenshot or recording file name. Local
+// The timestamp in a saved screenshot or recording file name. Local
 // time, not UTC: the name should match the clock the user is looking at when
 // they find the file in the Files screen. No milliseconds and no random
 // suffix, so the name is reproducible in a frozen-clock test.

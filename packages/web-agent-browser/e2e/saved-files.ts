@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-// 127/003 — page_screenshot and stop_recording return their own text first and
+// page_screenshot and stop_recording return their own text first and
 // the path they saved at on a final "Saved <path>" line. These read the two
 // halves back apart so an existing assertion keeps its original shape.
 

@@ -129,7 +129,7 @@ async function openPanel(context: BrowserContext, extensionId: string): Promise<
 
 const SETTINGS_KEYS = ["agentSettings", "savedSkills", "enabledOrigins"] as const;
 
-test.describe("VFS extension wiring (069/003)", () => {
+test.describe("VFS extension wiring", () => {
   test.beforeEach(async ({ context }) => {
     const worker = await getWorker(context);
     await worker.evaluate(async () => {
@@ -213,7 +213,7 @@ test.describe("VFS extension wiring (069/003)", () => {
     expect(keys).toContain("web-agent-vfs:home:chromagent:index");
     expect(keys).toContain("web-agent-vfs:shared:f:/USER.md");
     expect(keys).toContain("web-agent-vfs:shared:index");
-    // 127/004 — selecting tesagent seeds its starter AGENTS.md and nothing
+    // Selecting tesagent seeds its starter AGENTS.md and nothing
     // else. It still cannot see chromagent's /SOUL.md (asserted above).
     expect(keys).toContain("web-agent-vfs:home:tesagent:f:/AGENTS.md");
     expect(keys).toContain("web-agent-vfs:home:tesagent:index");

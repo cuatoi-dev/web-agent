@@ -1,4 +1,4 @@
-// 127/005 — the panel side of page_screenshot's css/xpath targets and
+// The panel side of page_screenshot's css/xpath targets and
 // highlight. Every page-side call goes through `Runtime.callFunctionOn` with
 // value arguments, so selector text never becomes executable source.
 import { errorMessage, thrownFromDetails } from "./error-message";

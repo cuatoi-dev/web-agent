@@ -23,7 +23,7 @@ export interface TabAgentToggleResult extends TabAgentState {
  *  It is false when there was no bubble to send to, or when the bubble's own
  *  `send()` failed before the message reached that session.
  *
- *  001/113 — `ranCommand` says whether the panel resolved the text as a slash
+ *  `ranCommand` says whether the panel resolved the text as a slash
  *  command and handled it. `command` carries the name, without the leading
  *  slash, when it did. A `/new` that arrived as ordinary text has
  *  `delivered: true` and `ranCommand: false`. */

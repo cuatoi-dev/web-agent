@@ -16,9 +16,9 @@ export type { PanelLike } from "./types";
  * `hosts`), so the relay in background.ts:24-69 solves a problem
  * this page does not have. No RELAY_PORT connection is opened from here.
  *
- * 136/005 — `getProvider` is read on every request, so a model switch in the kebab
+ * `getProvider` is read on every request, so a model switch in the kebab
  * menu sends the next request with the new provider's headers.
- * 137/001 — headers are only added when `url` matches the current provider's endpoint.
+ * Headers are only added when `url` matches the current provider's endpoint.
  */
 export function createDirectFetch(
   getProvider: () => ResolvedProvider,
@@ -45,7 +45,7 @@ export function createDirectFetch(
   };
 }
 
-/** Writes the panel's fetch and session config. 136/005 — path, type and
+/** Writes the panel's fetch and session config. Path, type and
  *  model come from createModelSwitch (model-switch.ts). Both must run BEFORE
  *  the element is connected: <agent-chat-panel> builds its session in
  *  connectedCallback and throws when `model` is unset
@@ -57,13 +57,13 @@ export function applyPanelSettings(
   fetchImpl: typeof fetch = fetch,
 ): void {
   panel.fetch = createDirectFetch(getProvider, fetchImpl);
-  // 115/006 — todo tracking is opt-in per host
+  // Todo tracking is opt-in per host
   // (packages/web-agent-core/src/controller.types.ts:119-121). Setting it here
   // is what makes the controller set the `_todos` seam
   // (controller-config.ts:188), which is what makes `todoTools(ctx)`
   // (tools/todo-tools.ts:14-15, folded into `defaultTools` at tools/builders.ts:172) return
   // `todo_write` and `todo_read` instead of an empty list.
-  // 155400-001 — the scheduler is on by default here too, and a turn may
+  // The scheduler is on by default here too, and a turn may
   // take up to 1000 tool steps. The core default is 200.
   panel.config = {
     persist: true,
@@ -71,7 +71,7 @@ export function applyPanelSettings(
     maxIterations: 1000,
     todo: { enabled: true },
     scheduler: { enabled: true },
-    // 116/003 — LAST, so brand/plugin.yml's `tools` block overrides the host
+    // LAST, so brand/plugin.yml's `tools` block overrides the host
     // opt-ins above. Adds nothing when the brand declares no flags.
     ...brandToolConfig(brand),
   };

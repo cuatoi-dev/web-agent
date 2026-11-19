@@ -27,11 +27,11 @@ declare global {
     /** act-by-ref.mock.spec.ts and debugger-session.mock.spec.ts: set once the
      *  mock model has asked for start_debugging, so it is asked only once. */
     __DEBUG_STARTED__?: boolean;
-    /** page-agent.mock.spec.ts, "002 — send_to_page_agent reports not
+    /** page-agent.mock.spec.ts, "send_to_page_agent reports not
      *  delivered after the page removes the bubble": the send tool's output
      *  plus its isError verdict, against detaching-agent.html. */
     __DETACHED_SEND_RESULT__?: { sendResult: string; isError: boolean };
-    /** page-agent.mock.spec.ts, "002 — the toggle mounts on the first press
+    /** page-agent.mock.spec.ts, "the toggle mounts on the first press
      *  after the page removed the bubble": the toggle tool's output plus its
      *  isError verdict, against detaching-agent.html. */
     __DETACHED_TOGGLE_RESULT__?: { toggleResult: string; isError: boolean };
@@ -85,7 +85,7 @@ declare global {
     /** page-tools.mock.spec.ts, "snapshot_page extracts document content":
      *  the snapshot_page tool's output text. */
     __LAST_SNAPSHOT__?: string;
-    /** skills.mock.spec.ts and brand-skills.mock.spec.ts (120/005 E13): the
+    /** skills.mock.spec.ts and brand-skills.mock.spec.ts: the
      *  load_skill tool's output text. */
     __LOAD_SKILL_RESULT__?: string;
     /** act-by-ref.mock.spec.ts, "a non-activated tab returns the
@@ -97,11 +97,11 @@ declare global {
      *  that proves the CSP is really in force for the page's own code, while
      *  page_eval's CDP-based `Runtime.evaluate` is unaffected by it. */
     __NEW_FUNCTION_BLOCKED__?: boolean;
-    /** skills.mock.spec.ts, 120/004 owner tests: the `create_skill`
+    /** skills.mock.spec.ts, owner tests: the `create_skill`
      *  input_schema in the tool list of the first model call, or null when
      *  the tool was not offered. */
     __OWNER_CREATE_SCHEMA__?: Record<string, unknown> | null;
-    /** skills.mock.spec.ts, 120/004 owner tests: the scripted tool call's
+    /** skills.mock.spec.ts, owner tests: the scripted tool call's
      *  output text and its isError flag. */
     __OWNER_TOOL_RESULT__?: { text: string; isError: boolean };
     /** relay.demo.spec.ts: a marker set before an in-page action, read back
@@ -117,7 +117,7 @@ declare global {
      *  fixture page's own click listener fired. */
     __SEARCH_CLICKED__?: boolean;
     /** sidepanel.mock.spec.ts, "tab_management skill is discoverable", and
-     *  brand-skills.mock.spec.ts (120/005 E10-E12, E14): the search_skills
+     *  brand-skills.mock.spec.ts (E10-E12, E14): the search_skills
      *  tool's output text. */
     __SEARCH_SKILLS_RESULT__?: string;
     /** page-agent.mock.spec.ts, "toggle_page_agent twice toggles OFF": the

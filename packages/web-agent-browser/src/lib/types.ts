@@ -13,7 +13,7 @@ import type { ModelRef, ModelEntry, PublicModel, WireFormat } from "./model-stor
 
 // --- constants.ts ----------------------------------------------------------
 
-// 136/005 — `WireFormat` moved to model-store.types.ts, re-exported below.
+// `WireFormat` moved to model-store.types.ts, re-exported below.
 export type * from "./model-store.types";
 
 /** A registered theme identifier or "auto" to follow system preferences.
@@ -45,7 +45,7 @@ export interface RelayRequest {
   method: string;
   headers: Record<string, string>;
   body: string | null;
-  /** 136/005 — the model the request is for. The worker adds that model's
+  /** The model the request is for. The worker adds that model's
    *  provider key only when `url` is under that provider's endpoint. */
   modelRef: ModelRef;
 }
@@ -75,13 +75,13 @@ export interface RelayHandlerDeps {
 
 // --- settings.ts -----------------------------------------------------------
 
-/** What the options page writes under "agentSettings". 136/005 — the model
+/** What the options page writes under "agentSettings". The model
  *  fields moved to the model store (model-store.types.ts); a stored old
  *  object's endpoint, wireFormat, model and apiKey are ignored. */
 export interface AgentSettings {
   /** How the bubble looks on a site that supplies no --wa-* tokens. */
   theme: ThemePreference;
-  /** 104/003 — per-agent user opt-in for side-panel memory (default `{}`). */
+  /** Per-agent user opt-in for side-panel memory (default `{}`). */
   memoryEnabled: Record<string, boolean>;
 }
 
@@ -109,7 +109,7 @@ export type AgentPromptKey = "inPage";
 /** Settings a brand fixes for every install. */
 export interface BrandOptions {
   /** True shows only brand models in the options page table and hides the
-   *  row checkboxes (136/005). Enable, Default and Key still work. Absent
+   *  row checkboxes. Enable, Default and Key still work. Absent
    *  means false. */
   lockModel?: boolean;
   /** True makes "+ Add model" offer the seven built-in providers and Custom
@@ -156,12 +156,12 @@ export interface BrandAgent {
   instructions: string;
   /** The text of `brand/agents/<id>.home/AGENTS.md`. The side panel seeds it
    *  into this agent's `/home/agent/AGENTS.md` once, when that file does not
-   *  exist (127/004). Absent means the agent has no starter file. */
+   *  exist. Absent means the agent has no starter file. */
   homeAgentsMd?: string;
   /** An id from `model.yml` in brand.json. `listAgents` turns it into the
-   *  ModelRef `"brand:" + id` (136/005). Absent means the default model. */
+   *  ModelRef `"brand:" + id`. Absent means the default model. */
   model?: string;
-  /** 104/003 — true when `brand/agents/<id>.yml` allows memory opt-in. */
+  /** True when `brand/agents/<id>.yml` allows memory opt-in. */
   memory?: boolean;
   tools: "*" | string[];
   excludeTools?: string[];
@@ -181,7 +181,7 @@ export interface AgentOwnerRef {
  *  present, so a reader never has to test for a missing one. */
 export interface AgentBrand {
   agents: BrandAgent[];
-  /** The agent the side panel runs with no stored last-agent id (task 002).
+  /** The agent the side panel runs with no stored last-agent id.
    *  The build guarantees this names a file in `agents`. */
   defaultAgent: string;
   prompts: Partial<Record<AgentPromptKey, string>>;
@@ -213,7 +213,7 @@ export interface BrandableAppContext {
 /** Only the field `applyAgentBrand` writes. Keeps the unit test free of the
  *  real custom element, the same way `PanelLike` does for `panel-setup.ts`.
  *  Both `WebAgentBubble` and `AgentChatPanel` satisfy it with no cast —
- *  checked with `tsc --strict` in the refine. */
+ *  checked with `tsc --strict`. */
 export interface BrandableElement {
   appContext?: BrandableAppContext;
 }
@@ -256,7 +256,7 @@ export interface RelayFetchContext {
 
 /** One brand model from model.yml (or the compiled presets). The options
  *  page groups entries with the same endpoint and wire format into one
- *  provider row (136/005). */
+ *  provider row. */
 export interface PresetEntry {
   /** Stable id. Its ModelRef is "brand:" + id. Never shown alone. */
   id: string;
@@ -326,13 +326,13 @@ export interface PageAgentReply {
   origin?: string;
   mounted?: boolean;
   foreign?: boolean;
-  /** 002 — which direction the toggle asked for, decided by the MAIN world
+  /** Which direction the toggle asked for, decided by the MAIN world
    *  from its own state when the request arrived. Without it, "asked for ON
    *  and it is not on" is indistinguishable from "asked for OFF and it is
    *  off", and the panel reported a decline as a deliberate turn-off. */
   requested?: "on" | "off";
   delivered?: boolean;
-  /** 001/113 — true only when the in-page panel actually resolved and handled
+  /** True only when the in-page panel actually resolved and handled
    *  a slash command. A `/new` that arrived as ordinary text is false. */
   ranCommand?: boolean;
   /** The command name, without the leading slash, when `ranCommand` is true. */
@@ -382,7 +382,7 @@ export interface PageEvalToolsOptions {
 }
 
 /** Declared in `src/core/types.ts` with `describeValue`, re-exported here so
- *  `src/lib/` keeps one import path for it (118/001). */
+ *  `src/lib/` keeps one import path for it. */
 export type { DescribedValue, EvalResult } from "../core/types";
 
 // --- page-fetch-tool.ts ----------------------------------------------------
@@ -439,7 +439,7 @@ export type { SkillStorage, SkillsRequestMessage, SkillsResultMessage, PanelSkil
 export type { RecordedStep, RecordedStepKind, RecordingApi, RecordingController, RecordingResult, RecordingState } from "./recorder.types";
 export type { WatchMeProvider, WatchMeProviderOptions, WatchMeProviderState } from "./watch-me-provider.types";
 
-// --- act-by-ref (122/001) and verify/locator (122/002) page tools -----------
+// --- act-by-ref and verify/locator page tools -----------
 // Types live in act-by-ref-tools.types.ts and verify-locator-tools.types.ts, to
 // stay under this file's line cap; re-exported so "./types" imports still work.
 
@@ -460,13 +460,13 @@ export interface RecordingToolsOptions {
 export interface PanelPageToolsOptions
   extends PageScreenshotToolOptions, DebuggerToolsOptions, RecordingToolsOptions {
   /** The panel's own vfs handle (sidepanel.ts:buildAgentPanel). page_screenshot and
-   *  stop_recording save what they produce into it (127/003). */
+   *  stop_recording save what they produce into it. */
   vfs: VfsHandle;
   /** The panel's own confirm gate for the "ask" permission tier on
-   *  `page_click`, `page_fill_form` and `page_select_option` (122/001). Absent
+   *  `page_click`, `page_fill_form` and `page_select_option`. Absent
    *  means every "ask"-tier action proceeds unconfirmed. */
   confirmInteraction?: (detail: ConfirmInteractionDetail) => Promise<boolean>;
-  /** 131/004 — called with a tab's origin the moment a tool has confirmed it,
+  /** Called with a tab's origin the moment a tool has confirmed it,
    *  so the step phrases can name the host (page-tool-phrases.ts:11-24).
    *  `forwardToTab` used to make this call; start_debugging makes it now. */
   onActivatedOrigin?: (tabId: number, origin: string) => void;
@@ -475,10 +475,10 @@ export interface PanelPageToolsOptions
   maxChars?: number;
   /** Overridable for tests only. Tracks the last seen documentId per tab. */
   lastSeenDocumentId?: Map<number, string>;
-  /** 131/002 — the isolated-world helper the ref tools call. `createPanelPageTools`
+  /** The isolated-world helper the ref tools call. `createPanelPageTools`
    *  always supplies one; a direct caller (and every unit test) may pass its own. */
   helper?: HelperWorlds;
-  /** 131/004 — one recorder driver per panel. `createPanelPageTools` always
+  /** One recorder driver per panel. `createPanelPageTools` always
    *  supplies one; a unit test may pass a fake. */
   recorder?: DebuggerRecorder;
 }

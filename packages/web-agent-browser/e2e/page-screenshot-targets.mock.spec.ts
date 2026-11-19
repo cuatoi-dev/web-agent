@@ -4,7 +4,7 @@ import { bodyOf, captionOf, savedPathOf } from "./saved-files";
 import { routeCrossSiteFrames } from "./cross-site-frames";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
-// 127/005 — page_screenshot css and xpath targets and the red highlight. The
+// page_screenshot css and xpath targets and the red highlight. The
 // real extension, real CDP capture and real VFS; only the model is scripted.
 
 const ORIGIN = "http://localhost:10040";
@@ -173,7 +173,7 @@ const applyStyle = (sitePage: Page) =>
     return { outline: el.style.outline, offset: el.style.outlineOffset, cssText: el.style.cssText };
   });
 
-test.describe("page_screenshot css, xpath and highlight (127/005)", () => {
+test.describe("page_screenshot css, xpath and highlight", () => {
   test.beforeEach(async ({ context }) => {
     const worker = await getWorker(context);
     await worker.evaluate(async () => {

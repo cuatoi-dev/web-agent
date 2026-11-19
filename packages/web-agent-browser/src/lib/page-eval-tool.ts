@@ -7,7 +7,7 @@ import type { PageEvalToolsOptions } from "./types";
 
 export type { DescribedValue, PageEvalToolsOptions } from "./types";
 // Re-exported so `src/lib/page-eval-tool.test.ts` and any other reader keep the
-// import path they have today. 118/001 moved the body to `src/core/run-eval.ts`.
+// import path they have today. The body lives in `src/core/run-eval.ts`.
 export { describeValue } from "../core/run-eval";
 
 export function createPageEvalTool(options: PageEvalToolsOptions = {}): CustomToolDef {
@@ -50,7 +50,7 @@ export function createPageEvalTool(options: PageEvalToolsOptions = {}): CustomTo
       }
       // Describing the value used to happen inside the same try as the run, so a value
       // that throws while being described came back as "The code threw …".
-      // Keeping the catch keeps that exactly true — criterion 11.
+      // Keeping the catch keeps that exactly true.
       try {
         const { kind, text } = describeValue(result.value);
         return { content: `Result type: ${kind}\n\n${truncate(text, maxChars)}` };

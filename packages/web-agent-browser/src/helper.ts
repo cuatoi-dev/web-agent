@@ -1,4 +1,4 @@
-// 131/002 — the webpack entry for dist-template/helper.js. The side panel reads
+// The webpack entry for dist-template/helper.js. The side panel reads
 // this file's TEXT and evaluates it inside an isolated world, so it must be one
 // self-contained bundle that installs itself on globalThis and nothing else.
 import * as api from "./lib/helper-api";

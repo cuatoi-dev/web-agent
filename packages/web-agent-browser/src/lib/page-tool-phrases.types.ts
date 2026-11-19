@@ -1,4 +1,4 @@
-// The shapes for page-tool-phrases.ts (124/007).
+// The shapes for page-tool-phrases.ts.
 
 import type { AvailableTool } from "@cuatoi/web-agent-core";
 

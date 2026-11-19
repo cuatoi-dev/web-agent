@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 
-// 104/003 — the extension's opt-in memory. Everything here is real: the real
+// The extension's opt-in memory. Everything here is real: the real
 // extension, real chrome.storage, a real side panel and the real vfs. Only the
 // model is scripted, so the assertions are about what this code sends.
 
@@ -210,7 +210,7 @@ function contrastRatioInPage(): string {
   });
 }
 
-test.describe("Extension memory opt-in (104/003)", () => {
+test.describe("Extension memory opt-in", () => {
   test.afterAll(async () => {
     await fs.rm(TEMP_DIR, { recursive: true, force: true });
   });

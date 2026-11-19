@@ -110,7 +110,7 @@ describe("ax-snapshot", () => {
     expect(result).toMatchObject({ kind: "ok", text: '- checkbox "Agree" [level=2] [disabled] [ref=1]' });
   });
 
-  it("does not print a property that is not in the plan's list", () => {
+  it("does not print a property that is not in the printed-property list", () => {
     const nodes: AxNode[] = [
       {
         nodeId: "1",
@@ -216,7 +216,7 @@ describe("ax-snapshot", () => {
     expect(result).toMatchObject({ kind: "ok", text: "- RootWebArea" });
   });
 
-  // 131/003 — Multi-frame tests
+  // Multi-frame tests
   it("prints an iframe line and its tree one level deeper", () => {
     const topNodes: AxNode[] = [
       { nodeId: "1", role: role("RootWebArea"), childIds: ["2"], backendDOMNodeId: 1 },

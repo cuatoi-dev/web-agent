@@ -1,11 +1,11 @@
-// The debugger session shapes (124/001): one chrome.debugger session per tab,
+// The debugger session shapes: one chrome.debugger session per tab,
 // owned by the side panel page. Its only import is `src/core/types.ts`, which
 // itself imports nothing, so types.ts can still import this file without a
 // cycle.
 import type { ConsoleEntry, ReadConsoleArgs, ReadConsoleResult } from "../core/types";
 import type { DebuggerFrames } from "./debugger-frames.types";
 
-/** One request in a tab's debugger network log (124/003). Timestamps are CDP
+/** One request in a tab's debugger network log. Timestamps are CDP
  *  MonotonicTime, in seconds. */
 export interface NetworkEntry {
   seq: number;
@@ -26,13 +26,13 @@ export interface NetworkEntry {
   failed?: string;
 }
 
-/** One tab's debugger state. Task 002 sets `emulation`; task 003 sets
- *  `dialogPlan` and fills `network`. */
+/** One tab's debugger state. `page_emulate` sets `emulation`; `page_dialog`
+ *  sets `dialogPlan`, and the network log fills `network`. */
 export interface TabDebugState {
   status: "debugging" | "canceled";
   /** `new URL(tab.url).host`, e.g. `localhost:10040`. */
   host: string;
-  /** 131/003 — the tab's top frame id, from Page.getFrameTree at start and
+  /** The tab's top frame id, from Page.getFrameTree at start and
    *  refreshed on every main-frame Page.frameNavigated. A console entry whose
    *  context belongs to any other frame is prefixed with that frame's origin. */
   topFrameId: string;
@@ -46,7 +46,7 @@ export interface TabDebugState {
   network: NetworkEntry[];
   /** The `seq` the next request gets; starts at 1. */
   nextSeq: number;
-  /** 131/001 — the tab's console, from Runtime.consoleAPICalled and
+  /** The tab's console, from Runtime.consoleAPICalled and
    *  Runtime.exceptionThrown. Newest last, at most PAGE_CONSOLE_CAPACITY. */
   console: ConsoleEntry[];
   /** How many entries fell out of the buffer since the current document. */
@@ -60,7 +60,7 @@ export interface TabDebugState {
 export interface DebuggerApi {
   attach(tabId: number): Promise<void>;
   detach(tabId: number): Promise<void>;
-  /** 131/003 — `sessionId` addresses an auto-attached iframe target
+  /** `sessionId` addresses an auto-attached iframe target
    *  (`{ tabId, sessionId }`); omitting it addresses the tab's top target. */
   sendCommand(
     tabId: number,
@@ -71,7 +71,7 @@ export interface DebuggerApi {
   /** `chrome.tabs.get(tabId).url`, or "" when the tab has none. */
   tabUrl(tabId: number): Promise<string>;
   onDetach(listener: (tabId: number, reason: string) => void): void;
-  /** 131/003 — `sessionId` is present when the event came from a child
+  /** `sessionId` is present when the event came from a child
    *  (iframe) session, absent for the tab's top target. */
   onEvent(listener: (tabId: number, method: string, params: unknown, sessionId?: string) => void): void;
 }
@@ -93,10 +93,10 @@ export interface DebuggerSession {
   stop(tabId: number): Promise<string>;
   gate(tabId: number): DebuggerGate;
   send(tabId: number, method: string, params?: Record<string, unknown>, sessionId?: string): Promise<unknown>;
-  /** 131/003 — the tab's frames: auto-attached iframe targets, execution
+  /** The tab's frames: auto-attached iframe targets, execution
    *  contexts and the ref → frame map. */
   readonly frames: DebuggerFrames;
-  /** 131/003 — every Page.frameNavigated, in any session. `isMain` is true for
+  /** Every Page.frameNavigated, in any session. `isMain` is true for
    *  the navigating target's OWN root frame (`frame.parentId === undefined`).
    *  The helper world drops that frame's isolated context, because Chrome
    *  hands back the same context id for an empty world after a navigation. */
@@ -112,25 +112,26 @@ export interface DebuggerSession {
   detachAll(): void;
   /** The tab's current URL (`chrome.tabs.get`), or "" when it has none. */
   tabUrl(tabId: number): Promise<string>;
-  /** 131/001 — the tab's console buffer, filtered and limited, in the same
+  /** The tab's console buffer, filtered and limited, in the same
    *  shape the page script's `readConsole` used to return. An unknown tab
    *  reads as an empty buffer. */
   readConsole(tabId: number, options?: ReadConsoleArgs): ReadConsoleResult;
-  /** Read by tasks 002 and 003 and by unit tests. */
+  /** Read by the debugger page tools, the helper worlds, the recorder and
+   *  unit tests. */
   readonly state: Map<number, TabDebugState>;
-  /** 131/002 — called with the tab id on every MAIN-frame navigation, so the
+  /** Called with the tab id on every MAIN-frame navigation, so the
    *  helper-world cache can drop a context id Chrome is about to reuse for an
    *  empty world. */
   onMainFrameNavigated(listener: (tabId: number) => void): void;
-  /** 131/004 — a child target attaches during a recording; arm it too. */
+  /** A child target attaches during a recording; arm it too. */
   onChildAttached(listener: (tabId: number, sessionId: string) => void): void;
-  /** 131/004 — Runtime.bindingCalled, in any session. */
+  /** Runtime.bindingCalled, in any session. */
   onBindingCalled(
     listener: (tabId: number, sessionId: string | undefined, name: string, payload: string, executionContextId: number) => void,
   ): void;
-  /** 131/004 — Page.navigatedWithinDocument, in any session. */
+  /** Page.navigatedWithinDocument, in any session. */
   onNavigatedWithinDocument(listener: (tabId: number, frameId: string, url: string) => void): void;
-  /** 131/004 — the tab's debugger detached: Cancel, a closed tab, or
+  /** The tab's debugger detached: Cancel, a closed tab, or
    *  stop_debugging. Ends any live recording on that tab. */
   onDetached(listener: (tabId: number, reason: string) => void): void;
 }

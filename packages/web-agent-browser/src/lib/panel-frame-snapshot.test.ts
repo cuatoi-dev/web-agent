@@ -1,4 +1,4 @@
-// 131/003 — collectAxFrames against a fake DebuggerSession whose `send`
+// collectAxFrames against a fake DebuggerSession whose `send`
 // answers by (method, sessionId).
 import { describe, it, expect, vi } from "vitest";
 import { collectAxFrames } from "./panel-frame-snapshot";
@@ -18,7 +18,7 @@ function fakeSession(
   } as unknown as DebuggerSession;
 }
 
-describe("collectAxFrames (131/003)", () => {
+describe("collectAxFrames", () => {
   it("returns one frame for a page with no iframe", async () => {
     const session = fakeSession((method) => {
       if (method === "Page.getFrameTree") return { frameTree: { frame: { id: "top", url: "http://a.test" }, childFrames: [] } };

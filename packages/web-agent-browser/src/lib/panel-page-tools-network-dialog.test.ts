@@ -33,7 +33,7 @@ function fakeDebuggerApi() {
   };
 }
 
-/** 131/002 — page_upload_file now calls through the helper-world seam. */
+/** page_upload_file now calls through the helper-world seam. */
 function fakeHelper(overrides: Partial<HelperWorlds> = {}): HelperWorlds {
   return {
     source: vi.fn().mockResolvedValue(""),
@@ -66,7 +66,7 @@ function setup(helper: HelperWorlds = fakeHelper(), vfs = testVfs()) {
   return { session, debuggerEnv, tools, pageNetwork, pageDialog, pageUploadFile, helper, vfs };
 }
 
-describe("panel-page-tools-network-dialog (124/003)", () => {
+describe("panel-page-tools-network-dialog", () => {
   it("U4.1: Gate: without start, each tool returns gate error", async () => {
     const { pageNetwork, pageDialog, pageUploadFile } = setup();
     const rNet = await pageNetwork.execute({ tabId: 1 }, toolCtx());

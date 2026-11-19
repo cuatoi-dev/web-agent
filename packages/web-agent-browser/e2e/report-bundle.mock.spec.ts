@@ -122,7 +122,7 @@ const TINY_PNG =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR42mNgYGAAAAAEAAHI6uv5AAAAAElFTkSuQmCC";
 const RUN = "/tmp/runs/2026-10-19-101500";
 
-test.describe("VFS report bundle (127/006)", () => {
+test.describe("VFS report bundle", () => {
   test("1 inlines every file-system image and reports the count", async ({ context, extensionId }, testInfo) => {
     const sitePage = await context.newPage();
     await sitePage.goto(CHECKOUT_URL);

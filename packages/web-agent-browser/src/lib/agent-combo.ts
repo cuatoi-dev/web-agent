@@ -4,8 +4,7 @@ export type { AgentComboDeps, AgentCombo } from "./agent-combo.types";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-/** The check mark in front of the selected option (mockup frame 2,
- *  tasks/idea/120-side-panel-agent-profiles.html:170). Same path as the lit
+/** The check mark in front of the selected option. Same path as the lit
  *  registry's `check` icon (packages/web-agent-lit/src/ui/icon-svgs.ts, ICON_SVGS.check).
  *  Decorative: `aria-selected` carries the state for assistive technology. */
 function checkIcon(): SVGSVGElement {
@@ -25,7 +24,7 @@ function checkIcon(): SVGSVGElement {
 /** Builds the options and wires the select-only combobox pattern
  *  (WAI-ARIA APG): Enter, Space or ArrowDown open; ArrowDown/ArrowUp move the
  *  highlight and stop at the ends; Enter selects; Escape closes with no change;
- *  a click outside closes with no change. 120/002. */
+ *  a click outside closes with no change. */
 export function mountAgentCombo(deps: AgentComboDeps): AgentCombo {
   const { button, list, agents } = deps;
   const nameEl = button.querySelector(".name");

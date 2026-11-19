@@ -1,5 +1,5 @@
-// 131/003 — mock-tier proof for page tools reaching into same-site and
-// cross-site iframes, T1-T11 from the refined plan's Test plan. Harness
+// Mock-tier proof for page tools reaching into same-site and
+// cross-site iframes, tests T1-T11. Harness
 // copied from ref-tools-131.mock.spec.ts:1-136, with CHECKOUT_URL pointed at
 // the new fixture, routeCrossSiteFrames applied, and refFor extended to also
 // match an "f<k>:" prefixed ref.
@@ -149,7 +149,7 @@ async function openCheckout(context: BrowserContext): Promise<{ worker: Worker; 
   return { worker, sitePage, tabId };
 }
 
-test.describe("Iframe tools 131 mock e2e (131/003)", () => {
+test.describe("Iframe tools mock e2e", () => {
   test("T1 page_snapshot lists every iframe, same-site plain refs, cross-site f1: refs", async ({ context, extensionId }) => {
     const { sitePage, tabId } = await openCheckout(context);
 

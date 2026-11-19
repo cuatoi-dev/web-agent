@@ -291,7 +291,7 @@ describe("forwardedSkillRegistry", () => {
   });
 });
 
-describe("handleSkillsRequest — owners (120/004)", () => {
+describe("handleSkillsRequest — owners", () => {
   it("4a: list with agentId chromagent sees shared skills only", async () => {
     const { storage } = fakeStorage({ [SKILLS_KEY]: [SKILL_A, OWNED] });
     const reply = await handleSkillsRequest({ type: "wa-skills-list", id: "x", agentId: "chromagent" }, storage);
@@ -393,7 +393,7 @@ describe("handleSkillsRequest — owners (120/004)", () => {
   });
 });
 
-describe("handlePageSkillsRequest — forged agentId (manager decision 2026-09-16)", () => {
+describe("handlePageSkillsRequest — forged agentId", () => {
   function seeded() {
     return fakeStorage({ [SKILLS_KEY]: [SKILL_A, OWNED] });
   }
@@ -447,7 +447,7 @@ describe("handlePageSkillsRequest — forged agentId (manager decision 2026-09-1
   });
 });
 
-describe("extensionSkillRegistry — owners (120/004)", () => {
+describe("extensionSkillRegistry — owners", () => {
   it("6a: save with shared: false stores the owner; another agent's registry does not see it", async () => {
     const { storage } = fakeStorage({ [SKILLS_KEY]: [] });
     const reg = extensionSkillRegistry(PANEL_OWNER, storage);
@@ -481,7 +481,7 @@ describe("extensionSkillRegistry — owners (120/004)", () => {
   });
 });
 
-describe("forwardedSkillRegistry — owners (120/004)", () => {
+describe("forwardedSkillRegistry — owners", () => {
   it("7a: the bubble's registry sees shared skills only and reports no supportsOwner", async () => {
     const { storage } = fakeStorage({ [SKILLS_KEY]: [SKILL_A, OWNED] });
     const { ctx } = linkedContext(storage);
@@ -509,7 +509,7 @@ describe("forwardedSkillRegistry — owners (120/004)", () => {
   });
 });
 
-describe("create_skill over the real extension registry (120/004)", () => {
+describe("create_skill over the real extension registry", () => {
   it("8a: tesagent saves a private skill through the real registry", async () => {
     const { storage } = fakeStorage({ [SKILLS_KEY]: [] });
     const reg = extensionSkillRegistry(PANEL_OWNER, storage);

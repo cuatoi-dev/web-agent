@@ -27,7 +27,7 @@ function fakeDebuggerApi() {
   };
 }
 
-describe("DebuggerSession (124/001)", () => {
+describe("DebuggerSession", () => {
   it("start attaches and records state", async () => {
     const { api } = fakeDebuggerApi();
     const session = createDebuggerSession(api);
@@ -653,7 +653,7 @@ describe("DebuggerSession (124/001)", () => {
     });
   });
 
-  describe("131/003 — frames", () => {
+  describe("frames", () => {
     const attach = (
       fireEvent: (t: number, m: string, p: unknown, sessionId?: string) => void,
       sessionId: string,

@@ -10,8 +10,8 @@ import { brandRef } from "./model-store";
 
 export const AGENT_EDITS_KEY = "agentEdits";
 export const USER_AGENTS_KEY = "userAgents";
-/** The side panel agent shown last (120/002). Read and written by
- *  `settings.ts`; removed by Delete agent (121/004). */
+/** The side panel agent shown last. Read and written by
+ *  `settings.ts`; removed by Delete agent. */
 export const LAST_AGENT_KEY = "sidePanelAgent";
 
 export const chromeAgentStorage: AgentStorage = {
@@ -84,7 +84,7 @@ export function listAgents(
     } else {
       out.push({
         ...a,
-        // 136/005 — brand.json names a model.yml id; every reader of the
+        // brand.json names a model.yml id; every reader of the
         // merged list works in ModelRefs.
         ...(a.model ? { model: brandRef(a.model) } : {}),
         origin: "brand",

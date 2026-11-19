@@ -1,4 +1,4 @@
-// 127/005 — page-side parts of page_screenshot: finding the first element for a
+// Page-side parts of page_screenshot: finding the first element for a
 // CSS or XPath target, and the temporary red outline. Installed on
 // `globalThis.__waHelper` through helper-api.ts. All functions are synchronous.
 import type { ScreenshotOutline, ScreenshotSelection, ScreenshotStyleDeclaration, Styled } from "./helper-screenshot.types";

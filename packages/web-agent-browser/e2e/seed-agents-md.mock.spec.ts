@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { test, expect } from "./extension.fixture";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
-// 127/004 — the brand's starter AGENTS.md. The real extension, real
+// The brand's starter AGENTS.md. The real extension, real
 // chrome.storage, a real panel build and a real seed. Only the model is
 // scripted, so nothing about the seed or the vfs is faked.
 
@@ -109,7 +109,7 @@ async function previewText(page: Page): Promise<string> {
   return page.locator("agent-files-screen pre.wa-file-text").textContent() ?? "";
 }
 
-test.describe("Tesagent starter AGENTS.md (127/004)", () => {
+test.describe("Tesagent starter AGENTS.md", () => {
   test("1 a fresh profile shows the exact brand text in the Files screen", async ({ context, extensionId }, testInfo) => {
     const starter = await fs.readFile(STARTER_PATH, "utf8");
     const page = await openPanel(context, extensionId);

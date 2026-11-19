@@ -4,7 +4,7 @@
 // This file imports nothing, so no sibling can close a cycle through it.
 
 /** One serialized value: a short type label and the text to show. Moved here
- *  from `src/lib/types.ts` by 118/001, with `describeValue`. `src/lib/types.ts`
+ *  from `src/lib/types.ts`, with `describeValue`. `src/lib/types.ts`
  *  re-exports it, so every existing import path still resolves. */
 export interface DescribedValue {
   kind: string;

@@ -6,17 +6,17 @@ import type { CardView } from "./agent-editor.types";
 import { EMPTY_MODEL_STORE, listModels, modelForAgent } from "./model-store";
 
 export const BRAND_LOCKED_NOTE = "Display name and id are provided and cannot be changed.";
-/** 121/004 — `editingId` while the new card is open. Never a valid agent id:
+/** `editingId` while the new card is open. Never a valid agent id:
  *  brand ids match `^[a-z]` (`tool/compile-brand.cjs:344`) and `makeId`
  *  emits only `[a-z0-9-]`. */
 export const NEW_AGENT_ID = "_new";
 export const NEW_AGENT_TITLE = "New agent";
 export const NEW_AGENT_NOTE = "Fill in the fields, then save.";
 
-/** 136/005 — the card's Model fact when the agent's model is off or gone. */
+/** The card's Model fact when the agent's model is off or gone. */
 export const MODEL_FELL_BACK_LABEL = "Options page model (its model is off or deleted)";
 
-/** 104/003 — help copy shown next to the per-agent Memory switch. */
+/** Help copy shown next to the per-agent Memory switch. */
 export const MEMORY_HELP_TEXT =
   "Remember things about you and this agent between chats. Saved in this browser.";
 

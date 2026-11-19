@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { BrowserContext, Locator, Page, Worker } from "@playwright/test";
 import { test, expect } from "./extension.fixture";
 
-// 128/002 — run-time folder mounts. Real OPFS handles, the real extension, a
+// Run-time folder mounts. Real OPFS handles, the real extension, a
 // mock model. No handle and no dialog is faked.
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -256,7 +256,7 @@ async function openFiles(page: Page): Promise<void> {
 
 const OLD_CSS = "body { margin: 0; }\n";
 
-test.describe("VFS folder mounts (128/002)", () => {
+test.describe("VFS folder mounts", () => {
   test.beforeEach(async ({ context }) => {
     const worker = await getWorker(context);
     await worker.evaluate(async () => {

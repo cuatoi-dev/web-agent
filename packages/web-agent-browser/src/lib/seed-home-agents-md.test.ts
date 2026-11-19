@@ -3,7 +3,7 @@ import { MemoryBackend, vfsTools, type VfsBackend } from "@cuatoi/web-agent-vfs"
 import { seedHomeAgentsMd, HOME_AGENTS_MD } from "./seed-home-agents-md";
 import { testVfs } from "./test-vfs";
 
-describe("seedHomeAgentsMd (127/004)", () => {
+describe("seedHomeAgentsMd", () => {
   it("writes the starter text when the file is missing", async () => {
     const vfs = testVfs();
     const warn = vi.fn();

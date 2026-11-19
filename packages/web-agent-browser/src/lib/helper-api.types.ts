@@ -1,4 +1,4 @@
-// The shapes for helper-api.ts and helper-api-actions.ts (131/002) — the
+// The shapes for helper-api.ts and helper-api-actions.ts — the
 // helper bundle's own functions, called through Runtime.callFunctionOn. Split
 // out to satisfy wa/types-in-types-file.
 import type { ElementTarget } from "./element-target.types";

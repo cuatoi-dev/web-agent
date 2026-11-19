@@ -27,7 +27,7 @@ export function ownerLabel(skill: SkillDef, agents: AgentOwnerRef[]): string {
  *  Built with `createElement` and `textContent`, never `innerHTML` — a skill
  *  name and description are written by a model, so they are untrusted text and
  *  must not be parsed as markup. The definition body is deliberately not
- *  rendered; the plan's Data shapes section says why. */
+ *  rendered. */
 function buildRow(
   skill: SkillDef,
   agents: AgentOwnerRef[],

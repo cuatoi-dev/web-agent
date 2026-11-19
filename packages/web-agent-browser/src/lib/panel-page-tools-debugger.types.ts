@@ -1,4 +1,4 @@
-// Shapes for the debugger page tools' key and device tables (124/002).
+// Shapes for the debugger page tools' key and device tables.
 // Imports nothing, mirroring page-screenshot-tool.types.ts.
 
 /** A CDP `Input.dispatchKeyEvent` key/code/vk/text quad, per key name. */
@@ -10,7 +10,7 @@ export interface KeyDef {
 }
 
 /** A `page_emulate` device preset. Values copied verbatim from Playwright
- *  1.58.2's `deviceDescriptorsSource.json` (see the task's External facts). */
+ *  1.58.2's `deviceDescriptorsSource.json`. */
 export interface DevicePreset {
   width: number;
   height: number;

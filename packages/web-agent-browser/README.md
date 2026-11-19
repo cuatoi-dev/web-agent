@@ -5,7 +5,19 @@ extension. You do not write source, a manifest, or webpack configuration. The
 toolkit ships the prebuilt extension, the compiler, and the `web-agent-brand`
 command that builds your brand into `dist/`.
 
-## Quick start
+## Install
+
+Install the toolkit as a dependency of your brand package:
+
+```bash
+npm install @cuatoi/web-agent-browser
+```
+
+The package has no peer dependencies. `web-agent-brand init` writes this
+dependency into each new package, so you need this step only for a package
+that you made yourself.
+
+## Usage
 
 Run these commands outside a copy of the web-agent repository:
 
@@ -23,6 +35,17 @@ and **Load unpacked**.
 the files in `brand/`, then build again. The
 [Branding guide](./docs/branding-guide.md) explains each step, each key, and
 each build error.
+
+### Commands
+
+| Command | What it does |
+|---|---|
+| `web-agent-brand init <directory>` | Creates a new brand package in `<directory>`. Refuses a directory that exists and is not empty. |
+| `web-agent-brand build` | Builds `./brand` into `./dist` in the current directory. |
+| `web-agent-brand --version` | Prints the toolkit version. |
+
+Any failure prints the error and exits 1. A wrong or missing command prints the
+usage text and exits 2.
 
 ## Documentation
 
@@ -46,13 +69,6 @@ The extension's own behavior is described in [`docs/`](./docs/README.md):
 - [Third-party notices](./docs/third-party-notices.md) — the licence of the
   provider logos.
 
-## Commands
+## License
 
-| Command | What it does |
-|---|---|
-| `web-agent-brand init <directory>` | Creates a new brand package in `<directory>`. Refuses a directory that exists and is not empty. |
-| `web-agent-brand build` | Builds `./brand` into `./dist` in the current directory. |
-| `web-agent-brand --version` | Prints the toolkit version. |
-
-Any failure prints the error and exits 1. A wrong or missing command prints the
-usage text and exits 2.
+Apache-2.0 — see [LICENSE](./LICENSE).

@@ -1,5 +1,5 @@
-// 124/006 — the composer's Watch me control. Built on the AttachmentProvider
-// seam (`view()`/`slot()`/`subscribe()`), driven by task 005's recording
+// The composer's Watch me control. Built on the AttachmentProvider
+// seam (`view()`/`slot()`/`subscribe()`), driven by the recording
 // controller — the same instance the `start_recording`/`stop_recording` tools
 // share, so the agent and the user watch (and can stop) the same recording.
 import type { AttachmentChip, MessagePart } from "@cuatoi/web-agent-core";
@@ -83,10 +83,10 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
   // path left standing. A recording ended by navigation or a closed tab never
   // gets that idle follow-up (nothing calls `stop()` to consume it), so the
   // tentative capture simply stays — but only when `startedHere` below says
-  // this composer is the one who started it (fix round 1: see that flag).
+  // this composer is the one who started it (see that flag).
   let stoppedState: Extract<WatchMeProviderState, { kind: "stopped" }> | null = null;
 
-  // Fix round 1 (124/006) — true only while the CURRENT (or most recently
+  // True only while the CURRENT (or most recently
   // stopped) recording was started by THIS provider's own `pick()`, not the
   // agent's start_recording tool. A `stop()`-driven completion (whichever of
   // the two started it) always resolves through the paired "stopped" then
@@ -262,7 +262,7 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
         onNotify?.(startRes.error, "error");
         return;
       }
-      // Fix round 1 (124/006) — recorded only once the start actually
+      // Recorded only once the start actually
       // succeeded, so a failed start never leaves a stale claim of ownership
       // over whatever the agent's own start_recording tool records next.
       startedHere = true;
@@ -271,7 +271,7 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
       notify();
     },
     hasPending() {
-      // Fix round 1 (124/006) — `stoppedState`, not `currentState()`: the
+      // `stoppedState`, not `currentState()`: the
       // latter falls through to the controller's own state, which stays
       // "stopped" for an agent-started recording ended by navigation or a
       // closed tab too (see `startedHere` above). Only `stoppedState` is
@@ -287,7 +287,7 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
       return () => listeners.delete(listener);
     },
     onUserPrompt(payload) {
-      // Fix round 1 (124/006) — reads `stoppedState` directly, for the same
+      // Reads `stoppedState` directly, for the same
       // reason `hasPending()` above does.
       if (!stoppedState) return;
       const taken = stoppedState;
@@ -300,7 +300,7 @@ export function createWatchMeProvider(options: WatchMeProviderOptions): WatchMeP
       ];
       const header = `# Recorded steps on ${taken.url}\n`;
       const note = taken.note ? `${taken.note}\n` : "";
-      // 127/002 — the agent gets each step's locator lines; the panel list does not.
+      // The agent gets each step's locator lines; the panel list does not.
       const lines = taken.steps
         .map((step, i) => [`${i + 1}. ${stepLine(step)}`, ...stepLocatorLines(step)].join("\n"))
         .join("\n");

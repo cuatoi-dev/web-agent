@@ -58,7 +58,7 @@ export function describeValue(value: unknown): DescribedValue {
   const kind = Array.isArray(value) ? `Array(${(value as unknown[]).length})` : ctor;
   const json = safeJson(value);
   // An object with nothing enumerable serializes to "{}" and tells the model
-  // nothing. Describe it instead — the acceptance criteria forbid a bare "{}".
+  // nothing. Describe it instead, so the model never gets a bare "{}".
   if (json === "{}" && Object.keys(value).length === 0) {
     const names = Object.getOwnPropertyNames(value);
     const props = names.length ? names.join(", ") : "(none)";

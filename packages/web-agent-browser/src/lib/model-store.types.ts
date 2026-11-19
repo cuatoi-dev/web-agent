@@ -1,4 +1,4 @@
-// The shapes for the model store (idea 136 task 005): stored providers and
+// The shapes for the model store: stored providers and
 // keys, the resolved model list, the public list the page may see, and the
 // model switch. Split out of types.ts to stay under its 500-line cap
 // (eslint.config.mjs max-lines). Imports nothing relative, so types.ts can
@@ -8,7 +8,7 @@ import type { ModelOption, ToolProvider } from "@cuatoi/web-agent-core";
 
 /** The three wire formats `bubble.type` accepts
  *  (web-agent-lit/src/embed/web-agent-embed.ts:100). Moved here from
- *  types.ts in 136/005; types.ts re-exports it. */
+ *  types.ts; types.ts re-exports it. */
 export type WireFormat = "openai" | "anthropic" | "gemini";
 
 /** Names one model. Brand: "brand:" + model.yml id. Custom: provider id +
@@ -29,7 +29,7 @@ export interface ModelDef {
   vision: boolean;
 }
 
-/** A provider the user added (task 006 adds the form; this task only reads it). */
+/** A provider the user added in the options page. */
 export interface CustomProvider {
   /** A uuid. */
   id: string;
@@ -64,7 +64,7 @@ export interface ResolvedProvider {
   wireFormat: WireFormat;
   apiKey: string;
   headers: HeaderPair[];
-  /** Brand providers only (137/001): where `apiKey` came from. "user" = the
+  /** Brand providers only: where `apiKey` came from. "user" = the
    *  Key button, "brand" = model.yml `apiKey`, "none" = no key. */
   keySource?: "user" | "brand" | "none";
 }
@@ -116,7 +116,7 @@ export interface ModelStorage {
   set(items: Record<string, unknown>): Promise<void>;
 }
 
-/** Seals plain API keys to `enc:v1:<base64>` and opens them back (138/001). */
+/** Seals plain API keys to `enc:v1:<base64>` and opens them back. */
 export interface KeyVault {
   seal(plain: string): Promise<string>;
   open(stored: string): Promise<string>;
@@ -178,7 +178,7 @@ export interface BrandKeyDialogOptions {
   endpoint: string;
   /** The stored key, shown in the password field. "" when none. */
   current: string;
-  /** True when model.yml gives this provider a default key (137/001). */
+  /** True when model.yml gives this provider a default key. */
   hasBrandKey: boolean;
 }
 

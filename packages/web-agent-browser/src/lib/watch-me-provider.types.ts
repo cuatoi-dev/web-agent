@@ -1,4 +1,4 @@
-// 124/006 — the watch-me composer control's own shapes, split out of
+// The watch-me composer control's own shapes, split out of
 // types.ts to keep it acyclic (imports the recorder's controller type),
 // mirroring recorder.types.ts.
 import type { AttachmentProvider } from "@cuatoi/web-agent-core";

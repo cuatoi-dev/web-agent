@@ -1,4 +1,4 @@
-// 001 — the in-page DOM tools treat a site's own chat agent as page content and
+// The in-page DOM tools treat a site's own chat agent as page content and
 // skip only the extension's own bubble. The selector is the one content.ts
 // gives domTools, so this file pins the rule at its source.
 import { describe, it, expect, beforeEach } from "vitest";

@@ -145,7 +145,7 @@ async function rerun(
   return runPlan(panelPage, prompt, plan.length);
 }
 
-test.describe("page_network, page_dialog and page_upload_file mock e2e (124/003)", () => {
+test.describe("page_network, page_dialog and page_upload_file mock e2e", () => {
   test("N1 gate on all three tools before start_debugging", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     await enableOrigin(worker, [ORIGIN]);

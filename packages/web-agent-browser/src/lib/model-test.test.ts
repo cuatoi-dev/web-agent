@@ -433,7 +433,7 @@ describe("mountRowTest", () => {
   });
 });
 
-describe("runTest onResult (138/002)", () => {
+describe("runTest onResult", () => {
   const setup = () => {
     const button = document.createElement("button");
     const resultEl = document.createElement("p");

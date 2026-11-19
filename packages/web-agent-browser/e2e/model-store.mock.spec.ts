@@ -618,7 +618,7 @@ async function seedProvider(page: Page, worker: import("@playwright/test").Worke
   await page.locator("#tab-btn-models").click();
 }
 
-test.describe("Custom providers, multi-select delete and Refresh from /models (136/006)", () => {
+test.describe("Custom providers, multi-select delete and Refresh from /models", () => {
   test.beforeAll(async () => {
     await fs.mkdir(ARTIFACTS_006, { recursive: true });
   });

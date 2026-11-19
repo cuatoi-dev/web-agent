@@ -114,7 +114,7 @@ async function runPlan(panelPage: Page, prompt: string, count: number): Promise<
   await panelPage.waitForFunction((n: number) => (window.__TOOL_RESULTS__?.length ?? 0) >= n, count, { timeout: 30_000 });
 }
 
-test.describe("page tool step phrases mock e2e (124/007)", () => {
+test.describe("page tool step phrases mock e2e", () => {
   test("a long tool step keeps its ellipsis inside the 400 px side panel", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     await enableOrigin(worker, [ORIGIN]);

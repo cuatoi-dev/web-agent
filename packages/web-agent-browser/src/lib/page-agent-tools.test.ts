@@ -28,7 +28,7 @@ function getTool(tools: ReturnType<typeof createPageAgentTools>, name: string) {
   return tool;
 }
 
-/** 001 — one fake that answers each message type differently, so a test can
+/** One fake that answers each message type differently, so a test can
  *  script "the send says not mounted, the probe says mounted". */
 function replyByType(replies: Record<string, unknown>) {
   const counts: Record<string, number> = {};
@@ -101,7 +101,7 @@ describe("page-agent-tools", () => {
       });
       const tools = createPageAgentTools({ pageAgentApi: api, sleep: async () => {} });
       await getTool(tools, "send_to_page_agent").execute({ text: "hello", tabId: 10 }, toolCtx());
-      // 001 — the send now probes before it refuses, so the count is no longer
+      // The send now probes before it refuses, so the count is no longer
       // the guard. What must stay true is that nothing it sends can mount,
       // unmount or toggle: the first message is the send, and every message
       // after it is the read-only state probe.
@@ -197,7 +197,7 @@ describe("page-agent-tools", () => {
       expect(api.sendMessage).not.toHaveBeenCalled();
     });
 
-    it("001/113 — reports 'Ran /new' when ranCommand is true and command is 'new'", async () => {
+    it("reports 'Ran /new' when ranCommand is true and command is 'new'", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({
           origin: "https://x.example",
@@ -213,7 +213,7 @@ describe("page-agent-tools", () => {
       expect(result.content).toContain("Ran /new");
     });
 
-    it("001/113 — reports slash as ordinary text when delivered but ranCommand is false", async () => {
+    it("reports slash as ordinary text when delivered but ranCommand is false", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({
           origin: "https://x.example",
@@ -229,7 +229,7 @@ describe("page-agent-tools", () => {
       expect(result.content).toContain("unknowncmd");
     });
 
-    it("001/113 — passes /compact through as text; tool sends no special messages", async () => {
+    it("passes /compact through as text; tool sends no special messages", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({
           origin: "https://x.example",
@@ -250,7 +250,7 @@ describe("page-agent-tools", () => {
       expect(result.content).toContain("Ran /compact");
     });
 
-    it("001 — a send that lands while the mount is still settling is delivered", async () => {
+    it("a send that lands while the mount is still settling is delivered", async () => {
       const api = fakePageAgentApi({
         sendMessage: replyByType({
           "wa-send": [
@@ -269,7 +269,7 @@ describe("page-agent-tools", () => {
       expect(types).toEqual(["wa-send", "wa-state", "wa-send"]);
     });
 
-    it("001 — the probe only reads; it never toggles", async () => {
+    it("the probe only reads; it never toggles", async () => {
       const api = fakePageAgentApi({
         sendMessage: replyByType({
           "wa-send": [
@@ -286,7 +286,7 @@ describe("page-agent-tools", () => {
       expect(types).not.toContain("wa-toggle");
     });
 
-    it("001 — a tab that never mounts still gets the unchanged refusal", async () => {
+    it("a tab that never mounts still gets the unchanged refusal", async () => {
       const sleep = vi.fn(async () => {});
       const api = fakePageAgentApi({
         sendMessage: replyByType({
@@ -308,7 +308,7 @@ describe("page-agent-tools", () => {
       }
     });
 
-    it("001 — a probe that rejects gives up at once", async () => {
+    it("a probe that rejects gives up at once", async () => {
       const sleep = vi.fn(async () => {});
       const api = fakePageAgentApi({
         sendMessage: vi.fn((_tabId: number, message: { type: string }) => {
@@ -326,7 +326,7 @@ describe("page-agent-tools", () => {
       expect(sleep).not.toHaveBeenCalled();
     });
 
-    it("001 — a foreign page is refused without any probe", async () => {
+    it("a foreign page is refused without any probe", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({ origin: "https://x.example", mounted: false, foreign: true }),
       });
@@ -398,7 +398,7 @@ describe("page-agent-tools", () => {
       expect(result.content).not.toContain("is now ON");
     });
 
-    it("002 — a press that asked for ON and did not mount reports a refusal, not a turn-off", async () => {
+    it("a press that asked for ON and did not mount reports a refusal, not a turn-off", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({
           origin: "https://x.example",
@@ -415,7 +415,7 @@ describe("page-agent-tools", () => {
       expect(result.content).not.toContain("is now OFF");
     });
 
-    it("002 — a press that asked for OFF still reports OFF", async () => {
+    it("a press that asked for OFF still reports OFF", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({
           origin: "https://x.example",
@@ -430,7 +430,7 @@ describe("page-agent-tools", () => {
       expect(result.content).toContain("is now OFF");
     });
 
-    it("002 — the foreign reason wins over the refused-turn-on wording", async () => {
+    it("the foreign reason wins over the refused-turn-on wording", async () => {
       const api = fakePageAgentApi({
         sendMessage: vi.fn().mockResolvedValue({
           origin: "https://x.example",
@@ -479,7 +479,7 @@ describe("page-agent-tools", () => {
       expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
-    it("001 — reports ON only after the probe confirms the mount", async () => {
+    it("reports ON only after the probe confirms the mount", async () => {
       const api = fakePageAgentApi({
         sendMessage: replyByType({
           "wa-toggle": { origin: "https://x.example", mounted: true, requested: "on" },
@@ -496,7 +496,7 @@ describe("page-agent-tools", () => {
       expect(stateCalls.length).toBe(1);
     });
 
-    it("001 — a mount the probe never confirms is reported as did-not-come-up", async () => {
+    it("a mount the probe never confirms is reported as did-not-come-up", async () => {
       const sleep = vi.fn(async () => {});
       const api = fakePageAgentApi({
         sendMessage: replyByType({
@@ -512,7 +512,7 @@ describe("page-agent-tools", () => {
       expect(result.content).not.toContain("is now ON");
     });
 
-    it("001 — a press that asked for OFF is never probed", async () => {
+    it("a press that asked for OFF is never probed", async () => {
       const api = fakePageAgentApi({
         sendMessage: replyByType({
           "wa-toggle": { origin: "https://x.example", mounted: true, requested: "off" },

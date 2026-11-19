@@ -523,7 +523,7 @@ const testBtn = (table: HTMLElement, ref: string) =>
 const resultOf = (table: HTMLElement, ref: string) =>
   table.querySelector<HTMLElement>(`tr.model-row[data-ref="${ref}"] .table-model-result`)!;
 
-describe("Models tab Test button (138/002)", () => {
+describe("Models tab Test button", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

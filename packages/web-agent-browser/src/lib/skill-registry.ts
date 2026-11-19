@@ -12,7 +12,7 @@ export type { PanelSkillOwner, SkillStorage, SkillsRequestMessage, SkillsResultM
 /** The one `chrome.storage.local` key both extension agents share. A skill
  *  saved on any site, or in the side panel, lands here. A skill with no
  *  `owner` is visible to every agent; one with `owner` only to that side panel
- *  agent (120/004). Exported because the options page (task 005) reads the
+ *  agent. Exported because the options page reads the
  *  same key. */
 export const SKILLS_KEY = "savedSkills";
 
@@ -44,7 +44,7 @@ async function readAll(storage: SkillStorage): Promise<SkillDef[]> {
   return Array.isArray(stored) ? (stored as SkillDef[]) : [];
 }
 
-/** True when `agentId` may see `skill` (120/004). A skill with no `owner` is
+/** True when `agentId` may see `skill`. A skill with no `owner` is
  *  shared. An owned skill is seen only by its owner, so an undefined
  *  `agentId` — the in-page bubble — sees shared skills only. */
 function visible(skill: SkillDef, agentId: string | undefined): boolean {
@@ -65,7 +65,7 @@ function withoutOwner(skill: SkillDef): SkillDef {
  * layer and the whole switch is unit-testable with a fake. `bridge.ts` posts
  * whatever this returns.
  *
- * 120/004 — `msg.agentId` decides what the caller sees: shared skills plus
+ * `msg.agentId` decides what the caller sees: shared skills plus
  * its own. A name stays unique across every agent, so a save for a name the
  * caller cannot see is refused with `error`, and a remove of it writes
  * nothing.
@@ -99,7 +99,7 @@ export async function handleSkillsRequest(
     }
     // Name is the identity: the existing entry is dropped and the new one is
     // appended, so the stored array holds exactly one entry per name. One
-    // `set` call, which is what acceptance criterion 9 measures.
+    // `set` call.
     const without = skills.filter((s) => s.name !== skill.name);
     await storage.set({ [SKILLS_KEY]: [...without, skill] });
     return { type: SKILLS_RESULT_MESSAGE, id: msg.id, result: true };
@@ -112,8 +112,7 @@ export async function handleSkillsRequest(
 }
 
 /**
- * The bridge's entry point for a request a page posted (120/004, manager
- * decision 2026-09-16).
+ * The bridge's entry point for a request a page posted.
  *
  * Every such request comes from the page's MAIN world — the in-page bubble or
  * any other script on the page — and never from a side panel agent, so
@@ -135,7 +134,7 @@ export function handlePageSkillsRequest(
  *  two-line adapter type-checks without depending on which overload TypeScript
  *  picks. The arrows read `chrome` only when called, so importing this module
  *  in a jsdom unit test with no chrome global is safe. Exported because the
- *  options page (task 005) binds the same storage area. */
+ *  options page binds the same storage area. */
 export const chromeSkillStorage: SkillStorage = {
   get: (key) => chrome.storage.local.get(key),
   set: (items) => chrome.storage.local.set(items),
@@ -146,7 +145,7 @@ export const chromeSkillStorage: SkillStorage = {
  * `chrome.storage.local` directly, exactly as `settings.ts:21,46` already
  * does, so it needs no forwarder.
  *
- * 120/004 — every call carries the agent's id, so the agent sees shared
+ * Every call carries the agent's id, so the agent sees shared
  * skills plus its own. `supportsOwner` makes core's create_skill offer
  * `shared`; `shared: false` stores the skill with `owner: agentId`, anything
  * else stores it with no owner. A refused save throws, and create_skill turns
@@ -223,7 +222,7 @@ export function forwardedSkillRegistry(
    *  runs on plain `http://` pages too. */
   const nextId = () => `wa-skill-${++counter}-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 
-  // 120/004 — no supportsOwner and no agentId: the bubble has no `shared`
+  // No supportsOwner and no agentId: the bubble has no `shared`
   // input and sees shared skills only.
   return {
     async list() {

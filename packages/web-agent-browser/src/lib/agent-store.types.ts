@@ -58,6 +58,6 @@ export interface AgentStore {
 export interface AgentStorage {
   get(keys: string | string[]): Promise<Record<string, unknown>>;
   set(items: Record<string, unknown>): Promise<void>;
-  /** 121/004 — Delete agent removes `sidePanelAgent`. */
+  /** Delete agent removes `sidePanelAgent`. */
   remove(keys: string | string[]): Promise<void>;
 }

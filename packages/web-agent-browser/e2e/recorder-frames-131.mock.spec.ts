@@ -1,4 +1,4 @@
-// 131/004 — the recorder on the debugger, in every frame: cross-site,
+// The recorder on the debugger, in every frame: cross-site,
 // same-site and doubly-nested. Harness copied from
 // iframe-tools-131.mock.spec.ts:1-149, with the plan-queue model driving
 // start_debugging/start_recording/stop_recording while the USER
@@ -139,7 +139,7 @@ async function startDebuggingAndRecording(context: BrowserContext, extensionId: 
   return panelPage;
 }
 
-test.describe("recorder in every frame — cross-site, same-site, nested (131/004)", () => {
+test.describe("recorder in every frame — cross-site, same-site, nested", () => {
   test("F1 a click and a fill in the cross-site Payment iframe are recorded", async ({ context, extensionId }) => {
     const { sitePage, tabId } = await openCheckout(context);
     const panelPage = await startDebuggingAndRecording(context, extensionId, tabId);
@@ -209,7 +209,7 @@ test.describe("recorder in every frame — cross-site, same-site, nested (131/00
     await context.close();
   });
 
-  // F6, as the plan names it, is Chrome's native "Cancel" button on the
+  // F6, the user's Cancel, is Chrome's native "Cancel" button on the
   // debugging infobar — a real OS-level UI element Playwright cannot click.
   // `stop_debugging` drives the SAME code path: debugger-session.ts's stop()
   // fires the identical `onDetached` listener with a non-"target_closed"

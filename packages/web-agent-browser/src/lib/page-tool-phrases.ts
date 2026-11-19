@@ -28,8 +28,7 @@ export function createHostTracker(): HostTracker {
 }
 
 /** The two texts every page tool can fail with, plus the two the debugger tools
- *  add. Verified against the source 2026-09-18 — see the task file's
- *  "Result texts re-verified" table for each file:line. */
+ *  add. Verified against the source 2026-09-18. */
 export function isPageFailure(toolName: string, summary: string): boolean {
   return (
     summary.startsWith("The web agent is not on in tab #") ||

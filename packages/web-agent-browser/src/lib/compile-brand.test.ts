@@ -268,7 +268,7 @@ describe("compileBrand", () => {
       }
     });
 
-    it("reads <id>.home/AGENTS.md into homeAgentsMd (127/004)", () => {
+    it("reads <id>.home/AGENTS.md into homeAgentsMd", () => {
       const tempDir = makeTempDir();
       writeDefaultAgent(tempDir);
       writeHome(tempDir, "chromagent", { "AGENTS.md": "# Starter\n\nLayout.\n" });
@@ -387,7 +387,7 @@ describe("compileBrand", () => {
       expect(() => compileBrand(tempDir)).toThrow(/playwright_script.*not a side panel skill/);
     });
 
-    it("chromagent has every side panel tool and skill; tesagent lacks the three in-page agent tools (155400-001)", () => {
+    it("chromagent has every side panel tool and skill; tesagent lacks the three in-page agent tools", () => {
       const brand = compileBrand(BRAND_DIR) as {
         agents: { id: string; tools: "*" | string[]; excludeTools?: string[]; skills: "*" | string[]; excludeSkills?: string[] }[];
       };
@@ -417,7 +417,7 @@ describe("compileBrand", () => {
       }
     });
 
-    it("the sample brand turns todo and the scheduler on (155400-001)", () => {
+    it("the sample brand turns todo and the scheduler on", () => {
       const brand = compileBrand(BRAND_DIR) as { tools: Record<string, { enabled: boolean }> };
       expect(brand.tools.todo).toEqual({ enabled: true });
       expect(brand.tools.scheduler).toEqual({ enabled: true });

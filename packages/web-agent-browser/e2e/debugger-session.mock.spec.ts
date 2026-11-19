@@ -106,7 +106,7 @@ async function runPlan(panelPage: Page, prompt: string, count: number): Promise<
   return panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 }
 
-test.describe("Debugger session mock e2e (124/001)", () => {
+test.describe("Debugger session mock e2e", () => {
   test("M1 gate before start; every page tool needs start_debugging", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     await enableOrigin(worker, [ORIGIN]);
@@ -125,7 +125,7 @@ test.describe("Debugger session mock e2e (124/001)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     const results = await runPlan(panelPage, "Check gate and ungated tools.", 4);
 
-    // 131/001 and 131/002 — page_eval and page_snapshot/page_verify all run
+    // page_eval and page_snapshot/page_verify all run
     // through the debugger now, so every one of these four is gated exactly
     // like page_click; none is "ungated" any more.
     const gate = `Debugging is not started on tab #${tabId}. Call start_debugging first.`;

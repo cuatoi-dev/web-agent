@@ -4,7 +4,7 @@ import { readPackagedBrand } from "./lib/brand-source";
 import { listModels, readModelStore } from "./lib/model-store";
 import { handleRelayRequest } from "./lib/relay-handler";
 
-// 118/004 — The toolbar icon click both opens the side panel and grants the
+// The toolbar icon click both opens the side panel and grants the
 // `activeTab` permission for the clicked tab. We disable Chrome's automatic
 // openPanelOnActionClick behavior so that chrome.action.onClicked fires,
 // providing the user gesture required by chrome.sidePanel.open and granting
@@ -36,7 +36,7 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((msg: RelayToWorker) => {
     if (msg.type === "abort") { controller.abort(); return; }
     if (msg.type !== "request") return;
-    // 136/005 — handleRelayRequest checks the URL against the model's
+    // handleRelayRequest checks the URL against the model's
     // provider before it adds that provider's key (lib/relay-handler.ts).
     void handleRelayRequest(msg, {
       readModels: readRelayModels,

@@ -91,7 +91,7 @@ function syncDeleteButton(): void {
 
 /** Paints the model table and the count line from `store`. Every switch,
  *  radio, Key save, provider save and delete writes the store at once and
- *  repaints (136/005, 136/006). */
+ *  repaints. */
 function paintModels(brand: AgentBrand, store: ModelStore): void {
   currentBrand = brand;
   currentModelStore = store;
@@ -130,7 +130,7 @@ function paintModels(brand: AgentBrand, store: ModelStore): void {
         name: provider.name,
         wireFormat: provider.wireFormat,
         endpoint: provider.endpoint,
-        // 137/001 — only the user's own key; `provider.apiKey` may be the
+        // Only the user's own key; `provider.apiKey` may be the
         // brand's default key, which must not be shown or saved as the user's.
         current: store.brandKeys[provider.id] ?? "",
         hasBrandKey: brandDefaultKey(
@@ -252,7 +252,7 @@ void (async () => {
       void setMemoryEnabled(agentId, on);
     },
     // Not awaited: an open side panel holds a connection, and the delete
-    // stays pending until it closes (121/004 design).
+    // stays pending until it closes.
     deleteDatabase: (name) => {
       indexedDB.deleteDatabase(name);
     },
@@ -264,7 +264,7 @@ void (async () => {
   });
 })();
 
-// 136/005 — Save keeps Theme only (137/001 removed Token). The model table saves itself;
+// Save keeps Theme only. The model table saves itself;
 // there is no endpoint here any more, so no host permission is asked for.
 save.addEventListener("click", () => {
   void (async () => {

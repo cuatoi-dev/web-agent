@@ -1,11 +1,11 @@
-// The four act-by-ref page tools (122/001): page_snapshot, page_click,
+// The four act-by-ref page tools: page_snapshot, page_click,
 // page_fill_form, page_select_option. Split out of panel-page-tools.ts on
 // 2026-09-17 to stay under that file's 500-line cap (eslint.config.mjs
 // max-lines) — `createPanelPageTools` spreads `createActByRefPageTools(options)`
 // into its own tool list, so the two files share one `PanelPageToolsOptions`
 // shape.
 //
-// 131/002 — every tool below moved off the page script onto the debugger.
+// Every tool below moved off the page script onto the debugger.
 // Every ref tool follows this order:
 //   1. const tabId = Number(input.tabId)
 //   2. const g = session.gate(tabId); if (!g.ok) return { content: g.error, isError: true }
@@ -69,7 +69,7 @@ export function createActByRefPageTools(options: PanelPageToolsOptions): CustomT
       const scope = typeof input.scope === "string" ? input.scope : undefined;
       const include_text = typeof input.include_text === "string" ? input.include_text : undefined;
 
-      // 131/003 — a scope ref may name a frame ("f1:23"); only its SHAPE is
+      // A scope ref may name a frame ("f1:23"); only its SHAPE is
       // checked here, because the snapshot itself decides whether the node is
       // still there (SCOPE_MISSING below).
       if (scope !== undefined) {

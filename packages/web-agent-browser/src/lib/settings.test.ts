@@ -112,7 +112,7 @@ describe("settings", () => {
     expect(result).toEqual({ theme: "auto", memoryEnabled: {} });
   });
 
-  it("getLastAgentId is undefined when nothing, an empty string or a non-string is stored (120/002)", async () => {
+  it("getLastAgentId is undefined when nothing, an empty string or a non-string is stored", async () => {
     expect(await getLastAgentId()).toBeUndefined();
     store["sidePanelAgent"] = "";
     expect(await getLastAgentId()).toBeUndefined();
@@ -120,13 +120,13 @@ describe("settings", () => {
     expect(await getLastAgentId()).toBeUndefined();
   });
 
-  it("setLastAgentId writes sidePanelAgent and getLastAgentId reads it back (120/002)", async () => {
+  it("setLastAgentId writes sidePanelAgent and getLastAgentId reads it back", async () => {
     await setLastAgentId("tesagent");
     expect(store["sidePanelAgent"]).toBe("tesagent");
     expect(await getLastAgentId()).toBe("tesagent");
   });
 
-  it("a stored id that names no agent resolves to the default agent (120/002)", async () => {
+  it("a stored id that names no agent resolves to the default agent", async () => {
     const chromagent: BrandAgent = { id: "chromagent", displayName: "Chromagent", description: "D", instructions: "I", tools: "*", skills: "*" };
     const tesagent: BrandAgent = { id: "tesagent", displayName: "tesagent", description: "D", instructions: "I", tools: "*", skills: "*" };
     const withAgents: AgentBrand = { ...EMPTY_BRAND, agents: [chromagent, tesagent], defaultAgent: "chromagent" };
@@ -136,7 +136,7 @@ describe("settings", () => {
     expect(resolveAgent(withAgents, await getLastAgentId())).toBe(tesagent);
   });
 
-  it("parseMemoryEnabled keeps booleans and drops anything else (104/003)", () => {
+  it("parseMemoryEnabled keeps booleans and drops anything else", () => {
     expect(parseMemoryEnabled({ tesagent: true, chromagent: false })).toEqual({
       tesagent: true,
       chromagent: false,
@@ -146,14 +146,14 @@ describe("settings", () => {
     expect(parseMemoryEnabled(undefined)).toEqual({});
   });
 
-  it("getSettings reads the boolean memory switches and drops the rest (104/003)", async () => {
+  it("getSettings reads the boolean memory switches and drops the rest", async () => {
     await chrome.storage.local.set({
       agentSettings: { theme: "wa2-light", memoryEnabled: { tesagent: true, chromagent: "yes" } },
     });
     expect(await getSettings()).toEqual({ theme: "wa2-light", memoryEnabled: { tesagent: true } });
   });
 
-  it("setMemoryEnabled writes one agent and keeps the theme and the others (104/003)", async () => {
+  it("setMemoryEnabled writes one agent and keeps the theme and the others", async () => {
     await chrome.storage.local.set({
       agentSettings: { theme: "wa2-dark", memoryEnabled: { chromagent: true } },
     });
@@ -170,7 +170,7 @@ describe("settings", () => {
     });
   });
 
-  it("saving the Theme alone keeps the stored memory switches (104/003)", async () => {
+  it("saving the Theme alone keeps the stored memory switches", async () => {
     await setMemoryEnabled("tesagent", true);
     await setSettings({ theme: "wa2-light" });
     expect(await getSettings()).toEqual({ theme: "wa2-light", memoryEnabled: { tesagent: true } });

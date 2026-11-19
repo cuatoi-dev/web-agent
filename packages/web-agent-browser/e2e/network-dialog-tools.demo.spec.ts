@@ -21,7 +21,7 @@ async function openCheckout(
   return { sitePage, panelPage };
 }
 
-test.describe("Network, dialogs and upload live proof (124/003)", () => {
+test.describe("Network, dialogs and upload live proof", () => {
   test("tesagent lists the checkout tab's requests with page_network", async ({ demoExtension }) => {
     test.setTimeout(150_000);
     const { sitePage, panelPage } = await openCheckout(demoExtension);

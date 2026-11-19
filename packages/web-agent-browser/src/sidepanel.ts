@@ -75,7 +75,7 @@ const chat = document.getElementById("chat") as HTMLDivElement;
 const agentCombo = document.getElementById("agent-combo") as HTMLButtonElement;
 const agentList = document.getElementById("agent-list") as HTMLUListElement;
 
-// 120/003 — the glyph and dot go in before the first paint() at the bottom of
+// The glyph and dot go in before the first paint() at the bottom of
 // this file.
 mountPageAgentIcon(toggleBtn);
 
@@ -88,14 +88,14 @@ function paint(): void {
 const query: QueryTabs = (info) => chrome.tabs.query(info);
 const send: SendToTab = (tabId, message) => chrome.tabs.sendMessage(tabId, message);
 
-// 124/001 — one debugger session for this side panel page, shared by every
+// One debugger session for this side panel page, shared by every
 // agent's panel. A debugger attach belongs to the extension, not this page,
 // so closing the panel would leave the tab attached: detach it here.
 const debuggerSession = createDebuggerSession();
 window.addEventListener("pagehide", () => {
   debuggerSession.detachAll();
 });
-// 131/002 / 131/004 — one helper-world cache and one recorder driver for this
+// One helper-world cache and one recorder driver for this
 // side panel page, shared by every agent's panel tools and its recording
 // controller, so a recording and an agent action share one debugger attach.
 const helper = createHelperWorlds(debuggerSession);
@@ -103,8 +103,8 @@ const recorder = createDebuggerRecorder(debuggerSession, helper);
 
 /** Builds the `<agent-chat-panel>` for one agent: its own prompt, display
  *  name, session namespace, and tools/skills filtered by the agent's `tools`,
- *  `excludeTools`, `skills` and `excludeSkills`. 120/001 — one agent per
- *  panel; 120/002 — the switcher builds one per agent, on first show. */
+ *  `excludeTools`, `skills` and `excludeSkills`. One agent per panel; the
+ *  switcher builds one per agent, on first show. */
 function buildAgentPanel(
   agent: BrandAgent,
   brand: AgentBrand,
@@ -130,12 +130,12 @@ function buildAgentPanel(
   };
   // The lit header shows this until the session has a title.
   panel.agentName = agent.displayName;
-  // 124/007 — the thread's step lines start with this. Without it every line
+  // The thread's step lines start with this. Without it every line
   // reads "Agent". "tesagent" (brand/agents/tesagent.yml:1) and "Chromagent"
   // (brand/agents/chromagent.yml:1).
   panel.agentShortName = agent.displayName;
 
-  // 136/005 — the agent's own model when it is on, else the options page
+  // The agent's own model when it is on, else the options page
   // default (modelForAgent).
   const { entry } = modelForAgent(models.entries, models.store, agent.model);
   // The switch is built below, once the tool providers it rebuilds exist.
@@ -155,13 +155,13 @@ function buildAgentPanel(
     sessionNamespace: `web-agent-extension-panel-${agent.id}`,
   };
 
-  // 116/001 — the brand's `data` switch, applied on top of the tools the side
+  // The brand's `data` switch, applied on top of the tools the side
   // panel never runs (lib/sidepanel-tool-filter.ts). The agent's own `tools` /
   // `excludeTools` applies last.
   panel.config.tools = (ctx: ToolContext): CustomToolDef[] =>
     sidePanelTools(brand, ctx).filter((t) => agentAllows(agent.tools, agent.excludeTools, t.name));
 
-  // 128/003 — an agent that cannot read files gets no folder button.
+  // An agent that cannot read files gets no folder button.
   const canReadFiles = agentAllows(agent.tools, agent.excludeTools, "read_file");
   const filterProvider = (p: ToolProvider): ToolProvider => ({
     ...p,
@@ -170,7 +170,7 @@ function buildAgentPanel(
     ...(p.name === "vfs" && !canReadFiles ? { attachmentProviders: [] } : {}),
   });
 
-  // 124/006 — one recording controller per panel, shared by the
+  // One recording controller per panel, shared by the
   // start_recording/stop_recording tools below and by the Watch me composer
   // control, so the agent and the user watch (and can stop) the same
   // recording. Built only for an agent whose tools include start_recording —
@@ -201,14 +201,14 @@ function buildAgentPanel(
     }
   };
   exposeVfsProof();
-  // 127/004 — the brand's starter /home/agent/AGENTS.md, written once when the
+  // The brand's starter /home/agent/AGENTS.md, written once when the
   // file is missing. The promise is awaited in the vfs provider's load() below,
   // so the first prompt of a fresh install already has the file for the
   // <agents-md> block (packages/web-agent-vfs/src/index.ts:144-171).
   const seedHome = seedHomeAgentsMd(vfs.vfs, agent.homeAgentsMd);
 
   const mockScript = window.__WA_MOCK_SCRIPT__;
-  // 136/005 — rebuilt by the model switch whenever the vision flag changes.
+  // Rebuilt by the model switch whenever the vision flag changes.
   const buildProviders = (vision: boolean): ToolProvider[] => [
     ...tabTools({
       confirmInteraction: panel.confirmInteraction.bind(panel),
@@ -216,8 +216,8 @@ function buildAgentPanel(
     ...pageAgentTools({
       onToggle: refreshTabState,
     }),
-    // 118/001 — the page tools, pointed at any activated tab.
-    // 118/004, 136/005 — page_screenshot is offered only when the CURRENT
+    // The page tools, for any tab the agent started debugging.
+    // page_screenshot is offered only when the CURRENT
     // model has `vision: true`; the explicit flag wins over the name guess.
     ...panelPageTools({
       vfs: vfs.vfs,
@@ -228,17 +228,17 @@ function buildAgentPanel(
       recorder,
       recording: recordingController,
     }),
-    // 069/003 — the agent file system, on chrome.storage rather than this
+    // The agent file system, on chrome.storage rather than this
     // page's own Web Storage. /tmp and /home/agent are namespaced per agent,
     // so two side panel agents never see each other's files; /home/shared is
     // one namespace, so they do. vfsTools returns ONE ToolProvider
     // (web-agent-vfs/src/index.ts:36), unlike the three helpers above, which
     // return arrays.
-    // 127/004 — the same provider with a load() that awaits the starter seed
+    // The same provider with a load() that awaits the starter seed
     // first. A failed seed resolves, so the session still starts.
     { ...vfs, load: async () => { await seedHome; return vfs.load(); } },
   ].map(filterProvider);
-  // 136/005 — path, type, model, imageInput, the kebab list (enabled models)
+  // Path, type, model, imageInput, the kebab list (enabled models)
   // and the tool providers, before the element is connected. A pick in the
   // kebab menu switches all of them for the next request and keeps the chat;
   // the options page default does not change.
@@ -273,12 +273,12 @@ function buildAgentPanel(
     panel.attachmentProviders = [watchMe];
   }
 
-  // 116/003 — the side panel's built-in groups, droppable from
+  // The side panel's built-in groups, droppable from
   // brand/plugin.yml's `skills` block, with the brand's own skills merged
   // over.
-  // 118/005 — `websiteEdit` is its own group, so a brand that ships no page
+  // `websiteEdit` is its own group, so a brand that ships no page
   // tools also ships no skill telling the agent to use them.
-  // 120/005 — `testing` is its own group too. The group switch runs
+  // `testing` is its own group too. The group switch runs
   // first, so a group switched off removes the skill even from an agent
   // whose `skills` list names it.
   const baseSkills = mergeBrandSkills(
@@ -311,10 +311,10 @@ function buildAgentPanel(
   });
 
   // Same store the in-page agents reach through bridge.js — an extension page
-  // calls chrome.storage.local directly. 120/004 — the registry belongs to
+  // calls chrome.storage.local directly. The registry belongs to
   // this agent: it lists shared skills plus this agent's own, and its
   // create_skill offers `shared`. Saved skills are not filtered by the
-  // agent's `skills` / `excludeSkills` (idea 120).
+  // agent's `skills` / `excludeSkills`.
   panel.skillRegistry = extensionSkillRegistry({ agentId: agent.id, displayName: agent.displayName });
 
   // Same escape hatch content.ts uses, so the mock e2e tier never calls a
@@ -335,9 +335,9 @@ async function main(): Promise<void> {
     readAgentStore(chromeAgentStorage),
     readModelStore(),
   ]);
-  // 121/002 — a stored edit or user agent reaches the panel through the
+  // A stored edit or user agent reaches the panel through the
   // merged brand, read once here; a change saved while the panel is open
-  // shows the next time it opens. 136/005 — the model list too.
+  // shows the next time it opens. The model list too.
   const merged = mergedBrand(brand, store);
   const models: ModelContext = { entries: listModels(brand, modelStore), store: modelStore };
   registerBrandThemes(brand.themes, { linkCss: true });
@@ -355,14 +355,14 @@ async function main(): Promise<void> {
     },
   });
 
-  // 120/001 — the compiled brand always has an agent matching its
+  // The compiled brand always has an agent matching its
   // defaultAgent, but a worker that could not answer degrades to
   // EMPTY_BRAND (brand-request.ts), and a hand-patched brand.json used by a
-  // test can hold no agents at all. Manager decision (2026-09-15): show an
+  // test can hold no agents at all. Show an
   // error and no chat rather than throw.
-  // 120/002 — reopen on the agent used last; a missing one falls back to the
+  // Reopen on the agent used last; a missing one falls back to the
   // default inside resolveAgent.
-  // 120/003 manager override — the agent row itself is never hidden, so the
+  // The agent row itself is never hidden, so the
   // page-agent icon stays visible and usable with no agent loaded; only the
   // combo box (empty, with no agent to show) is hidden.
   const agent = resolveAgent(merged, await getLastAgentId());

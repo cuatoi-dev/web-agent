@@ -23,7 +23,7 @@ import type { PageAgentDelivery } from "./types";
  *  pending and counts as delivered. The `catch` also keeps a later turn failure
  *  from surfacing as an unhandled rejection.
  *
- *  001/113 — the same helper now also reports whether the panel RAN a slash
+ *  The same helper now also reports whether the panel RAN a slash
  *  command. A command settles immediately (synchronously before the first
  *  await), so `settled` holds the outcome before the setTimeout fires.
  *

@@ -1,4 +1,4 @@
-// 155400-001 — live proof: Chromagent, with the real model (brand/model.yml's
+// Live proof: Chromagent, with the real model (brand/model.yml's
 // first entry, `anthropic-sonnet`), is offered and
 // uses todo_write, set_schedule and page_snapshot.
 import { test, expect, ask, expectCall } from "./demo-helpers";
@@ -19,7 +19,7 @@ async function chooseAgent(page: Page, id: string): Promise<void> {
   await page.locator(`#agent-option-${id}`).click();
 }
 
-test.describe("Chromagent full tool set live proof (155400-001)", () => {
+test.describe("Chromagent full tool set live proof", () => {
   test("chromagent makes a todo list, schedules a reminder and snapshots the page", async ({ demoExtension }) => {
     test.setTimeout(240_000);
     const sitePage = await demoExtension.context.newPage();

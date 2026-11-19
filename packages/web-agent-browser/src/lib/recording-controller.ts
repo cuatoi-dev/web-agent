@@ -1,4 +1,4 @@
-// 124/005 — the panel's recording controller, one per agent panel. It owns the
+// The panel's recording controller, one per agent panel. It owns the
 // step list, so a full page load loses no step that was already sent, and it
 // is what Watch me drives.
 import { REC_RESUME_DELAY_MS } from "./constants";
@@ -53,7 +53,7 @@ function newRecordingId(): string {
 }
 
 export function createRecordingController(options: {
-  /** 131/004 — the tab's debugger. A controller built without one can still
+  /** The tab's debugger. A controller built without one can still
    *  report a finished recording, but cannot start a new one. */
   session?: DebuggerSession;
   recorder?: DebuggerRecorder;
@@ -81,10 +81,10 @@ export function createRecordingController(options: {
   const onRoute = (tabId: number, path: string, seq: number): void => {
     if (state.kind !== "recording" || tabId !== state.tabId) return;
     // The ONLY source of route steps: CDP Page.navigatedWithinDocument, once
-    // per same-document navigation. The page script raises none (002).
+    // per same-document navigation. The page script raises none.
     // `seq` comes pre-assigned from the driver's own tab-wide seq space, so it
-    // can never collide with a step still in flight (131/004, found running
-    // this task's own mock e2e — a route step raised between a click's
+    // can never collide with a step still in flight (found running the
+    // recorder mock e2e — a route step raised between a click's
     // binding call and its async frame-chain lookup used to land on the same
     // seq and silently overwrite it).
     // The previous route step is the one with the highest seq. The array is
@@ -147,8 +147,8 @@ export function createRecordingController(options: {
       if (!session || !recorder) return { ok: false, error: "Recording is not available in this panel." };
       const gate = session.gate(tabId);
       if (!gate.ok) {
-        // "tool" gets the 131/001 error verbatim. "button" attaches itself —
-        // the user pressed it, which is the consent (idea 131).
+        // "tool" gets the debugger gate error verbatim. "button" attaches itself —
+        // the user pressed it, which is the consent.
         if (from === "tool") return { ok: false, error: gate.error };
         const started = await session.start(tabId);
         if (started.isError) {

@@ -220,7 +220,7 @@ export function mountMultiSelect(o: MultiSelectOptions): MultiSelect {
     if (typeof rowEl.scrollIntoView === "function") rowEl.scrollIntoView({ block: "nearest" });
   }
 
-  /** 104/003 — closes on the click, in the bubble phase, not on mousedown.
+  /** Closes on the click, in the bubble phase, not on mousedown.
    *  The list is in flow, so closing it moves the fields below up. On
    *  mousedown that move lands between the press and the release, and the
    *  browser then reports the click on a common ancestor: the button under

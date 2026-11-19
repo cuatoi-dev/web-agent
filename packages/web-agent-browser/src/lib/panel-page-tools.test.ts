@@ -11,7 +11,7 @@ function toolCtx(): ToolContext {
   return { app: {}, signal: new AbortController().signal };
 }
 
-/** 131/002 — the ref tools' page-side calls all go through one `HelperWorlds`
+/** The ref tools' page-side calls all go through one `HelperWorlds`
  *  seam now. `callQueue` shifts one reply per `fn` name per call, mirroring
  *  the old `routed()` helper's per-message-type queues. */
 function callQueue(replies: Record<string, unknown[]>) {
@@ -169,7 +169,7 @@ describe("panelPageTools vision gate", () => {
   });
 });
 
-describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", () => {
+describe("createPanelPageTools — act-by-ref page tools", () => {
   function tools(options: Partial<Parameters<typeof createPanelPageTools>[0]> = {}) {
     const [, , , pageSnapshot, pageClick, pageFillForm, pageSelectOption] = createPanelPageTools({ vfs: testVfs(), ...options });
     return { pageSnapshot, pageClick, pageFillForm, pageSelectOption };
@@ -722,7 +722,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
     });
   });
 
-  describe("createPanelPageTools — verify and locator tools (122/002, 131/002)", () => {
+  describe("createPanelPageTools — verify and locator tools", () => {
     function getVerifyLocatorTools(helper: HelperWorlds, debuggerSession = started().session) {
       const all = createPanelPageTools({ vfs: testVfs(), helper, debuggerSession });
       const pageVerify = all.find((t) => t.name === "page_verify");
@@ -849,7 +849,7 @@ describe("createPanelPageTools — act-by-ref page tools (122/001, 131/002)", ()
   });
 });
 
-describe("createPanelPageTools — 124/007 phrases", () => {
+describe("createPanelPageTools — step phrases", () => {
   const PHRASED_NAMES = [
     "page_snapshot", "page_click", "page_fill_form", "page_select_option",
     "page_verify", "page_generate_locator", "page_network", "page_dialog",
@@ -900,7 +900,7 @@ describe("createPanelPageTools — 124/007 phrases", () => {
     };
     const session = createDebuggerSession(api);
     const tools = toolsWithVision({ debuggerSession: session });
-    // 131/002 — page_snapshot no longer feeds the host tracker itself; only
+    // page_snapshot no longer feeds the host tracker itself; only
     // start_debugging does (panel-page-tools-debugger.ts), so the real tool
     // call is what fills the map, not a direct session.start().
     const startDebugging = tools.find((t) => t.name === "start_debugging")!;

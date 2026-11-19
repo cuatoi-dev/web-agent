@@ -1,10 +1,9 @@
-// 131/002 — mock-tier proof for accessibility-tree page_snapshot and the eight
-// debugger ref tools (task 2 of idea 131), covering R1-R16 from the refined
-// plan's code change 22. Where an existing spec (act-by-ref.mock.spec.ts,
-// verify-locator.mock.spec.ts, network-dialog.mock.spec.ts,
-// debugger-tools-002.mock.spec.ts) already proves an R item, it is proven
-// again here so the R-list maps one-to-one onto this file, per the finish
-// brief for this task's completion round (2026-09-19).
+// Mock-tier proof for accessibility-tree page_snapshot and the eight
+// debugger ref tools, covering R1-R16. Where an existing spec
+// (act-by-ref.mock.spec.ts, verify-locator.mock.spec.ts,
+// network-dialog.mock.spec.ts, debugger-tools-002.mock.spec.ts) already
+// proves an R item, it is proven again here so the R-list maps one-to-one
+// onto this file.
 import { test, expect, getTabId } from "./extension.fixture";
 import { captionOf, expectSavedPng } from "./saved-files";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
@@ -137,7 +136,7 @@ async function appendPlan(
   return runPlan(panelPage, prompt, count);
 }
 
-test.describe("Ref tools 131 mock e2e (131/002)", () => {
+test.describe("Ref tools mock e2e", () => {
   test("R1-R5 page_snapshot: shape, scope, include_text, and ref stability across a second snapshot", async ({
     context,
     extensionId,
@@ -240,8 +239,8 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
     const panelPage = await openPanel(context, extensionId, tabId, plan);
     // Run up to the first select in its own batch — the whole plan resolves
     // back-to-back once queued, so checking mid-sequence DOM state only works
-    // if the check happens BEFORE the next stage is appended (124/002 fix
-    // round 1 lesson, reused by debugger-tools-002.mock.spec.ts T8).
+    // if the check happens BEFORE the next stage is appended (the same
+    // approach as debugger-tools-002.mock.spec.ts T8).
     const results = await runPlan(
       panelPage,
       "Start debugging, snapshot, fill the form, click Apply, then pick Express shipping by value.",
@@ -511,8 +510,7 @@ test.describe("Ref tools 131 mock e2e (131/002)", () => {
   // The closest verifiable proxy: open the site tab before this test touches
   // the extension's service worker or side panel at all, so nothing here could
   // have primed a content script on it, then prove the ref tools still work —
-  // they never depend on the content script or on enabledOrigins, which is
-  // idea 131's point.
+  // they never depend on the content script or on enabledOrigins.
   test("R15 a tab opened before this test touched the panel or worker still answers every ref tool", async ({
     context,
     extensionId,

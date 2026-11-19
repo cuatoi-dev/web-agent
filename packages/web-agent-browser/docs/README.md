@@ -9,7 +9,7 @@ website. It has two agents:
 
 - **The side panel agent** lives in the Chrome side panel. It manages tabs,
   drives the in-page agent, and runs JavaScript, HTTP requests, console reads
-  and screenshots in any tab you turned the extension on for.
+  and screenshots in any tab you started debugging with `start_debugging`.
 - **The in-page agent** is mounted in the visited page itself. It can run
   JavaScript in that page and call the site's own HTTP API.
 

@@ -1,4 +1,4 @@
-// 005 — the panel's half of a closed-root click: finds the node under the click
+// The panel's half of a closed-root click: finds the node under the click
 // through CDP and hands it to the recorder's isolated world. Every failure falls
 // back to the host, and nothing here rejects.
 import type { DebuggerSession } from "./debugger-tools.types";

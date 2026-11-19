@@ -1,7 +1,7 @@
-// 124/003 — page_network, page_dialog and page_upload_file on the debugger.
+// page_network, page_dialog and page_upload_file on the debugger.
 // The network log and dialog answers live in the side panel's debugger session
 // (debugger-session.ts); only page_upload_file reaches into the page, to build
-// the files there. Replaces 122/003's in-page hooks.
+// the files there. Replaces the earlier in-page hooks.
 import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
 import { DEFAULT_NETWORK_REQ_BODY_CHARS, DEFAULT_NETWORK_RES_BODY_CHARS } from "./constants";

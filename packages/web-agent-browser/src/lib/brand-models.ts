@@ -5,8 +5,8 @@ import type { AgentBrand, PresetEntry } from "./types";
  *
  *  A brand that shipped `model.yml` decides the list. An empty list means the
  *  brand was compiled without one, or `brand.json` could not be read at all —
- *  the compiled presets are then the degrade path, the same rule task 001 set
- *  for the agent prompts. */
+ *  the compiled presets are then the degrade path, the same rule the agent
+ *  prompts follow. */
 export function resolveModels(brand: AgentBrand): PresetEntry[] {
   return Array.isArray(brand.models) && brand.models.length > 0
     ? brand.models

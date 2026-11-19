@@ -1,5 +1,5 @@
 // The shapes for skill-registry.ts: the storage seam, the MAIN<->ISOLATED
-// wa-skills-* protocol, and the side panel's per-agent owner (120/004). Split
+// wa-skills-* protocol, and the side panel's per-agent owner. Split
 // out of types.ts on 2026-09-16 to stay under that file's 500-line cap
 // (eslint.config.mjs max-lines); imports nothing, mirroring
 // page-screenshot-tool.types.ts.
@@ -15,7 +15,7 @@ export interface SkillStorage {
 }
 
 /** MAIN -> ISOLATED. One registry call, replied to via the same `id`.
- *  `agentId` is the side panel agent asking (120/004); absent = the in-page
+ *  `agentId` is the side panel agent asking; absent = the in-page
  *  bubble, which sees and saves shared skills only — `bridge.ts` strips it
  *  from a page's request. */
 export type SkillsRequestMessage =
@@ -25,7 +25,7 @@ export type SkillsRequestMessage =
   | { type: "wa-skills-remove"; id: string; name: string; agentId?: string };
 
 /** ISOLATED -> MAIN. `result` is the skill array for `list`, the found skill
- *  (or `undefined`) for `get`, `true` for `save`/`remove`. `error` (120/004)
+ *  (or `undefined`) for `get`, `true` for `save`/`remove`. `error`
  *  marks a refused request. */
 export interface SkillsResultMessage {
   type: "wa-skills-result";
@@ -34,7 +34,7 @@ export interface SkillsResultMessage {
   error?: string;
 }
 
-/** The side panel agent a registry belongs to (120/004); shown in the
+/** The side panel agent a registry belongs to; shown in the
  *  create_skill confirm summary via `displayName`. */
 export interface PanelSkillOwner {
   agentId: string;

@@ -5,10 +5,11 @@ title: In-page tools
 # In-page tools
 
 The in-page bubble is the agent mounted on the visited page itself. It carries
-the DOM and state tools from `@cuatoi/web-agent-dom` plus two tools of its
-own, `page_fetch` and `page_eval`, wired at `src/content.ts:109-125`. It also
+the DOM and state tools from `@cuatoi/web-agent-dom`, the file tools from
+`@cuatoi/web-agent-vfs`, and two tools of its own, `page_fetch` and
+`page_eval`, wired at `src/content.ts:107-124`. It also
 carries three built-in skill sets: the core skills, the DOM skills, and the
-`page_fetch` reference skill (`src/content.ts:95-102`,
+`page_fetch` reference skill (`src/content.ts:91-98`,
 `src/lib/page-fetch-skill.ts:3-29`).
 
 The side panel agent has its own `page_fetch` and `page_eval`, which take a tab
@@ -37,7 +38,7 @@ From `src/lib/page-fetch-tool.ts` and `src/core/run-fetch.ts`:
   the line reads `Content-Type: (unknown)` (`src/core/run-fetch.ts:53`).
 - **The 6000-character cap**: a longer body is cut and ends with
   `…(output truncated)`. The limit is `DEFAULT_PAGE_FETCH_MAX_CHARS = 6000` at
-  `src/lib/constants.ts:51`, applied to the body at
+  `src/lib/constants.ts:49`, applied to the body at
   `src/core/run-fetch.ts:55-56`.
 - **Errors**:
   - An empty `url` returns "No URL or path provided to page_fetch."
@@ -63,9 +64,9 @@ From `src/lib/page-eval-tool.ts` and `src/core/run-eval.ts`:
   JSON cannot express is described instead (`src/core/run-eval.ts:23-68`,
   `src/lib/page-eval-tool.ts:55-56`). The same 6000-character cap and the same
   `…(output truncated)` marker apply (`DEFAULT_PAGE_EVAL_MAX_CHARS` at
-  `src/lib/constants.ts:56`, applied by `truncate` at
+  `src/lib/constants.ts:54`, applied by `truncate` at
   `src/core/run-eval.ts:103-105`).
-- An error thrown by the code comes back as "The code threw `<name>`: `<message>`"
+- An error thrown by the code comes back as "The code threw <name>: <message>"
   (`src/lib/page-eval-tool.ts:49`); empty code comes back as
   "No code provided to page_eval." (`src/lib/page-eval-tool.ts:35`).
 - The code runs on the page's own thread and cannot be interrupted once it
@@ -94,7 +95,7 @@ From `src/lib/page-eval-tool.ts` and `src/core/run-eval.ts`:
 - `page_fetch` issues same-origin requests that carry the user's cookies, so it
   can act as the logged-in user on that site.
 - Both are available to the in-page bubble on every page it is mounted on. It is
-  mounted only on origins the user turned on (`src/bridge.ts:58-63`,
-  `src/lib/settings.ts:45-58`; the side panel control is described in
+  mounted only on origins the user turned on (`src/bridge.ts:61-65`,
+  `src/lib/settings.ts:74-86`; the side panel control is described in
   [Using the extension](./using-the-extension.md)), and it is never mounted on a
-  page that already carries its own agent (`src/content.ts:69`, `:179`).
+  page that already carries its own agent (`src/content.ts:58`, `:69`).

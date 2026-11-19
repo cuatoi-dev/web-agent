@@ -141,7 +141,7 @@ async function waitForResults(
   return panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 }
 
-/** 127/003 — the stored text of a /tmp file for this agent, read straight from
+/** The stored text of a /tmp file for this agent, read straight from
  *  the real chrome.storage.session the /tmp mount uses. The key format is
  *  `chrome-storage-backend.ts:69`; the namespace is `tmp:<agent id>` from
  *  `sidepanel.ts:169`. */
@@ -189,7 +189,7 @@ async function userFlow(sitePage: Page): Promise<void> {
   await sitePage.waitForTimeout(300);
 }
 
-test.describe("recorder and recording tools mock e2e (124/005, on the debugger since 131/004)", () => {
+test.describe("recorder and recording tools mock e2e, on the debugger", () => {
   test("M1 user flow, redacted password and screenshots", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
 
@@ -238,7 +238,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     const stopText = stopRes.text;
     console.log("M1 STOP TEXT:\n" + stopText);
 
-    // 127/002 — locator lines (two-space indent) sit under each step.
+    // Locator lines (two-space indent) sit under each step.
     const lines = stopText.split("\n").filter((l) => !l.startsWith("  "));
     expect(lines[0]).toBe("Recorded 9 steps on localhost:10040:");
     expect(lines[1]).toBe("1. scroll down 400 px");
@@ -256,7 +256,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     expect(stopText).toContain('4. fill textbox "Coupon" "SAVE10"\n  role+name: textbox "Coupon" (matches 1)\n  id: coupon\n');
     expect(stopText).not.toMatch(/getBy|\.nth\(/);
 
-    // 127/003 — the report is also a real file, with the same body the tool
+    // The report is also a real file, with the same body the tool
     // returned before its trailing "Saved <path>" line.
     const savedRecording = expectSavedRecording(stopText);
     const report = bodyOf(stopText);
@@ -541,7 +541,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     await context.close();
   });
 
-  test("M10 chromagent offers every tool tesagent offers plus the three in-page agent tools (155400-001)", async ({ context, extensionId }) => {
+  test("M10 chromagent offers every tool tesagent offers plus the three in-page agent tools", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     const sitePage = await context.newPage();
     await sitePage.goto(CHECKOUT_URL);
@@ -1071,7 +1071,7 @@ test.describe("recorder and recording tools mock e2e (124/005, on the debugger s
     expect(body).toContain('  role+name: button "5 items" (matches 1)');
     expect(body).toContain('  role+name: button "Add to cart" (matches 1)');
 
-    // A page tool still reports the full name (decision 1).
+    // A page tool still reports the full name.
     expect(results[4].tool).toBe("page_generate_locator");
     expect(results[4].text).toMatch(/^\[\d+\] link "Cart 6"\n {2}role\+name: link "Cart 6" \(matches 1\)\n/);
 

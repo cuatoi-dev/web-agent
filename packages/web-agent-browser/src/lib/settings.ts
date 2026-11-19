@@ -13,7 +13,7 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** 104/003 — extracts boolean entries from `memoryEnabled`, ignoring anything else. */
+/** Extracts boolean entries from `memoryEnabled`, ignoring anything else. */
 export function parseMemoryEnabled(raw: unknown): Record<string, boolean> {
   if (!isPlainRecord(raw)) return {};
   const out: Record<string, boolean> = {};
@@ -25,7 +25,7 @@ export function parseMemoryEnabled(raw: unknown): Record<string, boolean> {
 
 /** The stored theme when it names a known theme, else the default, plus the
  *  per-agent memory switches (default `{}`).
- *  136/005 — the model fields moved to the model store (model-store.ts); a
+ *  The model fields moved to the model store (model-store.ts); a
  *  stored old object's endpoint, wireFormat, model and apiKey are ignored. */
 export async function getSettings(): Promise<AgentSettings> {
   const [brand, got] = await Promise.all([
@@ -57,7 +57,7 @@ export async function setSettings(settings: AgentSettingsInput): Promise<void> {
   });
 }
 
-/** 104/003 — writes `memoryEnabled[agentId]` under `"agentSettings"` while
+/** Writes `memoryEnabled[agentId]` under `"agentSettings"` while
  *  keeping the stored theme and other agents' switches intact. */
 export async function setMemoryEnabled(agentId: string, on: boolean): Promise<void> {
   const got = await chrome.storage.local.get(SETTINGS_KEY);
@@ -86,7 +86,7 @@ export async function setOriginEnabled(origin: string, on: boolean): Promise<voi
   await chrome.storage.local.set({ [ENABLED_KEY]: [...current] });
 }
 
-/** 120/002 — the id of the side panel agent shown last. Anything that is not a
+/** The id of the side panel agent shown last. Anything that is not a
  *  non-empty string reads as unset. */
 export async function getLastAgentId(): Promise<string | undefined> {
   const got = await chrome.storage.local.get(LAST_AGENT_KEY);

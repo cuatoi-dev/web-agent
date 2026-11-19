@@ -34,7 +34,7 @@ async function sendMessage(page: Page, text: string): Promise<void> {
   await page.keyboard.press("Enter");
 }
 
-test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => {
+test.describe("page_verify and page_generate_locator mock e2e", () => {
   test("text_visible: PASS for the discount after SAVE10, FAIL for Enter a code", async ({
     context,
     extensionId,
@@ -585,7 +585,7 @@ test.describe("page_verify and page_generate_locator mock e2e (122/002)", () => 
     extensionId,
   }) => {
     const worker = await getWorker(context);
-    // 131/002 — page_verify and page_generate_locator run on the debugger now,
+    // page_verify and page_generate_locator run on the debugger now,
     // so they gate on start_debugging, not on enabledOrigins. Deliberately
     // never call start_debugging in this test.
 

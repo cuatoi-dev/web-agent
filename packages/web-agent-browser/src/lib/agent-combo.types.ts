@@ -1,4 +1,4 @@
-// The shapes for the side panel agent combo box (120/002).
+// The shapes for the side panel agent combo box.
 
 import type { BrandAgent } from "./types";
 

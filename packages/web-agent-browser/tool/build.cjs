@@ -5,8 +5,8 @@ const { decodePng, writeIcons } = require("./png-icons.cjs");
 const { generateManifest } = require("./manifest.cjs");
 
 /** The toolkit is this script's own package. In this repo that is also the
- *  consumer, so `build(".")` works from the package root. Task 005 publishes
- *  the toolkit and the two become different folders. */
+ *  consumer, so `build(".")` works from the package root. In a brand package
+ *  that installs the toolkit from npm, the two are different folders. */
 const TOOLKIT_DIR = path.resolve(__dirname, "..");
 
 /** Shipped at the package root, so a consumer install carries it. `src/` is

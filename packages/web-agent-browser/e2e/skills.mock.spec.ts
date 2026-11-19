@@ -30,7 +30,6 @@ test.describe("Extension shared skill storage", () => {
     });
   });
 
-  // 0222.1 / criterion 1 (in-page half).
   test("create_skill is offered to the in-page agent", async ({ context }) => {
     const page = await context.newPage();
     await page.addInitScript(() => {
@@ -57,7 +56,6 @@ test.describe("Extension shared skill storage", () => {
     expect(tools).toContain("create_skill");
   });
 
-  // 0222.1 / criterion 1 (side panel half).
   test("create_skill is offered to the side panel agent", async ({ context, extensionId }) => {
     const panelPage = await context.newPage();
     await panelPage.addInitScript(() => {
@@ -84,7 +82,7 @@ test.describe("Extension shared skill storage", () => {
     expect(tools).toContain("create_skill");
   });
 
-  // 0222.2-0222.5, criteria 2, 3, 4, 5, 6, 7, 9 — one story: a skill created on
+  // One story: a skill created on
   // site A is found on site B and in the panel, a skill created in the panel is
   // found on a site, storage holds one entry per name, and one save is one
   // write.
@@ -96,7 +94,7 @@ test.describe("Extension shared skill storage", () => {
     if (!worker) worker = await context.waitForEvent("serviceworker");
 
     // Count chrome.storage.local writes from the service worker's own
-    // listener — criterion 9.
+    // listener.
     await worker.evaluate(() => {
       globalThis.__skillWrites = 0;
       chrome.storage.onChanged.addListener(() => {
@@ -150,7 +148,7 @@ test.describe("Extension shared skill storage", () => {
     expect(await pageA.evaluate(() => window.__CREATE_SKILL_RESULT__)).toContain("saved successfully");
     expect(await pageA.evaluate(() => localStorage.length)).toBe(0);
 
-    // Criterion 9 — exactly one write for the one save.
+    // Exactly one write for the one save.
     expect(await worker.evaluate(() => globalThis.__skillWrites ?? 0)).toBe(1);
 
     // --- Site B (a different origin, same profile) finds it. --------------
@@ -304,7 +302,7 @@ test.describe("Extension shared skill storage", () => {
     await pageC.waitForFunction(() => window.__SEARCH_SKILLS_RESULT__ !== undefined, { timeout: 15_000 });
     expect(await pageC.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).toContain("panel_note — A note from the panel");
 
-    // --- Storage shape — criteria 5, 7. -------------------------------------
+    // --- Storage shape -------------------------------------------------------
     let stored = await worker.evaluate(() => chrome.storage.local.get("savedSkills"));
     let savedSkills = (stored as { savedSkills: unknown }).savedSkills as { name: string; description: string; definition: string }[];
     expect(Array.isArray(savedSkills)).toBe(true);
@@ -316,7 +314,7 @@ test.describe("Extension shared skill storage", () => {
     expect(savedSkills.filter((s) => s.name === "pirate_speak")).toHaveLength(1);
     expect(savedSkills.filter((s) => s.name === "panel_note")).toHaveLength(1);
 
-    // --- Overwrite by name — criterion 7. -----------------------------------
+    // --- Overwrite by name ----------------------------------------------------
     const updatedPirate = { ...PIRATE_SKILL, description: "Answer like an angry pirate" };
     await pageA.addInitScript((skill: typeof updatedPirate) => {
       let callCount = 0;
@@ -362,7 +360,7 @@ test.describe("Extension shared skill storage", () => {
     expect(pirateEntries[0]?.description).toBe("Answer like an angry pirate");
   });
 
-  // 0222.7 / criterion 10 — a skill saved mid-turn is loadable later in the
+  // A skill saved mid-turn is loadable later in the
   // same turn, with no reload between the two tool calls.
   test("a skill saved mid-turn is returned by load_skill later in the same turn", async ({ context }) => {
     const page = await context.newPage();
@@ -409,7 +407,6 @@ test.describe("Extension shared skill storage", () => {
     expect(await page.evaluate(() => window.__LOAD_SKILL_RESULT__)).toBe(PIRATE_SKILL.definition);
   });
 
-  // 0222.8 / criterion 11 — declining leaves storage unchanged.
   test("declining the confirm leaves storage unchanged", async ({ context }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
@@ -459,7 +456,7 @@ test.describe("Extension shared skill storage", () => {
     expect(after).toEqual(before);
   });
 
-  // 0222.6 / criterion 8 — with bridge.js prevented from running, the session
+  // With bridge.js prevented from running, the session
   // still starts and search_skills returns only the code-defined skills.
   test("with bridge.js prevented from running, the session still starts within the timeout", async () => {
     await fs.rm(PATCHED, { recursive: true, force: true });
@@ -478,8 +475,8 @@ test.describe("Extension shared skill storage", () => {
     try {
       const page = await ctx.newPage();
       // No bridge.js means nothing posts wa-bridge-enable on its own; the page
-      // does it itself. This is the same forgeable channel the plan's
-      // Decisions already record — it is not a new exposure.
+      // does it itself. This is the same forgeable channel any page already
+      // has — it is not a new exposure.
       await page.addInitScript(() => {
         window.addEventListener("load", () => {
           window.postMessage({ type: "wa-bridge-enable" }, "*");
@@ -532,7 +529,7 @@ test.describe("Extension shared skill storage", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 120/004 — saved skill owner and the shared flag. BDD 0250.
+// Saved skill owner and the shared flag.
 // ---------------------------------------------------------------------------
 
 const OWNER_ARTIFACTS_DIR = path.resolve(
@@ -696,7 +693,7 @@ function askBridge(page: Page, request: Record<string, unknown>): Promise<Record
   );
 }
 
-test.describe("Saved skill owner and the shared flag (120/004)", () => {
+test.describe("Saved skill owner and the shared flag", () => {
   test.beforeAll(async () => {
     await fs.mkdir(OWNER_ARTIFACTS_DIR, { recursive: true });
   });
@@ -711,7 +708,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     });
   });
 
-  test("0250.1: tesagent saves a private skill; summary, schema and stored owner", async ({ context, extensionId }) => {
+  test("tesagent saves a private skill; summary, schema and stored owner", async ({ context, extensionId }) => {
     const page = await panelTurn(context, extensionId, "tesagent", {
       name: "create_skill",
       input: { ...LOGIN_SMOKE, shared: false },
@@ -754,7 +751,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect(stored.filter((s) => s.name === "login_smoke")).toEqual([{ ...LOGIN_SMOKE, owner: "tesagent" }]);
   });
 
-  test("0250.2 / 0250.10: a private skill is listed only by its owner; the bubble has no shared", async ({
+  test("a private skill is listed only by its owner; the bubble has no shared", async ({
     context,
     extensionId,
   }) => {
@@ -775,7 +772,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect((schema as { required: string[] }).required).toEqual(["name", "description", "definition"]);
   });
 
-  test("0250.3: Chromagent saves a shared skill; tesagent and the bubble list it", async ({ context, extensionId }) => {
+  test("Chromagent saves a shared skill; tesagent and the bubble list it", async ({ context, extensionId }) => {
     const WEEKLY = { name: "weekly_report", description: "Weekly status report", definition: "Collect the week's changes." };
     const page = await panelTurn(context, extensionId, "chromagent", { name: "create_skill", input: WEEKLY });
 
@@ -796,7 +793,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect((await toolResult(bubble)).text).toContain("weekly_report — Weekly status report");
   });
 
-  test("0250.4: a skill stored with no owner before load is listed by all three", async ({ context, extensionId }) => {
+  test("a skill stored with no owner before load is listed by all three", async ({ context, extensionId }) => {
     const LEGACY = { name: "legacy_note", description: "Saved before owners", definition: "Old." };
     await seedSkills(context, [LEGACY]);
 
@@ -810,7 +807,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect((await toolResult(bubble)).text).toContain("legacy_note — Saved before owners");
   });
 
-  test("0250.5: Chromagent cannot save a name tesagent owns", async ({ context, extensionId }) => {
+  test("Chromagent cannot save a name tesagent owns", async ({ context, extensionId }) => {
     await seedSkills(context, [OWNED_LOGIN_SMOKE]);
     const page = await panelTurn(context, extensionId, "chromagent", {
       name: "create_skill",
@@ -825,7 +822,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect(await storedSkills(context)).toEqual([OWNED_LOGIN_SMOKE]);
   });
 
-  test("0250.5: the in-page bubble cannot save a name tesagent owns", async ({ context }) => {
+  test("the in-page bubble cannot save a name tesagent owns", async ({ context }) => {
     await seedSkills(context, [OWNED_LOGIN_SMOKE]);
     const page = await bubbleTurn(context, { name: "create_skill", input: { ...LOGIN_SMOKE, definition: "Page attempt." } });
     const scrim = await expectSummary(page, "web-agent-bubble agent-chat-panel", 'Create skill "login_smoke"');
@@ -837,7 +834,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect(await storedSkills(context)).toEqual([OWNED_LOGIN_SMOKE]);
   });
 
-  test("0250.6: tesagent overwrites its own skill as shared; Chromagent then lists it", async ({ context, extensionId }) => {
+  test("tesagent overwrites its own skill as shared; Chromagent then lists it", async ({ context, extensionId }) => {
     await seedSkills(context, [OWNED_LOGIN_SMOKE]);
     const page = await panelTurn(context, extensionId, "tesagent", { name: "create_skill", input: { ...LOGIN_SMOKE, shared: true } });
     const scrim = await expectSummary(page, VISIBLE_PANEL, 'Overwrite existing skill "login_smoke"');
@@ -851,7 +848,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect((await toolResult(chroma)).text).toContain("login_smoke — Smoke test the login page");
   });
 
-  test("0250.7: a page message with owner and no agentId stores a shared skill", async ({ context, extensionId }) => {
+  test("a page message with owner and no agentId stores a shared skill", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await page.goto(SITE_A);
     await expect(page.locator("web-agent-bubble #launcher")).toBeVisible();
@@ -872,7 +869,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect((await toolResult(bubble)).text).toContain("page_saved — Saved by a page script");
   });
 
-  test("0250.8: a page that forges agentId cannot list, read, save for or delete a private skill", async ({ context }) => {
+  test("a page that forges agentId cannot list, read, save for or delete a private skill", async ({ context }) => {
     await seedSkills(context, [OWNED_LOGIN_SMOKE]);
     const page = await context.newPage();
     await page.goto(SITE_A);
@@ -910,7 +907,7 @@ test.describe("Saved skill owner and the shared flag (120/004)", () => {
     expect((await storedSkills(context)).find((s) => s.name === "login_smoke")).toEqual(OWNED_LOGIN_SMOKE);
   });
 
-  test("0250.9 / 0250.11: Chromagent's delete_skill cannot remove tesagent's skill; the options page lists and deletes it", async ({
+  test("Chromagent's delete_skill cannot remove tesagent's skill; the options page lists and deletes it", async ({
     context,
     extensionId,
   }) => {

@@ -1,4 +1,4 @@
-// 131/001 — page_eval, page_fetch and page_console on the Chrome debugger.
+// page_eval, page_fetch and page_console on the Chrome debugger.
 // None of them touches the page script: each one gates on the tab's debugger
 // session and then talks CDP. The inputs, the validation order and the result
 // texts are the ones these tools already had.
@@ -205,7 +205,7 @@ export function createScriptPageTools(options: PanelPageToolsOptions): CustomToo
       const code = typeof input.code === "string" ? input.code.trim() : "";
       if (!code) return { content: "No code provided to page_eval.", isError: true };
 
-      // 131/003 — `frame` is validated AFTER timeoutMs and the code, so the
+      // `frame` is validated AFTER timeoutMs and the code, so the
       // existing order of those two messages is unchanged.
       const frameRef = typeof input.frame === "string" ? input.frame : undefined;
       let target: { sessionId?: string; contextId?: number } = {};

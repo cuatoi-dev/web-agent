@@ -2,7 +2,7 @@ import { test, expect } from "./extension.fixture";
 
 const SITE = "http://localhost:10040/plain.html";
 
-// The tools each agent had BEFORE this task. Criterion 8: none of them may be
+// The tools each agent had before the todo tools were added. None of them may be
 // lost by turning todo on.
 const PANEL_TOOLS_BEFORE = [
   "read_tabs",
@@ -35,7 +35,6 @@ test.describe("Todo tools on the extension agents", () => {
     });
   });
 
-  // 0225.1 / criteria 1 and 8 (side panel half).
   test("the side panel agent is offered todo_write and todo_read and keeps its own tools", async ({
     context,
     extensionId,
@@ -70,7 +69,6 @@ test.describe("Todo tools on the extension agents", () => {
     expect(tools).toEqual(expect.arrayContaining(["set_schedule", "list_schedules", "cancel_schedule"]));
   });
 
-  // 0225.2 / criteria 2 and 8 (in-page half).
   test("the in-page agent is offered todo_write and todo_read and keeps its own tools", async ({
     context,
   }) => {
@@ -103,7 +101,6 @@ test.describe("Todo tools on the extension agents", () => {
     expect(tools).toEqual(expect.arrayContaining(["set_schedule", "list_schedules", "cancel_schedule"]));
   });
 
-  // 0225.3 / criteria 4, 5, 6 and the indicator half of 3.
   test("empty list shows no indicator; todo_write populates it; todo_read returns ids and statuses; a patch changes one item", async ({
     context,
     extensionId,
@@ -171,7 +168,7 @@ test.describe("Todo tools on the extension agents", () => {
     await panelPage.setViewportSize({ width: 400, height: 700 });
     await panelPage.goto(`chrome-extension://${extensionId}/sidepanel.html`);
 
-    // Criterion 4 — with an empty list the indicator is absent from the DOM,
+    // With an empty list the indicator is absent from the DOM,
     // not present and dimmed.
     await expect(panelPage.locator("agent-chat-panel #input")).toBeVisible();
     await expect(panelPage.locator("agent-todo-indicator")).toHaveCount(0);
@@ -192,7 +189,7 @@ test.describe("Todo tools on the extension agents", () => {
     await expect(indicator).toHaveCount(1);
     await expect(indicator.locator(".todo-badge")).toHaveText("2");
 
-    // Criterion 5 — todo_read returns every item with its id and status. The
+    // todo_read returns every item with its id and status. The
     // render is core's own (packages/web-agent-core/src/todo.ts:50-57):
     // `1. [ ] text  (id: t1)`.
     const readOut = await panelPage.evaluate(() => window.__WA_TODO_READ_RESULT__ ?? "");
@@ -203,7 +200,7 @@ test.describe("Todo tools on the extension agents", () => {
     expect(readOut).toContain("2. [ ] Read the pending count");
     expect(readOut).toContain("3. [ ] Report the total");
 
-    // Criterion 6 — the patch changes only t2. Items 1 and 3 are byte-identical
+    // The patch changes only t2. Items 1 and 3 are byte-identical
     // to what todo_read reported before the patch.
     const patchOut = await panelPage.evaluate(() => window.__WA_TODO_PATCH_RESULT__ ?? "");
     expect(patchOut).toContain("1. [ ] Open the orders tab");
@@ -211,7 +208,6 @@ test.describe("Todo tools on the extension agents", () => {
     expect(patchOut).toContain("3. [ ] Report the total");
   });
 
-  // 0225.4 / criterion 7.
   test("adding a todo does not change the message list height or scroll position", async ({
     context,
     extensionId,

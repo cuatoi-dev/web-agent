@@ -156,7 +156,7 @@ describe("createHelperWorlds — call", () => {
     expect(result).toEqual({ ok: false, error: STALE_REF("7") });
   });
 
-  it("callFunctionOn is given the plan's wrapper and the arguments in order", async () => {
+  it("callFunctionOn is given the helper wrapper and the arguments in order", async () => {
     const { api, session } = await startedSession({
       "Page.getFrameTree": { frameTree: { frame: { id: "F1" } } },
       "Page.createIsolatedWorld": { executionContextId: 2 },

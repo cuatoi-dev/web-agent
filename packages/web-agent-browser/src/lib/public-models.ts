@@ -22,7 +22,7 @@ export function toPublicModels(entries: ModelEntry[]): PublicModel[] {
 }
 
 /** The brand as the page may see it: every model is a copy without
- *  `apiKey` (137/001). Only the payload posted to the MAIN world goes
+ *  `apiKey`. Only the payload posted to the MAIN world goes
  *  through this; the side panel and the options page are extension pages
  *  and keep the full brand. */
 export function pageBrand(brand: AgentBrand): AgentBrand {

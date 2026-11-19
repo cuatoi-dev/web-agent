@@ -41,7 +41,7 @@ describe("pageAgentSkill", () => {
     expect(def).toContain("5-step");
   });
 
-  it("tells the model that /compact, /new and /clear travel over send_to_page_agent (113/002)", () => {
+  it("tells the model that /compact, /new and /clear travel over send_to_page_agent", () => {
     const def = pageAgentSkill.definition;
     expect(def).toContain("/compact");
     expect(def).toContain("/new");

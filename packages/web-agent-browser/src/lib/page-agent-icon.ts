@@ -2,7 +2,7 @@ import { iconNode } from "@cuatoi/web-agent-lit/ui/icon-svgs";
 import type { ToggleView } from "./types";
 
 /** The icon button's tooltip and accessible name: today's button label and
- *  status line as one string (120/003). `status` already ends with a full stop
+ *  status line as one string. `status` already ends with a full stop
  *  and `label` does not (panel-toggle.ts:39-70). */
 export function pageAgentIconText(view: ToggleView): string {
   return `${view.label}. ${view.status}`;
@@ -28,7 +28,7 @@ export function mountPageAgentIcon(button: HTMLButtonElement): void {
 
 /** Writes one tab state onto the icon button: tooltip, accessible name,
  *  pressed, disabled, and the non-colour cue — the `off` class draws the slash
- *  and a pressed button shows the dot (120/003). */
+ *  and a pressed button shows the dot. */
 export function paintPageAgentIcon(button: HTMLButtonElement, view: ToggleView): void {
   const text = pageAgentIconText(view);
   button.setAttribute("aria-label", text);

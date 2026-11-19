@@ -10,7 +10,7 @@ function toolCtx(): ToolContext {
   return { app: {}, signal: new AbortController().signal };
 }
 
-/** 127/003 — stop_recording returns its report followed by the path it saved
+/** stop_recording returns its report followed by the path it saved
  *  it at. These two read the two halves back apart. */
 function reportOf(content: string): string {
   const i = content.lastIndexOf("\nSaved ");
@@ -356,14 +356,14 @@ describe("panel-page-tools-recording", () => {
     expect(lastThree).toEqual(["page_emulate", "start_recording", "stop_recording"]);
   });
 
-  it("both descriptions read as the plan requires", () => {
+  it("both descriptions read as required", () => {
     const { startTool, stopTool } = getTools();
     expect(startTool.description).toContain("start_debugging");
     expect(stopTool.description).not.toContain("navigated");
   });
 });
 
-describe("panel-page-tools-recording — the saved report (127/003)", () => {
+describe("panel-page-tools-recording — the saved report", () => {
   let controller: RecordingController;
 
   beforeEach(() => {

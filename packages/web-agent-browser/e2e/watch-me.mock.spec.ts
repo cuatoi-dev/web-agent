@@ -127,8 +127,8 @@ async function waitForResults(panelPage: Page, count: number): Promise<{ tool: s
   return panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 }
 
-test.describe("watch-me composer control mock e2e (124/006, self-attaching since 131/004)", () => {
-  test("brand visibility: both tesagent and chromagent show Watch me (155400-001)", async ({ context, extensionId }) => {
+test.describe("watch-me composer control mock e2e, self-attaching", () => {
+  test("brand visibility: both tesagent and chromagent show Watch me", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     const sitePage = await context.newPage();
     await sitePage.goto(CHECKOUT_URL);

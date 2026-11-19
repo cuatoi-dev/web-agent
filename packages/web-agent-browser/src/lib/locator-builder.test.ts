@@ -306,7 +306,7 @@ describe("locator-builder", () => {
     expect(journalTarget(email, document, "[2] textbox").isPassword).toBe(false);
   });
 
-  describe("locatorSet and stepLocatorSet names (002)", () => {
+  describe("locatorSet and stepLocatorSet names", () => {
     it("stepLocatorSet uses the stable name; locatorSet keeps the full name", () => {
       document.body.innerHTML = '<a href="#c">Cart <span>5</span></a>';
       const a = document.querySelector("a")!;
@@ -326,7 +326,7 @@ describe("locator-builder", () => {
     });
   });
 
-  describe("text locator for a generic element (rec 002)", () => {
+  describe("text locator for a generic element", () => {
     const SECTION = '<div id="docs" onclick="void 0"><span>ALL MATCHED DOCUMENTS <span>8</span></span></div>';
 
     it("locatorSet fills text and textMatches for a role-less element", () => {

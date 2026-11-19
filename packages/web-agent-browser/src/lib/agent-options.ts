@@ -30,7 +30,7 @@ const STUB_REGISTRY: SkillRegistry = {
   save: () => Promise.resolve(),
 };
 
-/** A handle that only answers the tool catalogue. 127/003 — `toolGroups` builds
+/** A handle that only answers the tool catalogue. `toolGroups` builds
  *  the page tools to read their names, so it needs a `VfsHandle`; nothing here
  *  ever executes, and no storage is instantiated. */
 const STUB_VFS: VfsHandle = {
@@ -103,7 +103,7 @@ export function skillNames(brand: AgentBrand): MultiSelectGroup[] {
 }
 
 /** The agent editor's Model options after "Use the options page model":
- *  the enabled models, as "label — provider" (136/005). */
+ *  the enabled models, as "label — provider". */
 export function modelOptions(entries: ModelEntry[]): AgentModelOption[] {
   return entries
     .filter((e) => e.enabled)

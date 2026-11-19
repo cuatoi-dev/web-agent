@@ -116,7 +116,7 @@ test.describe("Add agent and Delete agent", () => {
     await expect(page.locator("#edit-_new-id-hint")).toHaveText("Id: checkout-tester");
   });
 
-  test("AD2: blank fields show task 003's messages and write nothing", async ({ context, extensionId }) => {
+  test("AD2: blank fields show the required-field messages and write nothing", async ({ context, extensionId }) => {
     const page = await context.newPage();
     await openAgents(page, extensionId, 2);
     await page.locator("#add-agent-btn").click();

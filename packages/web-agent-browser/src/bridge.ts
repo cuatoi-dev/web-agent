@@ -46,7 +46,7 @@ const brandPromise = requestBrand();
 
 /** What the bubble needs, read fresh for each message: the enabled models
  *  (PublicModel — never a key or a header value), the default model, the
- *  theme and the brand without any `apiKey` (136/005, 137/001). */
+ *  theme and the brand without any `apiKey`. */
 async function bubblePayload(): Promise<BubblePayload> {
   const [settings, brand, store] = await Promise.all([getSettings(), brandPromise, readModelStore()]);
   const entries = listModels(brand, store);
@@ -179,7 +179,7 @@ window.addEventListener("message", (event) => {
   // correlated by `id`. A storage call that throws posts nothing and the MAIN
   // world's 2000 ms timeout resolves it empty — the same degradation core
   // applies to a registry whose list() rejects (skill-registry.ts:92-106).
-  // 120/004 — any script on the page can post here, so the request is handled
+  // Any script on the page can post here, so the request is handled
   // as the in-page bubble's: handlePageSkillsRequest removes `agentId`.
   if (msg.type.startsWith(SKILLS_MESSAGE_PREFIX) && msg.type !== SKILLS_RESULT_MESSAGE) {
     const request = msg as SkillsRequestMessage;

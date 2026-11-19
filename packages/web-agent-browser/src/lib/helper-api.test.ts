@@ -301,7 +301,7 @@ describe("locator", () => {
   });
 });
 
-describe("iframeSelector (131/003)", () => {
+describe("iframeSelector", () => {
   it("iframe with id produces #payment", () => {
     document.body.innerHTML = "";
     const el = document.createElement("iframe");

@@ -1,4 +1,4 @@
-// 131/004 — installs the recorder in every frame of a debugged tab and turns
+// Installs the recorder in every frame of a debugged tab and turns
 // Runtime.bindingCalled into a RecordedStep with its frame chain. Split out of
 // recording-controller.ts, which owns the step list and the state machine.
 import { errorMessage } from "./error-message";
@@ -55,7 +55,7 @@ export function createDebuggerRecorder(
   // carries no step count) can be inserted between two real steps of the SAME
   // band instead of being pushed into a band of its own, which would sort it
   // after every step of that document regardless of when it actually
-  // happened — measured 2026-09-20 running this task's own mock e2e: an SPA
+  // happened — measured 2026-09-20 in the recorder mock e2e: an SPA
   // route raised between two same-document clicks landed after both.
   const lastLocalSeq = new Map<number, Map<string, number>>();
   // How many route steps have been raised since the last real step in that
@@ -157,7 +157,7 @@ export function createDebuggerRecorder(
       tabLocalSeqs = new Map();
       lastLocalSeq.set(tabId, tabLocalSeqs);
     }
-    // A closed-root step arrives after later steps (005). It must not move the
+    // A closed-root step arrives after later steps. It must not move the
     // highest seq back, or the next route step would sort before those steps.
     const seen = tabLocalSeqs.get(key);
     if (seen === undefined || message.seq >= seen) {

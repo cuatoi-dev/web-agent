@@ -4,7 +4,7 @@ import type { AgentSwitcher, AgentSwitcherDeps, SwitchablePanel } from "./agent-
 export type { AgentSwitcher, AgentSwitcherDeps, SwitchablePanel } from "./agent-switcher.types";
 
 /** The side panel agents in list order: the brand's default agent first, then
- *  the rest by display name. 120/002. */
+ *  the rest by display name. */
 export function orderAgents(brand: AgentBrand): BrandAgent[] {
   const first = brand.agents.find((a) => a.id === brand.defaultAgent);
   const rest = brand.agents

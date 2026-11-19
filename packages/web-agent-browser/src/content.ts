@@ -85,7 +85,7 @@ function mount(payload: BubblePayload): Promise<void> {
         (el as unknown as { type: string }).type = "mock";
       }
 
-      // 116/003 — the same three built-in groups, each droppable from
+      // The same three built-in groups, each droppable from
       // brand/plugin.yml's `skills` block, with the brand's own skills merged over
       // them. The group keys are the ones the compiler accepts.
       el.skills = mergeBrandSkills(
@@ -102,7 +102,7 @@ function mount(payload: BubblePayload): Promise<void> {
       el.skillRegistry = forwardedSkillRegistry();
       el.cues = { enabled: true, speed: CUE_SPEED };
       const vfs = vfsTools();
-      // 136/005 — rebuilt by the model switch when the vision flag changes,
+      // Rebuilt by the model switch when the vision flag changes,
       // so `see` is offered only to a vision model.
       const toolProviders = (vision: boolean): ToolProvider[] => [
         ...domTools({
@@ -114,7 +114,7 @@ function mount(payload: BubblePayload): Promise<void> {
         }),
         ...pageFetchTools(),
         ...pageEvalTools(),
-        // 069/003 — the agent file system on the WEBSITE's own storage, with the
+        // The agent file system on the WEBSITE's own storage, with the
         // default layout: /tmp is this page's sessionStorage, /home/agent and
         // /home/shared its localStorage, under the web-agent-vfs: key prefix
         // (web-agent-vfs/src/mounts.ts:23-25). Each website therefore has its own
@@ -122,7 +122,7 @@ function mount(payload: BubblePayload): Promise<void> {
         // chrome.storage mounts. NOT spread: vfsTools returns ONE ToolProvider.
         vfs,
       ];
-      // 136/005 — path, type, model, imageInput, the kebab list and the tool
+      // Path, type, model, imageInput, the kebab list and the tool
       // providers, set before the element is appended so the first session
       // uses them. A pick in the kebab menu switches all of them.
       const modelSwitch = createModelSwitch({
@@ -140,12 +140,12 @@ function mount(payload: BubblePayload): Promise<void> {
         appName: document.title || "Visited page",
         appDescription: "The current webpage in the browser.",
       };
-      // 116/001 — the brand's own prompt for this agent. Runs AFTER appContext is
+      // The brand's own prompt for this agent. Runs AFTER appContext is
       // set, because it spreads what is already there. appName and appDescription
-      // keep their current values; the identity move is task 004.
+      // keep their current values.
       applyAgentBrand(el, brand, "inPage");
 
-      // 115/006 — todo tracking is opt-in per host
+      // Todo tracking is opt-in per host
       // (packages/web-agent-core/src/controller.types.ts:119-121).
       //
       // TRAP: `WebAgentBubble` applies its own fallback config ONLY when the host
@@ -161,11 +161,11 @@ function mount(payload: BubblePayload): Promise<void> {
         persist: true,
         sessionNamespace: IN_PAGE_SESSION_NAMESPACE,
         appendSystemPrompt: IN_PAGE_SYSTEM_PROMPT,
-        // 155400-001 — the extension allows up to 1000 tool steps per turn;
+        // The extension allows up to 1000 tool steps per turn;
         // the core default is 200.
         maxIterations: 1000,
         todo: { enabled: true },
-        // 116/003 — LAST, so brand/plugin.yml's `tools` block overrides the host
+        // LAST, so brand/plugin.yml's `tools` block overrides the host
         // opt-ins above. Adds nothing when the brand declares no flags.
         ...brandToolConfig(brand),
       };
@@ -254,7 +254,7 @@ function reportState(type: string, extra: Record<string, unknown> = {}): void {
   );
 }
 
-// 136/005 — the defensive fallback for a message that carries no model list.
+// The defensive fallback for a message that carries no model list.
 // The MAIN world cannot read the model store, so it uses the compiled
 // presets: the same degrade path an unreadable brand.json takes.
 // e2e/skills.mock.spec.ts:485 posts wa-bridge-enable with no payload, so
@@ -300,7 +300,7 @@ window.addEventListener("message", (event) => {
       // mount() declines, and writing `turningOn` would record a bubble that is
       // not there — the panel's control would then show the wrong state.
       window.postMessage({ type: "wa-bridge-set-origin-enabled", origin: ORIGIN, enabled: !!livingBubble() }, "*");
-      // 002 — the direction travels with the outcome. Without it a decline
+      // The direction travels with the outcome. Without it a decline
       // reads as a deliberate turn-off, which is what made the panel say "the
       // page agent was on and I just turned it off" for a press that had asked
       // for ON and got nothing.
@@ -318,14 +318,14 @@ window.addEventListener("message", (event) => {
     // (web-agent-embed.ts), so the user sees it open and the message arrive.
     void (async () => {
       await settled();
-      // 002 — one lookup, used for the send and for every field reported
+      // One lookup, used for the send and for every field reported
       // about it. `!!bubble` was true for an element the page had already
       // removed, so the panel was told a detached, invisible bubble had the
       // message.
       const el = livingBubble();
       // `delivered` reports that the message reached the panel's session, not
       // that the page agent has answered — reachedPageAgentSession explains why
-      // the send promise itself cannot be awaited here. 001/113: the same helper
+      // the send promise itself cannot be awaited here. The same helper
       // now also reports whether the panel RAN a slash command, which is the one
       // fact `send_to_page_agent` used to guess at.
       let outcome: PageAgentDelivery = { delivered: false, ranCommand: false };

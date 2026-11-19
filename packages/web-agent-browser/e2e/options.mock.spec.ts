@@ -296,9 +296,8 @@ test.describe("Saved skills", () => {
     await expect(secondCard.locator(".card-edit-btn")).toBeEnabled();
   });
 
-  // 121/002 — manager-required gap closure: the plan's own e2e code only
-  // spelled out T1 and A1; these three prove the rest of the "Agents tab"
-  // acceptance criteria the plan lists but leaves to unit tests C7-C8.
+  // T1 and A1 cover the basics; these three prove the rest of the
+  // "Agents tab" behaviour end to end.
   test("A2: a stored edit shows Edited, the stored description, resolved model, and tool count", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
@@ -858,7 +857,7 @@ test.describe("Options page full-width flex layout", () => {
   });
 });
 
-// --- 137/002: General tab, toolbar count and shared dialog spacing ----------
+// --- General tab, toolbar count and shared dialog spacing ------------------
 
 const ARTIFACTS_137_002 =
   process.env.E2E_ARTIFACTS_DIR ?? path.resolve(HERE, "../../../temp/e2e-artifacts/options-general-tab");
@@ -966,7 +965,7 @@ async function actionRowMetrics(dialog: Locator) {
   });
 }
 
-/** The spacing every dialog shares (137/002 C4). Returns the metrics so a
+/** The spacing every dialog shares. Returns the metrics so a
  *  caller can assert the per-dialog details. */
 async function expectSharedActionRow(dialog: Locator) {
   const m = await actionRowMetrics(dialog);
@@ -991,7 +990,7 @@ async function expectSharedActionRow(dialog: Locator) {
   return m;
 }
 
-test.describe("Options page 137/002: General tab and shared spacing", () => {
+test.describe("Options page: General tab and shared spacing", () => {
   test.beforeAll(async () => {
     await fs.mkdir(ARTIFACTS_137_002, { recursive: true });
   });
@@ -1696,7 +1695,7 @@ test.describe("Model table capabilities and ID badge", () => {
   });
 });
 
-// --- 138/001: API keys encrypted at rest in extension storage ----------------
+// --- API keys encrypted at rest in extension storage -------------------------
 
 async function findMarkerFiles(rootDir: string, needle: Buffer): Promise<string[]> {
   const matches: string[] = [];
@@ -1720,7 +1719,7 @@ async function findMarkerFiles(rootDir: string, needle: Buffer): Promise<string[
   return matches;
 }
 
-test.describe("API keys encrypted at rest (138/001)", () => {
+test.describe("API keys encrypted at rest", () => {
   test("E1: saved custom provider and brand keys are not on disk as plain text and still open after profile reopen", async () => {
     const profileDir = path.resolve(HERE, `../temp/e2e-profiles/key-vault-${Date.now()}`);
     const rand = Math.random().toString(36).slice(2, 10);

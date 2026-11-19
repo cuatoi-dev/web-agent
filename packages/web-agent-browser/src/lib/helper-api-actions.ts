@@ -1,4 +1,4 @@
-// 131/002 — the select-option half of helper-api.ts, split out to stay under
+// The select-option half of helper-api.ts, split out to stay under
 // this file's 500-line cap (eslint.config.mjs max-lines). `selectOptionMissing`,
 // `invisibleTargetNote`, `focusLikeHuman`, `dispatchChangeLikeHuman` and
 // `blurLikeHuman` are not exported from @cuatoi/web-agent-dom, so their
@@ -73,8 +73,8 @@ function findOption(options: HTMLOptionElement[], val: string): HTMLOptionElemen
   return matched;
 }
 
-/** The checks `content-act-by-ref.ts:139-164` ran before this task. Permission
- *  is handled generically by the shared `describe` step (code change 9); this
+/** The type-specific checks for one action. Permission
+ *  is handled generically by the shared `describe` step; this
  *  keeps only the type-specific checks. */
 export function selectPrepare(el: Element, ref: string, values: string[]): SelectPrepareResult {
   if (!(el instanceof HTMLSelectElement)) {

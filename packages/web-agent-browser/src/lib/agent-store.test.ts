@@ -183,7 +183,7 @@ describe("listAgents", () => {
     expect(out).toEqual(listAgents(brand(), {}, []));
   });
 
-  it("U12: keeps memory on unedited and edited brand agents, and never on user agents (104/003)", () => {
+  it("U12: keeps memory on unedited and edited brand agents, and never on user agents", () => {
     const b = brand();
     const withMemory = {
       ...b,

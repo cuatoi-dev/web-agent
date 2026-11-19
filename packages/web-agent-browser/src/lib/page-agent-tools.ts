@@ -43,7 +43,7 @@ export function createPageAgentTools(options: PageAgentToolsOptions = {}): Custo
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
   const maxChars = options.maxChars ?? DEFAULT_READ_RESULT_MAX_CHARS;
 
-  /** 001 — ask the tab, repeatedly and briefly, whether the page agent is
+  /** Ask the tab, repeatedly and briefly, whether the page agent is
    *  mounted yet. STATE_MESSAGE is the read-only probe the panel's own toggle
    *  control already uses (panel-toggle.ts:19): the tab answers it from
    *  `reportState` (content.ts:327-329), which mounts, unmounts and toggles
@@ -103,7 +103,7 @@ export function createPageAgentTools(options: PageAgentToolsOptions = {}): Custo
         };
       }
 
-      // 001 — a mount the toggle already acknowledged can still be settling
+      // A mount the toggle already acknowledged can still be settling
       // when the very next tool call arrives: the live run of 2026-09-20 had
       // toggle answer "is now ON" and this send answer "is not on", on the
       // same tab, moments apart. One bounded wait on the read-only probe, then
@@ -137,7 +137,7 @@ export function createPageAgentTools(options: PageAgentToolsOptions = {}): Custo
         };
       }
 
-      // 001/113 — report what the page agent actually did, never what was posted.
+      // Report what the page agent actually did, never what was posted.
       // Claiming a command ran when it did not is what made this bug invisible.
       if (reply.ranCommand) {
         return { content: `Ran /${reply.command ?? ""} in the page agent.` };
@@ -223,10 +223,10 @@ export function createPageAgentTools(options: PageAgentToolsOptions = {}): Custo
         }
       }
 
-      // 001 — a press that asked for ON is confirmed with the read-only probe
+      // A press that asked for ON is confirmed with the read-only probe
       // before it is reported. The toggle reports the state it saw at reply
-      // time; without this the next send can find the page agent gone, which
-      // is the defect this task fixes. Only an ON press is confirmed, so the
+      // time; without this the next send can find the page agent gone. Only
+      // an ON press is confirmed, so the
       // foreign, refusal and OFF branches below keep their exact behaviour.
       if (reply.mounted && reply.requested === "on" && !(await awaitMounted(tabId))) {
         return {
@@ -248,7 +248,7 @@ export function createPageAgentTools(options: PageAgentToolsOptions = {}): Custo
         };
       }
 
-      // 002 — a press that asked for ON and did not get it is a refusal, not
+      // A press that asked for ON and did not get it is a refusal, not
       // a turn-off. Reporting "now OFF" here told the panel the opposite of
       // what happened.
       if (reply.requested === "on") {

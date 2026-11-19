@@ -11,7 +11,7 @@ export type {
   PanelMemorySyncOptions,
 } from "./panel-memory.types";
 
-/** 104/003 — two gates: the brand allows memory in `.yml`, and the user
+/** Two gates: the brand allows memory in `.yml`, and the user
  *  switched it on in Options. */
 export function isAgentMemoryOn(
   agent: Pick<BrandAgent, "id" | "memory">,

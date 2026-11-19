@@ -9,7 +9,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXT = path.resolve(HERE, "../dist");
 const NO_TOOLS_EXT = path.resolve(HERE, "../temp/e2e-extensions/agent-defaults-no-tools");
 
-// 155400-001 — both extension agents start their session with 1000 steps.
+// Both extension agents start their session with 1000 steps.
 // Reads the `config` each agent's element carries: the side panel's
 // <agent-chat-panel> (sidepanel.ts sets it before connecting) and the
 // in-page <web-agent-bubble> (content.ts; the MAIN-world content script, so

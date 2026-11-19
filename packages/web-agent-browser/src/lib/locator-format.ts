@@ -1,4 +1,4 @@
-// 127/002 — the text lines page_generate_locator, stop_recording and the
+// The text lines page_generate_locator, stop_recording and the
 // Watch me composer print for one LocatorSet. No DOM: the side panel imports it.
 import type { LocatorSet } from "./types";
 

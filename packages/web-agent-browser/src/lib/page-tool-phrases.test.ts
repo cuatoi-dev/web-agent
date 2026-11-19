@@ -206,7 +206,7 @@ describe("pageToolPhrases — done lines", () => {
       .toBe("tesagent stopped recording: 4 steps");
   });
 
-  it("stop_recording: 127/003 the saved path does not change the count phrase", () => {
+  it("stop_recording: the saved path does not change the count phrase", () => {
     expect(
       phraseFor(
         "stop_recording",
@@ -281,7 +281,7 @@ describe("pageToolPhrases — done lines", () => {
       .toBe('tesagent took a screenshot of the button "Apply"');
   });
 
-  it("page_screenshot: 127/003 the saved path does not change the element phrase", () => {
+  it("page_screenshot: the saved path does not change the element phrase", () => {
     expect(
       phraseFor(
         "page_screenshot",
@@ -291,7 +291,7 @@ describe("pageToolPhrases — done lines", () => {
     ).toBe('tesagent took a screenshot of the button "Apply"');
   });
 
-  it("page_screenshot: 127/005 a selector caption with count, warning and Saved lines keeps the generic phrase", () => {
+  it("page_screenshot: a selector caption with count, warning and Saved lines keeps the generic phrase", () => {
     expect(
       phraseFor(
         "page_screenshot",
@@ -301,7 +301,7 @@ describe("pageToolPhrases — done lines", () => {
     ).toBe("tesagent took a screenshot");
   });
 
-  it("page_screenshot: 127/005 highlight keeps the ref and full-page phrases", () => {
+  it("page_screenshot: highlight keeps the ref and full-page phrases", () => {
     expect(
       phraseFor("page_screenshot", { ref: "7", highlight: ["8"] }, 'Screenshot of [7] button "Apply", 80 × 32.\nSaved /tmp/s.png'),
     ).toBe('tesagent took a screenshot of the button "Apply"');
@@ -416,7 +416,7 @@ describe("start_debugging / stop_debugging — the debugger gate error", () => {
   });
 });
 
-it("covers exactly the 18 tools this task names", () => {
+it("covers exactly the 18 phrased page tools", () => {
   expect(new Set(Object.keys(pageToolPhrases(() => "h")))).toEqual(new Set(TOOL_NAMES));
 });
 

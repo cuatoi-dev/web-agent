@@ -28,7 +28,7 @@ async function sendMessage(page: Page, text: string): Promise<void> {
   await page.keyboard.press("Enter");
 }
 
-test.describe("Act-by-ref page tools mock e2e (122/001)", () => {
+test.describe("Act-by-ref page tools mock e2e", () => {
   test("page_fill_form with one valid ref and one stale ref leaves both page fields empty", async ({
     context,
     extensionId,
@@ -114,7 +114,7 @@ test.describe("Act-by-ref page tools mock e2e (122/001)", () => {
     await sendMessage(panelPage, "Snapshot this page.");
     await panelPage.waitForFunction(() => window.__COUPON_REF__ !== undefined, { timeout: 15_000 });
 
-    // 131/002 — a ref is a Chrome node id, valid for as long as its element
+    // A ref is a Chrome node id, valid for as long as its element
     // is on the page; there is no snapshot "generation" any more. Remove the
     // email field from the DOM entirely so its earlier ref genuinely goes
     // stale (describe() sees el.isConnected === false).
@@ -376,7 +376,7 @@ test.describe("Act-by-ref page tools mock e2e (122/001)", () => {
 
   test("page_snapshot before start_debugging returns the not-started gate text", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
-    // 131/002 — page_snapshot runs on the debugger now, so it gates on
+    // page_snapshot runs on the debugger now, so it gates on
     // start_debugging, not on enabledOrigins. Deliberately not enabled AND
     // deliberately never call start_debugging.
 

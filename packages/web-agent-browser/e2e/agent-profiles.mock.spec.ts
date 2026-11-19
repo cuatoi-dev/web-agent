@@ -100,7 +100,7 @@ test.describe("Agent profiles mock e2e", () => {
       const page = await ctx.newPage();
       await installToolListingMock(page);
       await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-      // 120/002 — sidepanel.ts:main() now awaits one more storage round trip
+      // sidepanel.ts:main() now awaits one more storage round trip
       // (getLastAgentId) before it appends the panel, so this evaluate can no
       // longer assume the panel already exists right after goto() resolves.
       await page.waitForSelector("agent-chat-panel");
@@ -173,7 +173,7 @@ test.describe("Agent profiles mock e2e", () => {
       const page = await ctx.newPage();
       await installToolListingMock(page);
       await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-      // 120/002 — see the note on the "two tools" test above.
+      // See the note on the "two tools" test above.
       await page.waitForSelector("agent-chat-panel");
       await page.evaluate(() => {
         const panel = document.querySelector("agent-chat-panel") as any;
@@ -199,7 +199,7 @@ test.describe("Agent profiles mock e2e", () => {
     try {
       const page = await ctx.newPage();
       await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-      // 120/002 — see the note on the "two tools" test above.
+      // See the note on the "two tools" test above.
       await page.waitForSelector("agent-chat-panel");
       const skills = await page.evaluate(() => {
         const panel = document.querySelector("agent-chat-panel") as any;
@@ -253,7 +253,7 @@ test.describe("Agent profiles mock e2e", () => {
       });
 
       await page.goto(`chrome-extension://${extensionId}/sidepanel.html`);
-      // 120/002 — see the note on the "two tools" test above.
+      // See the note on the "two tools" test above.
       await page.waitForSelector("agent-chat-panel");
       await page.evaluate(() => {
         const panel = document.querySelector("agent-chat-panel") as any;
@@ -294,7 +294,7 @@ test.describe("Agent profiles mock e2e", () => {
       const page1 = await ctx1.newPage();
       await installToolListingMock(page1);
       await page1.goto(`chrome-extension://${ext1}/sidepanel.html`);
-      // 120/002 — see the note on the "two tools" test above.
+      // See the note on the "two tools" test above.
       await page1.waitForSelector("agent-chat-panel");
       await page1.evaluate(() => {
         const panel = document.querySelector("agent-chat-panel") as any;
@@ -319,7 +319,7 @@ test.describe("Agent profiles mock e2e", () => {
       const page2 = await ctx2.newPage();
       await installToolListingMock(page2);
       await page2.goto(`chrome-extension://${ext2}/sidepanel.html`);
-      // 120/002 — see the note on the "two tools" test above.
+      // See the note on the "two tools" test above.
       await page2.waitForSelector("agent-chat-panel");
       await page2.evaluate(() => {
         const panel = document.querySelector("agent-chat-panel") as any;
@@ -346,8 +346,8 @@ test.describe("Agent profiles mock e2e", () => {
         "The brand did not load, so no agent is available. Reload the extension, then open the side panel again.",
       );
       await expect(page.locator("agent-chat-panel")).toHaveCount(0);
-      // 120/002 — no agent, so no combo box either.
-      // 120/003 manager override — the row itself, and the page-agent icon in
+      // No agent, so no combo box either.
+      // The row itself, and the page-agent icon in
       // it, stay visible and usable even with no agent loaded.
       await expect(page.locator("#agent-combo")).toBeHidden();
       await expect(page.locator("#page-agent-toggle")).toBeVisible();

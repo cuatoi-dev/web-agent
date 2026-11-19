@@ -184,7 +184,7 @@ describe("watch-me-provider", () => {
     expect(root!.textContent).toContain("Recording stopped: the tab closed.");
   });
 
-  it("Fix round 1 (124/006): an agent-started recording ended by a closed tab is shown in the slot but is NOT pending — the agent, not the composer, owns it", async () => {
+  it("an agent-started recording ended by a closed tab is shown in the slot but is NOT pending — the agent, not the composer, owns it", async () => {
     const p = makeProvider();
     // The agent's start_recording tool calls the shared controller directly,
     // never through this provider's pick() — recorder.mock.spec.ts M7's setup.
@@ -279,7 +279,7 @@ describe("watch-me-provider", () => {
     );
   });
 
-  it("002: onUserPrompt() lists every step in order, bare", async () => {
+  it("onUserPrompt() lists every step in order, bare", async () => {
     const p = makeProvider();
     await p.pick();
     harness.step(0, 'click button "Apply"', undefined, {
@@ -317,7 +317,7 @@ describe("watch-me-provider", () => {
     );
   });
 
-  it("004: onUserPrompt() sets userDisplayText to only the typed text, leaving the model parts and chip unchanged", async () => {
+  it("onUserPrompt() sets userDisplayText to only the typed text, leaving the model parts and chip unchanged", async () => {
     const p = makeProvider();
     await p.pick();
     harness.step(0, 'click button "Apply"');

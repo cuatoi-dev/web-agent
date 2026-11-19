@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-/** 127/002 — the value of one `  <key>: <value>` line in a page_generate_locator
+/** The value of one `  <key>: <value>` line in a page_generate_locator
  *  or stop_recording result. Null when the line is absent. */
 export function locatorField(text: string, key: string): string | null {
   const start = `  ${key}: `;

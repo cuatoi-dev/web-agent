@@ -11,7 +11,7 @@ export interface CaptureApi {
   isOriginEnabled: (origin: string) => Promise<boolean>;
 }
 
-/** What `createPageScreenshotTool` and the vision gate read. 136/005 — the
+/** What `createPageScreenshotTool` and the vision gate read. The
  *  side panel sets `imageInput` from the current model's `vision` flag, which
  *  wins over the name guess from `endpointType` and `model`. */
 export interface PageScreenshotToolOptions {

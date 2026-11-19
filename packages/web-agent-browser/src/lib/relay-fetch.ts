@@ -8,7 +8,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** 136/005 — `getModelRef` is read per request, so the worker knows which
+/** `getModelRef` is read per request, so the worker knows which
  *  provider's key to add. An empty ref is refused by the worker. */
 export function createRelayFetch(
   ctx: RelayFetchContext = window,

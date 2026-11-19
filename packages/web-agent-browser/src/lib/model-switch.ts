@@ -9,7 +9,7 @@ export function toModelOptions(models: PublicModel[]): ModelOption[] {
 }
 
 /** Puts one model on a bubble or a side panel, and switches it when the user
- *  picks another in the kebab menu (136/005). A switch writes path, type,
+ *  picks another in the kebab menu. A switch writes path, type,
  *  model, imageInput and selectedModel; the panel keeps the conversation
  *  (core controller.ts:262-288). The tool providers are rebuilt only when
  *  the vision flag changes. Call before the element is connected. */

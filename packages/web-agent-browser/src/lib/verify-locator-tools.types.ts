@@ -1,4 +1,4 @@
-// The shapes for the panel's page_verify tool (122/002). Imports only the
+// The shapes for the panel's page_verify tool. Imports only the
 // element target type, mirroring act-by-ref-tools.types.ts; spliced into
 // types.ts's BridgeMessage union and re-exported from there.
 
@@ -25,7 +25,7 @@ export interface VerifyInput {
 export interface VerifyOutcome {
   text: string;
   isError: boolean;
-  /** 124/004 — a PASS check's element. Absent for text_visible and FAIL. */
+  /** A PASS check's element. Absent for text_visible and FAIL. */
   target?: ElementTarget;
 }
 

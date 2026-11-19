@@ -257,7 +257,7 @@ describe("page_eval", () => {
     expect(result.content?.endsWith("…(output truncated)")).toBe(true);
   });
 
-  describe("131/003 — frame", () => {
+  describe("frame", () => {
     it("leaves page_eval without frame exactly as it is", async () => {
       const { api, session } = await debuggingSession({
         "Runtime.evaluate": { result: { type: "string", value: "Hello" } },

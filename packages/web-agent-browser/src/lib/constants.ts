@@ -8,7 +8,7 @@ export const TOGGLE_MESSAGE = "wa-toggle";
 
 /** Panel -> tab: report the tab's origin and whether the bubble is really
  *  mounted there. Needs no permission, unlike reading `tab.url`, which the
- *  Chrome tabs API grants only with the "tabs" permission (task 002) or a host
+ *  Chrome tabs API grants only with the "tabs" permission or a host
  *  permission for that page. An extension page runs no content script, so this
  *  message rejects there and the panel can never target itself. */
 export const STATE_MESSAGE = "wa-state";
@@ -22,7 +22,7 @@ export const SEND_MESSAGE = "wa-send";
  *  state. */
 export const READ_MESSAGE = "wa-read";
 
-/** 001 — how long `toggle_page_agent` waits for {@link STATE_MESSAGE} to confirm
+/** How long `toggle_page_agent` waits for {@link STATE_MESSAGE} to confirm
  *  a mount before it reports the mount failed, and how long
  *  `send_to_page_agent` waits before it repeats its refusal. A mount the toggle
  *  already acknowledged can still be settling when the next tool call arrives;
@@ -31,7 +31,7 @@ export const READ_MESSAGE = "wa-read";
  *  the 15 s budget of e2e/page-agent.mock.spec.ts:738. */
 export const MOUNT_READY_TIMEOUT_MS = 3_000;
 
-/** 001 — the gap between two mounted probes inside that wait. */
+/** The gap between two mounted probes inside that wait. */
 export const MOUNT_PROBE_INTERVAL_MS = 100;
 
 /** Extension page or bridge -> worker: ask for the compiled brand. The worker
@@ -114,7 +114,7 @@ export const CLOSE_ICON_SVG = `<svg viewBox="0 0 24 24" width="28" height="28" f
 export const NOT_ACTIVATED = (tabId: number, origin: string) =>
   `The web agent is not on in tab #${tabId} (${origin}). Ask the user to activate the extension on that page, then try again.`;
 
-/** 131/002 — page_snapshot's character budget, the same 12,000 the DomAdapter
+/** page_snapshot's character budget, the same 12,000 the DomAdapter
  *  snapshot uses (packages/web-agent-dom/src/adapters/dom-adapter.ts:53). */
 export const SNAPSHOT_MAX_CHARS = 12_000;
 
@@ -124,14 +124,14 @@ export const SNAPSHOT_MAX_CHARS = 12_000;
 export const EXTENSION_UI_ATTR = "data-web-agent-extension";
 export const EXTENSION_UI_SELECTOR = `[${EXTENSION_UI_ATTR}]`;
 
-/** 131/002 — the selector page_verify's helper-world checks use to skip the
+/** The selector page_verify's helper-world checks use to skip the
  *  agent's own UI (panel-page-tools-verify-locator.ts:85-86). A site's own
  *  <web-agent-bubble> IS the page, so only the extension's own bubble is
  *  skipped, the same rule the recorder follows (page-recorder.ts:17). */
 export const AGENT_UI_SELECTOR = EXTENSION_UI_SELECTOR;
 
 /** The most requests one tab's debugger network log keeps; the oldest is
- *  dropped (124/003). */
+ *  dropped. */
 export const DEFAULT_NETWORK_BUFFER_CAPACITY = 200;
 /** `page_network` with `index`: the cap on the request body shown. */
 export const DEFAULT_NETWORK_REQ_BODY_CHARS = 4000;
@@ -141,7 +141,7 @@ export const DEFAULT_NETWORK_RES_BODY_CHARS = 8000;
 export const MAX_UPLOAD_BYTES = 10_485_760;
 
 /** How long the pointer must rest on one interactive element before the
- *  recorder records a hover (user decision, 2026-09-17). */
+ *  recorder records a hover. */
 export const REC_HOVER_REST_MS = 500;
 
 /** How long wheel events must stop before the recorder labels the scroll step. */

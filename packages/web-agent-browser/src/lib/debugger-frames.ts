@@ -1,4 +1,4 @@
-// 131/003 — the per-tab frame registry. It holds no chrome API of its own: the
+// The per-tab frame registry. It holds no chrome API of its own: the
 // session feeds it events and reads it back, so it is a plain object in tests.
 import type { ChildTarget, DebuggerFrames, TabFrames } from "./debugger-frames.types";
 
@@ -38,7 +38,7 @@ export function createDebuggerFrames(): DebuggerFrames {
       if (method === "Target.attachedToTarget") {
         const info = isRecord(params.targetInfo) ? params.targetInfo : {};
         // Auto-attach also reports workers and other related targets; only an
-        // iframe target is a frame this task can act in.
+        // iframe target is a frame the tools can act in.
         if (info.type !== "iframe") return undefined;
         const childSessionId = typeof params.sessionId === "string" ? params.sessionId : "";
         if (childSessionId === "" || t.children.has(childSessionId)) return undefined;

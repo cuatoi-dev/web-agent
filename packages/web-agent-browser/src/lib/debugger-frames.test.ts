@@ -1,9 +1,9 @@
-// 131/003 — the per-tab frame registry: auto-attached iframe targets,
+// The per-tab frame registry: auto-attached iframe targets,
 // execution contexts and the ref → frame map. No chrome API involved.
 import { describe, it, expect } from "vitest";
 import { createDebuggerFrames, originOf } from "./debugger-frames";
 
-describe("createDebuggerFrames (131/003)", () => {
+describe("createDebuggerFrames", () => {
   it("numbers children 1, 2, 3 in attach order", () => {
     const frames = createDebuggerFrames();
     frames.applyEvent(1, undefined, "Target.attachedToTarget", { sessionId: "S1", targetInfo: { type: "iframe", targetId: "F1", url: "http://a.test" } });

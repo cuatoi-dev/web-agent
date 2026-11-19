@@ -1,4 +1,4 @@
-// 131/003 — live proof. The built extension, real Chromium, real model
+// Live proof. The built extension, real Chromium, real model
 // through the router, driving tesagent against a checkout page
 // whose payment field sits in a cross-site iframe.
 import { test, expect, ask, expectCall } from "./demo-helpers";
@@ -11,7 +11,7 @@ async function chooseAgent(page: Page, id: string): Promise<void> {
   await page.locator(`#agent-option-${id}`).click();
 }
 
-test.describe("Iframe tools live proof (131/003)", () => {
+test.describe("Iframe tools live proof", () => {
   test("tesagent fills and pays inside the cross-site payment iframe against the real model", async ({
     demoExtension,
   }) => {

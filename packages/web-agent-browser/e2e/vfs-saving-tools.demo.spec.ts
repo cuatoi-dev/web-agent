@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { test, expect, ask, expectCall } from "./demo-helpers";
 import { bodyOf, captionOf, savedPathOf, SAVED_PNG_PATH, SAVED_RECORDING_PATH } from "./saved-files";
 
-// 127/003 — the saving tools against the real model. No mock script anywhere:
+// The saving tools against the real model. No mock script anywhere:
 // the model decides the calls, the browser really captures, and the file is
 // really written. The attached folder is mounted through the existing proof
 // hook with the same backend the composer's "Attach folder (read and write)"

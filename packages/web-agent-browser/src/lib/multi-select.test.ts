@@ -250,7 +250,7 @@ describe("multi-select", () => {
     expect(ms.isOpen()).toBe(true);
   });
 
-  it("MS15 outside click closes the list; a click inside it does not (104/003)", () => {
+  it("MS15 outside click closes the list; a click inside it does not", () => {
     const { ms, row } = mount();
     ms.open();
     document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));

@@ -22,7 +22,7 @@ export function urlMatchesProvider(url: string, endpoint: string): boolean {
   return target === base || target.startsWith(base + "/");
 }
 
-/** The worker half of the bubble relay (136/005). Adds the model's provider
+/** The worker half of the bubble relay. Adds the model's provider
  *  headers only when the URL is under that provider's endpoint, so no key
  *  leaves the extension for another host. Posts head / chunk / end, or one
  *  error. Never throws. */

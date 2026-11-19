@@ -6,7 +6,7 @@ export interface ElementTarget {
   isPassword: boolean;
 }
 
-/** 127/002 — the neutral locator set for one element. Every optional form is
+/** The neutral locator set for one element. Every optional form is
  *  present only when it matches exactly that element. */
 export interface LocatorSet {
   role: string;

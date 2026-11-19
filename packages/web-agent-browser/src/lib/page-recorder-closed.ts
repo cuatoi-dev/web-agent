@@ -1,4 +1,4 @@
-// 005 — clicks inside closed shadow roots. The recorder's isolated world cannot
+// Clicks inside closed shadow roots. The recorder's isolated world cannot
 // see inside a closed root, so it reserves the step's seq at click time and asks
 // the panel to look the node up through CDP (debugger-recorder-closed.ts).
 //
@@ -99,7 +99,7 @@ export function resolveClosedClick(inner: Node | null, seq: number, recordingId:
   });
 }
 
-/** Task 004's rule for a reserved click: one `dblclick` at the same seq. Returns
+/** The rule for a reserved click: one `dblclick` at the same seq. Returns
  *  null when the event is not for the last reserved click, "handled" when there
  *  is nothing to emit now, or the replacement step. */
 export function closedDblClick(event: Event, seq: number): RecordedStep | "handled" | null {

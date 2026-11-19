@@ -278,7 +278,7 @@ describe("renderAgents", () => {
     expect(c2.querySelector(".facts")).not.toBeNull();
   });
 
-  describe("Memory switch (104/003)", () => {
+  describe("Memory switch", () => {
     function brandWithMemory(memory: boolean | undefined, other: boolean | undefined): AgentBrand {
       const b = brand();
       return {

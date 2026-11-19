@@ -23,7 +23,7 @@ import { modelOptions, skillNames, toolGroups } from "./agent-options";
  *  included. Resolves after the first paint. */
 export async function mountAgentEditor(deps: AgentEditorDeps): Promise<void> {
   const { container, brand, storage, addButton, deleteDatabase, onAgentDeleted } = deps;
-  // 136/005 — the model list as the options page has it now. A model turned
+  // The model list as the options page has it now. A model turned
   // on or off on the Models tab shows here after the page is reopened.
   const modelStore = deps.modelStore ?? EMPTY_MODEL_STORE;
   const models: ModelContext = { entries: listModels(brand, modelStore), store: modelStore };
@@ -47,7 +47,7 @@ export async function mountAgentEditor(deps: AgentEditorDeps): Promise<void> {
       { editingId, onEdit, editBody, memoryEnabled, onMemoryToggle },
       models,
     );
-    // Add agent is disabled while a card is open (task 003).
+    // Add agent is disabled while a card is open.
     addButton.disabled = editingId !== null;
   };
 

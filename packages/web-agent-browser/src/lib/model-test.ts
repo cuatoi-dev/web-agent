@@ -195,7 +195,7 @@ function setLabel(button: HTMLButtonElement, label: string): void {
   button.title = label;
 }
 
-/** The Test click handler (138/001). Task 002 reuses it for the table rows. */
+/** The Test click handler. The Models table rows reuse it. */
 export async function runTest(
   button: HTMLButtonElement,
   resultEl: HTMLElement,

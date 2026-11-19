@@ -77,7 +77,7 @@ const CHECKOUT_BODY = `
   </script>
 `;
 
-/** 131/002 — the panel now resolves a ref to its element before calling
+/** The panel now resolves a ref to its element before calling
  *  runVerify, so the test adapter carries the already-resolved element
  *  directly instead of a ref table to look it up from. */
 function adapterFor(el: Element): VerifyAdapter {

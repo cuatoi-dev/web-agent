@@ -1,4 +1,4 @@
-// 131/004 — the recorder, in the "web-agent-recorder" isolated world that the
+// The recorder, in the "web-agent-recorder" isolated world that the
 // side panel installs with Page.addScriptToEvaluateOnNewDocument. It runs in
 // EVERY frame of the debugged tab, same-site and cross-site, and again in every
 // new document, so a recording survives a navigation.
@@ -90,7 +90,7 @@ function emit(step: RecordedStep | PendingClosedMessage): void {
 
 /** A step with an element: its role, name and neutral locator set. */
 function withTarget(el: Element, kind: RecordedStepKind, line: string, extra: Partial<RecordedStep> = {}): RecordedStep {
-  // 131/004 — no ref: the panel DomAdapter and its RefTable are gone with the
+  // No ref: the panel DomAdapter and its RefTable are gone with the
   // page script, and an isolated world cannot reach the MAIN world's one.
   const target = journalTarget(el, document, describe(el));
   const locators = stepLocatorSet(el, document);
@@ -134,7 +134,7 @@ function onClick(event: MouseEvent): void {
   ) {
     return;
   }
-  // 005 — a keyboard click is at (0, 0), so a lookup would find the wrong node.
+  // A keyboard click is at (0, 0), so a lookup would find the wrong node.
   if (host && event.detail >= 1) {
     const s = seq++;
     lastClick = null;
@@ -450,7 +450,7 @@ export function resume(): void {
   dragSource = null;
 }
 
-/** 005 — the panel calls this with the node its CDP lookup found, or null when
+/** The panel calls this with the node its CDP lookup found, or null when
  *  the lookup failed. A pause does not stop it: the click came first. */
 export function finishClosed(inner: Node | null, s: number): void {
   const step = resolveClosedClick(inner, s, recordingId);

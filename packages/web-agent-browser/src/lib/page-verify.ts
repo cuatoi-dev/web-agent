@@ -1,4 +1,4 @@
-// 122/002 — page_verify's four checks, run in the MAIN world against the
+// page_verify's four checks, run in the MAIN world against the
 // panel's own DomAdapter. A FAIL is a normal result (isError false); isError
 // is only for a bad ref. Input validation runs in the panel before this.
 import { getName, getRole, isElementVisible } from "@cuatoi/web-agent-dom";
@@ -32,7 +32,7 @@ function describeElement(el: Element): string {
   return name ? `${role} "${name}"` : role;
 }
 
-/** 131/002 — the ref's element is resolved by the panel through CDP and handed
+/** The ref's element is resolved by the panel through CDP and handed
  *  in, so there is no ref table here any more. A call that reaches runVerify
  *  always has a live element. */
 function resolve(adapter: VerifyAdapter): VerifyResolved {

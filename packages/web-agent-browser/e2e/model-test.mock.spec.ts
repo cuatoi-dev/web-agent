@@ -27,7 +27,7 @@ function row(dialog: Locator, i: number): Locator {
   return dialog.locator(".form-model-row").nth(i);
 }
 
-test.describe("Model Test button (138/001)", () => {
+test.describe("Model Test button", () => {
   test("M1: pass, 404, disabled, screenshots, nothing saved", async ({ context, extensionId }) => {
     await fs.mkdir(ARTIFACTS, { recursive: true });
     const page = await context.newPage();
@@ -346,7 +346,7 @@ test.describe("Model Test button (138/001)", () => {
   });
 });
 
-// ---- 138/002 — the Models tab ----
+// ---- The Models tab ----
 
 const EXT_DIST = path.resolve(HERE, "../dist");
 const SCRATCH = path.resolve(HERE, "../temp/e2e-extensions/model-test-table");
@@ -413,7 +413,7 @@ async function lastAuth(page: Page): Promise<string | undefined> {
   return reqs[reqs.length - 1]?.headers.authorization;
 }
 
-test.describe("Models tab Test button (138/002)", () => {
+test.describe("Models tab Test button", () => {
   test("T1: saved custom model, results, memory, icon buttons", async ({ context, extensionId }) => {
     const w = await worker(context);
     await seed(w, customStore());

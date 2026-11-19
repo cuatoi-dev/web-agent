@@ -1,4 +1,4 @@
-// 127/003 — `vfs` is required on the page-tool builders, so a caller that
+// `vfs` is required on the page-tool builders, so a caller that
 // forgets it must not compile. Type errors are asserted with @ts-expect-error;
 // vitest runs this file with --typecheck.only.
 import { describe, expectTypeOf, it } from "vitest";

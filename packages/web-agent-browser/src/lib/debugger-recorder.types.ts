@@ -1,4 +1,4 @@
-// 131/004 — the CDP half of the recorder: what the side panel installs in a
+// The CDP half of the recorder: what the side panel installs in a
 // debugged tab and how a step comes back. Imports only the step shape.
 import type { RecordedStep } from "./recorder.types";
 

@@ -7,7 +7,7 @@ async function chooseAgent(page: Page, id: string): Promise<void> {
   await page.locator(`#agent-option-${id}`).click();
 }
 
-test.describe("Act-by-ref page tools live proof (131/002)", () => {
+test.describe("Act-by-ref page tools live proof", () => {
   test("tesagent fills email and picks express shipping on checkout.html against the real model", async ({
     demoExtension,
   }) => {

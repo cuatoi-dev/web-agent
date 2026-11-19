@@ -1,4 +1,4 @@
-// The shapes for the side panel agent switcher (120/002).
+// The shapes for the side panel agent switcher.
 
 import type { ConfirmScrimDetail } from "@cuatoi/web-agent-lit";
 import type { AgentBrand, BrandAgent } from "./types";

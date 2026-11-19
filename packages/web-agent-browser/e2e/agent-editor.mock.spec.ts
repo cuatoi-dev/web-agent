@@ -227,7 +227,7 @@ test.describe("Agent card editor", () => {
     const s = await stored(page);
     const e = (s.agentEdits as Record<string, { tools: unknown; excludeTools: unknown }>).tesagent;
     expect(e.tools).toBe("*");
-    // tesagent's brand already excludes the three in-page agent tools (122/003);
+    // tesagent's brand already excludes the three in-page agent tools;
     // picking page_eval stores all four.
     expect(e.excludeTools).toEqual(["toggle_page_agent", "send_to_page_agent", "read_page_agent", "page_eval"]);
     await expect(page.locator(`${TESAGENT} .facts`)).toContainText("Tools All except 4");

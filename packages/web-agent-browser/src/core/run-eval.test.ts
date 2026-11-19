@@ -132,11 +132,9 @@ describe("truncate", () => {
   it("cuts and marks long text", () => {
     const result = truncate("Y".repeat(10_000), 6000);
     expect(result.endsWith("\n…(output truncated)")).toBe(true);
-    // The plan's unit test plan says this is exactly 6000; the verbatim-copied
-    // arithmetic (`slice(0, maxChars - 22) + "\n…(output truncated)"`, the
-    // marker being 20 chars, not 22) actually produces 5998 — confirmed with a
-    // direct probe against this exact function. Asserting the real, measured
-    // value rather than the plan's unchecked one; see Outcome.
+    // The arithmetic (`slice(0, maxChars - 22) + "\n…(output truncated)"`,
+    // the marker being 20 chars, not 22) produces 5998, not 6000 — confirmed
+    // with a direct probe against this exact function.
     expect(result.length).toBe(5998);
   });
 });

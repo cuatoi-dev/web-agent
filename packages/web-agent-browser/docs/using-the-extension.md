@@ -83,8 +83,8 @@ It names the action, then the state of the tab
 `<origin>` includes the scheme, for example `http://localhost:10040`.
 
 The extension saves your choice per origin in extension storage
-(`src/lib/settings.ts:45-58`). On a later visit to that origin, the bubble
-comes back without another click (`src/bridge.ts:58-63`).
+(`src/lib/settings.ts:74-87`). On a later visit to that origin, the bubble
+comes back without another click (`src/bridge.ts:61-65`).
 
 The side panel agent can make the same change with `toggle_page_agent`. See
 [Page agent tools](./page-agent-tools.md).
@@ -94,9 +94,9 @@ The side panel agent can make the same change with `toggle_page_agent`. See
 The extension never adds a second agent to a page. Before it mounts the bubble,
 it looks for a `web-agent-bubble` or `agent-chat-panel` element in the document
 and in every open shadow root (`src/lib/agent-detect.ts:11-32`,
-`src/content.ts:54`). If the page mounts its own agent later, within 10 seconds
+`src/content.ts:58`). If the page mounts its own agent later, within 10 seconds
 of the bubble appearing, the extension removes its bubble
-(`src/content.ts:191-205`, `src/lib/constants.ts:8`).
+(`src/content.ts:206-220`, `src/lib/constants.ts:6`).
 
 The extension registers its custom elements only when the bubble mounts. On a
 page where the bubble is off, the extension defines nothing, so the page keeps
@@ -122,7 +122,7 @@ Beyond the tools on the other pages, both agents have these capabilities:
   ask it to keep the skill private, and it saves with `shared: false`. Other
   agents and the in-page agent do not see that skill. A skill name is unique
   across all agents (`src/lib/skill-registry.ts`, `SKILLS_KEY`,
-  `src/sidepanel.ts:buildAgentPanel`, `src/content.ts:106`).
+  `src/sidepanel.ts:buildAgentPanel`, `src/content.ts:102`).
 - **Brand prompts and skills.** The in-page agent reads its prompt from
   `brand/plugin.yml`'s `prompts.inPage`; each side panel agent reads its own
   from `instructions` in its `brand/agents/<id>.yml` file. Both get the skills
@@ -150,11 +150,13 @@ The options page opens on **General**. Choose **Theme** there and select
    set to **Use the options page model** uses. A model that is off cannot be
    the default. Turning off the default moves it to the first other enabled
    model.
-4. **Key** on a brand provider row opens a dialog with one field,
+4. The key button (a key icon, tooltip `Key for <provider>`) on a brand
+   provider row opens a dialog with one field,
    **API key (optional)**. Empty: the provider sends the key the brand
    provides in `brand/model.yml`, or no key when the brand gives none.
    Filled: your key is sent in place of the provided key, to that endpoint
-   only. The key is stored unencrypted in browser storage.
+   only. The key is stored encrypted (AES-GCM) in extension storage, and the
+   encryption key is kept in the extension's IndexedDB.
 5. Switches, radios and keys save at once.
    **Theme** is on the **General** tab and keeps its own **Save** button, which
    shows `Saved. Reload a page to use the new settings.`
@@ -174,7 +176,7 @@ The theme changes the agent bubble and the side panel only. The extension never
 writes a `data-theme` attribute on the website itself. If the website already
 supplies the `--wa-*` design tokens, the extension applies no theme to the
 bubble, and the bubble follows the website's theme
-(`src/lib/theme.ts:34-66`). With **Auto**, an operating system change
+(`src/lib/theme.ts:94-119`). With **Auto**, an operating system change
 updates the bubble without a reload.
 
 ## Switch the model while chatting
@@ -197,7 +199,7 @@ tab (`src/lib/saved-skills.ts`).
   `No skills saved yet. Ask the agent to create one and it appears here.`
 
 The page reads the list when it opens and after each delete
-(`src/options.ts:102`). If an agent saves a skill while the options page is
+(`src/options.ts:243`, `src/lib/saved-skills.ts:100-112`). If an agent saves a skill while the options page is
 open, reopen the page to see it.
 
 ## See your agents
@@ -215,8 +217,9 @@ The list shows the default agent first, then the other agents by display name.
 - When a brand agent sets `memory: true` in its
   `brand/agents/<id>.yml`, its card shows a **Memory** switch, off by default.
   The help text reads "Remember things about you and this agent between chats.
-  Saved in this browser." Turning the switch on or off applies from the next
-  chat; the current chat keeps the files and skills it started with. With the
+  Saved in this browser." Turning the switch on or off applies at once when the
+  current chat has no messages. Otherwise it applies from the next chat, and
+  the current chat keeps the files and skills it started with. With the
   switch on, each chat starts with `/home/shared/USER.md`, which every side
   panel agent shares, and `/home/agent/MEMORY.md`, which belongs to that agent
   alone. The agent also gets the `remember` and `onboarding` skills. The agent
@@ -303,15 +306,15 @@ closes.
 
 The in-page bubble runs inside the visited page, so the page's cross-origin
 rules apply to it. Its requests therefore go through the service worker
-(`src/lib/relay-fetch.ts`, `src/bridge.ts:357-403`, `src/background.ts:24-69`):
+(`src/lib/relay-fetch.ts`, `src/bridge.ts:208-254`, `src/background.ts:24-50`):
 
 1. The bubble posts the request to the extension's isolated content script.
 2. The content script opens a port to the service worker.
 3. The service worker looks up the request's model, checks that the request URL is
    that model's provider endpoint or a path under it, and adds that provider's
    headers. A request for another URL gets
-   `The request URL does not match the model's provider.` and no header is
-   added.
+   `The request URL does not match the model's provider.` and is not
+   sent.
 4. The service worker sends the request to the endpoint and streams each chunk
    back over the port.
 5. The content script passes the chunks to the bubble.
@@ -335,7 +338,7 @@ scripts never receive a key: the brand object posted to the page has no
 
 The side panel does not use the relay. It is an extension page, so it calls the
 endpoint directly and adds the same header itself
-(`src/lib/panel-setup.ts:9-30`).
+(`src/lib/panel-setup.ts:9-46`).
 
 ## Build and test from this repository
 

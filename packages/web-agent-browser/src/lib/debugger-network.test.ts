@@ -23,7 +23,7 @@ function freshState(): TabDebugState {
   };
 }
 
-describe("debugger-network (124/003)", () => {
+describe("debugger-network", () => {
   it("U1.1: requestWillBeSent pushes an entry and increments nextSeq", () => {
     const s = freshState();
     applyNetworkEvent(s, "Network.requestWillBeSent", {

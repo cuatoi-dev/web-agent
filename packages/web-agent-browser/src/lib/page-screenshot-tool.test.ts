@@ -14,7 +14,7 @@ function toolCtx(): ToolContext {
   return { app: {}, signal: new AbortController().signal };
 }
 
-/** 131/002 — page_screenshot's `ref` branch goes through the helper-world
+/** page_screenshot's `ref` branch goes through the helper-world
  *  seam (describe + box). */
 function fakeHelper(overrides: Partial<HelperWorlds> = {}): HelperWorlds {
   return {
@@ -57,7 +57,7 @@ async function startedSession(impl: (method: string) => unknown) {
   return { api, session };
 }
 
-/** 127/003 — a capture payload that atob accepts, so the tool really saves
+/** A capture payload that atob accepts, so the tool really saves
  *  bytes rather than failing to decode its own fake. */
 const CAPTURE = btoa("png-bytes-not-a-real-png");
 const CAPTURE_URL = `data:image/png;base64,${CAPTURE}`;
@@ -135,7 +135,7 @@ describe("screenshotReachesModel", () => {
   });
 });
 
-describe("pageScreenshot tool (124/002, debugger-backed)", () => {
+describe("pageScreenshot tool, debugger-backed", () => {
   it("E1: tabId is abc", async () => {
     const tool = createPageScreenshotTool({ vfs: testVfs() });
     const result = await tool.execute({ tabId: "abc" }, toolCtx());
@@ -263,7 +263,7 @@ describe("pageScreenshot tool (124/002, debugger-backed)", () => {
   });
 });
 
-describe("page_screenshot saving (127/003)", () => {
+describe("page_screenshot saving", () => {
   afterEach(() => {
     vi.useRealTimers();
   });

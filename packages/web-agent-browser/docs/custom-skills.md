@@ -8,7 +8,7 @@ A skill is a named set of instructions for the agent. The agent sees each
 skill's name and description in the `# Skills` section of its system prompt.
 When a task matches, the agent calls `load_skill` to read the full instructions
 (`packages/web-agent-core/src/prompt/system-prompt.ts:116-119`,
-`packages/web-agent-core/src/tools/skill-tools.ts:92-117`).
+`packages/web-agent-core/src/tools/skill-tools.ts:104-129`).
 
 You can add a skill in two ways:
 
@@ -56,7 +56,7 @@ start, create a brand package. See the [Branding guide](./branding-guide.md).
 ### Step 2: Fill in the frontmatter
 
 The frontmatter is the block between the two `---` lines at the top of the file.
-The build reads these keys (`tool/compile-brand.cjs:138-182`):
+The build reads these keys (`tool/compile-brand.cjs:251-295`):
 
 | Key | Required | Accepted values | What it does |
 |---|---|---|---|
@@ -65,11 +65,11 @@ The build reads these keys (`tool/compile-brand.cjs:138-182`):
 | `command` | No | `true` or `false`. The default is `false`. | With `true`, the user can run the skill as `/name` from the message box. |
 | `argumentHint` | No | A string. | Text shown after the name in the command menu, for example `[version]`. It is only a label. |
 
-The build ignores any other frontmatter key (`tool/compile-brand.cjs:175-181`).
+The build ignores any other frontmatter key (`tool/compile-brand.cjs:288-294`).
 
 The body is everything below the closing `---`. It is the skill's instructions,
-in markdown, and it must not be empty. The build removes blank lines at the
-start and the end of the body (`tool/compile-brand.cjs:155`).
+in markdown, and it must not be empty. The build removes white space (blank lines, spaces and tabs) at the
+start and the end of the body (`tool/compile-brand.cjs:268`).
 
 ### Step 3: Build and check
 
@@ -101,17 +101,18 @@ its fix.
 ### How the build compiles skills
 
 - The build reads every `.md` file in `brand/skills/`, in sorted file-name
-  order. It skips `README.md` (`tool/compile-brand.cjs:200-223`).
+  order. It skips `README.md` (`tool/compile-brand.cjs:313-336`).
 - If `brand/skills/` does not exist, the brand has no skills
-  (`tool/compile-brand.cjs:202`).
+  (`tool/compile-brand.cjs:315`).
 - Each file becomes one entry in the `skillDefs` list of `dist/brand.json`, with
   the keys `name`, `description`, `definition` (the body), `command` and
-  `argumentHint` (`tool/compile-brand.cjs:175-181`).
+  `argumentHint` (`tool/compile-brand.cjs:288-294`).
 
 ### How the agents use a brand skill
 
 - **Both agents get every brand skill**: the side panel agent and the in-page
-  agent (`src/sidepanel.ts`, `buildAgentPanel`; `src/content.ts`, `mount`).
+  agent (`src/sidepanel.ts`, `buildAgentPanel`; `src/content.ts`, `mount`). A
+  side panel agent's `skills` and `excludeSkills` can leave a brand skill out.
 - **The agent can load it.** The skill's name and description are in the
   `# Skills` section of the system prompt, and `load_skill` returns the body.
 - **The user can run it.** If `command` is `true`, the skill is in the `/`
@@ -130,7 +131,7 @@ The extension has built-in skills in six groups
 | `core` | In-page | `query_data_advanced`, `present_to_user` | `packages/web-agent-core/src/skills/default-skills.ts:5,97` |
 | `dom` | In-page | `multi_step_ui` | `packages/web-agent-dom/src/skills/multi-step-ui-skill.ts:4` |
 | `pageFetch` | In-page | `page_fetch` | `src/lib/page-fetch-skill.ts:4` |
-| `tab` | Side panel | `tab_management`, `page_agent` | `src/lib/tab-skill.ts:55-57` |
+| `tab` | Side panel | `tab_management`, `page_agent` | `src/lib/tab-skill.ts:4,26` |
 | `websiteEdit` | Side panel | `website_edit` | `src/lib/website-edit-skill.ts:4` |
 | `testing` | Side panel | `test_plan`, `test_report`, `explore_app` | `src/lib/test-plan-skill.ts`, `src/lib/test-report-skill.ts`, `src/lib/explore-app-skill.ts` |
 
@@ -144,20 +145,20 @@ skills:
 ```
 
 A group that you do not list stays on. Only `{ enabled: false }` removes a
-group (`src/lib/brand-capabilities.ts:24-37`). The group names are fixed. An
+group (`src/lib/brand-capabilities.ts:23-36`). The group names are fixed. An
 unknown group name fails the build (`tool/compile-brand.cjs`, `compileFlags`).
 
 **To replace one built-in skill**, give your brand skill the same `name`. For
 example, a file with `name: website_edit` replaces the built-in `website_edit`
 skill in the side panel. The replacement stays in the same position in the
-list (`src/lib/brand-capabilities.ts:34-36`).
+list (`src/lib/brand-capabilities.ts:33-35`).
 
 The `skills` flag and a brand skill work together. If you turn off
 `websiteEdit` and also ship a skill named `website_edit`, the side panel has
 your skill, because brand skills are added after the groups are removed.
 
-The default brand gives `test_plan`, `test_report` and `explore_app` to both Chromagent and tesagent. To give
-it to one agent only, add `excludeSkills: [test_plan]` to the other agent's
+The default brand gives `test_plan`, `test_report` and `explore_app` to both Chromagent and Tesagent. To give
+them to one agent only, add `excludeSkills: [test_plan, test_report, explore_app]` to the other agent's
 file in `brand/agents/`.
 
 ## Create a skill at run time
@@ -184,7 +185,8 @@ without a new build.
    `Create skill "table_to_csv" for <agent name> only` when you asked the
    agent to keep the skill for itself. Select **Allow**
    (`packages/web-agent-lit/src/chat-ui/confirm-scrim.ts:82-113`).
-4. The tool returns `Skill "table_to_csv" saved successfully.`, and the agent
+4. The tool returns `Skill "table_to_csv" saved successfully. It is available
+   immediately via load_skill and search_skills.`, and the agent
    tells you that the skill is saved.
 
 To use the skill later, ask for the task, for example
@@ -195,7 +197,7 @@ To use the skill later, ask for the task, for example
 
 `create_skill` takes three required arguments and, in the side panel, one
 optional argument
-(`packages/web-agent-core/src/tools/skill-tools.ts:34-52`):
+(`packages/web-agent-core/src/tools/skill-tools.ts:38-64`):
 
 | Argument | What it is |
 |---|---|
@@ -204,7 +206,7 @@ optional argument
 | `definition` | The full instructions, in markdown. |
 | `shared` | Side panel agents only, optional. `true` or missing: every agent can use the skill. `false`: only the agent that saved it can use it. |
 
-In order, the tool (`packages/web-agent-core/src/tools/skill-tools.ts:128-178`):
+In order, the tool (`packages/web-agent-core/src/tools/skill-tools.ts:141-199`):
 
 1. Checks that each argument is a non-empty string, and removes spaces at the
    start and the end.
@@ -218,8 +220,8 @@ In order, the tool (`packages/web-agent-core/src/tools/skill-tools.ts:128-178`):
 
 The two agents offer `create_skill` and `delete_skill` because the extension
 gives each agent a writable skill store
-(`packages/web-agent-core/src/tools/skill-tools.ts:120`, `:183`;
-`src/sidepanel.ts:buildAgentPanel`, `src/content.ts:106`).
+(`packages/web-agent-core/src/tools/skill-tools.ts:132`, `:208`;
+`src/sidepanel.ts:buildAgentPanel`, `src/content.ts:102`).
 
 ### Where the saved skills are stored
 
@@ -240,22 +242,22 @@ gives each agent a writable skill store
 - The in-page agent cannot use `chrome.*` APIs, so it sends each read and write
   through the extension's content script, `bridge.js`
   (`forwardedSkillRegistry`, `src/lib/skill-registry.ts`).
-- A new conversation reads the saved skills once, when it starts
-  (`packages/web-agent-core/src/controller.ts:171-187`). A skill that you save in
-  one tab reaches an agent that is already open in another tab when that agent
-  starts a new session.
+- The agent reads the saved skills once, when its chat panel loads
+  (`packages/web-agent-core/src/controller.ts:198-214`). A skill that you save in
+  one tab reaches an agent that is already open in another tab after you reload
+  that page or reopen the side panel.
 
 ### Differences from a brand skill
 
 - **No `/` command.** `create_skill` saves only `name`, `description` and
-  `definition` (`packages/web-agent-core/src/tools/skill-tools.ts:161`). A saved
+  `definition` (`packages/web-agent-core/src/tools/skill-tools.ts:183`). A saved
   skill has no `command` or `argumentHint`, so it is not in the `/` command
   menu.
 - **No name format check.** Any non-empty name is accepted. A brand skill name
   must be lower_snake_case.
 - **A saved skill wins a name clash.** A saved skill replaces a brand skill or a
   built-in skill with the same name
-  (`packages/web-agent-core/src/controller-config.ts:197-205`,
+  (`packages/web-agent-core/src/controller-config.ts:212-220`,
   `packages/web-agent-core/src/skills/skill-registry.ts:67-75`). If the brand
   skill had `command: true`, its `/` command is gone while the saved skill
   exists, because the saved skill has no `command`.
@@ -269,9 +271,9 @@ gives each agent a writable skill store
 1. Open the extension options page.
 2. Select the **Skills** tab. Each row shows the skill name, owner label
    (`Shared` or the owning agent's name), and description
-   (`src/lib/saved-skills.ts:19-45`).
+   (`src/lib/saved-skills.ts:20-66`).
 3. Select **Delete** on a row. The page removes the skill at once and does not
-   ask you to confirm (`src/lib/saved-skills.ts:75-86`).
+   ask you to confirm (`src/lib/saved-skills.ts:100-112`).
 
 If no skill is saved, the section shows
 `No skills saved yet. Ask the agent to create one and it appears here.`
@@ -291,8 +293,8 @@ only are deleted too. See "Delete an agent" in
    that the skill is deleted.
 
 `delete_skill` works only for a name in the agent's current skill list. For
-another name, it returns `Skill "<name>" not found.`
-(`packages/web-agent-core/src/tools/skill-tools.ts:190-236`). It removes the
+another name, it returns `Skill "<name>" not found. Use search_skills to see
+available skills.` (`packages/web-agent-core/src/tools/skill-tools.ts:208-268`). It removes the
 entry from the saved store only. A brand skill or a built-in skill with the
 same name comes back when a new session starts.
 

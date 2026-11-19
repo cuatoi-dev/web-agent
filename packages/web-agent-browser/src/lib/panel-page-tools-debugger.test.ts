@@ -9,7 +9,7 @@ function toolCtx(): ToolContext {
   return { app: {}, signal: new AbortController().signal };
 }
 
-/** 131/002 — page_hover and page_click now call through the helper-world seam. */
+/** page_hover and page_click now call through the helper-world seam. */
 function fakeHelper(overrides: Partial<HelperWorlds> = {}): HelperWorlds {
   return {
     source: vi.fn().mockResolvedValue(""),
@@ -46,7 +46,7 @@ function fakeDebuggerApi() {
   return api;
 }
 
-describe("Debugger page tools (124/001)", () => {
+describe("Debugger page tools", () => {
   it("names and order: includes page_dialog, page_upload_file, start_debugging, stop_debugging, page_hover, page_press_key, page_emulate", () => {
     const tools = createPanelPageTools({ vfs: testVfs() });
     const names = tools.map((t) => t.name);
@@ -127,7 +127,7 @@ describe("Debugger page tools (124/001)", () => {
   });
 });
 
-describe("page_hover (124/002)", () => {
+describe("page_hover", () => {
   it("gate check: error when debugging not started", async () => {
     const debuggerSession = createDebuggerSession(fakeDebuggerApi());
     const tools = createPanelPageTools({ vfs: testVfs(), debuggerSession });
@@ -171,7 +171,7 @@ describe("page_hover (124/002)", () => {
   });
 });
 
-describe("page_press_key (124/002)", () => {
+describe("page_press_key", () => {
   async function pressTool(): Promise<{ tool: ReturnType<typeof createPanelPageTools>[number]; api: ReturnType<typeof fakeDebuggerApi> }> {
     const api = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(api);
@@ -296,7 +296,7 @@ describe("page_press_key (124/002)", () => {
   });
 });
 
-describe("page_emulate (124/002)", () => {
+describe("page_emulate", () => {
   async function emulateTool(): Promise<{ tool: ReturnType<typeof createPanelPageTools>[number]; api: ReturnType<typeof fakeDebuggerApi> }> {
     const api = fakeDebuggerApi();
     const debuggerSession = createDebuggerSession(api);

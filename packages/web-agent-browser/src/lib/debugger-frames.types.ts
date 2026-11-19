@@ -1,4 +1,4 @@
-// 131/003 — what one debugged tab knows about its frames: the auto-attached
+// What one debugged tab knows about its frames: the auto-attached
 // out-of-process iframe targets, each frame's default execution context, and
 // which frame every ref a snapshot printed came from. Imports nothing.
 
@@ -27,7 +27,7 @@ export interface FrameContext {
   /** `auxData.isDefault` — true for the frame's own main world. */
   isDefault: boolean;
   /** `ExecutionContextDescription.name` — what `worldName` set, e.g.
-   *  "web-agent-recorder" (131/004). "" for a world created without one. */
+   *  "web-agent-recorder". "" for a world created without one. */
   name: string;
   /** The child session this context belongs to; absent for the top target. */
   sessionId?: string;
@@ -67,7 +67,7 @@ export interface DebuggerFrames {
   /** The frame's main-world context, or undefined when none was seen. */
   defaultContext(tabId: number, sessionId: string | undefined, frameId: string): FrameContext | undefined;
   contextById(tabId: number, sessionId: string | undefined, contextId: number): FrameContext | undefined;
-  /** 131/004 — every context of the tab whose world name is `name`, in any
+  /** Every context of the tab whose world name is `name`, in any
    *  session. How pause/resume reaches the recorder in every frame. */
   contextsNamed(tabId: number, name: string): { sessionId?: string; contextId: number }[];
   /** Record where each ref a snapshot printed lives. Merges: a ref an older

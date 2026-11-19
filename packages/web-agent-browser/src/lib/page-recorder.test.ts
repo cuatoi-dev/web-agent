@@ -348,7 +348,7 @@ describe("page-recorder", () => {
     fire(btn, new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
     fire(document.body, new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     // A single printable key outside a text field records nothing — see
-    // "lone printable keys (rec 003)" below.
+    // "lone printable keys" below.
 
     const s = steps();
     expect(s).toHaveLength(2);
@@ -796,7 +796,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("closed shadow roots (005)", () => {
+  describe("closed shadow roots", () => {
     const composed = { bubbles: true, composed: true };
 
     function host(tag: string, mode: "open" | "closed", html: string): { host: HTMLElement; root: ShadowRoot } {
@@ -1081,7 +1081,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("extended ARIA roles and pointer/onclick fallbacks (001)", () => {
+  describe("extended ARIA roles and pointer/onclick fallbacks", () => {
     it("trusted click on each added ARIA widget role without tabindex records one click step", () => {
       const roles = [
         "combobox", "listbox", "slider", "spinbutton", "searchbox", "textbox",
@@ -1200,7 +1200,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("file, range and color inputs (002)", () => {
+  describe("file, range and color inputs", () => {
     /** jsdom cannot open a file chooser, so `files` is defined on the element. */
     function chooseFiles(input: HTMLInputElement, names: string[]): void {
       Object.defineProperty(input, "files", {
@@ -1383,7 +1383,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("navigation keys and shortcuts (003)", () => {
+  describe("navigation keys and shortcuts", () => {
     function keysField(): HTMLInputElement {
       document.body.innerHTML = '<label>Keys field <input id="keys" value="hello"></label>';
       return document.getElementById("keys") as HTMLInputElement;
@@ -1618,7 +1618,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("double-click, right-click and drag-and-drop (004)", () => {
+  describe("double-click, right-click and drag-and-drop", () => {
     function section5(): {
       dbl: HTMLButtonElement;
       ctx: HTMLButtonElement;
@@ -1706,7 +1706,7 @@ describe("page-recorder", () => {
       expect(steps().map((x) => x.line)).toEqual(['check checkbox "Agree"', 'uncheck checkbox "Agree"']);
     });
 
-    it("task 003 detail 0 keyboard activation stays suppressed while detail >= 2 double-click works right after it", () => {
+    it("detail 0 keyboard activation stays suppressed while detail >= 2 double-click works right after it", () => {
       const { dbl } = section5();
       recorder.start("r1");
 
@@ -1881,7 +1881,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("stable names (002)", () => {
+  describe("stable names", () => {
     it("link with a count", () => {
       document.body.innerHTML = '<a href="#c">Cart <span>5</span></a>';
       const a = document.querySelector("a")!;
@@ -1968,7 +1968,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("disabled clicks (003)", () => {
+  describe("disabled clicks", () => {
     afterEach(() => {
       Reflect.deleteProperty(document, "elementFromPoint");
     });
@@ -2151,7 +2151,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("unnamed and generic targets (rec 002)", () => {
+  describe("unnamed and generic targets", () => {
     const composed = { bubbles: true, composed: true };
 
     it("records the named combobox host for a click on its icon-only button", () => {
@@ -2225,7 +2225,7 @@ describe("page-recorder", () => {
     });
   });
 
-  describe("lone printable keys (rec 003)", () => {
+  describe("lone printable keys", () => {
     function key(target: EventTarget, init: KeyboardEventInit): void {
       fire(target, new KeyboardEvent("keydown", { bubbles: true, composed: true, ...init }));
     }

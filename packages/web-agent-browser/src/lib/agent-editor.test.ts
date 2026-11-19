@@ -642,7 +642,7 @@ describe("agent-editor", () => {
     expect(addButton.disabled).toBe(false);
   });
 
-  describe("Memory switch (104/003)", () => {
+  describe("Memory switch", () => {
     async function setupWithMemory() {
       const b = brand();
       const withMemory: AgentBrand = {

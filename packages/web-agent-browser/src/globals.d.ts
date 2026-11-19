@@ -8,7 +8,7 @@
 // are generic calls that infer `any` from an `as any` assertion, and every
 // property read after that is unsafe. Declaring them here keeps the
 // declaration inside the package that owns the usage — web-agent-lit is a
-// separate unit and is not edited by this task.
+// separate unit.
 import type { WebAgentBubble, AgentChatPanel } from "@cuatoi/web-agent-lit";
 import type { MockScript } from "@cuatoi/web-agent-core";
 import type { VfsBackend, VfsToolProvider } from "@cuatoi/web-agent-vfs";

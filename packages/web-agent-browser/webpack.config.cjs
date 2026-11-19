@@ -8,11 +8,11 @@ module.exports = {
     background: "./src/background.ts",
     content: "./src/content.ts",
     bridge: "./src/bridge.ts",
-    // 131/002 — the ref tools' page-side half. Emitted as its own bundle so the
+    // The ref tools' page-side half. Emitted as its own bundle so the
     // side panel can read its TEXT and evaluate it inside an isolated world.
     // Never loaded as a script by any page.
     helper: "./src/helper.ts",
-    // 131/004 — the recorder's page-side half, in the same shape as `helper`
+    // The recorder's page-side half, in the same shape as `helper`
     // above: its TEXT is evaluated inside an isolated world, in every frame.
     recorder: "./src/recorder.ts",
     options: "./src/options.ts",

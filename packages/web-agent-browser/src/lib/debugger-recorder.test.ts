@@ -343,7 +343,7 @@ describe("createDebuggerRecorder — onRoute", () => {
     expect(onRoute).not.toHaveBeenCalled();
   });
 
-  it("a route step's seq never collides with a step's own seq, however they interleave (131/004 regression)", async () => {
+  it("a route step's seq never collides with a step's own seq, however they interleave", async () => {
     const { session, fireEvent } = await startedSession({
       "Page.addScriptToEvaluateOnNewDocument": { identifier: "1" },
     });
@@ -358,7 +358,7 @@ describe("createDebuggerRecorder — onRoute", () => {
 
     // The route event is delivered (synchronously) BEFORE the step's own
     // async frame-chain lookup resolves and reaches its listeners — the
-    // exact race that overwrote a step in the mock e2e run this task fixed.
+    // exact race that once overwrote a step in the mock e2e run.
     fireEvent(1, "Runtime.bindingCalled", { name: RECORDER_BINDING, payload: JSON.stringify(step({ seq: 0 })), executionContextId: 202 }, undefined);
     fireEvent(1, "Page.navigatedWithinDocument", { frameId: "top-frame", url: "http://h/cart" }, undefined);
     await flush();
@@ -368,7 +368,7 @@ describe("createDebuggerRecorder — onRoute", () => {
     expect(stepSeq).not.toBe(routeSeq);
   });
 
-  describe("createDebuggerRecorder — closed shadow click (005)", () => {
+  describe("createDebuggerRecorder — closed shadow click", () => {
     function pendingClosed(seq: number, x: number, y: number, recordingId = "r1") {
       return JSON.stringify({ recordingId, seq, pendingClosed: { x, y } });
     }

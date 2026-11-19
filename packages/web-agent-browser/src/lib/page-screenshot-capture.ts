@@ -1,4 +1,4 @@
-// 127/005 — one page_screenshot capture: resolve the target, outline the
+// One page_screenshot capture: resolve the target, outline the
 // highlighted refs, scroll, measure and capture. The caller restores the
 // handles it collected in `handles`, whatever this returns or throws.
 import { STALE_REF } from "./debugger-helper-world";
@@ -62,7 +62,7 @@ export async function capture(
     if (!b.ok) return { error: b.error };
     area = { x: b.x + b.scrollX, y: b.y + b.scrollY, width: b.width, height: b.height };
     // b.x/b.y are already in the TOP page's viewport, frame offsets
-    // included (131/003), so the clip stays in top-page coordinates and
+    // included, so the clip stays in top-page coordinates and
     // the capture keeps going to the top target.
     const boxes = await measureHighlights(helper, tabId, highlightRefs);
     if ("error" in boxes) return boxes;

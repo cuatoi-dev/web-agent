@@ -1,4 +1,4 @@
-// The shapes for ax-snapshot.ts (131/002): one CDP accessibility-tree node,
+// The shapes for ax-snapshot.ts: one CDP accessibility-tree node,
 // and renderAxSnapshot's input/output. Split out to satisfy
 // wa/types-in-types-file.
 
@@ -14,7 +14,7 @@ export interface AxNode {
   backendDOMNodeId?: number;
 }
 
-/** 131/003 — one frame's accessibility tree, plus what the printer needs to
+/** One frame's accessibility tree, plus what the printer needs to
  *  place it under its `<iframe>` line. */
 export interface AxFrame {
   /** "" for the tab's top target, "f<k>:" for auto-attached child k. Every

@@ -33,17 +33,17 @@ From `src/lib/page-agent-tools.ts`:
 
 The `read_page_agent` output is capped at 6000 characters and ends with
 `…(output truncated)` when it is longer (`:339-341`,
-`src/lib/constants.ts:47`).
+`src/lib/constants.ts:45`).
 
 A toggle outcome is reported from the page, not from the request. On a page
 that already has its own agent, a request to turn the bubble on is reported as
-a refusal, never as "now OFF" (`src/content.ts:248-261`).
+a refusal, never as "now OFF" (`src/content.ts:299-307`).
 
 ## Send a command to the in-page agent
 
 `send_to_page_agent` also carries two commands. Send the command on its own, as
 the whole message text (`src/lib/page-agent-tools.ts:72`,
-`src/lib/tab-skill.ts:46-51`):
+`src/lib/tab-skill.ts:48-52`):
 
 - `/compact` makes the in-page agent summarise its older turns to free up its
   context.

@@ -126,7 +126,7 @@ async function imageInjectionCount(panelPage: Page): Promise<number> {
   return panelPage.evaluate(() => window.__IMAGE_INJECTIONS__ ?? 0);
 }
 
-test.describe("Debugger tools mock e2e (124/002)", () => {
+test.describe("Debugger tools mock e2e", () => {
   test("T1 gate error on all four tools before start_debugging", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     await enableOrigin(worker, [ORIGIN]);
@@ -305,7 +305,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     await context.close();
   });
 
-  // 124/002 fix round 1 (2026-09-17): page_emulate sent
+  // Before a fix on 2026-09-17, page_emulate sent
   // Emulation.setDeviceMetricsOverride BEFORE Emulation.setTouchEmulationEnabled.
   // The device-metrics call is what fires the page's "resize" event; the
   // checkout fixture's one resize listener reads BOTH #viewport-status and
@@ -377,7 +377,7 @@ test.describe("Debugger tools mock e2e (124/002)", () => {
     // Run in three stages, checking the fixture's own DOM between each: the
     // mock's plan queue resolves every step back-to-back, so reading
     // #viewport-status only after all 7 results exist would see the FINAL
-    // state, not the mid-sequence one (124/002 fix round 1, 2026-09-17).
+    // state, not the mid-sequence one.
     const planStage1: PlannedCall[] = [
       { name: "start_debugging", input: {} },
       { name: "page_screenshot", input: {} },

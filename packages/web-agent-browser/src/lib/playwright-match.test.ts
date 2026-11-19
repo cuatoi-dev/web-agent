@@ -118,7 +118,7 @@ describe("playwright-match", () => {
     expect(matches[0].id).toBe("visible-btn");
   });
 
-  describe("stableName (002)", () => {
+  describe("stableName", () => {
     const named = (html: string, selector: string, role: string): string => {
       document.body.innerHTML = html;
       const el = document.querySelector(selector)!;
@@ -201,7 +201,7 @@ describe("playwright-match", () => {
     });
   });
 
-  describe("stableName generic role (rec 002)", () => {
+  describe("stableName generic role", () => {
     it("drops a trailing count when the shorter text finds one element", () => {
       document.body.innerHTML =
         '<div id="docs"><span>ALL MATCHED DOCUMENTS <span>8</span></span></div>';

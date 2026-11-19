@@ -53,7 +53,7 @@ const SKILL_NAME = /^[a-z][a-z0-9_]*$/;
 const SKILLS_README = "README.md";
 
 /** The one file a `brand/agents/<id>.home/` folder may hold. The starter text
- *  is seeded into that agent's `/home/agent/AGENTS.md` once (127/004). */
+ *  is seeded into that agent's `/home/agent/AGENTS.md` once. */
 const HOME_AGENTS_MD = "AGENTS.md";
 
 /** Every key `dist/brand.json` carries, all empty. A brand that leaves a block
@@ -343,7 +343,7 @@ function compileSkills(brandDir) {
  * a brand owner who wrote the file meant it to be used.
  * `vision` is `true` only for the YAML boolean `true`; anything else, or no key, compiles to `false`.
  * `provider` is kept when it is a non-empty string and dropped otherwise.
- * `apiKey` is kept, trimmed, when it is a non-empty string and dropped otherwise (137/001).
+ * `apiKey` is kept, trimmed, when it is a non-empty string and dropped otherwise.
  *
  * @param {string} brandDir - the `brand/` folder
  * @returns {{id: string, label: string, endpoint: string, wireFormat: string, model: string, vision: boolean, provider?: string, apiKey?: string}[]}
@@ -396,10 +396,10 @@ function compileModels(brandDir) {
     }
   });
 
-  // 136/005 — `vision` is always a boolean in brand.json, so no reader has to
+  // `vision` is always a boolean in brand.json, so no reader has to
   // test for a missing key. A blank or non-string `provider` is dropped, and
   // the runtime then names the row after the endpoint.
-  // 137/001 — `apiKey` follows the `provider` rule, trimmed.
+  // `apiKey` follows the `provider` rule, trimmed.
   return doc.models.map((entry) => {
     const out = { ...entry, vision: entry.vision === true };
     if (typeof entry.provider !== "string" || entry.provider.trim() === "") {
@@ -551,7 +551,7 @@ function compileAgents(brandDir, modelIds, skillNames, toolNames) {
     if (doc.excludeTools !== undefined) agent.excludeTools = doc.excludeTools;
     if (doc.excludeSkills !== undefined) agent.excludeSkills = doc.excludeSkills;
 
-    // 127/004 — the optional starter file. A folder that holds anything other
+    // The optional starter file. A folder that holds anything other
     // than one plain AGENTS.md fails the build, so a brand owner never ships a
     // second file that the runtime silently ignores.
     const homeDir = path.join(dir, `${id}.home`);

@@ -1,4 +1,4 @@
-// 131/002 — Accessibility.getFullAXTree turned into the page_snapshot text.
+// Accessibility.getFullAXTree turned into the page_snapshot text.
 // CDP returns a FLAT node array with string `childIds`, not a tree (measured
 // 2026-09-19), so the walk starts by indexing the nodes by id.
 import { SNAPSHOT_MAX_CHARS } from "./constants";
@@ -6,7 +6,7 @@ import type { AxFrame, AxNode, AxSnapshotInput, AxSnapshotResult } from "./ax-sn
 
 export type { AxFrame, AxNode, AxSnapshotInput, AxSnapshotResult } from "./ax-snapshot.types";
 
-/** The properties the plan prints, in the plan's order. */
+/** The properties the snapshot prints, in print order. */
 const SHOWN_PROPERTIES = ["level", "checked", "disabled", "expanded", "selected", "pressed", "required"] as const;
 
 /** Roles whose current value is printed after ": ". `<select multiple>` is
@@ -60,7 +60,7 @@ export function renderAxSnapshot(input: AxSnapshotInput): AxSnapshotResult {
     const name = nameOf(node);
     const backend = node.backendDOMNodeId;
 
-    // 131/003 — an <iframe> element: print the frame line, then its own tree
+    // An <iframe> element: print the frame line, then its own tree
     // one level deeper. Checked FIRST, because an iframe node can be ignored
     // or flattened by the rules below and the frame must still show.
     const child = backend === undefined ? undefined : ownerIndex.get(`${frame.refPrefix}|${backend}`);

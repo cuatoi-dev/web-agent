@@ -5,7 +5,7 @@ import { test, expect, getTabId } from "./extension.fixture";
 import { bodyOf, captionOf, expectSavedPng, expectSavedRecording } from "./saved-files";
 import type { BrowserContext, Page, Worker } from "@playwright/test";
 
-// 127/003 — the saving tools. The real extension, real chrome.storage, real
+// The saving tools. The real extension, real chrome.storage, real
 // OPFS folder handles through the proof hook, real capture and debugging, a
 // mock model. Nothing about the vfs or the save path is faked.
 
@@ -167,7 +167,7 @@ async function allowRecording(page: Page): Promise<void> {
   await expect(scrim).toHaveCount(0, { timeout: 5000 });
 }
 
-test.describe("VFS saving tools (127/003)", () => {
+test.describe("VFS saving tools", () => {
   test.beforeEach(async ({ context }) => {
     const worker = await getWorker(context);
     await worker.evaluate(async () => {

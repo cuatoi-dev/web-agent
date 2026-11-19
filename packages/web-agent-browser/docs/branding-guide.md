@@ -10,7 +10,7 @@ it, and load it in Chrome.
 
 A brand package is a folder with two things in it: a `package.json` and a
 `brand/` folder. The `web-agent-brand build` command reads both and writes a
-loadable extension to `dist/` (`tool/build.cjs:30-52`). You do not write source
+loadable extension to `dist/` (`tool/build.cjs:30-67`). You do not write source
 code, a manifest, or a webpack configuration.
 
 To add your own skills, see [Custom skills](./custom-skills.md).
@@ -55,10 +55,15 @@ acme-agent/
 ├── package.json        the extension name, version and description
 ├── .gitignore          ignores node_modules only; dist/ is published
 └── brand/
-    ├── plugin.yml      prompts, options, extra hosts, tool and skill switches
+    ├── plugin.yml      prompts, default agent, options, extra hosts, tool and skill switches
     ├── model.yml       the models the options page offers
     ├── icon.png        the extension icon
     ├── README.md       the key reference for plugin.yml and model.yml
+    ├── agents/
+    │   ├── chromagent.yml        the default side panel agent
+    │   ├── tesagent.yml          a second side panel agent
+    │   └── tesagent.home/
+    │       └── AGENTS.md         Tesagent's starter /home/agent/AGENTS.md
     └── skills/
         └── README.md   the skill file reference
 ```
@@ -87,7 +92,7 @@ name in title case (`acme-agent` becomes `Acme Agent`), `version` is `0.1.0`, an
 Chrome accepts a version of one to four numbers separated by dots, each from 0
 to 65535. If your version has a prerelease or build suffix, such as
 `1.4.0-beta.2`, the build removes the suffix and prints one line to say so
-(`tool/manifest.cjs:55-66`, `tool/build.cjs:45-47`).
+(`tool/manifest.cjs:55-66`, `tool/build.cjs:59-61`).
 
 Example:
 
@@ -107,9 +112,9 @@ Keep the other fields that `init` wrote (`scripts`, `dependencies`, `files`,
 
 Open `brand/model.yml`. It holds a `models` list. The options page offers these
 entries, in this order, and a new install uses the first entry
-(`src/lib/brand-models.ts:11-23`).
+(`src/lib/brand-models.ts:10-14`, `src/lib/model-store.ts:128-131`).
 
-Each entry has these keys (`tool/compile-brand.cjs:236-288`):
+Each entry has these keys (`tool/compile-brand.cjs:352-415`):
 
 | Key | Required | Accepted values |
 |---|---|---|
@@ -127,9 +132,9 @@ Each wire format adds its own path to the endpoint, so do not put that path in
 
 | `wireFormat` | Path the extension adds | Source |
 |---|---|---|
-| `openai` | `/chat/completions` | `packages/web-agent-core/src/transport/openai-provider.ts:163` |
-| `anthropic` | `/v1/messages` | `packages/web-agent-core/src/transport/anthropic-provider.ts:133` |
-| `gemini` | `/v1beta/models/<model>:generateContent` | `packages/web-agent-core/src/transport/gemini-provider.ts:97` |
+| `openai` | `/chat/completions` | `packages/web-agent-core/src/transport/openai-provider.ts:151` |
+| `anthropic` | `/v1/messages` | `packages/web-agent-core/src/transport/anthropic-provider.ts:118` |
+| `gemini` | `/v1beta/models/<model>:generateContent` | `packages/web-agent-core/src/transport/gemini-provider.ts:85` |
 
 Example:
 
@@ -161,7 +166,7 @@ The build gives the extension permission to reach the origin of every
 permissions at install time.
 
 If you delete `model.yml`, the options page offers the extension's built-in
-model list instead (`src/lib/brand-models.ts:11-15`).
+model list instead (`src/lib/brand-models.ts:10-14`).
 
 ## Step 4: Write the agent prompts
 
@@ -204,7 +209,9 @@ defaultAgent: acme
 ```
 
 `defaultAgent` is required, and must name a file in `brand/agents/`. The side
-panel runs that agent (`src/lib/brand-capabilities.ts:resolveAgent`).
+panel opens on the agent the user used last. When there is none, it opens on
+`defaultAgent`, which is also first in the agent list
+(`src/lib/brand-capabilities.ts:resolveAgent`).
 
 An agent can also ship a starter `/home/agent/AGENTS.md`. Create
 `brand/agents/<id>.home/AGENTS.md`; the side panel writes it into the agent's
@@ -239,10 +246,11 @@ options:
 ```
 
 With `lockModel: true`, the options page table shows only brand models and no row
-checkboxes. **Enabled**, **Default**, **Key** and the chat switchers still work.
+checkboxes, the **+ Add model** and **Delete selected** buttons are hidden, and
+the agent editor's model select is disabled. **Enabled**, **Default**, **Key** and the chat switchers still work.
 The theme stays editable. Only the value `true` locks the table.
 Any other value, or no value, leaves row checkboxes present
-(`tool/compile-brand.cjs:635-639`).
+(`tool/compile-brand.cjs:646-651`).
 
 ### Offer the built-in providers
 
@@ -349,10 +357,10 @@ npm run build
 ```
 
 `npm run build` runs `web-agent-brand build` (`tool/init.cjs:61`). The build
-does these things (`tool/build.cjs:30-52`):
+does these things (`tool/build.cjs:30-67`):
 
-1. It checks `plugin.yml`, `model.yml`, every skill file, `icon.png` and
-   `package.json`.
+1. It checks `plugin.yml`, `model.yml`, every agent file, every skill file,
+   every theme file, `icon.png` and `package.json`.
 2. If a check fails, it prints the error, exits with code 1, and does not
    change `dist/`. See [When the build fails](#when-the-build-fails).
 3. If every check passes, it deletes `dist/` and writes a new one.
@@ -369,7 +377,7 @@ The output folder is always `dist/` in the package folder. It contains:
 ```
 dist/
 ├── manifest.json     generated from package.json and the brand
-├── brand.json        the compiled brand: agents, defaultAgent, prompts, options, models, skills, hosts, themes
+├── brand.json        the compiled brand: agents, defaultAgent, prompts, tools, skills, options, models, skillDefs, hosts, themes
 ├── brand-themes/     one CSS file per custom theme; present only when the brand declares themes
 ├── icons/            16.png, 32.png, 48.png, 128.png
 └── background.js, content.js, bridge.js, sidepanel.js, options.js, and the
@@ -487,7 +495,7 @@ The user picks one theme for the whole extension. A page that ships its own
 
 If you work in this repository, you can build a brand package with the local
 toolkit instead of the published one. Run the commands in steps 1 and 2 from the
-`projects/web-agent` folder.
+root of the repository.
 
 1. Build the extension once. This writes the bundles to `dist-template/`:
 
@@ -518,11 +526,11 @@ into `packages/web-agent-browser/dist/`.
   (see [Add custom themes](#add-custom-themes)). The three built-in themes
   (`wa1-dark`, `wa2-dark`, `wa2-light`) stay, and the user always decides which
   theme to use. The extension reads the `--wa-*` tokens from `wa-tokens.css`
-  (`webpack.config.cjs:54-59`).
+  (`webpack.config.cjs:57-62`).
 - **Page titles.** The side panel page title is `Web Agent`
   (`src/sidepanel.html:3`). The options page title and heading are
-  `Web Agent options` (`src/options.html:3`, `src/options.html:87`).
-- **The bubble launcher icon.** It is a fixed SVG (`src/lib/constants.ts:117`).
+  `Web Agent options` (`src/options.html:3`, `src/options.html:437`).
+- **The bubble launcher icon.** It is a fixed SVG (`src/lib/constants.ts:107`).
 
 ## When the build fails
 
@@ -556,7 +564,7 @@ Source: `tool/manifest.cjs:60-65`, `tool/manifest.cjs:80-83`.
 
 ### `brand/plugin.yml`
 
-Source: `tool/compile-brand.cjs:78-125`, `tool/compile-brand.cjs:316-336`,
+Source: `tool/compile-brand.cjs:191-238`, `tool/compile-brand.cjs:607-642`,
 `tool/manifest.cjs:33-38`.
 
 | Message | How to fix it |
@@ -583,6 +591,7 @@ Source: `tool/compile-brand.cjs:compileAgents`.
 | Message | How to fix it |
 |---|---|
 | `brand/agents/ has no agent files; add at least one <id>.yml, for example chromagent.yml` | Add at least one agent file. |
+| `brand/agents/<file> must contain a YAML mapping, got <what>` | Put `key: value` pairs at the top level of the file. |
 | `brand/agents/<file> file name must use lowercase letters, digits, - and _, starting with a letter` | Rename the file. The name without `.yml` becomes the agent's id. |
 | `brand/agents/<file> <key> must be a non-empty string` | Write a non-empty `displayName`, `description` or `instructions`. |
 | `brand/agents/<file> model "<x>" is not an id in model.yml; expected <ids>` | Fix the id, or add that entry to `model.yml`. |
@@ -597,7 +606,7 @@ Source: `tool/compile-brand.cjs:compileAgents`.
 
 ### `brand/model.yml`
 
-Source: `tool/compile-brand.cjs:243-283`.
+Source: `tool/compile-brand.cjs:359-396`.
 
 | Message | How to fix it |
 |---|---|
@@ -611,7 +620,7 @@ Source: `tool/compile-brand.cjs:243-283`.
 
 ### `brand/skills/*.md`
 
-Source: `tool/compile-brand.cjs:142-173`, `tool/compile-brand.cjs:213-218`.
+Source: `tool/compile-brand.cjs:255-286`, `tool/compile-brand.cjs:326-331`.
 
 | Message | How to fix it |
 |---|---|

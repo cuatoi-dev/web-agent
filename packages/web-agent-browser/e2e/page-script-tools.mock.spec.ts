@@ -1,4 +1,4 @@
-// 131/001 — page_eval, page_fetch and page_console on the Chrome debugger.
+// page_eval, page_fetch and page_console on the Chrome debugger.
 // `enabledOrigins` is never set in this spec: that is what proves the site
 // check is gone. The CSP page proves page_eval is not blocked by a page's own
 // policy; the timeout case proves a stuck script is stopped and the tab
@@ -85,7 +85,7 @@ async function runPlan(panelPage: Page, prompt: string, count: number): Promise<
   return panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 }
 
-test.describe("page_eval, page_fetch and page_console on the debugger (131/001)", () => {
+test.describe("page_eval, page_fetch and page_console on the debugger", () => {
   test("C1 the page's own CSP does not block page_eval", async ({ context, extensionId }) => {
     const worker = await getWorker(context);
     // enabledOrigins is never set — proves the site check is gone.

@@ -1,6 +1,6 @@
 import type { FolderStore, SavedFolder } from "@cuatoi/web-agent-vfs";
 
-// 127/007 — the folder button's remembered folders, in the extension origin's
+// The folder button's remembered folders, in the extension origin's
 // IndexedDB. chrome.storage cannot hold a FileSystemDirectoryHandle; IndexedDB
 // stores it by structured clone. One record per agent: folders:<agentId>.
 const DB_NAME = "web-agent-folders";

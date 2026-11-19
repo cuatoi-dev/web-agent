@@ -92,7 +92,7 @@ export function buildEditForm(
     const nameField = textField("displayName", "Display name", false);
     const idHint = h.idHint;
     if (idHint !== null) {
-      // 121/004 — the new card previews the id. Built with textContent: the
+      // The new card previews the id. Built with textContent: the
       // name is typed by the user.
       const hintEl = document.createElement("p");
       hintEl.className = "hint";
@@ -122,7 +122,7 @@ export function buildEditForm(
   first.value = "";
   first.textContent = MODEL_DEFAULT_LABEL;
   select.append(first);
-  // 136/005 — the enabled models, as "label — provider"; values are ModelRefs.
+  // The enabled models, as "label — provider"; values are ModelRefs.
   for (const m of lists.models) {
     const option = document.createElement("option");
     option.value = m.value;

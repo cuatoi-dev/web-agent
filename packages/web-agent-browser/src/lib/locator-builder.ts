@@ -1,4 +1,4 @@
-// 127/002 — the neutral locator set for one element: role and name with their
+// The neutral locator set for one element: role and name with their
 // match count, plus every unique id, data-testid, name attribute, CSS selector
 // and XPath. A Selenium-based framework consumes it. Pure DOM: the helper world
 // and the recorder world both bundle it.

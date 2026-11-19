@@ -4,9 +4,11 @@ title: Side panel tools
 
 # Side panel tools
 
-The side panel agent carries three tool groups, wired at
-`src/sidepanel.ts:buildAgentPanel`: the five tab tools, the three page-agent tools, and
-the page tools that act on any tab you turned the extension on for.
+The side panel agent carries these tool groups, wired at
+`src/sidepanel.ts:buildAgentPanel`: core's default tools, minus the ones the side
+panel drops (`src/lib/sidepanel-tool-filter.ts`); the five tab tools; the three
+page-agent tools; the page tools, which act on any tab you started debugging;
+and the file tools from `@cuatoi/web-agent-vfs`.
 
 ## Manage browser tabs from the side panel
 
@@ -92,7 +94,7 @@ one level deeper.
 
 ## Run JavaScript in a tab
 
-`page_eval` runs JavaScript in any tab you have activated the extension on. Call
+`page_eval` runs JavaScript in any tab you started debugging with `start_debugging`. Call
 `read_tabs` first and pass the tab ID it reports.
 
 - **What it runs**: the code you supply becomes the body of an async function,
@@ -124,7 +126,7 @@ one level deeper.
 
 ## Call an API from a tab
 
-`page_fetch` performs an HTTP request to the page origin of any tab you have activated the extension on. Call `read_tabs` first and pass the tab ID it reports.
+`page_fetch` performs an HTTP request to the page origin of any tab you started debugging with `start_debugging`. Call `read_tabs` first and pass the tab ID it reports.
 
 - **What it does**: an HTTP request to that tab's own origin, issued from the tab's realm through Chrome's debugger (`src/lib/panel-page-tools-script.ts`, the `fetch` call runs via `Runtime.evaluate`).
 - **Arguments**: `tabId` (number), `url` (relative path or same-origin absolute URL), `method` (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, default GET), `headers`, and `body`.
@@ -138,7 +140,7 @@ one level deeper.
 
 ## Read console output from a tab
 
-`page_console` reads the console log and error buffer from any tab you have activated the extension on. Call `read_tabs` first and pass the tab ID it reports.
+`page_console` reads the console log and error buffer from any tab you started debugging with `start_debugging`. Call `read_tabs` first and pass the tab ID it reports.
 
 - **What it captures**: `console.log`, `console.info`, `console.warn`, `console.error`, uncaught runtime exceptions, and unhandled promise rejections, through Chrome's debugger (`Runtime.consoleAPICalled` and `Runtime.exceptionThrown`).
 - **Buffer starts at `start_debugging`**: Chrome replays everything logged before `Runtime.enable`, so the buffer holds the whole document from load, not just what happened after `start_debugging`, and retains the most recent 200 entries. Entries falling out of the window increment a dropped counter.

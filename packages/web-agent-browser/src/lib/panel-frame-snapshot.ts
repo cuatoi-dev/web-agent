@@ -1,4 +1,4 @@
-// 131/003 — collects one AxFrame per frame of a debugged tab: the top frame,
+// Collects one AxFrame per frame of a debugged tab: the top frame,
 // every same-process iframe in `Page.getFrameTree`, and every auto-attached
 // cross-site iframe target, recursively.
 import type { DebuggerSession } from "./debugger-tools.types";

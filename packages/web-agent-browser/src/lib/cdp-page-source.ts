@@ -1,4 +1,4 @@
-// 131/001 — the two functions the side panel runs inside the page through the
+// The two functions the side panel runs inside the page through the
 // Chrome debugger, as SOURCE TEXT.
 //
 // Each one is self-contained: every helper it uses is declared inside its own

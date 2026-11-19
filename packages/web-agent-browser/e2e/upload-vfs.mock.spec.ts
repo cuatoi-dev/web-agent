@@ -134,7 +134,7 @@ async function runPlan(
   return panelPage.evaluate(() => window.__TOOL_RESULTS__ ?? []);
 }
 
-test.describe("page_upload_file from VFS mock e2e (001)", () => {
+test.describe("page_upload_file from VFS mock e2e", () => {
   test("uploads saved screenshot, VFS markdown, overrides, mixed inline+path, and enforces error and 10 MB gates", async ({
     context,
     extensionId,
@@ -172,7 +172,7 @@ test.describe("page_upload_file from VFS mock e2e (001)", () => {
     }, shotPath);
     expect(storedShotBytes).toBeGreaterThan(0);
 
-    // Criterion 1: upload saved screenshot by path.
+    // Upload a saved screenshot by path.
     const rShot = await runPlan(
       panelPage,
       [{ name: "page_upload_file", input: { ref: uploadRef, files: [{ path: shotPath }] } }],
@@ -188,7 +188,7 @@ test.describe("page_upload_file from VFS mock e2e (001)", () => {
       .evaluate((img: HTMLImageElement) => img.naturalWidth);
     expect(naturalW).toBeGreaterThan(0);
 
-    // Criterion 2: write /home/agent/notes.md and upload by path (UTF-8 + text/markdown).
+    // Write /home/agent/notes.md and upload by path (UTF-8 + text/markdown).
     const mdText = "# Test notes\nCafé line\n";
     const mdBytes = Buffer.byteLength(mdText, "utf8");
     const rMd = await runPlan(
@@ -205,7 +205,7 @@ test.describe("page_upload_file from VFS mock e2e (001)", () => {
     await expect(sitePage.locator("#change-summary")).toHaveText(`notes.md|text/markdown|${mdBytes}`);
     await expect(sitePage.locator('#uploaded-list li[data-name="notes.md"] .text-preview')).toHaveText(mdText);
 
-    // Criterion 3: name and mimeType override path defaults.
+    // name and mimeType override path defaults.
     const rOverride = await runPlan(
       panelPage,
       [
@@ -223,7 +223,7 @@ test.describe("page_upload_file from VFS mock e2e (001)", () => {
     expect(rOverride[0].text).toContain(`custom.txt (${mdBytes} B, from /home/agent/notes.md).`);
     await expect(sitePage.locator("#change-summary")).toHaveText(`custom.txt|text/plain|${mdBytes}`);
 
-    // Criterion 4 & 8: mix path file + inline CSV in one call; then inline-only call.
+    // Mix a path file + inline CSV in one call; then inline-only call.
     const rMix = await runPlan(
       panelPage,
       [
@@ -263,7 +263,7 @@ test.describe("page_upload_file from VFS mock e2e (001)", () => {
     expect(rInline[0].text).toMatch(/inline\.txt \(5 B\)\.$/);
     await expect(sitePage.locator("#change-summary")).toHaveText("inline.txt|text/plain|5");
 
-    // Criteria 5, 6, 7: error cases set no files and fire no change event.
+    // Error cases set no files and fire no change event.
     const countBeforeErrors = await sitePage.locator("#change-summary").getAttribute("data-change-count");
     await panelPage.evaluate(async () => {
       const sixMb = "A".repeat(6 * 1024 * 1024);

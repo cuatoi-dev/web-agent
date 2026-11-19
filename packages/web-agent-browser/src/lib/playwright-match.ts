@@ -1,16 +1,15 @@
-// 122/002 — the name-matching helper both panel tools share, and Playwright
+// The name-matching helper both panel tools share, and Playwright
 // 1.58.2's own counting rules for getBy* locators, reimplemented for the MAIN
-// world. Verified against playwright-core 1.58.2's injected script; see the
-// task file's "External facts verified" table for the source of each rule.
+// world. Verified against playwright-core 1.58.2's injected script.
 import { getName, getRole } from "@cuatoi/web-agent-dom";
 import type { MaybeCheckVisibility } from "./types";
 
-/** The plan's normalize(): collapse whitespace, trim, lower-case. */
+/** normalize(): collapse whitespace, trim, lower-case. */
 export function normalize(s: string): string {
   return s.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-/** The plan's nameMatches(): non-exact, like Playwright's default. */
+/** nameMatches(): non-exact, like Playwright's default. */
 export function nameMatches(actual: string, expected: string): boolean {
   return normalize(actual).includes(normalize(expected));
 }

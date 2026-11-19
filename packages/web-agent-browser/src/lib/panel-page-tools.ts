@@ -16,8 +16,8 @@ import type { PanelPageToolsOptions } from "./types";
 export type { PanelPageToolsOptions } from "./types";
 
 export function createPanelPageTools(input: PanelPageToolsOptions): CustomToolDef[] {
-  // 124/001 — one session shared by the act-by-ref and debugger tools below.
-  // 124/007 — one host map per agent panel. Filled by every forwarded call that
+  // One session shared by the act-by-ref and debugger tools below.
+  // One host map per agent panel. Filled by every forwarded call that
   // passes the activation check; read when a step line renders.
   const hostTracker = createHostTracker();
   const onActivatedOrigin = (tabId: number, origin: string): void => {
@@ -25,13 +25,13 @@ export function createPanelPageTools(input: PanelPageToolsOptions): CustomToolDe
     input.onActivatedOrigin?.(tabId, origin);
   };
   const debuggerSession = input.debuggerSession ?? createDebuggerSession();
-  // 131/002 — one helper-world cache shared by every ref tool, so the
+  // One helper-world cache shared by every ref tool, so the
   // isolated world is created once per tab rather than once per tool.
   const helper = input.helper ?? createHelperWorlds(debuggerSession);
-  // 131/004 — one recorder driver per panel, on the same session the page tools
+  // One recorder driver per panel, on the same session the page tools
   // use, so a recording and an agent action share one debugger attach.
   const recorder = input.recorder ?? createDebuggerRecorder(debuggerSession, helper);
-  // 124/005 — one recording controller per agent panel, shared by the two
+  // One recording controller per agent panel, shared by the two
   // recording tools and by the pause bracket every debugger input tool uses.
   const recording =
     input.recording ??
@@ -52,7 +52,7 @@ export function createPanelPageTools(input: PanelPageToolsOptions): CustomToolDe
     ...createRecordingPageTools(options),
   ];
 
-  // 118/004 — the vision gate, applied at provider-load time rather than at
+  // The vision gate, applied at provider-load time rather than at
   // call time, following `packages/web-agent-dom/src/tool-provider.ts:187`
   // where `see` is dropped when `images: false`. The agent never sees a tool it
   // cannot use.
@@ -60,7 +60,7 @@ export function createPanelPageTools(input: PanelPageToolsOptions): CustomToolDe
     tools.push(createPageScreenshotTool(options));
   }
 
-  // 124/007 — each tool carries its own readable step line from here on.
+  // Each tool carries its own readable step line from here on.
   return attachPhrases(tools, hostTracker.hostFor);
 }
 

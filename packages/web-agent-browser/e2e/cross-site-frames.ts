@@ -1,4 +1,4 @@
-// 131/003 — `pay.test` and `bank.test` are different sites from
+// `pay.test` and `bank.test` are different sites from
 // `localhost:10040` AND from each other (different eTLD+1), so Chrome gives
 // each its own renderer and its own debugger target. Nothing resolves these
 // names: Playwright fulfils the requests itself.

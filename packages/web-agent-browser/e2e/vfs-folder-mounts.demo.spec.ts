@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
 import { test, expect, ask } from "./demo-helpers";
 
-// 128/002 — live proof. The real model, the real gateway route
+// Live proof. The real model, the real gateway route
 // (anthropic-sonnet), real OPFS folders and a real
 // click on the real Delete button. No model mock, no network stub, no
 // automatic approval.
@@ -45,7 +45,7 @@ async function mountFolder(page: Page, dir: string, prefix: string, writable: bo
   );
 }
 
-test.describe("VFS folder mounts — live proof (128/002)", () => {
+test.describe("VFS folder mounts — live proof", () => {
   test("the agent summarises a read-only folder, then deletes a file after the user clicks Delete", async ({
     demoExtension,
   }) => {

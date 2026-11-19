@@ -276,7 +276,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     }
     addHeaderBtn.addEventListener("click", () => appendHeaderRow(headersList));
 
-    /** The unsaved form values a row's Test sends (138/001). Blank header
+    /** The unsaved form values a row's Test sends. Blank header
      *  names are dropped, as Refresh from /models does. */
     const rowTest: RowTestContext = {
       getProvider: () => ({
@@ -321,7 +321,7 @@ export function openProviderDialog(opts: ProviderDialogOptions = {}): Promise<Cu
     }
     addModelRowBtn.addEventListener("click", () => appendModelRow(modelsList, rowTest));
 
-    // 138/001 — an edit to the endpoint, the key or any header clears every
+    // An edit to the endpoint, the key or any header clears every
     // row's result. A format switch clears them in setFormat.
     const clearResults = (): void => clearRowResults(modelsList);
     endpointInput.addEventListener("input", clearResults);

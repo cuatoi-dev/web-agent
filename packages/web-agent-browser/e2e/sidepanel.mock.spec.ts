@@ -9,7 +9,7 @@ const ARTIFACTS_DIR = path.resolve(
   HERE,
   "../../../temp/artifacts/2026-08-31-023032-001-extension-side-panel",
 );
-// 120/003 — the page-agent icon toggle.
+// The page-agent icon toggle.
 const ICON_ARTIFACTS_DIR = path.resolve(
   HERE,
   "../../../temp/artifacts/2026-09-15-171940-003-page-agent-icon-toggle",
@@ -18,7 +18,7 @@ const SYNC_ARTIFACTS_DIR = path.resolve(
   process.env.TASK_ARTIFACTS_DIR ?? path.join(HERE, "../test-results/tab-state-sync"),
 );
 const SITE_URL = "http://localhost:10040/plain.html";
-// The four texts of the plan's state table. The origin is location.origin
+// The four status texts of the page-agent icon. The origin is location.origin
 // (src/content.ts:50), so it carries the scheme.
 const OFF_TEXT = "Turn on the agent in this tab. The in-page agent is off for http://localhost:10040.";
 const ON_TEXT = "Turn off the agent in this tab. The in-page agent is on for http://localhost:10040.";
@@ -426,7 +426,7 @@ test.describe("Side panel mock e2e", () => {
   });
 });
 
-test.describe("Page-agent icon toggle mock e2e (120/003)", () => {
+test.describe("Page-agent icon toggle mock e2e", () => {
   test("the top row is one row: combo box left, icon button right, glyph drawn, nothing cut off at 400 px", async ({
     context,
     extensionId,

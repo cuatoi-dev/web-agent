@@ -1,4 +1,4 @@
-// 124/003 — the debugger network log. debugger-session.ts feeds every
+// The debugger network log. debugger-session.ts feeds every
 // Network.* event for a debugging tab into applyNetworkEvent; page_network
 // (panel-page-tools-network-dialog.ts) turns the entries into text. Pure, so
 // the unit tests drive it without chrome.

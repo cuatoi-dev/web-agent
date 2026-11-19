@@ -6,7 +6,7 @@ import path from "node:path";
 const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures");
 const PORT = Number(process.env.FIXTURES_PORT ?? 10040);
 
-/** 136/005 — requests the stub LLM received, per run id. */
+/** Requests the stub LLM received, per run id. */
 const LLM_LOG = new Map();
 const MTEST_LOG = new Map();
 
@@ -24,7 +24,7 @@ const FIXTURE_HEADERS = {
   "dialog-csp.html": {
     "content-security-policy": "script-src 'self'; object-src 'none'",
   },
-  // 131/001 — the page's own eval is refused while CDP's is not. 'unsafe-inline'
+  // The page's own eval is refused while CDP's is not. 'unsafe-inline'
   // is kept so the fixture's inline script can still run.
   "page-eval-cdp.html": {
     "content-security-policy": "script-src 'self' 'unsafe-inline'; object-src 'none'",
@@ -95,7 +95,7 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({ status: "ok", data: "A".repeat(10_000) }));
       return;
     }
-    // 136/005 — a stub LLM for the bubble relay e2e. A brand.json patched by
+    // A stub LLM for the bubble relay e2e. A brand.json patched by
     // the test points its endpoints at /api/llm/<run>/anthropic and
     // /api/llm/<run>/openai/v1; GET /api/llm/<run>/requests returns what
     // arrived, headers included.
@@ -135,7 +135,7 @@ createServer(async (req, res) => {
         return;
       }
     }
-    // 138/001 — a stub for the model Test button. The model id picks the
+    // A stub for the model Test button. The model id picks the
     // answer; GET /api/mtest/<run>/requests returns what arrived. CORS headers
     // are sent so the stub works with or without the host permission.
     const mtest = pathname.match(/^\/api\/mtest\/([A-Za-z0-9-]+)\/(.+)$/);

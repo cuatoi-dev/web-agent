@@ -14,7 +14,7 @@ function clickAndRead(el: Element): { raw: Element | null; recorded: Element | n
   return seen;
 }
 
-describe("recordTarget (rec 002)", () => {
+describe("recordTarget", () => {
   it("keeps a named control", () => {
     document.body.innerHTML = '<button id="go">Apply</button>';
     expect(clickAndRead(document.getElementById("go")!).recorded?.id).toBe("go");

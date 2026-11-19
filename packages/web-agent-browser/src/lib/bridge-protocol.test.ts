@@ -48,7 +48,7 @@ describe("readBridgeMessage", () => {
     }
   });
 
-  it("116/001 — brand survives the guard on wa-bridge-enable", () => {
+  it("brand survives the guard on wa-bridge-enable", () => {
     const event = fireEvent({
       source: window,
       data: { type: "wa-bridge-enable", current: "brand:x", brand: { prompts: { inPage: "P" } } },
@@ -58,7 +58,7 @@ describe("readBridgeMessage", () => {
     expect((msg as { brand?: { prompts?: { inPage?: string } } }).brand?.prompts?.inPage).toBe("P");
   });
 
-  it("001/113 — ranCommand and command survive the guard on wa-bridge-send-result", () => {
+  it("ranCommand and command survive the guard on wa-bridge-send-result", () => {
     const event = fireEvent({
       source: window,
       data: { type: "wa-bridge-send-result", mounted: true, foreign: false, delivered: true, ranCommand: true, command: "new" },
@@ -68,7 +68,7 @@ describe("readBridgeMessage", () => {
     expect(result.command).toBe("new");
   });
 
-  it("002 — requested survives the guard on wa-bridge-toggle-result", () => {
+  it("requested survives the guard on wa-bridge-toggle-result", () => {
     const event = fireEvent({
       source: window,
       data: { type: "wa-bridge-toggle-result", mounted: false, foreign: false, requested: "on" },

@@ -19,7 +19,7 @@ export async function getTabId(worker: Worker, url: string): Promise<number> {
 
 /** Opens the options page and waits until its async init has finished.
  *
- *  137/002 — `init()` paints `#model-count` last, in the same synchronous
+ *  `init()` paints `#model-count` last, in the same synchronous
  *  block that fills the theme value. It runs even though the Models panel
  *  starts hidden, so "the count line has text" guarantees the whole page is
  *  populated. Without this wait a `fill()` or a value read that follows

@@ -154,7 +154,6 @@ test.describe("Brand skills and feature flags", () => {
     await fs.rm(TEMP_DIR, { recursive: true, force: true });
   });
 
-  // E1 / criterion 1's skill half.
   test("E1: default dist/ exposes exactly today's built-in skills", async ({ context }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
@@ -173,7 +172,6 @@ test.describe("Brand skills and feature flags", () => {
     expect(names.length).toBeGreaterThan(0);
   });
 
-  // E2 / criterion 2 — both agents.
   test("E2: a brand skill reaches both the bubble and the side panel", async () => {
     const dir = await patchedBrand(SKILLS_DIR, { skillDefs: [CLAIMS_LOOKUP] });
     const { ctx, extensionId } = await launchPatchedContext(dir);
@@ -194,7 +192,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E3 / criterion 3.
   test("E3: a brand skill named the same as a built-in replaces it, one entry, brand's body", async () => {
     const dir = await patchedBrand(SKILLS_DIR, {
       skillDefs: [{ name: "page_fetch", description: "Branded page fetch.", definition: "BRANDED" }],
@@ -217,7 +214,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E4 / criterion 4.
   test("E4: skills: { core: { enabled: false } } drops the core skills, keeps dom and brand", async () => {
     const dir = await patchedBrand(SKILLS_DIR, {
       skills: { core: { enabled: false } },
@@ -241,7 +237,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E5 / criterion 2's "invocable as /claims_lookup" half.
   test("E5: a brand skill with command: true shows up in the slash menu", async () => {
     const dir = await patchedBrand(SKILLS_DIR, {
       skillDefs: [{ ...CLAIMS_LOOKUP, command: true }],
@@ -265,7 +260,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E8 / criterion 6 — both agents.
   test("E8: tools: { todo: { enabled: false } } removes todo tools on both agents", async () => {
     const dir = await patchedBrand(FLAGS_DIR, { tools: { todo: { enabled: false } } });
     const { ctx, extensionId } = await launchPatchedContext(dir);
@@ -294,8 +288,7 @@ test.describe("Brand skills and feature flags", () => {
       const pageTools = await page.evaluate(() => window.__WA_TOOLS__);
       expect(pageTools).not.toContain("todo_write");
       expect(pageTools).not.toContain("todo_read");
-      // Out of scope for this task: the in-page bubble still renders the block,
-      // so it keeps the tool.
+      // The in-page bubble still renders the block, so it keeps the tool.
       expect(pageTools).toContain("show_generative_ui");
     } finally {
       await ctx.close();
@@ -325,7 +318,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // E9 / criterion 1's tool half, and criterion 2.
   test("E9: default dist/ offers todo_write, todo_read and the scheduler tools, and no generative-UI tool", async ({ context, extensionId }) => {
     const panelPage = await context.newPage();
     await installToolListingMock(panelPage);
@@ -344,8 +336,8 @@ test.describe("Brand skills and feature flags", () => {
     expect(tools).toContain("cancel_schedule");
   });
 
-  // Criterion 12 — the saved-skill registry still wins a name clash over a
-  // brand skill of the same name, even after this task's merge change.
+  // The saved-skill registry still wins a name clash over a brand skill of
+  // the same name.
   test("a saved skill still overrides a brand skill of the same name", async () => {
     const dir = await patchedBrand(SKILLS_DIR, {
       skillDefs: [{ ...CLAIMS_LOOKUP, definition: "BRAND BODY" }],
@@ -435,7 +427,6 @@ test.describe("Brand skills and feature flags", () => {
     expect(await page.evaluate(() => window.__SEARCH_SKILLS_RESULT__)).toContain("test_plan —");
   });
 
-  // 120/005 E11 — criterion 3.
   test("E11: skills: { testing: { enabled: false } } — tesagent's search_skills does not list test_plan", async () => {
     const dir = await patchedBrand(PLAYWRIGHT_DIR, {
       defaultAgent: "tesagent",
@@ -463,7 +454,7 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // 120/005 E12 — criterion 4 (run-time half; the build half is unit T3).
+  // The run-time half; compile-brand.test.ts covers the build half.
   test("E12: an agent with skills: [test_plan] lists only test_plan among built-in skills", async () => {
     const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8")) as {
       agents: { id: string; skills: unknown }[];
@@ -494,7 +485,7 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // 127/008 — excludeSkills drops only the named skill from the testing group.
+  // excludeSkills drops only the named skill from the testing group.
   test("E16: excludeSkills: [test_plan] hides test_plan but keeps explore_app", async () => {
     const brand = JSON.parse(await fs.readFile(path.join(EXT, "brand.json"), "utf8")) as {
       agents: { id: string; excludeSkills?: unknown }[];
@@ -520,7 +511,6 @@ test.describe("Brand skills and feature flags", () => {
     }
   });
 
-  // 120/005 E14 — criterion 6.
   test("E14: the in-page bubble's search_skills does not list test_plan", async ({ context }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");

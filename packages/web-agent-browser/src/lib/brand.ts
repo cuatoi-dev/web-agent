@@ -29,8 +29,7 @@ export const EMPTY_BRAND: AgentBrand = {
  *
  *  An absent prompt sets `appInstructions` to `undefined`, and the section is
  *  then left out entirely — which is exactly what "no brand" must look like.
- *  `appName` and `appDescription` are left as the caller set them; the
- *  identity move is task 004. */
+ *  `appName` and `appDescription` are left as the caller set them. */
 export function applyAgentBrand(
   el: BrandableElement,
   brand: AgentBrand,

@@ -1,4 +1,4 @@
-// 131/001 — the live proof: the real router, model `sonnet`
+// The live proof: the real router, model `sonnet`
 // (the extension's default profile, `brand/model.yml`'s first entry,
 // `anthropic-sonnet`).
 import { test, expect, ask, expectOrder } from "./demo-helpers";
@@ -10,7 +10,7 @@ async function chooseAgent(page: Page, id: string): Promise<void> {
   await page.locator(`#agent-option-${id}`).click();
 }
 
-test.describe("Debugger session and page_eval/page_console live proof (131/001)", () => {
+test.describe("Debugger session and page_eval/page_console live proof", () => {
   test("tesagent starts debugging, evaluates the title, and reads the console in order", async ({
     demoExtension,
   }) => {

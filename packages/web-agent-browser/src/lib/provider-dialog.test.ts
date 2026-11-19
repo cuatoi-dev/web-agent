@@ -343,7 +343,7 @@ describe("openProviderDialog", () => {
   });
 });
 
-describe("Test button (138/001)", () => {
+describe("Test button", () => {
   function setVal(input: HTMLInputElement, val: string): void {
     input.value = val;
     input.dispatchEvent(new Event("input"));

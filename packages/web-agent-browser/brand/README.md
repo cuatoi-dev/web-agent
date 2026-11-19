@@ -13,13 +13,13 @@ This page is the key reference. For step-by-step instructions, see:
 `web-agent-brand init` copies this file into each new brand package, and the
 published npm package does not include `docs/`. In a brand package, the two
 links above do not work. Read the pages in the web-agent repository at
-`projects/web-agent/packages/web-agent-browser/docs/`.
+`packages/web-agent-browser/docs/`.
 
 ## Files
 
 | File | What it does |
 |---|---|
-| `plugin.yml` | The in-page bubble's prompt under `prompts`, the side panel's default agent under `defaultAgent`, installation options under `options`, extra hosts under `hosts`, and tool and skill group switches under `tools` and `skills`. The file is optional, but `defaultAgent` is required whenever it is loaded. |
+| `plugin.yml` | The in-page bubble's prompt under `prompts`, the side panel's default agent under `defaultAgent`, installation options under `options`, extra hosts under `hosts`, and tool and skill group switches under `tools` and `skills`. The file is required, because `defaultAgent` is required. |
 | `agents/` | One YAML file per side panel agent. At least one is required. See [agents/](#agents). |
 | `model.yml` | The models the options page table and the chat switchers offer. |
 | `skills/` | One markdown file per skill the brand ships. See `skills/README.md`. |
@@ -40,8 +40,8 @@ The side panel's agents get their prompt from `instructions` in their own
 block that still carries `sidePanel` fails the build with a message telling
 you to move the text there.
 
-`defaultAgent` names the agent, from `brand/agents/`, the side panel runs. It
-is required.
+`defaultAgent` names the agent, from `brand/agents/`, that the side panel opens
+on when the user has not used another agent yet. It is required.
 
 The build fails, and writes no `dist/`, when:
 
@@ -115,15 +115,21 @@ The folder may hold only `AGENTS.md`. Any other entry fails the build, and the
 message names the extra entry. An agent with no `<id>.home/` folder has no
 starter file.
 
+## More plugin.yml keys
+
+The keys in this section go in `plugin.yml`, not in an agent file.
+
 ### Options
 
 `options` configures installation behavior:
 
 - `lockModel` (boolean, default `false`) — when set to `true`, the options page
-  table shows only brand models and no row checkboxes. **Enabled**, **Default**,
+  table shows only brand models and no row checkboxes, the **+ Add model** and
+  **Delete selected** buttons are hidden, and the agent editor's model select
+  is disabled. **Enabled**, **Default**,
   **Key** and the chat switchers still work. The theme stays editable.
 - `builtInProviders` (boolean, default `false`) — when set to `true`,
-  **Add model** first shows the seven built-in providers and **Custom**.
+  **Add model** first shows the nine built-in providers and **Custom**.
   Picking a provider fills in the endpoint, the format and, for Anthropic,
   OpenAI, DeepSeek and Google AI, its current models.
 

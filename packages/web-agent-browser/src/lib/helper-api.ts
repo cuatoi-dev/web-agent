@@ -1,4 +1,4 @@
-// 131/002 — the ref tools' page-side half. The side panel installs the bundle
+// The ref tools' page-side half. The side panel installs the bundle
 // built from this module into an isolated world (Page.createIsolatedWorld), so
 // the page's own scripts can neither see nor change it. Every function takes
 // the element itself: the isolated world has no RefTable and no DomAdapter.
@@ -43,12 +43,12 @@ export function target(el: Element, ref: string, desc: string): ElementTarget {
   return journalTarget(el, document, `[${ref}] ${desc}`);
 }
 
-/** 127/002 — the neutral locator set for `el`, in this frame's document. */
+/** The neutral locator set for `el`, in this frame's document. */
 export function locator(el: Element): LocatorSet {
   return locatorSet(el, document);
 }
 
-/** 131/003, 127/002 — the CSS for ONE `<iframe>`/`<frame>` element, from the
+/** The CSS for ONE `<iframe>`/`<frame>` element, from the
  *  same walk as the locator set's `css`. "" for any other element, and for a
  *  frame inside a shadow root, which has no page-level CSS. */
 export function iframeSelector(el: Element): { selector: string } {

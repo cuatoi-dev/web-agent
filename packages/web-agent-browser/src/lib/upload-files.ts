@@ -1,4 +1,4 @@
-// 124/003, 001 — page_upload_file's checks and VFS path resolution, run in the
+// page_upload_file's checks and VFS path resolution, run in the
 // panel before anything is sent to the tab, and the size text of its result.
 import type { VfsFile, VfsHandle } from "@cuatoi/web-agent-vfs";
 import { MAX_UPLOAD_BYTES } from "./constants";

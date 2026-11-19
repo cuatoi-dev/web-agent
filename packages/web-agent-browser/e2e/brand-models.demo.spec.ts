@@ -14,7 +14,7 @@ const PROOF_MODELS = [
   { id: "proof-gemini", label: "Proof Gemini", endpoint: "http://localhost:30000/api/gemini", wireFormat: "gemini", model: "gemini-flash-lite-latest", vision: true },
 ];
 
-/** Which bundled model.yml entry gives each proof model its key (137/001). */
+/** Which bundled model.yml entry gives each proof model its key. */
 const BUNDLED_ID: Record<string, string> = {
   "proof-anthropic": "anthropic-sonnet",
   "proof-openai": "openai-sonnet",
@@ -31,7 +31,7 @@ test.describe("Brand models — live proof", () => {
   test("three brand entries route to three live wire formats", async () => {
     test.setTimeout(300_000);
 
-    // 137/001 — the gateway needs the brand key; take it from the built brand
+    // The gateway needs the brand key; take it from the built brand
     // so the literal stays only in model.yml.
     const bundled = JSON.parse(await fs.readFile(path.resolve(HERE, "../dist/brand.json"), "utf8")) as { models: { id: string; apiKey?: string }[] };
     const models = PROOF_MODELS.map((m) => ({ ...m, apiKey: bundled.models.find((b) => b.id === BUNDLED_ID[m.id])?.apiKey ?? "" }));

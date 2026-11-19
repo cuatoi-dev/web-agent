@@ -1,4 +1,4 @@
-// 124/005 — start_recording and stop_recording. Split out of
+// start_recording and stop_recording. Split out of
 // panel-page-tools.ts to stay under that file's 500-line cap
 // (eslint.config.mjs max-lines), the same way
 // panel-page-tools-debugger.ts is.
@@ -14,7 +14,7 @@ function tabIdText(input: Record<string, unknown>): string {
   return typeof input.tabId === "number" || typeof input.tabId === "string" ? String(input.tabId) : "(none)";
 }
 
-/** The plan's stop_recording body. 127/002 — the locator lines go under each
+/** The stop_recording body. The locator lines go under each
  *  step that has an element. */
 function report(result: RecordingResult): string {
   const n = result.steps.length;
@@ -88,7 +88,7 @@ export function createRecordingPageTools(options: PanelPageToolsOptions): Custom
 
       const result = await recording.stop();
       if ("error" in result) return { content: result.error, isError: true };
-      // 127/003 — the report is saved as a Markdown file the user can
+      // The report is saved as a Markdown file the user can
       // download from the Files screen; a failed save fails the call.
       const text = report(result);
       const path = `/tmp/recordings/${localFileStamp()}.md`;

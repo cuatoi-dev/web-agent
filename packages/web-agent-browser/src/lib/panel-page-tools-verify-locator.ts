@@ -1,6 +1,6 @@
-// 122/002 — the panel's page_verify and page_generate_locator.
-// 127/002 — page_generate_locator returns the neutral locator set.
-// 131/002 — both moved onto the debugger's helper world; no forwardToTab, no
+// The panel's page_verify and page_generate_locator.
+// page_generate_locator returns the neutral locator set.
+// Both moved onto the debugger's helper world; no forwardToTab, no
 // activation check.
 import { z } from "zod";
 import type { CustomToolDef } from "@cuatoi/web-agent-core";
@@ -13,7 +13,7 @@ import type { LocatorSet, VerifyOutcome, PanelPageToolsOptions } from "./types";
 
 const nonEmpty = (v: unknown): v is string => typeof v === "string" && v !== "";
 
-/** The plan's per-kind required input. Returns the error text, or undefined. */
+/** The per-kind required input. Returns the error text, or undefined. */
 export function verifyInputError(input: Record<string, unknown>): string | undefined {
   const kind = String(input.kind);
   const needs = (field: string) => `page_verify kind "${kind}" needs ${field}.`;
@@ -64,7 +64,7 @@ export function createVerifyLocatorPageTools(options: PanelPageToolsOptions): Cu
       if (inputError) return { content: inputError, isError: true };
 
       // element_visible / value / list WITH a ref act on that element; text_visible
-      // and the by-role forms act on the document element, exactly as the plan says.
+      // and the by-role forms act on the document element.
       const ref = typeof input.ref === "string" && input.ref !== "" ? input.ref : undefined;
       const verifyInput = {
         kind: input.kind,

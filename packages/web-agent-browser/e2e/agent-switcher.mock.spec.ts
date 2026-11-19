@@ -6,8 +6,7 @@ import fs from "node:fs/promises";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXT = path.resolve(HERE, "../dist");
-// Per the user's test-extension-copy instruction (task 001, "## Manager note
-// — test extension copies"): every e2e copy of dist/ lives under
+// Every e2e copy of dist/ lives under
 // temp/e2e-extensions/<spec>/, removed when the spec finishes.
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/agent-switcher");
 const ARTIFACTS_DIR = path.resolve(
@@ -231,9 +230,9 @@ test.describe("Agent switcher mock e2e", () => {
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, "03-list-open-light.png") });
     await setTheme(page, "wa2-dark");
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, "04-list-open-dark.png") });
-    // 120/002 review fix (item 6b) — hover shares the same tint/text tokens as
-    // aria-selected; capture the unselected tesagent row's :hover state too, so
-    // both states the fix touches have their own screenshot evidence.
+    // Hover shares the same tint/text tokens as aria-selected; capture the
+    // unselected tesagent row's :hover state too, so both states have their
+    // own screenshot.
     await page.locator("#agent-option-tesagent").hover();
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, "list-hover-dark.png") });
     await setTheme(page, "wa2-light");
@@ -289,9 +288,9 @@ test.describe("Agent switcher mock e2e", () => {
     await expect(combo).toHaveAttribute("aria-activedescendant", "agent-option-chromagent");
     await page.keyboard.press("ArrowDown");
     await expect(combo).toHaveAttribute("aria-activedescendant", "agent-option-tesagent");
-    // 120/002 review fix (item 6b) — the keyboard-highlighted row only gains an
-    // outline (no background change), so its description keeps the rest-state
-    // colour; capture it anyway for the round's contrast evidence.
+    // The keyboard-highlighted row only gains an outline (no background
+    // change), so its description keeps the rest-state colour; capture it
+    // anyway as contrast evidence.
     await setTheme(page, "wa2-light");
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, "list-highlighted-light.png") });
     await setTheme(page, "wa2-dark");
@@ -362,7 +361,7 @@ test.describe("Agent switcher mock e2e", () => {
     await page.locator(`${VISIBLE_PANEL} #history-anchor`).click();
     await expect(page.locator(VISIBLE_PANEL).getByRole("button", { name: "+ New Session" })).toBeVisible();
     await expect(page.locator(`${VISIBLE_PANEL} .wa-history-row`, { hasText: "Apples chat" })).toHaveCount(0);
-    // 120/002 round 3 — the history dropdown must stay inside the panel
+    // The history dropdown must stay inside the panel
     // viewport with no cut-off button text, the same guard the switch-dialog
     // test below already applies to its own card.
     await expectInsideViewport(page.locator(`${VISIBLE_PANEL} [role="dialog"]`));
@@ -478,7 +477,7 @@ test.describe("Agent switcher mock e2e", () => {
     await expect.poll(() => storedAgentId(page)).toBe("chromagent");
   });
 
-  // --- 121/002: the side panel reads the merged agent store -----------------
+  // --- The side panel reads the merged agent store --------------------------
 
   test("stored agent edits and user agents reflect in side panel combo and panel setup", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
@@ -552,8 +551,8 @@ test.describe("Agent switcher mock e2e", () => {
       const panel = document.querySelector<HTMLElementTagNameMap["agent-chat-panel"]>(selector);
       return { model: panel?.model, path: panel?.path };
     }, VISIBLE_PANEL);
-    // brand/model.yml's anthropic-sonnet entry (External facts table,
-    // task 002): model "sonnet" at the shared gateway's anthropic path.
+    // brand/model.yml's anthropic-sonnet entry: model "sonnet" at the shared
+    // gateway's anthropic path.
     expect(routed.model).toBe("sonnet");
     expect(routed.path).toBe("http://localhost:30000/api/anthropic");
   });

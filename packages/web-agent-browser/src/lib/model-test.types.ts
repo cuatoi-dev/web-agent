@@ -1,6 +1,6 @@
 import type { ResolvedProvider } from "./model-store.types";
 
-/** What one model test found (138/001). */
+/** What one model test found. */
 export type TestKind = "pass" | "auth" | "notfound" | "http" | "noOk" | "denied" | "network" | "timeout";
 
 export interface TestResult {

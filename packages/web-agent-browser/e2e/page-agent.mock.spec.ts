@@ -673,7 +673,7 @@ test.describe("Side panel page agent tools mock e2e", () => {
     expect(result).toContain("120");
   });
 
-  test("002 — send_to_page_agent reports not delivered after the page removes the bubble", async ({ context, extensionId }) => {
+  test("send_to_page_agent reports not delivered after the page removes the bubble", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
     await worker.evaluate(() => chrome.storage.local.clear());
@@ -746,7 +746,7 @@ test.describe("Side panel page agent tools mock e2e", () => {
     expect(isError).toBe(true);
   });
 
-  test("002 — the toggle mounts on the first press after the page removed the bubble", async ({ context, extensionId }) => {
+  test("the toggle mounts on the first press after the page removed the bubble", async ({ context, extensionId }) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent("serviceworker");
     await worker.evaluate(() => chrome.storage.local.clear());

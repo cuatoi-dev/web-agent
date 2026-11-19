@@ -98,7 +98,7 @@ export function createPageScreenshotTool(options: PanelPageToolsOptions): Custom
         ? input.save_to
         : `/tmp/screenshots/${localFileStamp()}-tab${tabId}.png`;
       try {
-        // 127/003 — the bytes, not the base64 string: the backends store
+        // The bytes, not the base64 string: the backends store
         // base64 themselves, through `VfsHandle.write`. A save that fails
         // fails the call, so the model is never told about a file that is
         // not there.

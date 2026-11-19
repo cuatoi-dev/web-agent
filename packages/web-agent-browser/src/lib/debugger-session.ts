@@ -1,4 +1,4 @@
-// 124/001 — one chrome.debugger session per tab, owned by the side panel page.
+// One chrome.debugger session per tab, owned by the side panel page.
 // The debugger attach belongs to the EXTENSION, not to this page: closing the
 // page does not detach it (probed 2026-09-17), which is why sidepanel.ts calls
 // detachAll() on pagehide, and why an attach left over from an earlier panel
@@ -21,7 +21,7 @@ export type { DebuggerApi, DebuggerSession, TabDebugState } from "./debugger-too
 const PROTOCOL_VERSION = "1.3";
 const MAX_DIALOGS = 50;
 
-/** 131/003 — flat mode: every child speaks through `{ tabId, sessionId }`
+/** Flat mode: every child speaks through `{ tabId, sessionId }`
  *  instead of Target.sendMessageToTarget. `waitForDebuggerOnStart: false`
  *  keeps the iframe running while we enable its domains. */
 const AUTO_ATTACH = { autoAttach: true, waitForDebuggerOnStart: false, flatten: true };
@@ -29,7 +29,7 @@ const AUTO_ATTACH = { autoAttach: true, waitForDebuggerOnStart: false, flatten: 
 export const defaultDebuggerApi: DebuggerApi = {
   attach: (tabId) => chrome.debugger.attach({ tabId }, PROTOCOL_VERSION),
   detach: (tabId) => chrome.debugger.detach({ tabId }),
-  // 131/003 — Chrome 125 added `sessionId` to the debuggee target, which is how
+  // Chrome 125 added `sessionId` to the debuggee target, which is how
   // a command reaches an auto-attached iframe target. @types/chrome 0.0.278
   // still types the target as `Debuggee` (tabId | extensionId | targetId), so
   // the field is cast through. Do not upgrade @types/chrome for this.
@@ -72,8 +72,7 @@ function hostOf(url: string): string {
   }
 }
 
-/** A fresh id for the tab's current document. Moved here from
- *  `src/core/run-console.ts:23-25`, which this task deletes. */
+/** A fresh id for the tab's current document. */
 function newDocumentId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -127,18 +126,18 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
   const state = new Map<number, TabDebugState>();
   const frames = createDebuggerFrames();
   let listening = false;
-  // 131/002 — the helper-world cache listens here to drop a context id Chrome
+  // The helper-world cache listens here to drop a context id Chrome
   // is about to reuse for an empty world on a main-frame navigation.
   const navListeners: ((tabId: number) => void)[] = [];
-  // 131/003 — the same, per frame and per session.
+  // The same, per frame and per session.
   const frameNavListeners: ((tabId: number, sessionId: string | undefined, frameId: string, isMain: boolean) => void)[] = [];
-  // 131/004 — the recorder driver arms a child the moment it attaches, reads
+  // The recorder driver arms a child the moment it attaches, reads
   // its own binding calls, and raises a route step on a same-document
   // navigation.
   const childListeners: ((tabId: number, sessionId: string) => void)[] = [];
   const bindingListeners: ((tabId: number, sessionId: string | undefined, name: string, payload: string, executionContextId: number) => void)[] = [];
   const withinDocListeners: ((tabId: number, frameId: string, url: string) => void)[] = [];
-  // 131/004 — a detach (the user's Cancel, a closed tab, or stop_debugging)
+  // A detach (the user's Cancel, a closed tab, or stop_debugging)
   // ends any recording on that tab.
   const detachedListeners: ((tabId: number, reason: string) => void)[] = [];
 
@@ -197,7 +196,7 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
       const s = state.get(tabId);
       if (!s || s.status !== "debugging") return;
       const p = isRecord(params) ? params : {};
-      // 131/003 — child iframe targets and per-frame execution contexts.
+      // Child iframe targets and per-frame execution contexts.
       if (method.startsWith("Target.") || method.startsWith("Runtime.executionContext")) {
         const child = frames.applyEvent(tabId, sessionId, method, p);
         if (child) {
@@ -207,7 +206,7 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
         }
         return;
       }
-      // 124/003 — the tab's network log.
+      // The tab's network log.
       if (method.startsWith("Network.")) {
         applyNetworkEvent(s, method, p);
         return;
@@ -225,7 +224,7 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
         for (const l of withinDocListeners) l(tabId, frameId, url);
         return;
       }
-      // 131/001 — the tab's console. Chrome replays everything logged before
+      // The tab's console. Chrome replays everything logged before
       // Runtime.enable (measured 2026-09-19), so the buffer holds the whole
       // document, not just what happened after start_debugging.
       if (method === "Runtime.consoleAPICalled") {
@@ -255,7 +254,7 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
         const isMain = frame.parentId === undefined;
         for (const l of frameNavListeners) l(tabId, sessionId, frameId, isMain);
         // Only the TOP target's own main frame clears the console and the refs;
-        // a child target's root frame is an iframe, and the plan keeps the
+        // a child target's root frame is an iframe, and the console keeps the
         // buffer across iframe navigations.
         if (isMain && sessionId === undefined) {
           s.topFrameId = frameId;
@@ -322,7 +321,7 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
       }
     }
     const host = hostOf(url);
-    // 131/001 — REGISTER THE STATE FIRST. Chrome replays the tab's earlier
+    // REGISTER THE STATE FIRST. Chrome replays the tab's earlier
     // console calls the moment Runtime.enable lands, and the onEvent listener
     // drops any event for a tab it has no state for, so enabling before this
     // line loses every replayed entry.
@@ -343,13 +342,13 @@ export function createDebuggerSession(api: DebuggerApi = defaultDebuggerApi): De
     });
     try {
       await api.sendCommand(tabId, "Page.enable");
-      // 131/003 — the top frame id, read BEFORE Runtime.enable. Runtime.enable
-      // replays every console message the page already produced (the 131/002
-      // finding, reused by the 131/003 mock e2e's T11), and framePrefix() needs
+      // The top frame id, read BEFORE Runtime.enable. Runtime.enable
+      // replays every console message the page already produced, and
+      // framePrefix() needs
       // topFrameId set before that replay to tell the top frame's own messages
       // apart from a frame's — reading it after Runtime.enable left topFrameId
       // "" for the whole replay, so a page's own top-frame startup logging came
-      // back wrongly prefixed (found running the mock e2e for this task).
+      // back wrongly prefixed (found running the mock e2e).
       const ft = await api.sendCommand(tabId, "Page.getFrameTree");
       const tree = isRecord(ft) && isRecord(ft.frameTree) && isRecord(ft.frameTree.frame) ? ft.frameTree.frame : {};
       const started = state.get(tabId);

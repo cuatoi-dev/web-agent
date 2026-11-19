@@ -22,7 +22,7 @@ export type AgentDraftField = "displayName" | "description" | "instructions" | "
 
 export type AgentDraftErrors = Partial<Record<AgentDraftField, string>>;
 
-/** One option of the agent editor's Model select (136/005). */
+/** One option of the agent editor's Model select. */
 export interface AgentModelOption {
   value: string;
   text: string;
@@ -39,9 +39,9 @@ export interface EditFormHandlers {
   onCancel(): void;
   onSave(): void;
   onReset(): void;
-  /** 121/004 — non-null only for a saved user agent; shows Delete agent. */
+  /** Non-null only for a saved user agent; shows Delete agent. */
   onDelete: (() => void) | null;
-  /** 121/004 — non-null only for the new card; returns the id the hint shows
+  /** Non-null only for the new card; returns the id the hint shows
    *  for the display name typed so far. */
   idHint: ((displayName: string) => string) | null;
 }
@@ -57,9 +57,9 @@ export interface CardView {
   onEdit(agent: ListedAgent): void;
   /** Called once, for the card whose id is editingId. */
   editBody(agent: ListedAgent): HTMLElement;
-  /** 104/003 — current user switches (`settings.memoryEnabled`). */
+  /** Current user switches (`settings.memoryEnabled`). */
   memoryEnabled?: Record<string, boolean>;
-  /** 104/003 — called when the user flips an agent's Memory switch. */
+  /** Called when the user flips an agent's Memory switch. */
   onMemoryToggle?: (agentId: string, on: boolean) => void;
 }
 
@@ -75,12 +75,12 @@ export interface AgentEditorDeps {
   /** Called after a delete has been written and the cards repainted, so the
    *  options page can repaint the Skills tab list. */
   onAgentDeleted: () => Promise<void>;
-  /** 136/005 — the stored model store, read by the options page. Absent in
+  /** The stored model store, read by the options page. Absent in
    *  unit tests that do not care; the empty store is used then. */
   modelStore?: ModelStore;
-  /** 104/003 — initial `settings.memoryEnabled` map. Defaults to `{}`. */
+  /** Initial `settings.memoryEnabled` map. Defaults to `{}`. */
   memoryEnabled?: Record<string, boolean>;
-  /** 104/003 — persists `settings.memoryEnabled[agentId]`. */
+  /** Persists `settings.memoryEnabled[agentId]`. */
   onMemoryToggle?: (agentId: string, on: boolean) => void;
 }
 
