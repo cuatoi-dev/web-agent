@@ -8,6 +8,10 @@
     "url": "git+https://github.com/cuatoi-dev/web-agent.git",
     "directory": "packages/web-agent-mcp"
   },
+  "homepage": "https://github.com/cuatoi-dev/web-agent/tree/main/packages/web-agent-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/cuatoi-dev/web-agent/issues"
+  },
   "publishConfig": {
     "access": "public"
   },

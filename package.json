@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cuatoi-dev/web-agent.git"
+  },
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "pnpm -r build",

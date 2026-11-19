@@ -8,6 +8,10 @@
     "url": "git+https://github.com/cuatoi-dev/web-agent.git",
     "directory": "packages/web-agent-openapi"
   },
+  "homepage": "https://github.com/cuatoi-dev/web-agent/tree/main/packages/web-agent-openapi#readme",
+  "bugs": {
+    "url": "https://github.com/cuatoi-dev/web-agent/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
