@@ -20,7 +20,7 @@ Todo tracking is off by default. Set `todo` on the `SessionConfig`
 import { createAgentSession } from "@cuatoi/web-agent-core";
 
 const session = createAgentSession({
-  model: "your-model-name",
+  model: "your-model-id",
   endpointType: "anthropic",
   todo: { enabled: true },
 });

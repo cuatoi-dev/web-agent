@@ -26,7 +26,7 @@ import { createAgentSession } from "@cuatoi/web-agent-core";
 
 const session = createAgentSession({
   baseURL: "/api/anthropic",
-  model: "your-model-name",
+  model: "your-model-id",
   endpointType: "anthropic",
 });
 
