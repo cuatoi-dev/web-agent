@@ -1,4 +1,4 @@
-// 124/003 — answers the page's fetch('/api/totals') with its own response, so
+// Answers the page's fetch('/api/totals') with its own response, so
 // page_network shows a page request a service worker answered.
 self.addEventListener("install", () => {
   self.skipWaiting();

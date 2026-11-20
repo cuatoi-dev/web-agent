@@ -46,7 +46,7 @@ function wireAgent() {
     // Anthropic is different (/api/anthropic → the provider appends /v1/messages).
     bubble.path = "/api/openai/v1";
     bubble.model = "sonnet";
-    // 067-ui runtime model switcher — friendly labels for the kebab "Choose model" group.
+    // Runtime model switcher — friendly labels for the kebab "Choose model" group.
     bubble.models = [{ id: "sonnet", label: "Leo" }, { id: "haiku", label: "Mochi" }];
     bubble.imageInput = false;
     bubble.cues = { enabled: true, speed: "slow" };

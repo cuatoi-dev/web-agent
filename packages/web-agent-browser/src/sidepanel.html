@@ -20,12 +20,11 @@
     background: var(--wa-background-color);
     color: var(--wa-text-color);
   }
-  /* 120/002 — the agent row: a combo box that switches side panel agents.
-     120/003 — the page-agent icon shares the row and stays visible even with
-     no agent loaded. Tokens match mockup frames 1-2
-     (tasks/idea/120-side-panel-agent-profiles.html:70-77,94-100).
+  /* The agent row: a combo box that switches side panel agents.
+     The page-agent icon shares the row and stays visible even with
+     no agent loaded. Tokens match the design mockup.
      The row itself is never hidden; #agent-combo (below) is hidden until
-     sidepanel.ts shows an agent, so the no-agent error from 120/001 renders
+     sidepanel.ts shows an agent, so the no-agent error renders
      without an empty combo box. */
   #agent-row {
     flex: 0 0 auto;
@@ -91,9 +90,9 @@
     position: absolute;
     top: 100%;
     left: var(--wa-padding-l);
-    /* 120/003 manager override — stop before the icon button so an open list
+    /* Stop before the icon button so an open list
        never covers it: padding-l (12px) + row gap (8px) + icon width (37px) =
-       57px (mockup 120-side-panel-agent-profiles.html:90). */
+       57px. */
     right: 57px;
     /* Above <agent-chat-panel>, which is z-index 9999
        (web-agent-lit/src/chat-ui/chat-panel-shell-css.ts:24). */
@@ -149,7 +148,7 @@
     color: var(--wa-label-color);
     overflow-wrap: anywhere;
   }
-  /* 120/002 review fix (item 6b) — the hover and selected states share the
+  /* The hover and selected states share the
      --wa-action-color-info-10opc tint, and --wa-label-color on that
      tint measures 4.20:1 in wa2-light, below the WCAG AA 4.5:1 floor.
      --wa-text-color meets AA on the tint in both themes. */
@@ -159,14 +158,14 @@
   }
   /* Each of these sets its own display, which beats the browser's
      [hidden] { display: none } rule (it has no !important).
-     120/003 manager override — #agent-row is never hidden (the page-agent
+     #agent-row is never hidden (the page-agent
      icon must stay visible and usable with no agent loaded), so #agent-combo
      is hidden instead when there is no agent to show in it. */
   #agent-combo[hidden],
   #agent-list[hidden],
   #chat agent-chat-panel[hidden] { display: none; }
-  /* 120/003 — the page-agent toggle as an icon button, right of the combo box.
-     Mockup .iconbtn (tasks/idea/120-side-panel-agent-profiles.html:72-76).
+  /* The page-agent toggle as an icon button, right of the combo box.
+     Mockup .iconbtn.
      Mockup colour roles → tokens, the same mapping the #agent-combo and
      #agent-list rules above use: --field → input-background, --border → border,
      --text → text, --accent → action-color-info, --accent-soft →
@@ -233,7 +232,7 @@
      the remaining height instead of overflowing the page. */
   #chat { flex: 1 1 auto; min-height: 0; display: flex; }
   #chat agent-chat-panel { flex: 1 1 auto; min-width: 0; }
-  /* 120/001 — shown instead of the panel when no agent is available. Plain
+  /* Shown instead of the panel when no agent is available. Plain
      text, not a dialog: the page background and body font, at padding-l. */
   #agent-error {
     margin: 0;

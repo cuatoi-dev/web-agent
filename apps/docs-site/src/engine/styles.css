@@ -162,7 +162,7 @@ main.page-content article a[href]:not([class]):not([data-ui]):focus-visible {
   border-radius: 2px;
 }
 
-/* 003: <web-agent-bubble> is a shadow element. docs-site sets
+/* <web-agent-bubble> is a shadow element. docs-site sets
    launcherIcon = "menu_book" (src/docs-embed.ts:85) and leaves closeIcon unset,
    so both launcher glyphs are Material Symbols ligatures. Beer CSS applies that
    font with a global `i { font-family: … }` rule, which is tree-scoped and stops

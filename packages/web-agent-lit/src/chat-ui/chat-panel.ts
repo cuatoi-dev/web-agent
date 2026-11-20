@@ -297,7 +297,7 @@ export class AgentChatPanel extends ChatPanelWindow {
 ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
       </style>
       ${this._registryStyleEl}
-      ${/* 011 — one message-row stylesheet for the whole thread. A row renders
+      ${/* One message-row stylesheet for the whole thread. A row renders
             its own copy only with no <agent-chat-panel> ancestor. */ ""}
       ${messageViewStyles}
       ${this._hideHeader
@@ -373,15 +373,14 @@ ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
               @block-button=${(e: CustomEvent<{ prompt: string }>) => this._handleBlockButton(e)}
               @block-submit=${(e: CustomEvent<{ id: string; values: Record<string, unknown> }>) => this._handleBlockSubmit(e)}
             >
-              ${/* 009 — the older-window loader, at the head of the list.
-                    Rendered bare, exactly as the plan's pseudo code and the
-                    mockup's `loading-strip` show it: `.wa-working-dots`
+              ${/* The older-window loader, at the head of the list.
+                    Rendered bare, exactly as the design mockup's `loading-strip` show it: `.wa-working-dots`
                     already carries its own flex layout and padding, and a
                     bare node cannot collide with the bottom loader's
                     `.message-row.assistant .message-container.assistant > div`
                     selector (`apps/cat-store/e2e/working-dots.mock.spec.ts:22`). */ ""}
               ${this._loadingOlder ? html`<wa-working-dots></wa-working-dots>` : ""}
-              ${/* 011 — a message that carries `parts` already holds its text
+              ${/* A message that carries `parts` already holds its text
                     there, so the row gets `.text` empty and the view does not
                     write a text->html cache the following `.parts` write would
                     throw away in the same property batch. */ ""}
@@ -426,7 +425,7 @@ ${PANEL_SHELL_CSS}${PANEL_COMPOSER_CSS}${PANEL_SCREENS_CSS}
 
             ${this._renderQueueList()}
             ${this._resolveProviders().map((p) => p.slot?.() ?? "")}
-            ${/* 010 — the scroll-to-bottom button. The anchor always reserves space
+            ${/* The scroll-to-bottom button. The anchor always reserves space
                   between the list and the composer so the list never resizes when
                   the button appears or disappears. Only the button element inside
                   is toggled. */ ""}

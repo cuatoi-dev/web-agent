@@ -45,7 +45,7 @@ export default tseslint.config(
       "packages/web-agent-vfs/dist/**",
       "apps/cat-store/dist/**",
       "apps/docs-site/dist/**",
-      // Files each unit excluded when eslint was installed, tasks 001-017.
+      // Files each unit excluded when eslint was installed.
       "packages/web-agent-browser/webpack.config.cjs",
       "packages/web-agent-browser/tool/generate-public-sans-css.cjs",
       "packages/web-agent-browser/tool/compile-brand.cjs",

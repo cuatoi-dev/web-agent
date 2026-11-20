@@ -184,11 +184,11 @@ function buildPanelProps(
   // the gateway resolves. The internal proxy uses the same alias, so hosts and
   // proxy name the model identically.
   applyProviderEntry(panel, PROVIDER_ENTRIES[DEFAULT_PROVIDER_ENTRY_INDEX]);
-  // 067-ui runtime model switcher — friendly labels for the kebab "Choose model" group.
+  // Runtime model switcher — friendly labels for the kebab "Choose model" group.
   panel.models = [{ id: "sonnet", label: "Leo" }, { id: "haiku", label: "Mochi" }];
 
   // Test/e2e seam: deterministic mock LLM (no network). Inert unless a script is set.
-  // 027-3 wires the full mock tier (test:e2e:mock on both hosts, mock-llm.mock.spec.ts, docs-site seam).
+  // The full mock tier uses it: test:e2e:mock on both hosts, mock-llm.mock.spec.ts and the docs-site seam.
   const mockScript = window.__WA_MOCK_SCRIPT__;
   if (mockScript) {
     // Test seam only: overrides the entry's transport, deliberately AFTER

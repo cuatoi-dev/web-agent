@@ -170,7 +170,7 @@ if (agentUi) {
 
   // Backend configuration
   panel.path = "/api/anthropic";
-  panel.model = "sonnet";       // model id — always required
+  panel.model = "your-model-name"; // model id — always required
   panel.type = "anthropic";     // "openai" | "anthropic" | "gemini" (or "mock" for e2e)
 
   // UI block renderers
@@ -298,7 +298,7 @@ if (host) {
   bubble.store = myStore;
   bubble.appContext = { appName: "My App", appDescription: "…" };
   bubble.path = "/api/anthropic";
-  bubble.model = "sonnet";   // required — there is no default model
+  bubble.model = "your-model-name"; // required — there is no default model
   bubble.type = "anthropic";
 }
 ```

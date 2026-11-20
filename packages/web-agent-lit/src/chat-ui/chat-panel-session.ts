@@ -109,7 +109,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
     
     if (!oldState || oldState.activeSessionId !== s.activeSessionId) {
       this._forceScrollToBottom = true;
-      this._atBottom = true;                 // 008 — the new session opens at its bottom
+      this._atBottom = true;                 // the new session opens at its bottom
       const newMeta = s.sessions.find(x => x.id === s.activeSessionId);
       this._manualTitle = newMeta?.titleManual ?? false;
       const turnCount = s.messages ? s.messages.filter(m => m.role === "assistant").length : 0;
@@ -145,7 +145,7 @@ export abstract class ChatPanelSession extends ChatPanelElements {
     this._resolvedProviders = undefined;
     this._syncAttachmentProviders();
 
-    this._recomputeWindow();                 // 008 — after `_state` is the new state
+    this._recomputeWindow();                 // after `_state` is the new state
     this.requestUpdate();
   }
 

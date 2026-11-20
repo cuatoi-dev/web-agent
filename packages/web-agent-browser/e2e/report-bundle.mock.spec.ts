@@ -34,7 +34,7 @@ async function openPanel(context: BrowserContext, extensionId: string, tabId: nu
       const lastMsg = opts.messages[opts.messages.length - 1];
       const lastText = typeof lastMsg?.content === "string" ? lastMsg.content : "";
       if (lastText.includes("Summarize the following conversation as a short UI title")) {
-        return { text: "VFS report bundle 127/006" };
+        return { text: "VFS report bundle" };
       }
       const queue = window.__PLAN__ ?? [];
       const results = window.__TOOL_RESULTS__ ?? [];

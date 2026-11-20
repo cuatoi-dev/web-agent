@@ -12,9 +12,9 @@ overrides:
   # StreamableHTTPServerTransport mounted on Express 4 — all verified locally.
   # It implements protocol revision 2025-11-25, which lags the current spec.
   '@modelcontextprotocol/sdk': 1.27.0
-  # Express 5 for the cat-store server (task 215535-001). 5.2.1 is the registry's
+  # Express 5 for the cat-store server. 5.2.1 is the registry's
   # current `latest` and satisfies the MCP SDK's declared `express: ^5.2.1`, so
-  # idea 076 will not add a second major.
+  # a later upgrade will not add a second major.
   express: 5.2.1
   # webpack-dev-server 5.2.4 declares `express: ^4.22.1` and is not tested against
   # Express 5 (which swaps in router@2 / path-to-regexp@8). Keep the dev server on

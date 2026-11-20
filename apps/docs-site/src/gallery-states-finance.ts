@@ -36,7 +36,7 @@ export const FINANCE_GALLERY_STATES: GalleryState[] = [
   {
     id: 'candlestick',
     title: 'Candlestick chart',
-    caption: 'Finance — a candlestick/OHLC chart with a temporal x-axis and a dashed reference (entry) line (072).',
+    caption: 'Finance — a candlestick/OHLC chart with a temporal x-axis and a dashed reference (entry) line.',
     kind: 'panel',
     state: makeState({
       messages: [
@@ -53,7 +53,7 @@ export const FINANCE_GALLERY_STATES: GalleryState[] = [
   {
     id: 'payoff',
     title: 'Options payoff diagram',
-    caption: 'Finance — an options payoff diagram: P/L at expiry with a zero baseline, shaded profit (green) / loss (red) regions, strike lines and a breakeven marker (072).',
+    caption: 'Finance — an options payoff diagram: P/L at expiry with a zero baseline, shaded profit (green) / loss (red) regions, strike lines and a breakeven marker.',
     kind: 'panel',
     state: makeState({
       messages: [
@@ -70,7 +70,7 @@ export const FINANCE_GALLERY_STATES: GalleryState[] = [
   {
     id: 'equity',
     title: 'Equity / P&L curve',
-    caption: 'Finance — a cumulative P&L / equity curve with a signed area fill split at the zero line (green above / red below) and a zero baseline (072).',
+    caption: 'Finance — a cumulative P&L / equity curve with a signed area fill split at the zero line (green above / red below) and a zero baseline.',
     kind: 'panel',
     state: makeState({
       messages: [
@@ -87,7 +87,7 @@ export const FINANCE_GALLERY_STATES: GalleryState[] = [
   {
     id: 'drawdown',
     title: 'Drawdown / underwater',
-    caption: 'Finance — an underwater/drawdown chart: percent decline from the running peak, filled red below the zero high-water line (072).',
+    caption: 'Finance — an underwater/drawdown chart: percent decline from the running peak, filled red below the zero high-water line.',
     kind: 'panel',
     state: makeState({
       messages: [
@@ -104,7 +104,7 @@ export const FINANCE_GALLERY_STATES: GalleryState[] = [
   {
     id: 'volume',
     title: 'Price & volume (dual-axis)',
-    caption: 'Finance — a price line over volume bars on a secondary right-hand y-axis (dual-axis combo) (072).',
+    caption: 'Finance — a price line over volume bars on a secondary right-hand y-axis (dual-axis combo).',
     kind: 'panel',
     state: makeState({
       messages: [
@@ -121,7 +121,7 @@ export const FINANCE_GALLERY_STATES: GalleryState[] = [
   {
     id: 'waterfall',
     title: 'Waterfall / P&L bridge',
-    caption: 'Finance — a waterfall/P&L bridge: stacked-bar attribution from opening balance through signed steps (green up / red down) to a net total, with a dashed total line (072).',
+    caption: 'Finance — a waterfall/P&L bridge: stacked-bar attribution from opening balance through signed steps (green up / red down) to a net total, with a dashed total line.',
     kind: 'panel',
     state: makeState({
       messages: [

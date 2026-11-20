@@ -282,8 +282,8 @@ import {
 } from "@cuatoi/web-agent-core";
 
 const CHAIN: FallbackChainEntry[] = [
-  { endpointType: "anthropic", model: "sonnet", baseURL: "/api/anthropic" },
-  { endpointType: "openai", model: "sonnet", baseURL: "/api/openai/v1" },
+  { endpointType: "anthropic", model: "your-model-name", baseURL: "/api/anthropic" },
+  { endpointType: "openai", model: "your-model-name", baseURL: "/api/openai/v1" },
 ];
 
 providerRegistry.register("my-chain", createFallbackProviderFactory(CHAIN));

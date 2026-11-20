@@ -29,7 +29,7 @@ module.exports = {
     // applicator vocabulary here, a Material-Web Lit component there —
     // overwrite one another. That collision is what made `import("ajv")`
     // throw "(0 , o.default) is not a function" and silently disabled every
-    // tool-argument validation in the deployed bundle (docs/tests/0167).
+    // tool-argument validation in the deployed bundle.
     uniqueName: "cat-store-genui",
   },
   optimization: {

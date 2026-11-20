@@ -20,3 +20,6 @@ packages/web-agent-browser/dist-template/
 temp/
 artifacts/
 tasks/
+
+# Packed npm tarballs (`pnpm pack` output).
+*.tgz

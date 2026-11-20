@@ -93,7 +93,7 @@ for (const theme of listThemes().map(({ id }) => id)) {
       el.id = 'annotation-probe';
       el.block = {
         type: 'chart',
-        title: 'Annotation label probe (018)',
+        title: 'Annotation label probe',
         config: {
           type: 'line',
           data: {

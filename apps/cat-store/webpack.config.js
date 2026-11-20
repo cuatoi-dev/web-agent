@@ -3,7 +3,7 @@ const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
-// 137/001 — the gateway key: the env value, else the dev default. Used by
+// The gateway key: the env value, else the dev default. Used by
 // the build define and by the dev-server proxy below.
 const GATEWAY_KEY = process.env.WEB_AGENT_TOKEN || "wa-demo-token";
 
@@ -71,7 +71,7 @@ module.exports = {
     ],
   },
   plugins: [
-    // Key gate (137/001): bakes the gateway key into the bundle at build time
+    // Key gate: bakes the gateway key into the bundle at build time
     // so gateway-auth.ts sends it in each LLM route's own auth header,
     // without hardcoding a literal in the source.
     new webpack.DefinePlugin({
@@ -125,7 +125,7 @@ module.exports = {
         target: "http://localhost:20030",
         changeOrigin: true,
       },
-      // 137/001 — one entry per LLM route, each sending that route's own
+      // One entry per LLM route, each sending that route's own
       // auth header.
       {
         context: ["/api/openai"],

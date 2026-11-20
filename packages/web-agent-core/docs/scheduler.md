@@ -19,7 +19,7 @@ Scheduling is off by default. Set `scheduler` on the `SessionConfig`
 import { createAgentSession } from "@cuatoi/web-agent-core";
 
 const session = createAgentSession({
-  model: "sonnet",
+  model: "your-model-name",
   endpointType: "anthropic",
   scheduler: { enabled: true },
 });

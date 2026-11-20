@@ -457,7 +457,7 @@
 
 [data-theme="wa2-dark"], :where([data-theme-base="wa2-dark"]) {
   /* Action colours */
-  /* 009: same as wa1-dark — the error surface is hsl(352deg 60% 68%) here, so
+  /* Same as wa1-dark — the error surface is hsl(352deg 60% 68%) here, so
      white measured 2.84:1 (the 2.857:1 the mock e2e reported). This value
      measures 6.72:1 at rest, 5.73:1 on :hover and 4.99:1 on :active. */
   --wa-action-text-color-error: hsl(221deg 36% 7%);

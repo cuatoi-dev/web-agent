@@ -36,7 +36,7 @@ export const WORKING_STATES: GalleryState[] = [
   },
   {
     id: 'compacting',
-    title: 'Compacting the context (009)',
+    title: 'Compacting the context',
     caption: 'Automatic compaction — running is false (the turn already settled) but compacting is true: the permanent "Agent compacts its context · running" row, the gauge spinning, and the same working-dots row a normal in-progress turn shows.',
     kind: 'panel',
     state: makeState({

@@ -75,8 +75,7 @@
   }
   /* Saved skills. Every colour comes from the six tokens declared at the top
      of this file, so the section follows the page into either theme. Shapes
-     and sizes follow the mockup in
-     tasks/done/114-extension-skill-storage.html:123-133. */
+     and sizes follow the design mockup. */
   .tabs {
     display: flex; gap: 4px;
     border-bottom: 1px solid var(--wa-border-color);
@@ -185,7 +184,7 @@
     font-size: 13px; opacity: 0.82; padding: 14px 8px; margin: 0;
     border: 1px dashed var(--wa-border-color);
   }
-  /* Agent card editor (121/003). Every colour is a token declared at the top
+  /* Agent card editor. Every colour is a token declared at the top
      of this file. Meaning never rests on colour alone: a selected row has a
      drawn tick mark, a disabled exclude field has its hint text, an error
      has its message text, and the open card has the "Editing" button text. */
@@ -274,7 +273,7 @@
     border-color: var(--wa-action-color-info);
     color: var(--wa-action-text-color-info);
   }
-  /* Delete agent (121/004). The danger action is named in words ("Delete
+  /* Delete agent. The danger action is named in words ("Delete
      agent"); the error colour only repeats it. Contrast of
      --wa-action-color-error on the button ground: light 5.52:1,
      dark 5.59:1. */
@@ -380,7 +379,7 @@
     width: 36px; height: 36px; box-sizing: border-box; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  /* 138/001 — the per-row Test button and its result line. The line starts
+  /* The per-row Test button and its result line. The line starts
      with ✓ or ✗ and says what happened in words, so the colour only repeats
      the meaning. Every colour is a theme token. */
   .test-model-btn svg.logo { width: 18px; height: 18px; flex: none; }
@@ -395,7 +394,7 @@
   .form-model-result[hidden] { display: none; }
   .form-model-result.ok { color: var(--wa-action-color-success); }
   .form-model-result.fail { color: var(--wa-action-color-error); }
-  /* 138/002 — the Models tab: icon-only Edit, Key and Test, and the inline result. */
+  /* The Models tab: icon-only Edit, Key and Test, and the inline result. */
   .model-table .key-btn, .model-table .edit-btn, .model-table .test-model-btn {
     margin-top: 0;
     width: calc(var(--wa-icon-size-s) + 2 * var(--wa-padding-m));

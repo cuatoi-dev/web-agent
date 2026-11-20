@@ -32,7 +32,7 @@ Set `hooks` on the session config. `hooks` is a field of `AgentConfig`
 import { createAgentSession } from "@cuatoi/web-agent-core";
 
 const session = createAgentSession({
-  model: "sonnet",
+  model: "your-model-name",
   endpointType: "anthropic",
   hooks: {
     onTurnEnd: ({ stopReason }) => {
@@ -124,7 +124,7 @@ handler, the decision stays `"allow"` and the tool runs.
 
 ```ts
 const session = createAgentSession({
-  model: "sonnet",
+  model: "your-model-name",
   endpointType: "anthropic",
   hooks: {
     onPreTool: [
