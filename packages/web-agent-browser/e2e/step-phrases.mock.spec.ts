@@ -7,7 +7,7 @@ import type { BrowserContext, Page, Worker } from "@playwright/test";
 const ORIGIN = "http://localhost:10040";
 const CHECKOUT_URL = `${ORIGIN}/checkout.html`;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-09-24-013526-003-step-phrases-mock-chromagent-tool");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/step-phrases-mock-chromagent-tool");
 
 async function enableOrigin(worker: Worker, origins: string[]): Promise<void> {
   await worker.evaluate(async (o: string[]) => {
@@ -150,7 +150,7 @@ test.describe("page tool step phrases mock e2e", () => {
     expect(sizes.scrollWidth).toBeGreaterThan(sizes.clientWidth);
     expect(sizes.overflow).toBe("hidden");
     expect(sizes.textOverflow).toBe("ellipsis");
-    const artifacts = path.resolve(HERE, "../../../temp/artifacts/2026-10-01-022937-001-agents-md-auto-load");
+    const artifacts = path.resolve(HERE, "../../../temp/artifacts/agents-md-auto-load");
     await fs.mkdir(artifacts, { recursive: true });
     await fs.writeFile(path.join(artifacts, "rework2-mock-layout.json"), JSON.stringify(sizes, null, 2));
     await panelPage.screenshot({ path: path.join(artifacts, "rework2-mock-layout.png") });

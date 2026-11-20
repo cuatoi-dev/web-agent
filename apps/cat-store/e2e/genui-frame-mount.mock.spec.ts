@@ -8,7 +8,7 @@ import fs from 'fs';
 
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-26-182335-004-genui-frame-delivery-and-mount',
+  '../../../temp/artifacts/genui-frame-delivery-and-mount',
 );
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');

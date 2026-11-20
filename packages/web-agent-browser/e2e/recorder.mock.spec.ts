@@ -9,7 +9,7 @@ import type { BrowserContext, Page, Worker } from "@playwright/test";
 const ORIGIN = "http://localhost:10040";
 const CHECKOUT_URL = `${ORIGIN}/checkout.html`;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-09-19-041603-004-recording-watch-me-and-cleanup");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/recording-watch-me-and-cleanup");
 
 async function getWorker(context: BrowserContext): Promise<Worker> {
   let [worker] = context.serviceWorkers();

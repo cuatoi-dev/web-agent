@@ -534,7 +534,7 @@ test.describe("Extension shared skill storage", () => {
 
 const OWNER_ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-09-15-171940-004-saved-skill-owner-and-shared-flag",
+  "../../../temp/artifacts/saved-skill-owner-and-shared-flag",
 );
 const VISIBLE_PANEL = "#chat agent-chat-panel:not([hidden])";
 const LOGIN_SMOKE = {

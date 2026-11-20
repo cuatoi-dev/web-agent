@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/2026-08-16-124449-005-options-page-theme-dark-light-auto");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/options-page-theme-dark-light-auto");
 
 async function writeSettings(worker: import("@playwright/test").Worker, theme: "auto" | "wa2-dark" | "wa2-light"): Promise<void> {
   await worker.evaluate(async (t) => {

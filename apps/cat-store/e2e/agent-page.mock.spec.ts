@@ -8,11 +8,11 @@ import type { WebAgentBubble } from '@cuatoi/web-agent-lit/embed/web-agent-embed
 const MOCK_REPLY = 'AGENT-PAGE-MOCK-9c2f';
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-12-093300-003-agent-page-shell',
+  '../../../temp/artifacts/agent-page-shell',
 );
 const ARTIFACTS_DIR_003A = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-12-093300-003a-hide-bubble-on-agent-page',
+  '../../../temp/artifacts/hide-bubble-on-agent-page',
 );
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');

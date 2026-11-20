@@ -4,7 +4,7 @@ import { chooseTheme, openPanel, attachmentIcon, sendChat, waitForAssistantReply
 import path from 'path';
 import fs from 'fs/promises';
 
-const ARTIFACTS = path.resolve(__dirname, '../../../temp/artifacts/2026-10-01-022937-003-attach-folder-button');
+const ARTIFACTS = path.resolve(__dirname, '../../../temp/artifacts/attach-folder-button');
 
 // The menu surface animates open and an ancestor can clip it, so an item's own
 // box says nothing. Wait until the surface box is nonzero and unchanged.

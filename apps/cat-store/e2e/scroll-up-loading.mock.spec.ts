@@ -10,7 +10,7 @@ test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');
 // Task-file stem, not a bare order number — see AGENTS.md artifact hygiene rules.
 const ARTIFACTS_DIR = path.resolve(
   __dirname, '..', '..', '..', 'temp', 'artifacts',
-  '2026-09-08-204122-009-scroll-up-window-loading',
+  'scroll-up-window-loading',
 );
 
 /** One turn: a user bubble, then an assistant bubble carrying `tools` chips.

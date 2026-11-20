@@ -10,7 +10,7 @@ import { test, expect, ask } from "./demo-helpers";
 // automatic approval.
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/2026-10-01-022937-002-vfs-folder-mounts");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/vfs-folder-mounts");
 
 async function chooseAgent(page: Page, id: string): Promise<void> {
   await page.locator("#agent-combo").click();

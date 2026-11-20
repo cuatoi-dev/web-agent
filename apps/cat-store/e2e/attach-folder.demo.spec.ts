@@ -3,7 +3,7 @@ import { openPanel, attachmentIcon, sendChat, waitForAssistantReply } from './he
 import path from 'path';
 import fs from 'fs/promises';
 
-const ARTIFACTS = path.resolve(__dirname, '../../../temp/artifacts/2026-10-01-022937-003-attach-folder-button');
+const ARTIFACTS = path.resolve(__dirname, '../../../temp/artifacts/attach-folder-button');
 
 test('attach folder against real model in cat-store', async ({ page }) => {
   test.setTimeout(300_000);

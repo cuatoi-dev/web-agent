@@ -11,7 +11,7 @@ interface MessagePartLike { type?: string; image?: string }
 
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-26-182335-008-genui-tool-and-panel-binding',
+  '../../../temp/artifacts/genui-tool-and-panel-binding',
 );
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');

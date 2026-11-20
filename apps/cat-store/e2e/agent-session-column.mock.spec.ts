@@ -7,7 +7,7 @@ import fs from 'fs';
 const MOCK_REPLY = 'SESSION-COL-MOCK-4b71';
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-12-093300-004-agent-page-session-column',
+  '../../../temp/artifacts/agent-page-session-column',
 );
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');

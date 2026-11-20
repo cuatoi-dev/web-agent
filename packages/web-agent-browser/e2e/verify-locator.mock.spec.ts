@@ -7,7 +7,7 @@ import { countMatches, locatorField } from "./locator-text";
 
 const CHECKOUT_URL = "http://localhost:10040/checkout.html";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-09-17-064916-002-verify-and-locator-tools");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/verify-and-locator-tools");
 
 async function enableOrigin(worker: Worker, origins: string[]): Promise<void> {
   await worker.evaluate(async (o: string[]) => {

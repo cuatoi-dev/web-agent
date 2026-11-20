@@ -8,7 +8,7 @@ import type { BrowserContext, Page, Worker } from "@playwright/test";
 const ORIGIN = "http://localhost:10040";
 const CHECKOUT_URL = `${ORIGIN}/checkout.html`;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-09-17-194017-002-hover-key-screenshot-and-emulation");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/hover-key-screenshot-and-emulation");
 
 async function enableOrigin(worker: Worker, origins: string[]): Promise<void> {
   await worker.evaluate(async (o: string[]) => {

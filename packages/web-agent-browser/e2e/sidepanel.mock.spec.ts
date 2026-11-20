@@ -7,12 +7,12 @@ import fs from "node:fs/promises";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-08-31-023032-001-extension-side-panel",
+  "../../../temp/artifacts/extension-side-panel",
 );
 // The page-agent icon toggle.
 const ICON_ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-09-15-171940-003-page-agent-icon-toggle",
+  "../../../temp/artifacts/page-agent-icon-toggle",
 );
 const SYNC_ARTIFACTS_DIR = path.resolve(
   process.env.TASK_ARTIFACTS_DIR ?? path.join(HERE, "../test-results/tab-state-sync"),

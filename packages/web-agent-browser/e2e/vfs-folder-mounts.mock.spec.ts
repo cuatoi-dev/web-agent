@@ -8,7 +8,7 @@ import { test, expect } from "./extension.fixture";
 // mock model. No handle and no dialog is faked.
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/2026-10-01-022937-002-vfs-folder-mounts");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/vfs-folder-mounts");
 const VISIBLE_PANEL = "agent-chat-panel:not([hidden])";
 
 // A valid 1x1 PNG.

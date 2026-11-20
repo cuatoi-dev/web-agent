@@ -8,7 +8,7 @@ import fs from 'fs';
 
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-12-093300-005-agent-page-right-panel',
+  '../../../temp/artifacts/agent-page-right-panel',
 );
 
 const MOCK_REPLY = 'AGENT-RIGHT-PANEL-MOCK-7d1a';

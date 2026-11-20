@@ -5,7 +5,7 @@ import type { Page } from "@playwright/test";
 import { test, expect } from "./demo-helpers";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/2026-10-01-022937-003-attach-folder-button");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/attach-folder-button");
 
 async function chooseAgent(page: Page, id: string): Promise<void> {
   await page.locator("#agent-combo").click();

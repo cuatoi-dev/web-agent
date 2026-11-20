@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-08-16-124449-002-web-agent-browser-extension-package");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/web-agent-browser-extension-package");
 
 test.describe("Extension mount and toggle", () => {
   test("mount lifecycle on plain page", async ({ context }) => {

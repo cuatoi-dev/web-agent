@@ -8,13 +8,13 @@ test.use({ viewport: { width: 1024, height: 768 }, consoleErrorExtraAllowlist: [
 // Task-file stem, not a bare order number — see AGENTS.md artifact hygiene rules.
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  "../../../temp/artifacts/2026-08-09-105014-009-compaction-progress-indicator",
+  "../../../temp/artifacts/compaction-progress-indicator",
 );
 
 // Task-file stem, not a bare order number — see AGENTS.md artifact hygiene rules.
 const DRAIN_ARTIFACTS_DIR = path.resolve(
   __dirname,
-  "../../../temp/artifacts/2026-09-25-175317-001-drain-queue-after-manual-compact",
+  "../../../temp/artifacts/drain-queue-after-manual-compact",
 );
 
 /**

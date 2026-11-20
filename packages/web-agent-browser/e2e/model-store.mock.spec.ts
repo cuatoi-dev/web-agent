@@ -9,7 +9,7 @@ const EXT = path.resolve(HERE, "../dist");
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/model-store");
 const ARTIFACTS = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-10-19-133304-005-extension-model-store-relay-and-switchers",
+  "../../../temp/artifacts/extension-model-store-relay-and-switchers",
 );
 
 async function patchedBrand(dir: string, patch: Record<string, unknown>): Promise<string> {

@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-09-26-155400-001-agent-defaults-step-limit-and-chromagent-tools",
+  "../../../temp/artifacts/agent-defaults-step-limit-and-chromagent-tools",
 );
 
 async function chooseAgent(page: Page, id: string): Promise<void> {

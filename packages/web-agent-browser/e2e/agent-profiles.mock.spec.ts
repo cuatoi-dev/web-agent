@@ -9,7 +9,7 @@ const EXT = path.resolve(HERE, "../dist");
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/agent-profiles");
 const ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-09-15-171940-001-brand-agent-files-and-single-agent-panel",
+  "../../../temp/artifacts/brand-agent-files-and-single-agent-panel",
 );
 
 async function patchedBrand(dir: string, patch: Record<string, unknown>): Promise<string> {

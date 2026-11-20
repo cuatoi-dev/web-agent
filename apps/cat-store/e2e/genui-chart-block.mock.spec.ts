@@ -6,7 +6,7 @@ import { panelChartSkill } from '../src/web/store/panel-chart-skill';
 
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-09-02-130024-002-live-chart-block-in-genui-frame',
+  '../../../temp/artifacts/live-chart-block-in-genui-frame',
 );
 
 /** A live revenue chart block — same shape as demo-chart-datasource in gallery-demos.ts. */

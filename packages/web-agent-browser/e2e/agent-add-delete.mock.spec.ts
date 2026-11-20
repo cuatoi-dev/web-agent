@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-09-16-182426-004-add-and-delete-agent");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/add-and-delete-agent");
 
 const NEW = '#agent-cards .card[data-agent-id="_new"]';
 const CT = '#agent-cards .card[data-agent-id="checkout-tester"]';

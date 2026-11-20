@@ -9,7 +9,7 @@ const EXT = path.resolve(HERE, "../dist");
 // Every e2e copy of dist/ lives under temp/e2e-extensions/<spec>/, removed
 // when the spec finishes (same rule as agent-switcher.mock.spec.ts:9-12).
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/agent-editor");
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-09-16-182426-003-agent-card-editor");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/agent-card-editor");
 
 const TESAGENT = '#agent-cards .card[data-agent-id="tesagent"]';
 const CHROMAGENT = '#agent-cards .card[data-agent-id="chromagent"]';

@@ -5,9 +5,9 @@ import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/2026-08-16-124449-002-web-agent-browser-extension-package");
-const ARTIFACTS_004 = path.resolve(HERE, "../../../temp/artifacts/2026-08-16-124449-004-options-page-endpoint-model-and-key");
-const ARTIFACTS_005 = path.resolve(HERE, "../../../temp/artifacts/2026-09-08-204122-005-saved-skills-list-on-options-page");
+const ARTIFACTS_DIR = path.resolve(HERE, "../../../temp/artifacts/web-agent-browser-extension-package");
+const ARTIFACTS_004 = path.resolve(HERE, "../../../temp/artifacts/options-page-endpoint-model-and-key");
+const ARTIFACTS_005 = path.resolve(HERE, "../../../temp/artifacts/saved-skills-list-on-options-page");
 
 test.describe("Options page", () => {
   test("has no Token field; Save stores the theme", async ({ context, extensionId }) => {
@@ -601,7 +601,7 @@ test.describe("Brand model list", () => {
 
 const ARTIFACTS_005_LAYOUT = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-09-16-195740-005-options-page-full-width-flex",
+  "../../../temp/artifacts/options-page-full-width-flex",
 );
 
 /** The ids of the tab panels that are currently laid out (display is not none). */

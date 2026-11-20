@@ -7,7 +7,7 @@ test.use({ viewport: { width: 1024, height: 768 } });
 // Task-file stem — see AGENTS.md artifact hygiene rules.
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  "../../../temp/artifacts/2026-08-10-195636-004-fix-context-menu-theme",
+  "../../../temp/artifacts/fix-context-menu-theme",
 );
 
 /** WCAG 2.x contrast, computed in the page from painted colours. Reads the

@@ -7,7 +7,7 @@ import fs from 'fs';
 import type { AgentPageProbe } from './dom-types';
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-15-002512-002-four-entry-provider-model-mode-switcher',
+  '../../../temp/artifacts/four-entry-provider-model-mode-switcher',
 );
 
 test.skip(process.env.E2E_ENV !== 'mock', 'mock tier is mock-only');

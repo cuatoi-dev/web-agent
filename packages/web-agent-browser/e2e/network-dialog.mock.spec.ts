@@ -11,7 +11,7 @@ const IFRAME_URL = `${ORIGIN}/dialog-iframe.html`;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACTS_DIR = path.resolve(
   HERE,
-  "../../../temp/artifacts/2026-09-17-194017-003-debugger-network-dialogs-and-upload",
+  "../../../temp/artifacts/debugger-network-dialogs-and-upload",
 );
 
 async function enableOrigin(worker: Worker, origins: string[]): Promise<void> {

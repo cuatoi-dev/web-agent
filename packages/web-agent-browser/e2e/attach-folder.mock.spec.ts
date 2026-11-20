@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXT = path.resolve(HERE, "../dist");
 const TEMP_DIR = path.resolve(HERE, "../temp/e2e-extensions/attach-folder");
-const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/2026-10-01-022937-003-attach-folder-button");
+const ARTIFACTS = path.resolve(HERE, "../../../temp/artifacts/attach-folder-button");
 const RAINBOW_PNG = path.resolve(HERE, "../../../apps/cat-store/e2e/fixtures/004-test-rainbow.png");
 
 type Seed = Record<string, string | { b64: string }>;

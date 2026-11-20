@@ -9,7 +9,7 @@ test.use({ viewport: { width: 1024, height: 768 } });
 // Task-file stem, not a bare order number — see AGENTS.md artifact hygiene rules.
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  "../../../temp/artifacts/2026-08-10-000415-017-fix-working-dots-indicator",
+  "../../../temp/artifacts/fix-working-dots-indicator",
 );
 
 /**

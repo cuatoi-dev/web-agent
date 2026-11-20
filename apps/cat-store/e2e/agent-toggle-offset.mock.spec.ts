@@ -9,7 +9,7 @@ import fs from 'fs';
 
 const ARTIFACTS_DIR = path.resolve(
   __dirname,
-  '../../../temp/artifacts/2026-08-13-122925-001-agent-page-toggle-off-the-divider-line',
+  '../../../temp/artifacts/agent-page-toggle-off-the-divider-line',
 );
 
 const MOCK_REPLY = 'AGENT-TOGGLE-OFFSET-MOCK-4b2c';
